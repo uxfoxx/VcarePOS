@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useReducer } from 'react';
-import { mockProducts, mockRawMaterials, mockTransactions } from '../data/mockData';
+import { mockProducts, mockRawMaterials, mockTransactions, mockCoupons } from '../data/mockData';
 
 const initialState = {
   cart: [],
   products: mockProducts,
   rawMaterials: mockRawMaterials,
   transactions: mockTransactions,
+  coupons: mockCoupons,
   currentUser: { name: 'Sarah Wilson', role: 'manager' },
   customers: []
 };
@@ -104,6 +105,23 @@ function posReducer(state, action) {
             ? { ...material, stockQuantity: material.stockQuantity - action.payload.quantity }
             : material
         )
+      };
+    case 'ADD_COUPON':
+      return {
+        ...state,
+        coupons: [...(state.coupons || []), action.payload]
+      };
+    case 'UPDATE_COUPON':
+      return {
+        ...state,
+        coupons: (state.coupons || []).map(coupon =>
+          coupon.id === action.payload.id ? action.payload : coupon
+        )
+      };
+    case 'DELETE_COUPON':
+      return {
+        ...state,
+        coupons: (state.coupons || []).filter(coupon => coupon.id !== action.payload)
       };
     case 'SET_USER':
       return {

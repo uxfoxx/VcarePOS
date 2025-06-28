@@ -11,6 +11,7 @@ import { RawMaterialManagement } from './components/RawMaterials/RawMaterialMana
 import { TransactionHistory } from './components/Transactions/TransactionHistory';
 import { ReportsOverview } from './components/Reports/ReportsOverview';
 import { SettingsPanel } from './components/Settings/SettingsPanel';
+import { CouponManagement } from './components/Coupons/CouponManagement';
 
 const { Sider, Content } = Layout;
 
@@ -34,6 +35,7 @@ function App() {
       'raw-materials': <RawMaterialManagement />,
       'transactions': <TransactionHistory />,
       'reports': <ReportsOverview />,
+      'coupons': <CouponManagement />,
       'settings': <SettingsPanel />,
     };
 

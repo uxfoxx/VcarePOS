@@ -347,3 +347,74 @@ export const mockTransactions = [
     customerPhone: '+1-555-0456'
   }
 ];
+
+export const mockCoupons = [
+  {
+    id: 'COUPON-001',
+    code: 'WELCOME10',
+    description: 'Welcome discount for new customers',
+    discountType: 'percentage',
+    discountPercent: 10,
+    discountAmount: 0,
+    minimumAmount: 100,
+    maxDiscount: 50,
+    usageLimit: 100,
+    usedCount: 15,
+    validFrom: new Date('2024-01-01'),
+    validTo: new Date('2024-12-31'),
+    isActive: true,
+    applicableCategories: [],
+    createdAt: new Date('2024-01-01')
+  },
+  {
+    id: 'COUPON-002',
+    code: 'FURNITURE20',
+    description: '20% off on all furniture items',
+    discountType: 'percentage',
+    discountPercent: 20,
+    discountAmount: 0,
+    minimumAmount: 500,
+    maxDiscount: 200,
+    usageLimit: 50,
+    usedCount: 8,
+    validFrom: new Date('2024-01-15'),
+    validTo: new Date('2024-02-15'),
+    isActive: true,
+    applicableCategories: ['Tables', 'Chairs'],
+    createdAt: new Date('2024-01-15')
+  },
+  {
+    id: 'COUPON-003',
+    code: 'CHAIRS15',
+    description: '15% discount on all chairs',
+    discountType: 'percentage',
+    discountPercent: 15,
+    discountAmount: 0,
+    minimumAmount: 200,
+    maxDiscount: 100,
+    usageLimit: null,
+    usedCount: 25,
+    validFrom: new Date('2024-01-01'),
+    validTo: null,
+    isActive: true,
+    applicableCategories: ['Chairs'],
+    createdAt: new Date('2024-01-01')
+  },
+  {
+    id: 'COUPON-004',
+    code: 'EXPIRED50',
+    description: 'Expired 50% discount coupon',
+    discountType: 'percentage',
+    discountPercent: 50,
+    discountAmount: 0,
+    minimumAmount: 1000,
+    maxDiscount: 500,
+    usageLimit: 10,
+    usedCount: 10,
+    validFrom: new Date('2023-12-01'),
+    validTo: new Date('2023-12-31'),
+    isActive: false,
+    applicableCategories: [],
+    createdAt: new Date('2023-12-01')
+  }
+];

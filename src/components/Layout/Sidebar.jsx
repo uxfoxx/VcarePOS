@@ -33,6 +33,11 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
       label: 'Reports',
     },
     {
+      key: 'coupons',
+      icon: <span className="material-icons">local_offer</span>,
+      label: 'Coupons',
+    },
+    {
       key: 'settings',
       icon: <span className="material-icons">settings</span>,
       label: 'Settings',

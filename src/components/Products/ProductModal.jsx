@@ -48,7 +48,32 @@ export function ProductModal({
         ...editingProduct,
         dimensions: editingProduct.dimensions
       });
-      setSelectedMaterials(editingProduct.rawMaterials || []);
+      
+      // Enrich raw materials with full details from state
+      const enrichedMaterials = (editingProduct.rawMaterials || []).map(rawMat => {
+        const fullMaterial = state.rawMaterials?.find(m => m.id === rawMat.rawMaterialId);
+        if (fullMaterial) {
+          return {
+            rawMaterialId: rawMat.rawMaterialId,
+            name: fullMaterial.name,
+            unit: fullMaterial.unit,
+            quantity: rawMat.quantity,
+            unitPrice: fullMaterial.unitPrice || 0,
+            totalCost: (fullMaterial.unitPrice || 0) * rawMat.quantity
+          };
+        }
+        // Fallback for missing materials
+        return {
+          rawMaterialId: rawMat.rawMaterialId,
+          name: 'Unknown Material',
+          unit: 'unit',
+          quantity: rawMat.quantity || 0,
+          unitPrice: 0,
+          totalCost: 0
+        };
+      });
+      
+      setSelectedMaterials(enrichedMaterials);
       setImagePreview(editingProduct.image);
       setCurrentStep(0);
     } else if (open && !editingProduct) {
@@ -61,7 +86,7 @@ export function ProductModal({
       // Generate initial SKU
       generateSKU();
     }
-  }, [editingProduct, open, productForm]);
+  }, [editingProduct, open, productForm, state.rawMaterials]);
 
   const generateSKU = () => {
     const timestamp = Date.now().toString().slice(-6);
@@ -101,8 +126,8 @@ export function ProductModal({
       name: material.name,
       unit: material.unit,
       quantity: values.quantity,
-      unitPrice: material.unitPrice,
-      totalCost: material.unitPrice * values.quantity
+      unitPrice: material.unitPrice || 0,
+      totalCost: (material.unitPrice || 0) * values.quantity
     };
 
     setSelectedMaterials([...selectedMaterials, newMaterial]);
@@ -200,19 +225,19 @@ export function ProductModal({
     {
       title: 'Quantity',
       key: 'quantity',
-      render: (record) => `${record.quantity} ${record.unit}`,
+      render: (record) => `${record.quantity || 0} ${record.unit || 'unit'}`,
     },
     {
       title: 'Unit Cost',
       dataIndex: 'unitPrice',
       key: 'unitPrice',
-      render: (price) => `$${price.toFixed(2)}`,
+      render: (price) => `$${(price || 0).toFixed(2)}`,
     },
     {
       title: 'Total Cost',
       dataIndex: 'totalCost',
       key: 'totalCost',
-      render: (cost) => `$${cost.toFixed(2)}`,
+      render: (cost) => `$${(cost || 0).toFixed(2)}`,
     },
     {
       title: 'Actions',
@@ -465,7 +490,7 @@ export function ProductModal({
             pagination={false}
             size="small"
             summary={(pageData) => {
-              const totalCost = pageData.reduce((sum, record) => sum + record.totalCost, 0);
+              const totalCost = pageData.reduce((sum, record) => sum + (record.totalCost || 0), 0);
               return (
                 <Table.Summary.Row>
                   <Table.Summary.Cell colSpan={3}>

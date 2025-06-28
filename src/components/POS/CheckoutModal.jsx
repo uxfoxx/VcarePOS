@@ -24,7 +24,18 @@ const { Title, Text } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
 
-export function CheckoutModal({ open, onClose, cartItems, orderTotal, appliedCoupon, couponDiscount }) {
+export function CheckoutModal({ 
+  open, 
+  onClose, 
+  cartItems, 
+  orderTotal, 
+  appliedCoupon, 
+  couponDiscount,
+  itemTaxes,
+  fullBillTaxes,
+  categoryTaxTotal,
+  fullBillTaxTotal
+}) {
   const { state, dispatch } = usePOS();
   const [currentStep, setCurrentStep] = useState(0);
   const [customerForm] = Form.useForm();
@@ -36,9 +47,8 @@ export function CheckoutModal({ open, onClose, cartItems, orderTotal, appliedCou
   const [showInvoice, setShowInvoice] = useState(false);
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-  const taxableAmount = subtotal - (couponDiscount || 0);
-  const tax = taxableAmount * ((state.taxSettings?.rate || 8) / 100);
-  const total = taxableAmount + tax;
+  const taxableAmount = subtotal + (categoryTaxTotal || 0) - (couponDiscount || 0);
+  const total = taxableAmount + (fullBillTaxTotal || 0);
 
   const handleNext = () => {
     if (currentStep === 1) {
@@ -67,7 +77,9 @@ export function CheckoutModal({ open, onClose, cartItems, orderTotal, appliedCou
         id: `TXN-${Date.now()}`,
         items: cartItems,
         subtotal,
-        tax,
+        categoryTaxTotal: categoryTaxTotal || 0,
+        fullBillTaxTotal: fullBillTaxTotal || 0,
+        totalTax: (categoryTaxTotal || 0) + (fullBillTaxTotal || 0),
         discount: couponDiscount || 0,
         total,
         paymentMethod,
@@ -79,7 +91,11 @@ export function CheckoutModal({ open, onClose, cartItems, orderTotal, appliedCou
         customerAddress: customerData.customerAddress,
         appliedCoupon: appliedCoupon?.code,
         notes: orderNotes,
-        status: 'completed'
+        status: 'completed',
+        appliedTaxes: {
+          itemTaxes: itemTaxes || [],
+          fullBillTaxes: fullBillTaxes || []
+        }
       };
 
       // Update product stock
@@ -149,24 +165,40 @@ export function CheckoutModal({ open, onClose, cartItems, orderTotal, appliedCou
       <div className="max-h-64 overflow-y-auto border rounded-lg p-4">
         <List
           dataSource={cartItems}
-          renderItem={(item, index) => (
-            <List.Item className="px-0 py-2">
-              <div className="w-full">
-                <div className="flex items-center justify-between mb-2">
-                  <Text strong className="text-sm">{item.product.name}</Text>
-                  <Text strong className="text-[#0E72BD]">
-                    ${(item.product.price * item.quantity).toFixed(2)}
-                  </Text>
+          renderItem={(item, index) => {
+            // Get category taxes for this item
+            const itemCategoryTaxes = (itemTaxes || []).filter(tax => tax.productId === item.product.id);
+            const itemTaxAmount = itemCategoryTaxes.reduce((sum, tax) => sum + tax.amount, 0);
+            
+            return (
+              <List.Item className="px-0 py-2">
+                <div className="w-full">
+                  <div className="flex items-center justify-between mb-2">
+                    <Text strong className="text-sm">{item.product.name}</Text>
+                    <Text strong className="text-[#0E72BD]">
+                      ${(item.product.price * item.quantity + itemTaxAmount).toFixed(2)}
+                    </Text>
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-gray-500">
+                    <Text type="secondary">
+                      ${item.product.price.toFixed(2)} × {item.quantity}
+                      {itemTaxAmount > 0 && ` + $${itemTaxAmount.toFixed(2)} tax`}
+                    </Text>
+                    <Text type="secondary">SKU: {item.product.barcode}</Text>
+                  </div>
+                  {itemCategoryTaxes.length > 0 && (
+                    <div className="mt-1">
+                      {itemCategoryTaxes.map(tax => (
+                        <Text key={tax.taxId} type="secondary" className="text-xs block">
+                          {tax.taxName} ({tax.rate}%): +${tax.amount.toFixed(2)}
+                        </Text>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center justify-between text-sm text-gray-500">
-                  <Text type="secondary">
-                    ${item.product.price.toFixed(2)} × {item.quantity}
-                  </Text>
-                  <Text type="secondary">SKU: {item.product.barcode}</Text>
-                </div>
-              </div>
-            </List.Item>
-          )}
+              </List.Item>
+            );
+          }}
         />
       </div>
 
@@ -175,16 +207,28 @@ export function CheckoutModal({ open, onClose, cartItems, orderTotal, appliedCou
           <Text>Subtotal</Text>
           <Text>${subtotal.toFixed(2)}</Text>
         </div>
+        
+        {categoryTaxTotal > 0 && (
+          <div className="flex justify-between">
+            <Text>Category Taxes</Text>
+            <Text>${categoryTaxTotal.toFixed(2)}</Text>
+          </div>
+        )}
+        
         {appliedCoupon && (
           <div className="flex justify-between">
             <Text className="text-green-600">Coupon ({appliedCoupon.code})</Text>
             <Text className="text-green-600">-${couponDiscount.toFixed(2)}</Text>
           </div>
         )}
-        <div className="flex justify-between">
-          <Text>Tax ({state.taxSettings?.rate || 8}%)</Text>
-          <Text>${tax.toFixed(2)}</Text>
-        </div>
+        
+        {fullBillTaxes && fullBillTaxes.map(tax => (
+          <div key={tax.id} className="flex justify-between">
+            <Text>{tax.name} ({tax.rate}%)</Text>
+            <Text>${((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
+          </div>
+        ))}
+        
         <Divider className="my-2" />
         <div className="flex justify-between">
           <Title level={5} className="m-0">Total</Title>
@@ -306,16 +350,28 @@ export function CheckoutModal({ open, onClose, cartItems, orderTotal, appliedCou
             <Text>Items ({cartItems.length})</Text>
             <Text>${subtotal.toFixed(2)}</Text>
           </div>
+          
+          {categoryTaxTotal > 0 && (
+            <div className="flex justify-between">
+              <Text>Category Taxes</Text>
+              <Text>${categoryTaxTotal.toFixed(2)}</Text>
+            </div>
+          )}
+          
           {appliedCoupon && (
             <div className="flex justify-between">
               <Text className="text-green-600">Discount</Text>
               <Text className="text-green-600">-${couponDiscount.toFixed(2)}</Text>
             </div>
           )}
-          <div className="flex justify-between">
-            <Text>Tax</Text>
-            <Text>${tax.toFixed(2)}</Text>
-          </div>
+          
+          {fullBillTaxes && fullBillTaxes.map(tax => (
+            <div key={tax.id} className="flex justify-between">
+              <Text>{tax.name}</Text>
+              <Text>${((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
+            </div>
+          ))}
+          
           <Divider className="my-2" />
           <div className="flex justify-between">
             <Title level={4} className="m-0">Total</Title>

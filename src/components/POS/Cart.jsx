@@ -25,11 +25,49 @@ export function Cart() {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponCode, setCouponCode] = useState('');
 
+  // Calculate taxes for each item and total
+  const calculateTaxes = () => {
+    const activeTaxes = state.taxes?.filter(tax => tax.isActive) || [];
+    let itemTaxes = [];
+    let billTaxes = [];
+    
+    // Calculate category taxes for each item
+    state.cart.forEach(cartItem => {
+      const categoryTaxes = activeTaxes.filter(tax => 
+        tax.taxType === 'category' && 
+        tax.applicableCategories.includes(cartItem.product.category)
+      );
+      
+      categoryTaxes.forEach(tax => {
+        const taxAmount = (cartItem.product.price * cartItem.quantity * tax.rate) / 100;
+        itemTaxes.push({
+          taxId: tax.id,
+          taxName: tax.name,
+          rate: tax.rate,
+          amount: taxAmount,
+          productId: cartItem.product.id,
+          productName: cartItem.product.name
+        });
+      });
+    });
+
+    // Get full bill taxes
+    const fullBillTaxes = activeTaxes.filter(tax => tax.taxType === 'full_bill');
+    
+    return { itemTaxes, fullBillTaxes };
+  };
+
+  const { itemTaxes, fullBillTaxes } = calculateTaxes();
+  
   const subtotal = state.cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+  const categoryTaxTotal = itemTaxes.reduce((sum, tax) => sum + tax.amount, 0);
   const couponDiscount = appliedCoupon ? (subtotal * appliedCoupon.discountPercent) / 100 : 0;
-  const taxableAmount = subtotal - couponDiscount;
-  const tax = taxableAmount * ((state.taxSettings?.rate || 8) / 100);
-  const total = taxableAmount + tax;
+  const taxableAmount = subtotal + categoryTaxTotal - couponDiscount;
+  
+  // Calculate full bill taxes on the taxable amount
+  const fullBillTaxTotal = fullBillTaxes.reduce((sum, tax) => sum + (taxableAmount * tax.rate) / 100, 0);
+  
+  const total = taxableAmount + fullBillTaxTotal;
 
   const handleQuantityChange = (productId, newQuantity) => {
     if (newQuantity <= 0) {
@@ -108,51 +146,78 @@ export function Cart() {
             ) : (
               <List
                 dataSource={state.cart}
-                renderItem={(item, index) => (
-                  <List.Item className="px-0 py-3 border-b border-gray-100">
-                    <div className="w-full">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <Badge count={index + 1} size="small" color="#0E72BD" />
-                          <Text strong className="text-sm">{item.product.name}</Text>
+                renderItem={(item, index) => {
+                  // Get category taxes for this item
+                  const itemCategoryTaxes = itemTaxes.filter(tax => tax.productId === item.product.id);
+                  const itemTaxAmount = itemCategoryTaxes.reduce((sum, tax) => sum + tax.amount, 0);
+                  
+                  return (
+                    <List.Item className="px-0 py-3 border-b border-gray-100">
+                      <div className="w-full">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            <Badge count={index + 1} size="small" color="#0E72BD" />
+                            <Text strong className="text-sm">{item.product.name}</Text>
+                          </div>
+                          <Popconfirm
+                            title="Remove item?"
+                            onConfirm={() => dispatch({ type: 'REMOVE_FROM_CART', payload: item.product.id })}
+                          >
+                            <ActionButton.Text 
+                              icon="close"
+                              size="small"
+                              className="text-gray-400 hover:text-red-500"
+                            />
+                          </Popconfirm>
                         </div>
-                        <Popconfirm
-                          title="Remove item?"
-                          onConfirm={() => dispatch({ type: 'REMOVE_FROM_CART', payload: item.product.id })}
-                        >
-                          <ActionButton.Text 
-                            icon="close"
-                            size="small"
-                            className="text-gray-400 hover:text-red-500"
-                          />
-                        </Popconfirm>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Text className="text-sm">${item.product.price.toFixed(2)}</Text>
-                          <InputNumber
-                            min={1}
-                            max={item.product.stock + item.quantity}
-                            value={item.quantity}
-                            onChange={(value) => handleQuantityChange(item.product.id, value || 1)}
-                            size="small"
-                            className="w-16"
-                          />
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Text className="text-sm">${item.product.price.toFixed(2)}</Text>
+                            <InputNumber
+                              min={1}
+                              max={item.product.stock + item.quantity}
+                              value={item.quantity}
+                              onChange={(value) => handleQuantityChange(item.product.id, value || 1)}
+                              size="small"
+                              className="w-16"
+                            />
+                          </div>
+                          <div className="text-right">
+                            <Text strong className="text-[#0E72BD]">
+                              ${(item.product.price * item.quantity).toFixed(2)}
+                            </Text>
+                            {itemTaxAmount > 0 && (
+                              <>
+                                <br />
+                                <Text type="secondary" className="text-xs">
+                                  +${itemTaxAmount.toFixed(2)} tax
+                                </Text>
+                              </>
+                            )}
+                          </div>
                         </div>
-                        <Text strong className="text-[#0E72BD]">
-                          ${(item.product.price * item.quantity).toFixed(2)}
-                        </Text>
+                        
+                        {/* Show category taxes for this item */}
+                        {itemCategoryTaxes.length > 0 && (
+                          <div className="mt-1">
+                            {itemCategoryTaxes.map(tax => (
+                              <Text key={tax.taxId} type="secondary" className="text-xs block">
+                                {tax.taxName} ({tax.rate}%): +${tax.amount.toFixed(2)}
+                              </Text>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <div className="mt-1">
+                          <Text type="secondary" className="text-xs">
+                            SKU: {item.product.barcode} | Stock: {item.product.stock}
+                          </Text>
+                        </div>
                       </div>
-                      
-                      <div className="mt-1">
-                        <Text type="secondary" className="text-xs">
-                          SKU: {item.product.barcode} | Stock: {item.product.stock}
-                        </Text>
-                      </div>
-                    </div>
-                  </List.Item>
-                )}
+                    </List.Item>
+                  );
+                }}
               />
             )}
           </div>
@@ -165,6 +230,14 @@ export function Cart() {
                   <Text>Subtotal</Text>
                   <Text>${subtotal.toFixed(2)}</Text>
                 </div>
+
+                {/* Category Taxes */}
+                {categoryTaxTotal > 0 && (
+                  <div className="flex justify-between">
+                    <Text>Category Taxes</Text>
+                    <Text>${categoryTaxTotal.toFixed(2)}</Text>
+                  </div>
+                )}
 
                 {/* Coupon Section */}
                 <div className="space-y-2">
@@ -214,10 +287,14 @@ export function Cart() {
                   )}
                 </div>
 
-                <div className="flex justify-between">
-                  <Text>Tax ({state.taxSettings?.rate || 8}%)</Text>
-                  <Text>${tax.toFixed(2)}</Text>
-                </div>
+                {/* Full Bill Taxes */}
+                {fullBillTaxes.map(tax => (
+                  <div key={tax.id} className="flex justify-between">
+                    <Text>{tax.name} ({tax.rate}%)</Text>
+                    <Text>${((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
+                  </div>
+                ))}
+
                 <Divider className="my-2" />
                 <div className="flex justify-between">
                   <Title level={5} className="m-0">Total</Title>
@@ -252,6 +329,10 @@ export function Cart() {
         orderTotal={total}
         appliedCoupon={appliedCoupon}
         couponDiscount={couponDiscount}
+        itemTaxes={itemTaxes}
+        fullBillTaxes={fullBillTaxes}
+        categoryTaxTotal={categoryTaxTotal}
+        fullBillTaxTotal={fullBillTaxTotal}
       />
     </>
   );

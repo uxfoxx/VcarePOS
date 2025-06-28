@@ -14,7 +14,9 @@ import {
   message,
   Row,
   Col,
-  Select
+  Select,
+  Radio,
+  Tag
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
@@ -33,8 +35,10 @@ export function TaxManagement() {
   const [showModal, setShowModal] = useState(false);
   const [editingTax, setEditingTax] = useState(null);
   const [form] = Form.useForm();
+  const [taxType, setTaxType] = useState('full_bill');
 
   const taxes = state.taxes || [];
+  const categories = state.categories?.filter(cat => cat.isActive) || [];
 
   const filteredTaxes = taxes.filter(tax =>
     tax.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -48,10 +52,10 @@ export function TaxManagement() {
         name: values.name,
         description: values.description,
         rate: values.rate,
-        type: values.type,
+        taxType: values.taxType, // 'full_bill' or 'category'
         isActive: values.isActive !== false,
         isDefault: values.isDefault || false,
-        applicableCategories: values.applicableCategories || [],
+        applicableCategories: values.taxType === 'category' ? (values.applicableCategories || []) : [],
         createdAt: editingTax?.createdAt || new Date()
       };
 
@@ -83,6 +87,7 @@ export function TaxManagement() {
       setShowModal(false);
       setEditingTax(null);
       form.resetFields();
+      setTaxType('full_bill');
     } catch (error) {
       message.error('Please fill in all required fields');
     }
@@ -90,16 +95,31 @@ export function TaxManagement() {
 
   const handleEdit = (tax) => {
     setEditingTax(tax);
-    form.setFieldsValue(tax);
+    setTaxType(tax.taxType || 'full_bill');
+    form.setFieldsValue({
+      ...tax,
+      taxType: tax.taxType || 'full_bill'
+    });
     setShowModal(true);
   };
 
   const handleDelete = (taxId) => {
+    const taxToDelete = taxes.find(t => t.id === taxId);
+    if (taxToDelete?.isDefault) {
+      message.error('Cannot delete default tax. Please set another tax as default first.');
+      return;
+    }
+    
     dispatch({ type: 'DELETE_TAX', payload: taxId });
     message.success('Tax deleted successfully');
   };
 
   const handleToggleStatus = (tax) => {
+    if (tax.isDefault && !tax.isActive) {
+      message.error('Cannot deactivate default tax. Please set another tax as default first.');
+      return;
+    }
+    
     const updatedTax = { ...tax, isActive: !tax.isActive };
     dispatch({ type: 'UPDATE_TAX', payload: updatedTax });
     message.success(`Tax ${updatedTax.isActive ? 'activated' : 'deactivated'}`);
@@ -126,6 +146,16 @@ export function TaxManagement() {
     message.success(`${tax.name} set as default tax`);
   };
 
+  const handleTaxTypeChange = (e) => {
+    const newTaxType = e.target.value;
+    setTaxType(newTaxType);
+    
+    // Clear applicable categories if switching to full_bill
+    if (newTaxType === 'full_bill') {
+      form.setFieldsValue({ applicableCategories: [] });
+    }
+  };
+
   const columns = [
     {
       title: 'Tax Name',
@@ -133,16 +163,14 @@ export function TaxManagement() {
       key: 'name',
       render: (text, record) => (
         <div>
-          <Text strong>{record.name}</Text>
-          {record.isDefault && (
-            <div className="mt-1">
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                <Icon name="star" className="mr-1" size="text-xs" />
+          <div className="flex items-center space-x-2">
+            <Text strong>{record.name}</Text>
+            {record.isDefault && (
+              <Tag color="blue" icon={<Icon name="star" size="text-xs" />}>
                 Default
-              </span>
-            </div>
-          )}
-          <br />
+              </Tag>
+            )}
+          </div>
           <Text type="secondary" className="text-xs">{record.description}</Text>
         </div>
       ),
@@ -155,28 +183,33 @@ export function TaxManagement() {
     },
     {
       title: 'Type',
-      dataIndex: 'type',
-      key: 'type',
+      dataIndex: 'taxType',
+      key: 'taxType',
       render: (type) => (
-        <span className="capitalize px-2 py-1 bg-gray-100 rounded text-sm">
-          {type}
-        </span>
+        <Tag color={type === 'full_bill' ? 'green' : 'orange'}>
+          {type === 'full_bill' ? 'Full Bill' : 'Category'}
+        </Tag>
       ),
     },
     {
-      title: 'Categories',
-      dataIndex: 'applicableCategories',
-      key: 'applicableCategories',
-      render: (categories) => (
+      title: 'Applicable To',
+      key: 'applicableTo',
+      render: (record) => (
         <div>
-          {categories && categories.length > 0 ? (
-            categories.map(category => (
-              <span key={category} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1 mb-1">
-                {category}
-              </span>
-            ))
+          {record.taxType === 'full_bill' ? (
+            <Tag color="green">All Products</Tag>
           ) : (
-            <Text type="secondary" className="text-xs">All categories</Text>
+            <div>
+              {record.applicableCategories && record.applicableCategories.length > 0 ? (
+                record.applicableCategories.map(category => (
+                  <Tag key={category} color="blue" className="mb-1">
+                    {category}
+                  </Tag>
+                ))
+              ) : (
+                <Text type="secondary" className="text-xs">No categories selected</Text>
+              )}
+            </div>
           )}
         </div>
       ),
@@ -189,6 +222,7 @@ export function TaxManagement() {
           checked={record.isActive}
           onChange={() => handleToggleStatus(record)}
           size="small"
+          disabled={record.isDefault && record.isActive}
         />
       ),
     },
@@ -273,11 +307,12 @@ export function TaxManagement() {
         onCancel={() => {
           setShowModal(false);
           setEditingTax(null);
+          setTaxType('full_bill');
           form.resetFields();
         }}
         onSubmit={handleSubmit}
         form={form}
-        width={600}
+        width={700}
         submitText={editingTax ? 'Update Tax' : 'Add Tax'}
       >
         <Row gutter={16}>
@@ -307,32 +342,68 @@ export function TaxManagement() {
           </Col>
         </Row>
 
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              name="type"
-              label="Tax Type"
-              rules={[{ required: true, message: 'Please select tax type' }]}
-              initialValue="sales"
+        <Form.Item
+          name="taxType"
+          label="Tax Type"
+          rules={[{ required: true, message: 'Please select tax type' }]}
+          initialValue="full_bill"
+        >
+          <Radio.Group onChange={handleTaxTypeChange} value={taxType}>
+            <Space direction="vertical">
+              <Radio value="full_bill">
+                <div>
+                  <Text strong>Full Bill Tax</Text>
+                  <br />
+                  <Text type="secondary" className="text-sm">
+                    Applied to the entire order total (after discounts)
+                  </Text>
+                </div>
+              </Radio>
+              <Radio value="category">
+                <div>
+                  <Text strong>Category Tax</Text>
+                  <br />
+                  <Text type="secondary" className="text-sm">
+                    Applied only to specific product categories
+                  </Text>
+                </div>
+              </Radio>
+            </Space>
+          </Radio.Group>
+        </Form.Item>
+
+        {taxType === 'category' && (
+          <Form.Item 
+            name="applicableCategories" 
+            label="Applicable Categories"
+            rules={[
+              { 
+                required: taxType === 'category', 
+                message: 'Please select at least one category for category tax' 
+              }
+            ]}
+          >
+            <Select 
+              mode="multiple" 
+              placeholder="Select categories this tax applies to"
+              showSearch
+              filterOption={(input, option) =>
+                option.children.toLowerCase().includes(input.toLowerCase())
+              }
             >
-              <Select>
-                <Option value="sales">Sales Tax</Option>
-                <Option value="vat">VAT</Option>
-                <Option value="gst">GST</Option>
-                <Option value="service">Service Tax</Option>
-                <Option value="luxury">Luxury Tax</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item name="applicableCategories" label="Applicable Categories">
-              <Select mode="multiple" placeholder="Select categories (leave empty for all)">
-                <Option value="Tables">Tables</Option>
-                <Option value="Chairs">Chairs</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-        </Row>
+              {categories.map(category => (
+                <Option key={category.id} value={category.name}>
+                  <div className="flex items-center justify-between">
+                    <span>{category.name}</span>
+                    <Text type="secondary" className="text-xs ml-2">
+                      {state.products.filter(p => p.category === category.name).length} products
+                    </Text>
+                  </div>
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+        )}
 
         <Form.Item name="description" label="Description">
           <TextArea
@@ -359,6 +430,24 @@ export function TaxManagement() {
             </Form.Item>
           </Col>
         </Row>
+
+        {taxType === 'full_bill' && (
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <Text className="text-sm">
+              <Icon name="info" className="mr-2 text-blue-500" />
+              <strong>Full Bill Tax:</strong> This tax will be applied to the entire order total after any discounts are applied.
+            </Text>
+          </div>
+        )}
+
+        {taxType === 'category' && (
+          <div className="bg-orange-50 p-3 rounded-lg">
+            <Text className="text-sm">
+              <Icon name="info" className="mr-2 text-orange-500" />
+              <strong>Category Tax:</strong> This tax will be applied only to products in the selected categories. The tax is calculated on individual product prices.
+            </Text>
+          </div>
+        )}
       </FormModal>
     </>
   );

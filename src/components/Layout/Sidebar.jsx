@@ -125,62 +125,6 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
           }}
         />
       </div>
-
-      {/* Store Status - Only show when not collapsed */}
-      {!collapsed && (
-        <div className="p-4 border-t border-gray-200">
-          <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                <span className="material-icons text-white text-sm">store</span>
-              </div>
-              <div>
-                <Text strong className="text-sm text-green-800">Store Status</Text>
-                <br />
-                <Text type="secondary" className="text-xs text-green-600">Currently Open</Text>
-              </div>
-            </div>
-            
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between">
-                <Text type="secondary" className="text-green-700">Today's Sales:</Text>
-                <Text strong className="text-green-800">$2,450</Text>
-              </div>
-              <div className="flex justify-between">
-                <Text type="secondary" className="text-green-700">Transactions:</Text>
-                <Text strong className="text-green-800">24</Text>
-              </div>
-              <div className="flex justify-between">
-                <Text type="secondary" className="text-green-700">Low Stock Items:</Text>
-                <Badge count={3} size="small" style={{ backgroundColor: '#ff4d4f' }} />
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-100">
-            <div className="flex items-center space-x-2 mb-2">
-              <span className="material-icons text-amber-600 text-sm">lightbulb</span>
-              <Text strong className="text-sm text-amber-800">Quick Tip</Text>
-            </div>
-            <Text className="text-xs text-amber-700">
-              Use Ctrl+S to quickly save changes, or Ctrl+N to add new items.
-            </Text>
-          </div>
-        </div>
-      )}
-
-      {/* Collapsed State Status Indicator */}
-      {collapsed && (
-        <div className="p-2 border-t border-gray-200">
-          <Tooltip title="Store Status: Open" placement="right">
-            <div className="flex justify-center">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                <span className="material-icons text-white text-sm">store</span>
-              </div>
-            </div>
-          </Tooltip>
-        </div>
-      )}
     </div>
   );
 }

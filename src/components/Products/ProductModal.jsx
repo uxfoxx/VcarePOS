@@ -152,9 +152,11 @@ export function ProductModal({
   const handleNext = async () => {
     if (currentStep === 0) {
       try {
-        await productForm.validateFields();
+        const values = await productForm.validateFields();
+        console.log('Product form values:', values); // Debug log
         setCurrentStep(1);
       } catch (error) {
+        console.error('Validation error:', error); // Debug log
         message.error('Please fill in all required product details');
       }
     }
@@ -163,56 +165,79 @@ export function ProductModal({
   const handlePrev = () => {
     setCurrentStep(currentStep - 1);
   };
-const handleSubmit = async () => {
-  try {
-    setLoading(true);
-    
-    // Validate all fields before submitting
-    await productForm.validateFields(); // This will ensure all required fields are validated
 
-    // If validation passes, gather form values
-    const productValues = productForm.getFieldsValue();
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+      
+      // Get form values without validation first
+      const productValues = productForm.getFieldsValue();
+      console.log('Form values before validation:', productValues); // Debug log
+      
+      // Manual validation for required fields
+      const requiredFields = ['name', 'category', 'price', 'stock'];
+      const missingFields = [];
+      
+      requiredFields.forEach(field => {
+        if (!productValues[field] || productValues[field] === '' || productValues[field] === 0) {
+          if (field === 'price' || field === 'stock') {
+            // For numeric fields, check if they're actually 0 or just empty
+            if (productValues[field] === undefined || productValues[field] === null || productValues[field] === '') {
+              missingFields.push(field);
+            }
+          } else {
+            missingFields.push(field);
+          }
+        }
+      });
 
-    // Prepare the data object
-    const productData = {
-      id: editingProduct?.id || `PROD-${Date.now()}`,
-      name: productValues.name,
-      price: Number(productValues.price) || 0,
-      category: productValues.category,
-      stock: Number(productValues.stock) || 0,
-      barcode: productValues.barcode || '',
-      description: productValues.description || '',
-      dimensions: productValues.dimensions && (
-        productValues.dimensions.length || 
-        productValues.dimensions.width || 
-        productValues.dimensions.height
-      ) ? {
-        length: Number(productValues.dimensions.length) || 0,
-        width: Number(productValues.dimensions.width) || 0,
-        height: Number(productValues.dimensions.height) || 0,
-        unit: productValues.dimensions.unit || 'cm'
-      } : null,
-      weight: Number(productValues.weight) || 0,
-      material: productValues.material || '',
-      color: productValues.color || '',
-      image: imagePreview || productValues.image || '',
-      rawMaterials: selectedMaterials.map(m => ({
-        rawMaterialId: m.rawMaterialId,
-        quantity: m.quantity
-      }))
-    };
+      if (missingFields.length > 0) {
+        message.error(`Please fill in required fields: ${missingFields.join(', ')}`);
+        setCurrentStep(0); // Go back to first step
+        return;
+      }
 
-    // Pass the productData to the onSubmit callback
-    await onSubmit(productData);
-    handleClose();
-  } catch (error) {
-    // If validation fails or an error occurs, display an error message
-    console.error('Error submitting product:', error);
-    message.error('Failed to save product. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+      // Prepare the data object
+      const productData = {
+        id: editingProduct?.id || `PROD-${Date.now()}`,
+        name: productValues.name,
+        price: Number(productValues.price) || 0,
+        category: productValues.category,
+        stock: Number(productValues.stock) || 0,
+        barcode: productValues.barcode || '',
+        description: productValues.description || '',
+        dimensions: productValues.dimensions && (
+          productValues.dimensions.length || 
+          productValues.dimensions.width || 
+          productValues.dimensions.height
+        ) ? {
+          length: Number(productValues.dimensions.length) || 0,
+          width: Number(productValues.dimensions.width) || 0,
+          height: Number(productValues.dimensions.height) || 0,
+          unit: productValues.dimensions.unit || 'cm'
+        } : null,
+        weight: Number(productValues.weight) || 0,
+        material: productValues.material || '',
+        color: productValues.color || '',
+        image: imagePreview || productValues.image || '',
+        rawMaterials: selectedMaterials.map(m => ({
+          rawMaterialId: m.rawMaterialId,
+          quantity: m.quantity
+        }))
+      };
+
+      console.log('Final product data:', productData); // Debug log
+
+      // Pass the productData to the onSubmit callback
+      await onSubmit(productData);
+      handleClose();
+    } catch (error) {
+      console.error('Error submitting product:', error);
+      message.error('Failed to save product. Please check all required fields.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleClose = () => {
     setCurrentStep(0);

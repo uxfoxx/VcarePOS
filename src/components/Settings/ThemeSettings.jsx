@@ -18,7 +18,6 @@ import {
   Image,
   Alert
 } from 'antd';
-import { Color } from 'antd/es/color-picker/color';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
@@ -136,7 +135,7 @@ export function ThemeSettings() {
                 label="Primary Color"
               >
                 <ColorPicker
-                  value={new Color(branding.primaryColor)}
+                  value={branding.primaryColor}
                   onChange={(color) => {
                     const hexColor = color.toHexString();
                     updateBranding({ ...branding, primaryColor: hexColor });
@@ -153,7 +152,7 @@ export function ThemeSettings() {
                 label="Secondary Color"
               >
                 <ColorPicker
-                  value={new Color(branding.secondaryColor)}
+                  value={branding.secondaryColor}
                   onChange={(color) => {
                     const hexColor = color.toHexString();
                     updateBranding({ ...branding, secondaryColor: hexColor });
@@ -170,7 +169,7 @@ export function ThemeSettings() {
                 label="Accent Color"
               >
                 <ColorPicker
-                  value={new Color(branding.accentColor)}
+                  value={branding.accentColor}
                   onChange={(color) => {
                     const hexColor = color.toHexString();
                     updateBranding({ ...branding, accentColor: hexColor });

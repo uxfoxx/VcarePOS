@@ -7,7 +7,8 @@ import {
   Modal,
   Descriptions,
   Tabs,
-  Image
+  Image,
+  Tag
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { SearchInput } from '../common/SearchInput';
@@ -27,7 +28,8 @@ export function ProductGrid({ collapsed }) {
   const activeCategories = state.categories?.filter(cat => cat.isActive) || [];
   const categoryNames = ['All', ...activeCategories.map(cat => cat.name)];
   
-  const filteredProducts = state.products
+  // Use allProducts which includes all variations as individual products
+  const filteredProducts = state.allProducts
     .filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (product.barcode && product.barcode.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -116,6 +118,7 @@ export function ProductGrid({ collapsed }) {
                     product={product}
                     onAddToCart={handleAddToCart}
                     onClick={handleProductClick}
+                    showVariationInfo={true}
                   />
                 </Col>
               ))}
@@ -165,10 +168,21 @@ export function ProductGrid({ collapsed }) {
                   subtitle={selectedProduct.description}
                   level={4}
                 />
-                <div className="mt-2">
+                <div className="mt-2 space-y-2">
                   <span className="text-xl font-bold text-[#0E72BD]">
                     ${selectedProduct.price.toFixed(2)}
                   </span>
+                  {selectedProduct.isVariation && (
+                    <div>
+                      <Tag color="blue">
+                        Variation: {selectedProduct.variationName}
+                      </Tag>
+                      <br />
+                      <span className="text-sm text-gray-500">
+                        Part of: {selectedProduct.parentProductName}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -197,6 +211,11 @@ export function ProductGrid({ collapsed }) {
               <Descriptions.Item label="Weight">
                 {selectedProduct.weight} kg
               </Descriptions.Item>
+              {selectedProduct.isVariation && (
+                <Descriptions.Item label="Product Type">
+                  <Tag color="purple">Product Variation</Tag>
+                </Descriptions.Item>
+              )}
             </Descriptions>
           </div>
         )}

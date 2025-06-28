@@ -16,7 +16,9 @@ import {
   Popconfirm,
   message,
   Card,
-  Divider
+  Divider,
+  Switch,
+  Tag
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { ActionButton } from '../common/ActionButton';
@@ -36,8 +38,11 @@ export function ProductModal({
   const [currentStep, setCurrentStep] = useState(0);
   const [productForm] = Form.useForm();
   const [materialsForm] = Form.useForm();
+  const [variationsForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [selectedMaterials, setSelectedMaterials] = useState([]);
+  const [variations, setVariations] = useState([]);
+  const [hasVariations, setHasVariations] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [productData, setProductData] = useState({});
@@ -48,21 +53,28 @@ export function ProductModal({
       const formData = {
         name: editingProduct.name || '',
         category: editingProduct.category || '',
-        price: editingProduct.price || 0,
-        stock: editingProduct.stock || 0,
+        price: editingProduct.basePrice || editingProduct.price || 0,
+        stock: editingProduct.baseStock || editingProduct.stock || 0,
         barcode: editingProduct.barcode || '',
         description: editingProduct.description || '',
-        weight: editingProduct.weight || 0,
-        material: editingProduct.material || '',
-        color: editingProduct.color || '',
-        dimensions: editingProduct.dimensions || {}
+        weight: editingProduct.baseWeight || editingProduct.weight || 0,
+        material: editingProduct.baseMaterial || editingProduct.material || '',
+        color: editingProduct.baseColor || editingProduct.color || '',
+        dimensions: editingProduct.baseDimensions || editingProduct.dimensions || {}
       };
       
-      // Set product form values
       productForm.setFieldsValue(formData);
       setProductData(formData);
+      setHasVariations(editingProduct.hasVariations || false);
       
-      // Enrich raw materials with full details from state
+      // Set variations if they exist
+      if (editingProduct.hasVariations && editingProduct.variations) {
+        setVariations(editingProduct.variations);
+      } else {
+        setVariations([]);
+      }
+      
+      // Enrich raw materials
       const enrichedMaterials = (editingProduct.rawMaterials || []).map(rawMat => {
         const fullMaterial = state.rawMaterials?.find(m => m.id === rawMat.rawMaterialId);
         if (fullMaterial) {
@@ -75,7 +87,6 @@ export function ProductModal({
             totalCost: (fullMaterial.unitPrice || 0) * rawMat.quantity
           };
         }
-        // Fallback for missing materials
         return {
           rawMaterialId: rawMat.rawMaterialId,
           name: 'Unknown Material',
@@ -107,10 +118,11 @@ export function ProductModal({
       productForm.resetFields();
       setProductData(initialData);
       setSelectedMaterials([]);
+      setVariations([]);
+      setHasVariations(false);
       setImageFile(null);
       setImagePreview(null);
       setCurrentStep(0);
-      // Generate initial SKU
       generateSKU();
     }
   }, [editingProduct, open, productForm, state.rawMaterials]);
@@ -123,9 +135,13 @@ export function ProductModal({
     setProductData(prev => ({ ...prev, barcode: sku }));
   };
 
+  const generateVariationSKU = () => {
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.random().toString(36).substring(2, 3).toUpperCase();
+    return `VAR-${timestamp}${random}`;
+  };
+
   const handleImageUpload = (file) => {
-    // In a real application, you would upload to a server
-    // For now, we'll create a local URL for preview
     const reader = new FileReader();
     reader.onload = (e) => {
       setImagePreview(e.target.result);
@@ -133,7 +149,7 @@ export function ProductModal({
     };
     reader.readAsDataURL(file);
     setImageFile(file);
-    return false; // Prevent automatic upload
+    return false;
   };
 
   const handleAddMaterial = (values) => {
@@ -143,7 +159,6 @@ export function ProductModal({
       return;
     }
 
-    // Check if material already added
     const existingMaterial = selectedMaterials.find(m => m.rawMaterialId === values.materialId);
     if (existingMaterial) {
       message.error('Material already added');
@@ -169,31 +184,57 @@ export function ProductModal({
     message.success('Material removed');
   };
 
+  const handleAddVariation = (values) => {
+    // Check for duplicate SKUs
+    const existingVariation = variations.find(v => v.sku === values.sku);
+    if (existingVariation) {
+      message.error('SKU already exists in variations');
+      return;
+    }
+
+    const newVariation = {
+      id: `VAR-${Date.now()}`,
+      name: values.name,
+      sku: values.sku,
+      price: values.price,
+      stock: values.stock,
+      dimensions: values.dimensions || {},
+      weight: values.weight || 0,
+      material: values.material || '',
+      color: values.color || '',
+      description: values.description || '',
+      image: values.image || imagePreview || '',
+      rawMaterials: [...selectedMaterials.map(m => ({
+        rawMaterialId: m.rawMaterialId,
+        quantity: m.quantity
+      }))]
+    };
+
+    setVariations([...variations, newVariation]);
+    variationsForm.resetFields();
+    variationsForm.setFieldsValue({ sku: generateVariationSKU() });
+    message.success('Variation added successfully');
+  };
+
+  const handleRemoveVariation = (variationId) => {
+    setVariations(variations.filter(v => v.id !== variationId));
+    message.success('Variation removed');
+  };
+
   const handleFormChange = (changedValues, allValues) => {
-    // Update productData state whenever form values change
     setProductData(prev => ({ ...prev, ...allValues }));
   };
 
   const handleNext = async () => {
     if (currentStep === 0) {
       try {
-        // Validate the form
         const values = await productForm.validateFields();
-        console.log('Validated form values:', values);
-        
-        // Update productData with validated values
         setProductData(prev => ({ ...prev, ...values }));
-        
-        // Move to next step
         setCurrentStep(1);
       } catch (error) {
-        console.error('Validation error:', error);
-        
-        // Extract missing field names from the error
         if (error.errorFields && error.errorFields.length > 0) {
           const missingFields = error.errorFields.map(field => {
             const fieldName = Array.isArray(field.name) ? field.name.join('.') : field.name;
-            // Convert field names to user-friendly labels
             const fieldLabels = {
               'name': 'Product Name',
               'category': 'Category',
@@ -213,6 +254,8 @@ export function ProductModal({
           message.error('Please fill in all required product details');
         }
       }
+    } else {
+      setCurrentStep(currentStep + 1);
     }
   };
 
@@ -224,16 +267,16 @@ export function ProductModal({
     try {
       setLoading(true);
       
-      // Get the latest form values
       const currentFormValues = productForm.getFieldsValue();
       const finalProductData = { ...productData, ...currentFormValues };
       
-      console.log('Final product data before submission:', finalProductData);
+      // Validation for required fields
+      const requiredFields = ['name', 'category'];
+      if (!hasVariations) {
+        requiredFields.push('price', 'stock');
+      }
       
-      // Manual validation for required fields
-      const requiredFields = ['name', 'category', 'price', 'stock'];
       const missingFields = [];
-      
       requiredFields.forEach(field => {
         const value = finalProductData[field];
         if (value === undefined || value === null || value === '') {
@@ -252,7 +295,14 @@ export function ProductModal({
         };
         const missingLabels = missingFields.map(field => fieldLabels[field] || field);
         message.error(`Please fill in required fields: ${missingLabels.join(', ')}`);
-        setCurrentStep(0); // Go back to first step
+        setCurrentStep(0);
+        return;
+      }
+
+      // Validate variations if product has variations
+      if (hasVariations && variations.length === 0) {
+        message.error('Please add at least one variation for this product');
+        setCurrentStep(2);
         return;
       }
 
@@ -260,34 +310,46 @@ export function ProductModal({
       const productSubmissionData = {
         id: editingProduct?.id || `PROD-${Date.now()}`,
         name: finalProductData.name,
-        price: Number(finalProductData.price) || 0,
         category: finalProductData.category,
-        stock: Number(finalProductData.stock) || 0,
-        barcode: finalProductData.barcode || '',
         description: finalProductData.description || '',
-        dimensions: finalProductData.dimensions && (
-          finalProductData.dimensions.length || 
-          finalProductData.dimensions.width || 
-          finalProductData.dimensions.height
-        ) ? {
+        image: imagePreview || finalProductData.image || '',
+        hasVariations: hasVariations,
+        
+        // Base product data (used when hasVariations is true)
+        basePrice: hasVariations ? (Number(finalProductData.price) || 0) : undefined,
+        baseStock: hasVariations ? 0 : undefined, // Base product has no stock when it has variations
+        baseDimensions: hasVariations && finalProductData.dimensions ? {
           length: Number(finalProductData.dimensions.length) || 0,
           width: Number(finalProductData.dimensions.width) || 0,
           height: Number(finalProductData.dimensions.height) || 0,
           unit: finalProductData.dimensions.unit || 'cm'
-        } : null,
-        weight: Number(finalProductData.weight) || 0,
-        material: finalProductData.material || '',
-        color: finalProductData.color || '',
-        image: imagePreview || finalProductData.image || '',
-        rawMaterials: selectedMaterials.map(m => ({
+        } : undefined,
+        baseWeight: hasVariations ? (Number(finalProductData.weight) || 0) : undefined,
+        baseMaterial: hasVariations ? (finalProductData.material || '') : undefined,
+        baseColor: hasVariations ? (finalProductData.color || '') : undefined,
+        
+        // Regular product data (used when hasVariations is false)
+        price: !hasVariations ? (Number(finalProductData.price) || 0) : undefined,
+        stock: !hasVariations ? (Number(finalProductData.stock) || 0) : undefined,
+        barcode: !hasVariations ? (finalProductData.barcode || '') : undefined,
+        dimensions: !hasVariations && finalProductData.dimensions ? {
+          length: Number(finalProductData.dimensions.length) || 0,
+          width: Number(finalProductData.dimensions.width) || 0,
+          height: Number(finalProductData.dimensions.height) || 0,
+          unit: finalProductData.dimensions.unit || 'cm'
+        } : undefined,
+        weight: !hasVariations ? (Number(finalProductData.weight) || 0) : undefined,
+        material: !hasVariations ? (finalProductData.material || '') : undefined,
+        color: !hasVariations ? (finalProductData.color || '') : undefined,
+        rawMaterials: !hasVariations ? selectedMaterials.map(m => ({
           rawMaterialId: m.rawMaterialId,
           quantity: m.quantity
-        }))
+        })) : [],
+        
+        // Variations data
+        variations: hasVariations ? variations : []
       };
 
-      console.log('Submitting product data:', productSubmissionData);
-
-      // Pass the productData to the onSubmit callback
       await onSubmit(productSubmissionData);
       handleClose();
     } catch (error) {
@@ -302,7 +364,10 @@ export function ProductModal({
     setCurrentStep(0);
     productForm.resetFields();
     materialsForm.resetFields();
+    variationsForm.resetFields();
     setSelectedMaterials([]);
+    setVariations([]);
+    setHasVariations(false);
     setImageFile(null);
     setImagePreview(null);
     setProductData({});
@@ -319,6 +384,11 @@ export function ProductModal({
       title: 'Raw Materials',
       icon: <Icon name="category" />,
       description: 'Materials used in production'
+    },
+    {
+      title: 'Variations',
+      icon: <Icon name="tune" />,
+      description: 'Product variations and options'
     }
   ];
 
@@ -352,6 +422,63 @@ export function ProductModal({
         <Popconfirm
           title="Remove this material?"
           onConfirm={() => handleRemoveMaterial(record.rawMaterialId)}
+        >
+          <ActionButton.Text icon="delete" danger size="small" />
+        </Popconfirm>
+      ),
+    },
+  ];
+
+  const variationColumns = [
+    {
+      title: 'Variation Name',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text, record) => (
+        <div>
+          <Text strong>{text}</Text>
+          <br />
+          <Text type="secondary" className="text-xs">SKU: {record.sku}</Text>
+        </div>
+      ),
+    },
+    {
+      title: 'Price',
+      dataIndex: 'price',
+      key: 'price',
+      render: (price) => `$${(price || 0).toFixed(2)}`,
+    },
+    {
+      title: 'Stock',
+      dataIndex: 'stock',
+      key: 'stock',
+    },
+    {
+      title: 'Specifications',
+      key: 'specs',
+      render: (record) => (
+        <div className="space-y-1">
+          {record.material && (
+            <Tag size="small">{record.material}</Tag>
+          )}
+          {record.color && (
+            <Tag size="small" color="blue">{record.color}</Tag>
+          )}
+          {record.dimensions && record.dimensions.length && (
+            <div className="text-xs text-gray-500">
+              {record.dimensions.length}×{record.dimensions.width}×{record.dimensions.height} {record.dimensions.unit}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (record) => (
+        <Popconfirm
+          title="Remove this variation?"
+          onConfirm={() => handleRemoveVariation(record.id)}
         >
           <ActionButton.Text icon="delete" danger size="small" />
         </Popconfirm>
@@ -397,81 +524,136 @@ export function ProductModal({
         </Col>
       </Row>
 
-      <Row gutter={16}>
-        <Col span={8}>
-          <Form.Item
-            name="price"
-            label="Price ($)"
-            rules={[
-              { required: true, message: 'Please enter price' },
-              { type: 'number', min: 0.01, message: 'Price must be greater than 0' }
-            ]}
-          >
-            <InputNumber
-              min={0.01}
-              step={0.01}
-              placeholder="0.00"
-              className="w-full"
-            />
-          </Form.Item>
-        </Col>
-        <Col span={8}>
-          <Form.Item
-            name="stock"
-            label="Stock"
-            rules={[
-              { required: true, message: 'Please enter stock' },
-              { type: 'number', min: 0, message: 'Stock cannot be negative' }
-            ]}
-          >
-            <InputNumber
-              min={0}
-              placeholder="0"
-              className="w-full"
-            />
-          </Form.Item>
-        </Col>
-        <Col span={8}>
-          <Form.Item name="weight" label="Weight (kg)">
-            <InputNumber
-              min={0}
-              step={0.1}
-              placeholder="0.0"
-              className="w-full"
-            />
-          </Form.Item>
-        </Col>
-      </Row>
+      <div className="bg-blue-50 p-4 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <Text strong>Product Variations</Text>
+            <br />
+            <Text type="secondary" className="text-sm">
+              Enable if this product has multiple variations (size, color, material, etc.)
+            </Text>
+          </div>
+          <Switch
+            checked={hasVariations}
+            onChange={setHasVariations}
+            checkedChildren="Yes"
+            unCheckedChildren="No"
+          />
+        </div>
+      </div>
 
-      <Row gutter={16}>
-        <Col span={16}>
-          <Form.Item name="barcode" label="SKU/Barcode">
-            <Input 
-              placeholder="Enter SKU or barcode"
-              addonAfter={
-                <Button 
-                  type="text" 
-                  size="small"
-                  onClick={generateSKU}
-                  icon={<Icon name="refresh" size="text-sm" />}
-                  title="Generate SKU"
+      {!hasVariations && (
+        <>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item
+                name="price"
+                label="Price ($)"
+                rules={[
+                  { required: true, message: 'Please enter price' },
+                  { type: 'number', min: 0.01, message: 'Price must be greater than 0' }
+                ]}
+              >
+                <InputNumber
+                  min={0.01}
+                  step={0.01}
+                  placeholder="0.00"
+                  className="w-full"
                 />
-              }
-            />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                name="stock"
+                label="Stock"
+                rules={[
+                  { required: true, message: 'Please enter stock' },
+                  { type: 'number', min: 0, message: 'Stock cannot be negative' }
+                ]}
+              >
+                <InputNumber
+                  min={0}
+                  placeholder="0"
+                  className="w-full"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="weight" label="Weight (kg)">
+                <InputNumber
+                  min={0}
+                  step={0.1}
+                  placeholder="0.0"
+                  className="w-full"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={16}>
+              <Form.Item name="barcode" label="SKU/Barcode">
+                <Input 
+                  placeholder="Enter SKU or barcode"
+                  addonAfter={
+                    <Button 
+                      type="text" 
+                      size="small"
+                      onClick={generateSKU}
+                      icon={<Icon name="refresh" size="text-sm" />}
+                      title="Generate SKU"
+                    />
+                  }
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="color" label="Color">
+                <Input placeholder="Enter color" />
+              </Form.Item>
+            </Col>
+          </Row>
+        </>
+      )}
+
+      {hasVariations && (
+        <div className="bg-yellow-50 p-4 rounded-lg">
+          <Text className="text-sm">
+            <Icon name="info" className="mr-2 text-yellow-600" />
+            Since this product has variations, the base price, stock, and other details will be set for each variation individually.
+            The fields below represent the base/default values for reference.
+          </Text>
+        </div>
+      )}
+
+      <Row gutter={16}>
+        <Col span={hasVariations ? 12 : 8}>
+          <Form.Item name={hasVariations ? "price" : undefined} label={hasVariations ? "Base Price ($)" : undefined}>
+            {hasVariations && (
+              <InputNumber
+                min={0.01}
+                step={0.01}
+                placeholder="0.00"
+                className="w-full"
+              />
+            )}
           </Form.Item>
         </Col>
-        <Col span={8}>
-          <Form.Item name="color" label="Color">
-            <Input placeholder="Enter color" />
+        <Col span={hasVariations ? 12 : 8}>
+          <Form.Item name="material" label={hasVariations ? "Base Material" : "Material"}>
+            <Input placeholder="Enter material type" />
           </Form.Item>
         </Col>
+        {!hasVariations && (
+          <Col span={8}>
+            <Form.Item name="color" label="Color">
+              <Input placeholder="Enter color" />
+            </Form.Item>
+          </Col>
+        )}
       </Row>
 
-      <Form.Item name="material" label="Material">
-        <Input placeholder="Enter material type" />
-      </Form.Item>
-
-      <Form.Item label="Dimensions">
+      <Form.Item label={hasVariations ? "Base Dimensions" : "Dimensions"}>
         <Input.Group compact>
           <Form.Item name={['dimensions', 'length']} noStyle>
             <InputNumber placeholder="Length" className="w-1/4" min={0} />
@@ -540,9 +722,12 @@ export function ProductModal({
   const renderRawMaterials = () => (
     <div className="space-y-6">
       <div>
-        <Title level={5}>Add Raw Materials</Title>
+        <Title level={5}>Raw Materials</Title>
         <Text type="secondary">
-          Specify the raw materials used to manufacture this product
+          {hasVariations 
+            ? "Add base raw materials. You can customize materials for each variation later."
+            : "Specify the raw materials used to manufacture this product"
+          }
         </Text>
       </div>
 
@@ -641,12 +826,187 @@ export function ProductModal({
     </div>
   );
 
+  const renderVariations = () => (
+    <div className="space-y-6">
+      <div>
+        <Title level={5}>Product Variations</Title>
+        <Text type="secondary">
+          Create different variations of this product with unique SKUs, prices, and specifications
+        </Text>
+      </div>
+
+      {hasVariations ? (
+        <>
+          <Card size="small">
+            <Form form={variationsForm} onFinish={handleAddVariation} layout="vertical">
+              <Row gutter={16}>
+                <Col span={8}>
+                  <Form.Item
+                    name="name"
+                    label="Variation Name"
+                    rules={[{ required: true, message: 'Please enter variation name' }]}
+                  >
+                    <Input placeholder="e.g., Large, Red, Premium" />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item
+                    name="sku"
+                    label="SKU"
+                    rules={[{ required: true, message: 'Please enter SKU' }]}
+                    initialValue={generateVariationSKU()}
+                  >
+                    <Input 
+                      placeholder="Enter unique SKU"
+                      addonAfter={
+                        <Button 
+                          type="text" 
+                          size="small"
+                          onClick={() => variationsForm.setFieldsValue({ sku: generateVariationSKU() })}
+                          icon={<Icon name="refresh" size="text-sm" />}
+                        />
+                      }
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item
+                    name="price"
+                    label="Price ($)"
+                    rules={[{ required: true, message: 'Please enter price' }]}
+                  >
+                    <InputNumber
+                      min={0.01}
+                      step={0.01}
+                      placeholder="0.00"
+                      className="w-full"
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={16}>
+                <Col span={6}>
+                  <Form.Item
+                    name="stock"
+                    label="Stock"
+                    rules={[{ required: true, message: 'Please enter stock' }]}
+                  >
+                    <InputNumber
+                      min={0}
+                      placeholder="0"
+                      className="w-full"
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item name="weight" label="Weight (kg)">
+                    <InputNumber
+                      min={0}
+                      step={0.1}
+                      placeholder="0.0"
+                      className="w-full"
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item name="material" label="Material">
+                    <Input placeholder="Material type" />
+                  </Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item name="color" label="Color">
+                    <Input placeholder="Color" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Form.Item label="Dimensions">
+                <Input.Group compact>
+                  <Form.Item name={['dimensions', 'length']} noStyle>
+                    <InputNumber placeholder="Length" className="w-1/4" min={0} />
+                  </Form.Item>
+                  <Form.Item name={['dimensions', 'width']} noStyle>
+                    <InputNumber placeholder="Width" className="w-1/4" min={0} />
+                  </Form.Item>
+                  <Form.Item name={['dimensions', 'height']} noStyle>
+                    <InputNumber placeholder="Height" className="w-1/4" min={0} />
+                  </Form.Item>
+                  <Form.Item name={['dimensions', 'unit']} noStyle>
+                    <Select placeholder="Unit" className="w-1/4">
+                      <Option value="cm">cm</Option>
+                      <Option value="inch">inch</Option>
+                    </Select>
+                  </Form.Item>
+                </Input.Group>
+              </Form.Item>
+
+              <Row gutter={16}>
+                <Col span={16}>
+                  <Form.Item name="description" label="Variation Description">
+                    <TextArea
+                      rows={2}
+                      placeholder="Describe this specific variation"
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item label=" ">
+                    <ActionButton.Primary htmlType="submit" icon="add" block>
+                      Add Variation
+                    </ActionButton.Primary>
+                  </Form.Item>
+                </Col>
+              </Row>
+            </Form>
+          </Card>
+
+          {variations.length > 0 && (
+            <div>
+              <Title level={5}>Product Variations ({variations.length})</Title>
+              <Table
+                columns={variationColumns}
+                dataSource={variations}
+                rowKey="id"
+                pagination={false}
+                size="small"
+              />
+            </div>
+          )}
+
+          {variations.length === 0 && (
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <Icon name="tune" className="text-4xl text-gray-300 mb-2" />
+              <Text type="secondary">No variations added yet</Text>
+              <br />
+              <Text type="secondary" className="text-sm">
+                Add variations to create different options for this product
+              </Text>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <Icon name="info" className="text-4xl text-gray-300 mb-4" />
+          <Title level={4} type="secondary">Product Variations Disabled</Title>
+          <Text type="secondary">
+            This product is set as a single product without variations.
+            <br />
+            Go back to Product Details to enable variations if needed.
+          </Text>
+        </div>
+      )}
+    </div>
+  );
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
         return renderProductDetails();
       case 1:
         return renderRawMaterials();
+      case 2:
+        return renderVariations();
       default:
         return null;
     }
@@ -657,7 +1017,7 @@ export function ProductModal({
       title={editingProduct ? 'Edit Product' : 'Add New Product'}
       open={open}
       onCancel={handleClose}
-      width={900}
+      width={1000}
       footer={null}
       destroyOnClose
     >

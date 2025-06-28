@@ -1,9 +1,55 @@
 import React, { createContext, useContext, useReducer } from 'react';
 import { mockProducts, mockRawMaterials, mockTransactions, mockCoupons, mockTaxes, mockCategories } from '../data/mockData';
 
+// Helper function to get all product variations as individual products
+const getAllProductVariations = (products) => {
+  const allProducts = [];
+  
+  products.forEach(product => {
+    if (product.hasVariations && product.variations && product.variations.length > 0) {
+      // Add each variation as a separate product
+      product.variations.forEach(variation => {
+        allProducts.push({
+          id: variation.id,
+          name: `${product.name} - ${variation.name}`,
+          price: variation.price,
+          category: product.category,
+          stock: variation.stock,
+          barcode: variation.sku,
+          image: variation.image || product.image,
+          description: variation.description || product.description,
+          dimensions: variation.dimensions || product.baseDimensions,
+          weight: variation.weight || product.baseWeight,
+          material: variation.material || product.baseMaterial,
+          color: variation.color || product.baseColor,
+          rawMaterials: variation.rawMaterials || [],
+          // Additional fields for variation tracking
+          parentProductId: product.id,
+          parentProductName: product.name,
+          variationId: variation.id,
+          variationName: variation.name,
+          isVariation: true
+        });
+      });
+    } else {
+      // Add regular product without variations
+      allProducts.push({
+        ...product,
+        isVariation: false,
+        parentProductId: null,
+        variationId: null,
+        variationName: null
+      });
+    }
+  });
+  
+  return allProducts;
+};
+
 const initialState = {
   cart: [],
-  products: mockProducts,
+  products: mockProducts, // Original products with variations
+  allProducts: getAllProductVariations(mockProducts), // Flattened list for display
   rawMaterials: mockRawMaterials,
   transactions: mockTransactions,
   coupons: mockCoupons,
@@ -70,59 +116,79 @@ function posReducer(state, action) {
             : transaction
         )
       };
-    case 'UPDATE_PRODUCT_STOCK':
-      return {
-        ...state,
-        products: state.products.map(product => {
-          if (product.id === action.payload.productId) {
-            const updatedProduct = { ...product, stock: product.stock - action.payload.quantity };
-            
-            // Also update raw material stock if product has raw materials
-            if (updatedProduct.rawMaterials && updatedProduct.rawMaterials.length > 0) {
-              updatedProduct.rawMaterials.forEach(material => {
-                const totalMaterialUsed = material.quantity * action.payload.quantity;
-                // This will be handled by UPDATE_RAW_MATERIAL_STOCK action
-                // We'll dispatch it separately to maintain clean separation
-              });
+    case 'UPDATE_PRODUCT_STOCK': {
+      const updatedAllProducts = state.allProducts.map(product => {
+        if (product.id === action.payload.productId) {
+          return { ...product, stock: product.stock - action.payload.quantity };
+        }
+        return product;
+      });
+
+      // Also update the original products structure
+      const updatedProducts = state.products.map(product => {
+        if (product.hasVariations) {
+          const updatedVariations = product.variations.map(variation => {
+            if (variation.id === action.payload.productId) {
+              return { ...variation, stock: variation.stock - action.payload.quantity };
             }
-            
-            return updatedProduct;
+            return variation;
+          });
+          return { ...product, variations: updatedVariations };
+        } else if (product.id === action.payload.productId) {
+          return { ...product, stock: product.stock - action.payload.quantity };
+        }
+        return product;
+      });
+
+      // Update raw materials stock
+      const productToUpdate = updatedAllProducts.find(p => p.id === action.payload.productId);
+      const updatedRawMaterials = state.rawMaterials.map(rawMaterial => {
+        if (productToUpdate && productToUpdate.rawMaterials) {
+          const materialUsage = productToUpdate.rawMaterials.find(m => m.rawMaterialId === rawMaterial.id);
+          if (materialUsage) {
+            const totalUsed = materialUsage.quantity * action.payload.quantity;
+            return {
+              ...rawMaterial,
+              stockQuantity: Math.max(0, rawMaterial.stockQuantity - totalUsed)
+            };
           }
-          return product;
-        }),
-        // Update raw materials stock when product is sold
-        rawMaterials: state.rawMaterials.map(rawMaterial => {
-          const product = state.products.find(p => p.id === action.payload.productId);
-          if (product && product.rawMaterials) {
-            const materialUsage = product.rawMaterials.find(m => m.rawMaterialId === rawMaterial.id);
-            if (materialUsage) {
-              const totalUsed = materialUsage.quantity * action.payload.quantity;
-              return {
-                ...rawMaterial,
-                stockQuantity: Math.max(0, rawMaterial.stockQuantity - totalUsed)
-              };
-            }
-          }
-          return rawMaterial;
-        })
-      };
-    case 'ADD_PRODUCT':
+        }
+        return rawMaterial;
+      });
+
       return {
         ...state,
-        products: [...state.products, action.payload]
+        products: updatedProducts,
+        allProducts: updatedAllProducts,
+        rawMaterials: updatedRawMaterials
       };
-    case 'UPDATE_PRODUCT':
+    }
+    case 'ADD_PRODUCT': {
+      const newProducts = [...state.products, action.payload];
       return {
         ...state,
-        products: state.products.map(product =>
-          product.id === action.payload.id ? action.payload : product
-        )
+        products: newProducts,
+        allProducts: getAllProductVariations(newProducts)
       };
-    case 'DELETE_PRODUCT':
+    }
+    case 'UPDATE_PRODUCT': {
+      const updatedProducts = state.products.map(product =>
+        product.id === action.payload.id ? action.payload : product
+      );
       return {
         ...state,
-        products: state.products.filter(product => product.id !== action.payload)
+        products: updatedProducts,
+        allProducts: getAllProductVariations(updatedProducts)
       };
+    }
+    case 'DELETE_PRODUCT': {
+      const updatedProducts = state.products.filter(product => product.id !== action.payload);
+      return {
+        ...state,
+        products: updatedProducts,
+        allProducts: getAllProductVariations(updatedProducts)
+      };
+    }
     case 'ADD_RAW_MATERIAL':
       return {
         ...state,

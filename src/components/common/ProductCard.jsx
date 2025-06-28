@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Typography, Image, Badge } from 'antd';
+import { Card, Typography, Image, Badge, Tag } from 'antd';
 import { ActionButton } from './ActionButton';
 import { StatusTag } from './StatusTag';
 import { Icon } from './Icon';
@@ -11,6 +11,7 @@ export function ProductCard({
   onAddToCart,
   onClick,
   showDetails = true,
+  showVariationInfo = false,
   className = '',
   ...props
 }) {
@@ -48,6 +49,13 @@ export function ProductCard({
               {product.category}
             </StatusTag>
           </div>
+          {showVariationInfo && product.isVariation && (
+            <div className="absolute bottom-2 right-2">
+              <Tag color="purple" size="small">
+                {product.variationName}
+              </Tag>
+            </div>
+          )}
           {product.stock <= 5 && product.stock > 0 && (
             <div className="absolute bottom-2 left-2">
               <StatusTag status="low-stock">
@@ -69,6 +77,11 @@ export function ProductCard({
           <Text type="secondary" className="text-sm block mb-1">
             SKU: {product.barcode || 'N/A'}
           </Text>
+          {showVariationInfo && product.isVariation && (
+            <Text type="secondary" className="text-xs block mb-1">
+              Base Product: {product.parentProductName}
+            </Text>
+          )}
           <div className="flex items-center justify-between">
             <Text strong className="text-lg text-[#0E72BD]">
               ${product.price.toFixed(2)}

@@ -13,7 +13,8 @@ import {
   Col,
   Dropdown,
   Tabs,
-  Modal
+  Modal,
+  Collapse
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { ActionButton } from '../common/ActionButton';
@@ -25,6 +26,7 @@ import { CategoryManagement } from './CategoryManagement';
 import { ProductModal } from './ProductModal';
 
 const { Title, Text } = Typography;
+const { Panel } = Collapse;
 
 export function ProductManagement() {
   const { state, dispatch } = usePOS();
@@ -33,12 +35,31 @@ export function ProductManagement() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showProductSheet, setShowProductSheet] = useState(false);
+  const [viewMode, setViewMode] = useState('all'); // 'all', 'base', 'variations'
 
-  const filteredProducts = state.products.filter(product =>
-    (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (product.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (product.barcode || '').includes(searchTerm)
-  );
+  // Filter products based on view mode and search
+  const getFilteredProducts = () => {
+    let productsToShow = [];
+    
+    if (viewMode === 'all') {
+      // Show all products (base products and individual variations)
+      productsToShow = state.allProducts;
+    } else if (viewMode === 'base') {
+      // Show only base products (original product structure)
+      productsToShow = state.products;
+    } else if (viewMode === 'variations') {
+      // Show only products that are variations
+      productsToShow = state.allProducts.filter(product => product.isVariation);
+    }
+
+    return productsToShow.filter(product =>
+      (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.barcode || '').includes(searchTerm)
+    );
+  };
+
+  const filteredProducts = getFilteredProducts();
 
   const handleSubmit = async (productData) => {
     try {
@@ -58,11 +79,30 @@ export function ProductManagement() {
   };
 
   const handleEdit = (product) => {
-    setEditingProduct(product);
+    // If editing a variation, find and edit the base product
+    if (product.isVariation) {
+      const baseProduct = state.products.find(p => p.id === product.parentProductId);
+      if (baseProduct) {
+        setEditingProduct(baseProduct);
+      } else {
+        message.error('Base product not found');
+        return;
+      }
+    } else {
+      setEditingProduct(product);
+    }
     setShowModal(true);
   };
 
   const handleDelete = (productId) => {
+    // Find if this is a variation or base product
+    const product = state.allProducts.find(p => p.id === productId);
+    
+    if (product?.isVariation) {
+      message.error('Cannot delete individual variations. Edit the base product to manage variations.');
+      return;
+    }
+    
     dispatch({ type: 'DELETE_PRODUCT', payload: productId });
     message.success('Product deleted successfully');
   };
@@ -76,7 +116,7 @@ export function ProductManagement() {
     {
       key: 'edit',
       icon: <Icon name="edit" />,
-      label: 'Edit Product',
+      label: record.isVariation ? 'Edit Base Product' : 'Edit Product',
       onClick: () => handleEdit(record)
     },
     {
@@ -90,7 +130,12 @@ export function ProductManagement() {
       icon: <Icon name="delete" />,
       label: 'Delete Product',
       danger: true,
+      disabled: record.isVariation,
       onClick: () => {
+        if (record.isVariation) {
+          message.error('Cannot delete individual variations');
+          return;
+        }
         Modal.confirm({
           title: 'Are you sure you want to delete this product?',
           content: 'This action cannot be undone.',
@@ -120,6 +165,14 @@ export function ProductManagement() {
           />
           <div>
             <Text strong>{record.name}</Text>
+            {record.isVariation && (
+              <>
+                <br />
+                <Tag color="purple" size="small">
+                  {record.variationName}
+                </Tag>
+              </>
+            )}
             <br />
             <Text type="secondary" className="text-xs">{record.description}</Text>
             <br />
@@ -132,30 +185,74 @@ export function ProductManagement() {
       title: 'Category',
       dataIndex: 'category',
       key: 'category',
-      render: (category) => {
-        const categoryData = state.categories?.find(cat => cat.name === category);
-        return (
-          <Tag color="blue">
-            {category}
-          </Tag>
-        );
-      },
+      render: (category) => (
+        <Tag color="blue">
+          {category}
+        </Tag>
+      ),
     },
     {
       title: 'Price',
       dataIndex: 'price',
       key: 'price',
-      render: (price) => <Text strong>${(price || 0).toFixed(2)}</Text>,
+      render: (price, record) => {
+        if (viewMode === 'base' && record.hasVariations) {
+          return (
+            <div>
+              <Text type="secondary" className="text-sm">Base: ${(record.basePrice || 0).toFixed(2)}</Text>
+              <br />
+              <Text type="secondary" className="text-xs">
+                {record.variations?.length || 0} variations
+              </Text>
+            </div>
+          );
+        }
+        return <Text strong>${(price || 0).toFixed(2)}</Text>;
+      },
     },
     {
       title: 'Stock',
       dataIndex: 'stock',
       key: 'stock',
-      render: (stock) => (
-        <Tag color={stock > 10 ? 'green' : stock > 0 ? 'orange' : 'red'}>
-          {stock} units
-        </Tag>
-      ),
+      render: (stock, record) => {
+        if (viewMode === 'base' && record.hasVariations) {
+          const totalStock = record.variations?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
+          return (
+            <div>
+              <Tag color={totalStock > 10 ? 'green' : totalStock > 0 ? 'orange' : 'red'}>
+                {totalStock} total
+              </Tag>
+              <br />
+              <Text type="secondary" className="text-xs">
+                Across {record.variations?.length || 0} variations
+              </Text>
+            </div>
+          );
+        }
+        return (
+          <Tag color={stock > 10 ? 'green' : stock > 0 ? 'orange' : 'red'}>
+            {stock} units
+          </Tag>
+        );
+      },
+    },
+    {
+      title: 'Type',
+      key: 'type',
+      render: (record) => {
+        if (viewMode === 'base') {
+          return record.hasVariations ? (
+            <Tag color="purple">Has Variations</Tag>
+          ) : (
+            <Tag color="default">Single Product</Tag>
+          );
+        }
+        return record.isVariation ? (
+          <Tag color="purple">Variation</Tag>
+        ) : (
+          <Tag color="default">Base Product</Tag>
+        );
+      },
     },
     {
       title: 'Materials',
@@ -163,7 +260,7 @@ export function ProductManagement() {
       render: (record) => (
         <div>
           {record.rawMaterials && record.rawMaterials.length > 0 ? (
-            <Tag color="purple">
+            <Tag color="green">
               {record.rawMaterials.length} material{record.rawMaterials.length !== 1 ? 's' : ''}
             </Tag>
           ) : (
@@ -230,7 +327,7 @@ export function ProductManagement() {
       <div className="flex items-center justify-between">
         <div>
           <Title level={5} className="m-0">Product Inventory</Title>
-          <Text type="secondary">Manage your furniture products</Text>
+          <Text type="secondary">Manage your furniture products and variations</Text>
         </div>
         <Space>
           <SearchInput
@@ -247,19 +344,152 @@ export function ProductManagement() {
           </ActionButton.Primary>
         </Space>
       </div>
-      
-      <Table
-        columns={columns}
-        dataSource={filteredProducts}
-        rowKey="id"
-        pagination={{
-          pageSize: 10,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-        }}
-        scroll={{ x: 1200 }}
-      />
+
+      {/* View Mode Selector */}
+      <Card size="small">
+        <div className="flex items-center justify-between">
+          <div>
+            <Text strong>View Mode:</Text>
+            <Text type="secondary" className="ml-2">Choose how to display products</Text>
+          </div>
+          <Space>
+            <ActionButton 
+              type={viewMode === 'all' ? 'primary' : 'default'}
+              size="small"
+              onClick={() => setViewMode('all')}
+            >
+              All Products ({state.allProducts.length})
+            </ActionButton>
+            <ActionButton 
+              type={viewMode === 'base' ? 'primary' : 'default'}
+              size="small"
+              onClick={() => setViewMode('base')}
+            >
+              Base Products ({state.products.length})
+            </ActionButton>
+            <ActionButton 
+              type={viewMode === 'variations' ? 'primary' : 'default'}
+              size="small"
+              onClick={() => setViewMode('variations')}
+            >
+              Variations Only ({state.allProducts.filter(p => p.isVariation).length})
+            </ActionButton>
+          </Space>
+        </div>
+      </Card>
+
+      {/* Products with Variations Expandable View */}
+      {viewMode === 'base' && (
+        <div className="space-y-4">
+          {state.products.filter(product => 
+            (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (product.category || '').toLowerCase().includes(searchTerm.toLowerCase())
+          ).map(product => (
+            <Card key={product.id} size="small">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <Image
+                    src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=60'}
+                    alt={product.name}
+                    width={60}
+                    height={60}
+                    className="object-cover rounded"
+                    preview={false}
+                  />
+                  <div>
+                    <Text strong className="text-lg">{product.name}</Text>
+                    <br />
+                    <Tag color="blue">{product.category}</Tag>
+                    {product.hasVariations ? (
+                      <Tag color="purple">Has {product.variations?.length || 0} Variations</Tag>
+                    ) : (
+                      <Tag color="default">Single Product</Tag>
+                    )}
+                    <br />
+                    <Text type="secondary" className="text-sm">{product.description}</Text>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Dropdown
+                    menu={{
+                      items: getActionMenuItems(product)
+                    }}
+                    trigger={['click']}
+                  >
+                    <ActionButton.Text
+                      icon="more_vert"
+                      className="text-[#0E72BD] hover:text-blue-700"
+                    />
+                  </Dropdown>
+                </div>
+              </div>
+
+              {product.hasVariations && product.variations && product.variations.length > 0 && (
+                <Collapse className="mt-4" size="small">
+                  <Panel 
+                    header={`View ${product.variations.length} Variations`} 
+                    key="variations"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {product.variations.map(variation => (
+                        <Card key={variation.id} size="small" className="border">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Text strong>{variation.name}</Text>
+                              <Tag color={variation.stock > 0 ? 'green' : 'red'} size="small">
+                                {variation.stock} units
+                              </Tag>
+                            </div>
+                            <div className="space-y-1">
+                              <Text className="text-sm">
+                                <strong>SKU:</strong> {variation.sku}
+                              </Text>
+                              <Text className="text-sm">
+                                <strong>Price:</strong> ${variation.price.toFixed(2)}
+                              </Text>
+                              {variation.material && (
+                                <Text className="text-sm">
+                                  <strong>Material:</strong> {variation.material}
+                                </Text>
+                              )}
+                              {variation.color && (
+                                <Text className="text-sm">
+                                  <strong>Color:</strong> {variation.color}
+                                </Text>
+                              )}
+                              {variation.dimensions && variation.dimensions.length && (
+                                <Text className="text-sm">
+                                  <strong>Size:</strong> {variation.dimensions.length}×{variation.dimensions.width}×{variation.dimensions.height} {variation.dimensions.unit}
+                                </Text>
+                              )}
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </Panel>
+                </Collapse>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Regular Table View */}
+      {viewMode !== 'base' && (
+        <Table
+          columns={columns}
+          dataSource={filteredProducts}
+          rowKey="id"
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+          }}
+          scroll={{ x: 1200 }}
+        />
+      )}
     </div>
   );
 
@@ -292,7 +522,7 @@ export function ProductManagement() {
         <PageHeader
           title="Product Management"
           icon="inventory_2"
-          subtitle="Manage products and categories"
+          subtitle="Manage products, variations, and categories"
         />
         
         <Tabs

@@ -12,7 +12,8 @@ import {
   Row,
   Col,
   Dropdown,
-  Tabs
+  Tabs,
+  Modal
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { ActionButton } from '../common/ActionButton';
@@ -34,9 +35,9 @@ export function ProductManagement() {
   const [showProductSheet, setShowProductSheet] = useState(false);
 
   const filteredProducts = state.products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.barcode?.includes(searchTerm)
+    (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.barcode || '').includes(searchTerm)
   );
 
   const handleSubmit = async (productData) => {

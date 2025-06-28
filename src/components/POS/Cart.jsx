@@ -136,6 +136,7 @@ export function Cart() {
                   height={60}
                   className="object-cover rounded-lg"
                   preview={false}
+                  crossOrigin="anonymous"
                 />
                 
                 <div className="flex-1 min-w-0">

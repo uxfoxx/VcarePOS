@@ -116,6 +116,7 @@ export function ProductGrid() {
                 alt={selectedProduct.name}
                 className="w-full rounded-lg"
                 style={{ maxHeight: '300px', objectFit: 'cover' }}
+                crossOrigin="anonymous"
               />
             </div>
             
@@ -327,6 +328,7 @@ export function ProductGrid() {
                           src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=400'}
                           className="h-48 w-full object-cover"
                           preview={false}
+                          crossOrigin="anonymous"
                         />
                         <div className="absolute top-2 right-2">
                           <Badge 

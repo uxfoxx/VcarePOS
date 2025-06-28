@@ -73,11 +73,38 @@ function posReducer(state, action) {
     case 'UPDATE_PRODUCT_STOCK':
       return {
         ...state,
-        products: state.products.map(product =>
-          product.id === action.payload.productId
-            ? { ...product, stock: product.stock - action.payload.quantity }
-            : product
-        )
+        products: state.products.map(product => {
+          if (product.id === action.payload.productId) {
+            const updatedProduct = { ...product, stock: product.stock - action.payload.quantity };
+            
+            // Also update raw material stock if product has raw materials
+            if (updatedProduct.rawMaterials && updatedProduct.rawMaterials.length > 0) {
+              updatedProduct.rawMaterials.forEach(material => {
+                const totalMaterialUsed = material.quantity * action.payload.quantity;
+                // This will be handled by UPDATE_RAW_MATERIAL_STOCK action
+                // We'll dispatch it separately to maintain clean separation
+              });
+            }
+            
+            return updatedProduct;
+          }
+          return product;
+        }),
+        // Update raw materials stock when product is sold
+        rawMaterials: state.rawMaterials.map(rawMaterial => {
+          const product = state.products.find(p => p.id === action.payload.productId);
+          if (product && product.rawMaterials) {
+            const materialUsage = product.rawMaterials.find(m => m.rawMaterialId === rawMaterial.id);
+            if (materialUsage) {
+              const totalUsed = materialUsage.quantity * action.payload.quantity;
+              return {
+                ...rawMaterial,
+                stockQuantity: Math.max(0, rawMaterial.stockQuantity - totalUsed)
+              };
+            }
+          }
+          return rawMaterial;
+        })
       };
     case 'ADD_PRODUCT':
       return {

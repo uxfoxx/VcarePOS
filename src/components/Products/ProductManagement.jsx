@@ -4,10 +4,6 @@ import {
   Table, 
   Input, 
   Space, 
-  Modal, 
-  Form, 
-  Select, 
-  InputNumber, 
   Typography,
   Tag,
   Image,
@@ -23,13 +19,11 @@ import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
 import { PageHeader } from '../common/PageHeader';
 import { SearchInput } from '../common/SearchInput';
-import { FormModal } from '../common/FormModal';
 import { ProductDetailsSheet } from '../Invoices/ProductDetailsSheet';
 import { CategoryManagement } from './CategoryManagement';
+import { ProductModal } from './ProductModal';
 
 const { Title, Text } = Typography;
-const { Option } = Select;
-const { TextArea } = Input;
 
 export function ProductManagement() {
   const { state, dispatch } = usePOS();
@@ -38,7 +32,6 @@ export function ProductManagement() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showProductSheet, setShowProductSheet] = useState(false);
-  const [form] = Form.useForm();
 
   const filteredProducts = state.products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -46,28 +39,8 @@ export function ProductManagement() {
     product.barcode?.includes(searchTerm)
   );
 
-  const handleSubmit = async (values) => {
+  const handleSubmit = async (productData) => {
     try {
-      const productData = {
-        id: editingProduct?.id || `PROD-${Date.now()}`,
-        name: values.name,
-        price: values.price,
-        category: values.category,
-        stock: values.stock,
-        barcode: values.barcode,
-        description: values.description,
-        dimensions: values.dimensions ? {
-          length: values.dimensions.length,
-          width: values.dimensions.width,
-          height: values.dimensions.height,
-          unit: values.dimensions.unit
-        } : undefined,
-        weight: values.weight,
-        material: values.material,
-        color: values.color,
-        image: values.image
-      };
-
       if (editingProduct) {
         dispatch({ type: 'UPDATE_PRODUCT', payload: productData });
         message.success('Product updated successfully');
@@ -78,18 +51,13 @@ export function ProductManagement() {
 
       setShowModal(false);
       setEditingProduct(null);
-      form.resetFields();
     } catch (error) {
-      message.error('Please fill in all required fields');
+      message.error('Failed to save product');
     }
   };
 
   const handleEdit = (product) => {
     setEditingProduct(product);
-    form.setFieldsValue({
-      ...product,
-      dimensions: product.dimensions
-    });
     setShowModal(true);
   };
 
@@ -186,6 +154,21 @@ export function ProductManagement() {
         <Tag color={stock > 10 ? 'green' : stock > 0 ? 'orange' : 'red'}>
           {stock} units
         </Tag>
+      ),
+    },
+    {
+      title: 'Materials',
+      key: 'materials',
+      render: (record) => (
+        <div>
+          {record.rawMaterials && record.rawMaterials.length > 0 ? (
+            <Tag color="purple">
+              {record.rawMaterials.length} material{record.rawMaterials.length !== 1 ? 's' : ''}
+            </Tag>
+          ) : (
+            <Text type="secondary" className="text-xs">No materials</Text>
+          )}
+        </div>
       ),
     },
     {
@@ -318,134 +301,15 @@ export function ProductManagement() {
         />
       </Card>
 
-      <FormModal
-        title={editingProduct ? 'Edit Product' : 'Add New Product'}
+      <ProductModal
         open={showModal}
-        onCancel={() => {
+        onClose={() => {
           setShowModal(false);
           setEditingProduct(null);
-          form.resetFields();
         }}
         onSubmit={handleSubmit}
-        form={form}
-        width={800}
-        submitText={editingProduct ? 'Update Product' : 'Add Product'}
-      >
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              name="name"
-              label="Product Name"
-              rules={[{ required: true, message: 'Please enter product name' }]}
-            >
-              <Input placeholder="Enter product name" />
-            </Form.Item>
-            
-            <Form.Item
-              name="category"
-              label="Category"
-              rules={[{ required: true, message: 'Please select category' }]}
-            >
-              <Select placeholder="Select category">
-                {state.categories?.filter(cat => cat.isActive).map(category => (
-                  <Option key={category.id} value={category.name}>
-                    {category.name}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-
-            <Row gutter={8}>
-              <Col span={12}>
-                <Form.Item
-                  name="price"
-                  label="Price ($)"
-                  rules={[{ required: true, message: 'Please enter price' }]}
-                >
-                  <InputNumber
-                    min={0}
-                    step={0.01}
-                    placeholder="0.00"
-                    className="w-full"
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  name="stock"
-                  label="Stock"
-                  rules={[{ required: true, message: 'Please enter stock' }]}
-                >
-                  <InputNumber
-                    min={0}
-                    placeholder="0"
-                    className="w-full"
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Form.Item name="barcode" label="Barcode/SKU">
-              <Input placeholder="Enter barcode or SKU" />
-            </Form.Item>
-
-            <Form.Item name="image" label="Image URL">
-              <Input placeholder="Enter image URL" />
-            </Form.Item>
-          </Col>
-
-          <Col span={12}>
-            <Form.Item label="Dimensions">
-              <Input.Group compact>
-                <Form.Item name={['dimensions', 'length']} noStyle>
-                  <InputNumber placeholder="Length" className="w-1/4" />
-                </Form.Item>
-                <Form.Item name={['dimensions', 'width']} noStyle>
-                  <InputNumber placeholder="Width" className="w-1/4" />
-                </Form.Item>
-                <Form.Item name={['dimensions', 'height']} noStyle>
-                  <InputNumber placeholder="Height" className="w-1/4" />
-                </Form.Item>
-                <Form.Item name={['dimensions', 'unit']} noStyle>
-                  <Select placeholder="Unit" className="w-1/4">
-                    <Option value="cm">cm</Option>
-                    <Option value="inch">inch</Option>
-                  </Select>
-                </Form.Item>
-              </Input.Group>
-            </Form.Item>
-
-            <Row gutter={8}>
-              <Col span={12}>
-                <Form.Item name="weight" label="Weight (kg)">
-                  <InputNumber
-                    min={0}
-                    step={0.1}
-                    placeholder="0.0"
-                    className="w-full"
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item name="color" label="Color">
-                  <Input placeholder="Enter color" />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Form.Item name="material" label="Material">
-              <Input placeholder="Enter material type" />
-            </Form.Item>
-
-            <Form.Item name="description" label="Description">
-              <TextArea
-                rows={3}
-                placeholder="Enter product description"
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-      </FormModal>
+        editingProduct={editingProduct}
+      />
 
       {/* Product Details Sheet Modal */}
       <ProductDetailsSheet

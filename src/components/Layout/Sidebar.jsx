@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Menu, Typography, Badge, Button, Divider, Tooltip } from 'antd';
+import { Layout, Menu, Typography, Badge } from 'antd';
 
 const { Sider } = Layout;
 const { Text, Title } = Typography;
@@ -85,22 +85,6 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Collapse Toggle Button */}
-      <div className={`${collapsed ? 'p-2' : 'p-4'} border-b border-gray-200`}>
-        <Tooltip title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"} placement="right">
-          <Button
-            type="text"
-            icon={
-              <span className="material-icons">
-                {collapsed ? 'chevron_right' : 'chevron_left'}
-              </span>
-            }
-            onClick={() => onCollapse(!collapsed)}
-            className="w-full flex items-center justify-center hover:bg-blue-50"
-          />
-        </Tooltip>
       </div>
 
       {/* Navigation Menu */}

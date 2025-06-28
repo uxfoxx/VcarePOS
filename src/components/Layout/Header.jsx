@@ -75,6 +75,7 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
       'raw-materials': 'Raw Materials',
       'transactions': 'Transaction History',
       'reports': 'Reports & Analytics',
+      'coupons': 'Coupon Management',
       'settings': 'Settings'
     };
     return titles[activeTab] || 'VCare POS';
@@ -86,13 +87,13 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
       className="flex items-center justify-between"
     >
       <div className="flex items-center space-x-6">
-        {/* Mobile Collapse Button */}
+        {/* Expand/Collapse Button */}
         <Tooltip title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}>
           <Button
             type="text"
             icon={<span className="material-icons text-lg">{collapsed ? 'menu_open' : 'menu'}</span>}
             onClick={() => onCollapse(!collapsed)}
-            className="lg:hidden hover:bg-blue-50 transition-colors"
+            className="hover:bg-blue-50 transition-colors"
           />
         </Tooltip>
 

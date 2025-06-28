@@ -157,7 +157,25 @@ export function ProductModal({
         setCurrentStep(1);
       } catch (error) {
         console.error('Validation error:', error); // Debug log
-        message.error('Please fill in all required product details');
+        
+        // Extract missing field names from the error
+        if (error.errorFields && error.errorFields.length > 0) {
+          const missingFields = error.errorFields.map(field => {
+            const fieldName = Array.isArray(field.name) ? field.name.join('.') : field.name;
+            // Convert field names to user-friendly labels
+            const fieldLabels = {
+              'name': 'Product Name',
+              'category': 'Category',
+              'price': 'Price',
+              'stock': 'Stock'
+            };
+            return fieldLabels[fieldName] || fieldName;
+          });
+          
+          message.error(`Please fill in the following required fields: ${missingFields.join(', ')}`);
+        } else {
+          message.error('Please fill in all required product details');
+        }
       }
     }
   };

@@ -36,6 +36,11 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('pos');
   const [collapsed, setCollapsed] = useState(false);
 
+  // Track component renders for performance monitoring - MUST be called before any conditional returns
+  React.useEffect(() => {
+    performanceMonitor.trackRender('AppContent');
+  });
+
   if (!isAuthenticated) {
     return <LoginPage />;
   }
@@ -190,11 +195,6 @@ function AppContent() {
     zIndex: 50,
     transition: 'all 0.2s',
   };
-
-  // Track component renders for performance monitoring
-  React.useEffect(() => {
-    performanceMonitor.trackRender('AppContent');
-  });
 
   return (
     <Layout style={layoutStyle}>

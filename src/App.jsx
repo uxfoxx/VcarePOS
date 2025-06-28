@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Layout } from 'antd';
-import { ThemeProvider } from './contexts/ThemeContext';
+import { ConfigProvider, Layout, theme } from 'antd';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { POSProvider } from './contexts/POSContext';
 import { LoginPage } from './components/Auth/LoginPage';
@@ -23,7 +22,7 @@ import { AuditTrail } from './components/AuditTrail/AuditTrail';
 const { Sider, Content } = Layout;
 
 function AppContent() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState('pos');
   const [collapsed, setCollapsed] = useState(false);
 
@@ -195,13 +194,68 @@ function AppContent() {
 
 function App() {
   return (
-    <ThemeProvider>
+    <ConfigProvider
+      theme={{
+        algorithm: theme.defaultAlgorithm,
+        token: {
+          colorPrimary: '#0E72BD',
+          borderRadius: 8,
+          colorBgContainer: '#ffffff',
+          colorBgLayout: '#f8fafc',
+          fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontSize: 14,
+          lineHeight: 1.5,
+          colorText: '#1f2937',
+          colorTextSecondary: '#6b7280',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          boxShadowSecondary: '0 4px 6px rgba(0, 0, 0, 0.1)',
+        },
+        components: {
+          Layout: {
+            headerBg: '#ffffff',
+            siderBg: '#ffffff',
+            bodyBg: '#f8fafc',
+            headerHeight: 64,
+            footerBg: '#ffffff',
+          },
+          Card: {
+            borderRadiusLG: 12,
+            boxShadowTertiary: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          },
+          Button: {
+            borderRadius: 8,
+            controlHeight: 40,
+            fontWeight: 500,
+          },
+          Input: {
+            borderRadius: 8,
+            controlHeight: 40,
+          },
+          Select: {
+            borderRadius: 8,
+            controlHeight: 40,
+          },
+          Table: {
+            borderRadiusLG: 12,
+            headerBg: 'rgba(14, 114, 189, 0.04)',
+          },
+          Modal: {
+            borderRadiusLG: 16,
+          },
+          Menu: {
+            itemBorderRadius: 8,
+            itemMarginInline: 4,
+            itemMarginBlock: 2,
+          },
+        },
+      }}
+    >
       <AuthProvider>
         <POSProvider>
           <AppContent />
         </POSProvider>
       </AuthProvider>
-    </ThemeProvider>
+    </ConfigProvider>
   );
 }
 

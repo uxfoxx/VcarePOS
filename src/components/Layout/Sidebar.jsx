@@ -1,7 +1,6 @@
 import React from 'react';
 import { Layout, Menu, Typography, Badge } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
-import { useTheme } from '../../contexts/ThemeContext';
 import { Icon } from '../common/Icon';
 
 const { Sider } = Layout;
@@ -9,7 +8,6 @@ const { Text, Title } = Typography;
 
 export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
   const { hasPermission } = useAuth();
-  const { branding } = useTheme();
 
   const allMenuItems = [
     {
@@ -103,25 +101,20 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
       {/* Logo Section */}
       <div className={`${collapsed ? 'p-4' : 'p-6'} border-b border-gray-200 transition-all duration-200`}>
         <div className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'}`}>
-          <div 
-            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
-            style={{ 
-              background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})` 
-            }}
-          >
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
             <img 
-              src={branding.logo} 
-              alt={`${branding.companyName} Logo`}
+              src="/VCARELogo 1.png" 
+              alt="VCare Logo" 
               className="w-8 h-8 object-contain"
             />
           </div>
           {!collapsed && (
             <div>
               <Title level={4} className="m-0 text-gray-900">
-                {branding.companyName.split(' ')[0]} POS
+                VCare POS
               </Title>
               <Text type="secondary" className="text-xs">
-                {branding.tagline}
+                Furniture Store Management
               </Text>
             </div>
           )}

@@ -4,13 +4,13 @@ import {
   Avatar, 
   Dropdown, 
   Badge, 
-  Button, 
   Space, 
   Typography, 
   Tooltip,
-  Divider
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
+import { ActionButton } from '../common/ActionButton';
+import { Icon } from '../common/Icon';
 
 const { Header: AntHeader } = Layout;
 const { Text, Title } = Typography;
@@ -21,12 +21,12 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
   const userMenuItems = [
     {
       key: 'profile',
-      icon: <span className="material-icons">person</span>,
+      icon: <Icon name="person" />,
       label: 'Profile Settings',
     },
     {
       key: 'preferences',
-      icon: <span className="material-icons">tune</span>,
+      icon: <Icon name="tune" />,
       label: 'Preferences',
     },
     {
@@ -34,12 +34,12 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
     },
     {
       key: 'help',
-      icon: <span className="material-icons">help_outline</span>,
+      icon: <Icon name="help_outline" />,
       label: 'Help & Support',
     },
     {
       key: 'logout',
-      icon: <span className="material-icons">logout</span>,
+      icon: <Icon name="logout" />,
       label: 'Sign Out',
       danger: true,
     },
@@ -89,11 +89,11 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
       <div className="flex items-center space-x-6">
         {/* Expand/Collapse Button */}
         <Tooltip title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}>
-          <Button
-            type="text"
-            icon={<span className="material-icons text-lg">{collapsed ? 'menu_open' : 'menu'}</span>}
+          <ActionButton.Text
+            icon={collapsed ? 'menu_open' : 'menu'}
             onClick={() => onCollapse(!collapsed)}
             className="hover:bg-blue-50 transition-colors"
+            size="large"
           />
         </Tooltip>
 
@@ -106,7 +106,7 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
       
       <Space size="middle" className="flex items-center">
         <Tooltip title="WiFi Connected">
-          <span className="material-icons text-green-500">wifi</span>
+          <Icon name="wifi" className="text-green-500" />
         </Tooltip>
 
         <Dropdown 
@@ -115,9 +115,8 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
           trigger={['click']}
         >
           <Badge count={2} size="small" offset={[-2, 2]}>
-            <Button 
-              type="text" 
-              icon={<span className="material-icons">notifications</span>}
+            <ActionButton.Text 
+              icon="notifications"
               className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all"
             />
           </Badge>
@@ -134,7 +133,7 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
               style={{ 
                 background: 'linear-gradient(135deg, #0E72BD, #1890ff)',
               }}
-              icon={<span className="material-icons">person</span>}
+              icon={<Icon name="person" />}
             />
             <div className="hidden sm:block text-left">
               <Text strong className="text-gray-900 block text-sm">

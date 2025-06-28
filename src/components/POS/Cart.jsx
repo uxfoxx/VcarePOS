@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   Card, 
   List, 
-  Button, 
   InputNumber, 
   Space, 
   Typography, 
@@ -16,6 +15,8 @@ import {
   Select
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
+import { ActionButton } from '../common/ActionButton';
+import { Icon } from '../common/Icon';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -107,7 +108,7 @@ export function Cart() {
       <div className="max-h-64 overflow-y-auto">
         {state.cart.length === 0 ? (
           <div className="text-center py-8">
-            <span className="material-icons text-4xl text-gray-300 mb-2">restaurant</span>
+            <Icon name="restaurant" className="text-4xl text-gray-300 mb-2" />
             <Text type="secondary">No items in order</Text>
           </div>
         ) : (
@@ -125,10 +126,10 @@ export function Cart() {
                       title="Remove item?"
                       onConfirm={() => dispatch({ type: 'REMOVE_FROM_CART', payload: item.product.id })}
                     >
-                      <Button 
-                        type="text" 
+                      <ActionButton.Text 
+                        icon="close"
                         size="small"
-                        icon={<span className="material-icons text-gray-400">close</span>}
+                        className="text-gray-400"
                       />
                     </Popconfirm>
                   </div>
@@ -189,21 +190,21 @@ export function Cart() {
       <Form form={customerForm} layout="vertical">
         <Form.Item name="customerName" label="Customer Name">
           <Input 
-            prefix={<span className="material-icons text-gray-400">person</span>}
+            prefix={<Icon name="person" className="text-gray-400" />}
             placeholder="Enter customer name (optional)"
           />
         </Form.Item>
         
         <Form.Item name="customerPhone" label="Phone Number">
           <Input 
-            prefix={<span className="material-icons text-gray-400">phone</span>}
+            prefix={<Icon name="phone" className="text-gray-400" />}
             placeholder="Enter phone number (optional)"
           />
         </Form.Item>
         
         <Form.Item name="customerEmail" label="Email Address">
           <Input 
-            prefix={<span className="material-icons text-gray-400">email</span>}
+            prefix={<Icon name="email" className="text-gray-400" />}
             placeholder="Enter email address (optional)"
             type="email"
           />
@@ -236,12 +237,11 @@ export function Cart() {
                   {appliedCoupon.discountPercent}% discount applied
                 </Text>
               </div>
-              <Button 
-                type="text" 
+              <ActionButton.Text 
+                icon="close"
                 danger 
                 size="small"
                 onClick={handleRemoveCoupon}
-                icon={<span className="material-icons">close</span>}
               />
             </div>
           </div>
@@ -251,12 +251,12 @@ export function Cart() {
               <Form.Item name="couponCode" className="flex-1 mb-0">
                 <Input 
                   placeholder="Enter coupon code"
-                  prefix={<span className="material-icons text-gray-400">local_offer</span>}
+                  prefix={<Icon name="local_offer" className="text-gray-400" />}
                 />
               </Form.Item>
-              <Button type="primary" htmlType="submit">
+              <ActionButton.Primary htmlType="submit">
                 Apply
-              </Button>
+              </ActionButton.Primary>
             </div>
           </Form>
         )}
@@ -282,7 +282,7 @@ export function Cart() {
       key: 'order',
       label: (
         <div className="flex items-center space-x-2">
-          <span className="material-icons text-sm">shopping_cart</span>
+          <Icon name="shopping_cart" size="text-sm" />
           <span>Order</span>
           <Badge count={state.cart.length} size="small" />
         </div>
@@ -293,7 +293,7 @@ export function Cart() {
       key: 'customer',
       label: (
         <div className="flex items-center space-x-2">
-          <span className="material-icons text-sm">person</span>
+          <Icon name="person" size="text-sm" />
           <span>Customer</span>
         </div>
       ),
@@ -303,7 +303,7 @@ export function Cart() {
       key: 'coupons',
       label: (
         <div className="flex items-center space-x-2">
-          <span className="material-icons text-sm">local_offer</span>
+          <Icon name="local_offer" size="text-sm" />
           <span>Coupons & Notes</span>
           {appliedCoupon && <Badge dot />}
         </div>
@@ -339,21 +339,20 @@ export function Cart() {
         {/* Action Buttons */}
         <div className="border-t border-gray-200 p-4 space-y-2">
           <div className="flex space-x-2">
-            <Button 
+            <ActionButton 
               size="large"
               className="flex-1 bg-red-500 text-white border-red-500 hover:bg-red-600"
             >
               Hold Order
-            </Button>
-            <Button
-              type="primary"
+            </ActionButton>
+            <ActionButton.Primary
               size="large"
               onClick={handleCheckout}
               disabled={state.cart.length === 0}
               className="flex-1 bg-green-500 hover:bg-green-600 border-green-500"
             >
               Proceed
-            </Button>
+            </ActionButton.Primary>
           </div>
         </div>
       </div>

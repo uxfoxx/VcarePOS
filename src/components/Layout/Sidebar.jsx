@@ -1,5 +1,6 @@
 import React from 'react';
 import { Layout, Menu, Typography, Badge } from 'antd';
+import { Icon } from '../common/Icon';
 
 const { Sider } = Layout;
 const { Text, Title } = Typography;
@@ -8,38 +9,38 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
   const menuItems = [
     {
       key: 'pos',
-      icon: <span className="material-icons">restaurant</span>,
+      icon: <Icon name="restaurant" />,
       label: 'Point of Sale',
     },
     {
       key: 'products',
-      icon: <span className="material-icons">inventory_2</span>,
+      icon: <Icon name="inventory_2" />,
       label: 'Products',
     },
     {
       key: 'raw-materials',
-      icon: <span className="material-icons">category</span>,
+      icon: <Icon name="category" />,
       label: 'Raw Materials',
       badge: { count: 3, color: 'red' },
     },
     {
       key: 'transactions',
-      icon: <span className="material-icons">receipt_long</span>,
+      icon: <Icon name="receipt_long" />,
       label: 'Transactions',
     },
     {
       key: 'reports',
-      icon: <span className="material-icons">analytics</span>,
+      icon: <Icon name="analytics" />,
       label: 'Reports',
     },
     {
       key: 'coupons',
-      icon: <span className="material-icons">local_offer</span>,
+      icon: <Icon name="local_offer" />,
       label: 'Coupons',
     },
     {
       key: 'settings',
-      icon: <span className="material-icons">settings</span>,
+      icon: <Icon name="settings" />,
       label: 'Settings',
     },
   ];

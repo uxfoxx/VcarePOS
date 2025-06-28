@@ -1,22 +1,21 @@
 import React, { useState } from 'react';
 import { 
   Card, 
-  Input, 
   Row, 
   Col, 
-  Button, 
-  Typography, 
-  Image, 
-  Badge,
   Empty,
   Modal,
   Descriptions,
-  Tabs
+  Tabs,
+  Image
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
+import { SearchInput } from '../common/SearchInput';
+import { ProductCard } from '../common/ProductCard';
+import { PageHeader } from '../common/PageHeader';
+import { ActionButton } from '../common/ActionButton';
+import { Icon } from '../common/Icon';
 
-const { Meta } = Card;
-const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 
 export function ProductGrid({ collapsed }) {
@@ -64,20 +63,22 @@ export function ProductGrid({ collapsed }) {
       <Card 
         className="h-full"
         bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
-        title={
-          <div className="flex items-center justify-between">
-            <Title level={4} className="m-0">Products</Title>
-            <Input
-              placeholder="Search by product name or SKU..."
-              prefix={<span className="material-icons text-gray-400">search</span>}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-80"
-              allowClear
-            />
-          </div>
-        }
       >
+        <div className="p-4 border-b border-gray-200">
+          <PageHeader
+            title="Products"
+            icon="inventory_2"
+            extra={
+              <SearchInput
+                placeholder="Search by product name or SKU..."
+                value={searchTerm}
+                onSearch={setSearchTerm}
+                className="w-80"
+              />
+            }
+          />
+        </div>
+
         {/* Category Tabs */}
         <div className="px-4 pt-4 border-b border-gray-200">
           <Tabs 
@@ -96,105 +97,18 @@ export function ProductGrid({ collapsed }) {
         <div className="p-4 overflow-y-auto" style={{ height: 'calc(100% - 140px)' }}>
           {filteredProducts.length === 0 ? (
             <Empty
-              image={<span className="material-icons text-6xl text-gray-300">inventory_2</span>}
+              image={<Icon name="inventory_2" className="text-6xl text-gray-300 mb-4" />}
               description="No products found"
             />
           ) : (
             <Row gutter={[16, 16]}>
               {filteredProducts.map((product) => (
                 <Col key={product.id} {...getColSpan()}>
-                  <Card
-                    hoverable
-                    className="h-full cursor-pointer"
-                    cover={
-                      <div className="relative h-48 overflow-hidden">
-                        <Image
-                          alt={product.name}
-                          src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
-                          className="w-full h-full object-cover"
-                          preview={false}
-                        />
-                        <div className="absolute top-2 right-2">
-                          <Badge 
-                            count={`$${product.price.toFixed(2)}`}
-                            style={{ backgroundColor: '#0E72BD' }}
-                          />
-                        </div>
-                        <div className="absolute top-2 left-2">
-                          <Badge 
-                            count={product.category}
-                            style={{ backgroundColor: product.category === 'Tables' ? '#52c41a' : '#fa8c16' }}
-                          />
-                        </div>
-                        {product.stock <= 5 && product.stock > 0 && (
-                          <div className="absolute bottom-2 left-2">
-                            <Badge 
-                              count="Low Stock"
-                              style={{ backgroundColor: '#ff4d4f' }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    }
-                    onClick={() => handleProductClick(product)}
-                    bodyStyle={{ padding: '16px' }}
-                  >
-                    <div className="space-y-3">
-                      <div>
-                        <Text strong className="text-base line-clamp-2 leading-tight block mb-1">
-                          {product.name}
-                        </Text>
-                        <Text type="secondary" className="text-sm block mb-1">
-                          SKU: {product.barcode || 'N/A'}
-                        </Text>
-                        <div className="flex items-center justify-between">
-                          <Text strong className="text-lg text-[#0E72BD]">
-                            ${product.price.toFixed(2)}
-                          </Text>
-                          <Text type="secondary" className="text-sm">
-                            Stock: {product.stock}
-                          </Text>
-                        </div>
-                      </div>
-
-                      {/* Product Details */}
-                      <div className="space-y-1">
-                        {product.dimensions && (
-                          <Text type="secondary" className="text-xs block">
-                            <span className="material-icons text-xs mr-1">straighten</span>
-                            {product.dimensions.length}×{product.dimensions.width}×{product.dimensions.height} {product.dimensions.unit}
-                          </Text>
-                        )}
-                        {product.material && (
-                          <Text type="secondary" className="text-xs block">
-                            <span className="material-icons text-xs mr-1">texture</span>
-                            {product.material}
-                          </Text>
-                        )}
-                        {product.color && (
-                          <Text type="secondary" className="text-xs block">
-                            <span className="material-icons text-xs mr-1">palette</span>
-                            {product.color}
-                          </Text>
-                        )}
-                      </div>
-                      
-                      <Button
-                        type="primary"
-                        size="large"
-                        block
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddToCart(product);
-                        }}
-                        disabled={product.stock === 0}
-                        className="bg-[#0E72BD] hover:bg-blue-700 font-semibold"
-                        icon={<span className="material-icons">add_shopping_cart</span>}
-                      >
-                        {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
-                      </Button>
-                    </div>
-                  </Card>
+                  <ProductCard
+                    product={product}
+                    onAddToCart={handleAddToCart}
+                    onClick={handleProductClick}
+                  />
                 </Col>
               ))}
             </Row>
@@ -209,12 +123,12 @@ export function ProductGrid({ collapsed }) {
         onCancel={() => setShowDetailModal(false)}
         width={600}
         footer={[
-          <Button key="close" onClick={() => setShowDetailModal(false)}>
+          <ActionButton key="close" onClick={() => setShowDetailModal(false)}>
             Close
-          </Button>,
-          <Button
+          </ActionButton>,
+          <ActionButton.Primary
             key="add-to-cart"
-            type="primary"
+            icon="add_shopping_cart"
             onClick={() => {
               handleAddToCart(selectedProduct);
               setShowDetailModal(false);
@@ -223,7 +137,7 @@ export function ProductGrid({ collapsed }) {
             className="bg-[#0E72BD] hover:bg-blue-700"
           >
             Add to Cart
-          </Button>
+          </ActionButton.Primary>
         ]}
       >
         {selectedProduct && (
@@ -238,12 +152,15 @@ export function ProductGrid({ collapsed }) {
                 preview={false}
               />
               <div className="flex-1">
-                <Title level={4}>{selectedProduct.name}</Title>
-                <Text type="secondary">{selectedProduct.description}</Text>
+                <PageHeader
+                  title={selectedProduct.name}
+                  subtitle={selectedProduct.description}
+                  level={4}
+                />
                 <div className="mt-2">
-                  <Text strong className="text-xl text-[#0E72BD]">
+                  <span className="text-xl font-bold text-[#0E72BD]">
                     ${selectedProduct.price.toFixed(2)}
-                  </Text>
+                  </span>
                 </div>
               </div>
             </div>

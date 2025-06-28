@@ -87,6 +87,16 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
       className="flex items-center justify-between"
     >
       <div className="flex items-center space-x-6">
+        {/* Mobile Collapse Button */}
+        <Tooltip title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}>
+          <Button
+            type="text"
+            icon={<span className="material-icons text-lg">{collapsed ? 'menu_open' : 'menu'}</span>}
+            onClick={() => onCollapse(!collapsed)}
+            className="lg:hidden hover:bg-blue-50 transition-colors"
+          />
+        </Tooltip>
+
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -96,7 +106,7 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
                 className="w-6 h-6 object-contain"
               />
             </div>
-            <div>
+            <div className="hidden sm:block">
               <Title level={4} className="m-0 text-gray-900">
                 VCare POS
               </Title>

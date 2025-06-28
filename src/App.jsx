@@ -47,6 +47,10 @@ function App() {
     );
   };
 
+  // Calculate dynamic widths based on collapsed state
+  const siderWidth = collapsed ? 80 : 280;
+  const contentWidth = `calc(100% - ${siderWidth}px)`;
+
   // Layout styles
   const layoutStyle = {
     minHeight: '100vh',
@@ -63,6 +67,7 @@ function App() {
     top: 0,
     bottom: 0,
     zIndex: 100,
+    transition: 'all 0.2s',
   };
 
   const headerStyle = {
@@ -71,18 +76,21 @@ function App() {
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
     padding: '0 24px',
     position: 'fixed',
-    width: '75%',
+    width: contentWidth,
     right: 0,
     top: 0,
     zIndex: 50,
+    transition: 'all 0.2s',
   };
 
   const contentStyle = {
     padding: '24px',
     marginTop: '64px',
     marginBottom: '64px',
+    marginLeft: `${siderWidth}px`,
     minHeight: 'calc(100vh - 128px)',
     overflow: 'auto',
+    transition: 'all 0.2s',
   };
 
   const footerStyle = {
@@ -90,10 +98,11 @@ function App() {
     borderTop: '1px solid #e5e7eb',
     textAlign: 'center',
     position: 'fixed',
-    width: '75%',
+    width: contentWidth,
     right: 0,
     bottom: 0,
     zIndex: 50,
+    transition: 'all 0.2s',
   };
 
   return (
@@ -155,7 +164,14 @@ function App() {
     >
       <POSProvider>
         <Layout style={layoutStyle}>
-          <Sider width="25%" style={siderStyle}>
+          <Sider 
+            width={siderWidth} 
+            style={siderStyle}
+            collapsible
+            collapsed={collapsed}
+            onCollapse={setCollapsed}
+            trigger={null}
+          >
             <Sidebar 
               activeTab={activeTab} 
               onTabChange={setActiveTab}

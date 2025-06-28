@@ -163,58 +163,56 @@ export function ProductModal({
   const handlePrev = () => {
     setCurrentStep(currentStep - 1);
   };
+const handleSubmit = async () => {
+  try {
+    setLoading(true);
+    
+    // Validate all fields before submitting
+    await productForm.validateFields(); // This will ensure all required fields are validated
 
-  const handleSubmit = async () => {
-    try {
-      setLoading(true);
-      
-      // Get all form values
-      const productValues = productForm.getFieldsValue();
-      
-      // Validate required fields manually
-      if (!productValues.name || !productValues.category || !productValues.price || productValues.stock === undefined) {
-        message.error('Please fill in all required fields (Name, Category, Price, Stock)');
-        setLoading(false);
-        return;
-      }
-      
-      const productData = {
-        id: editingProduct?.id || `PROD-${Date.now()}`,
-        name: productValues.name,
-        price: Number(productValues.price) || 0,
-        category: productValues.category,
-        stock: Number(productValues.stock) || 0,
-        barcode: productValues.barcode || '',
-        description: productValues.description || '',
-        dimensions: productValues.dimensions && (
-          productValues.dimensions.length || 
-          productValues.dimensions.width || 
-          productValues.dimensions.height
-        ) ? {
-          length: Number(productValues.dimensions.length) || 0,
-          width: Number(productValues.dimensions.width) || 0,
-          height: Number(productValues.dimensions.height) || 0,
-          unit: productValues.dimensions.unit || 'cm'
-        } : null,
-        weight: Number(productValues.weight) || 0,
-        material: productValues.material || '',
-        color: productValues.color || '',
-        image: imagePreview || productValues.image || '',
-        rawMaterials: selectedMaterials.map(m => ({
-          rawMaterialId: m.rawMaterialId,
-          quantity: m.quantity
-        }))
-      };
+    // If validation passes, gather form values
+    const productValues = productForm.getFieldsValue();
 
-      await onSubmit(productData);
-      handleClose();
-    } catch (error) {
-      console.error('Error submitting product:', error);
-      message.error('Failed to save product. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Prepare the data object
+    const productData = {
+      id: editingProduct?.id || `PROD-${Date.now()}`,
+      name: productValues.name,
+      price: Number(productValues.price) || 0,
+      category: productValues.category,
+      stock: Number(productValues.stock) || 0,
+      barcode: productValues.barcode || '',
+      description: productValues.description || '',
+      dimensions: productValues.dimensions && (
+        productValues.dimensions.length || 
+        productValues.dimensions.width || 
+        productValues.dimensions.height
+      ) ? {
+        length: Number(productValues.dimensions.length) || 0,
+        width: Number(productValues.dimensions.width) || 0,
+        height: Number(productValues.dimensions.height) || 0,
+        unit: productValues.dimensions.unit || 'cm'
+      } : null,
+      weight: Number(productValues.weight) || 0,
+      material: productValues.material || '',
+      color: productValues.color || '',
+      image: imagePreview || productValues.image || '',
+      rawMaterials: selectedMaterials.map(m => ({
+        rawMaterialId: m.rawMaterialId,
+        quantity: m.quantity
+      }))
+    };
+
+    // Pass the productData to the onSubmit callback
+    await onSubmit(productData);
+    handleClose();
+  } catch (error) {
+    // If validation fails or an error occurs, display an error message
+    console.error('Error submitting product:', error);
+    message.error('Failed to save product. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleClose = () => {
     setCurrentStep(0);

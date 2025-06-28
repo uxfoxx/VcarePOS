@@ -54,6 +54,15 @@ function posReducer(state, action) {
         ...state,
         transactions: [action.payload, ...state.transactions]
       };
+    case 'UPDATE_TRANSACTION_STATUS':
+      return {
+        ...state,
+        transactions: state.transactions.map(transaction =>
+          transaction.id === action.payload.transactionId
+            ? { ...transaction, status: action.payload.status }
+            : transaction
+        )
+      };
     case 'UPDATE_PRODUCT_STOCK':
       return {
         ...state,

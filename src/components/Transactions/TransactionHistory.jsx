@@ -12,15 +12,22 @@ import {
   Col,
   Descriptions,
   Modal,
-  List
+  List,
+  Button,
+  message
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
+import { Icon } from '../common/Icon';
+import { ActionButton } from '../common/ActionButton';
+import { StatusTag } from '../common/StatusTag';
+import { PageHeader } from '../common/PageHeader';
+import { SearchInput } from '../common/SearchInput';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 export function TransactionHistory() {
-  const { state } = usePOS();
+  const { state, dispatch } = usePOS();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPeriod, setFilterPeriod] = useState('all');
   const [selectedTransaction, setSelectedTransaction] = useState(null);
@@ -49,15 +56,44 @@ export function TransactionHistory() {
     setShowDetailModal(true);
   };
 
+  const handleUpdateStatus = (transactionId, newStatus) => {
+    dispatch({
+      type: 'UPDATE_TRANSACTION_STATUS',
+      payload: { transactionId, status: newStatus }
+    });
+    message.success(`Order status updated to ${newStatus}`);
+    
+    // Update the selected transaction if it's currently being viewed
+    if (selectedTransaction && selectedTransaction.id === transactionId) {
+      setSelectedTransaction({
+        ...selectedTransaction,
+        status: newStatus
+      });
+    }
+  };
+
   const getPaymentMethodIcon = (method) => {
     switch (method) {
       case 'cash':
-        return <span className="material-icons">payments</span>;
+        return 'payments';
       case 'card':
-        return <span className="material-icons">credit_card</span>;
+        return 'credit_card';
+      case 'digital':
+        return 'smartphone';
       default:
-        return <span className="material-icons">smartphone</span>;
+        return 'payment';
     }
+  };
+
+  const getStatusColor = (status) => {
+    const colors = {
+      'pending': 'orange',
+      'processing': 'blue',
+      'completed': 'green',
+      'cancelled': 'red',
+      'refunded': 'purple'
+    };
+    return colors[status] || 'default';
   };
 
   const columns = [
@@ -119,9 +155,19 @@ export function TransactionHistory() {
       dataIndex: 'paymentMethod',
       key: 'paymentMethod',
       render: (method) => (
-        <Tag icon={getPaymentMethodIcon(method)} color="green">
+        <Tag icon={<Icon name={getPaymentMethodIcon(method)} />} color="green">
           {method.toUpperCase()}
         </Tag>
+      ),
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status) => (
+        <StatusTag status={status || 'completed'}>
+          {(status || 'completed').toUpperCase()}
+        </StatusTag>
       ),
     },
     {
@@ -133,14 +179,11 @@ export function TransactionHistory() {
       title: 'Actions',
       key: 'actions',
       render: (record) => (
-        <Space>
-          <span 
-            className="material-icons cursor-pointer text-[#0E72BD] hover:text-blue-700"
-            onClick={() => handleViewDetails(record)}
-          >
-            visibility
-          </span>
-        </Space>
+        <ActionButton.Text
+          icon="visibility"
+          onClick={() => handleViewDetails(record)}
+          className="text-[#0E72BD] hover:text-blue-700"
+        />
       ),
     },
   ];
@@ -182,36 +225,32 @@ export function TransactionHistory() {
         </Col>
       </Row>
 
-      <Card 
-        title={
-          <Space>
-            <span className="material-icons text-[#0E72BD]">receipt_long</span>
-            <Title level={4} className="m-0">Transaction History</Title>
-          </Space>
-        }
-        extra={
-          <Space>
-            <Input
-              placeholder="Search transactions..."
-              prefix={<span className="material-icons">search</span>}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-64"
-              allowClear
-            />
-            <Select
-              value={filterPeriod}
-              onChange={setFilterPeriod}
-              className="w-32"
-            >
-              <Option value="all">All Time</Option>
-              <Option value="today">Today</Option>
-              <Option value="week">This Week</Option>
-              <Option value="month">This Month</Option>
-            </Select>
-          </Space>
-        }
-      >
+      <Card>
+        <PageHeader
+          title="Transaction History"
+          icon="receipt_long"
+          extra={
+            <Space>
+              <SearchInput
+                placeholder="Search transactions..."
+                value={searchTerm}
+                onSearch={setSearchTerm}
+                className="w-64"
+              />
+              <Select
+                value={filterPeriod}
+                onChange={setFilterPeriod}
+                className="w-32"
+              >
+                <Option value="all">All Time</Option>
+                <Option value="today">Today</Option>
+                <Option value="week">This Week</Option>
+                <Option value="month">This Month</Option>
+              </Select>
+            </Space>
+          }
+        />
+        
         <Table
           columns={columns}
           dataSource={filteredTransactions}
@@ -231,11 +270,16 @@ export function TransactionHistory() {
         title={`Transaction Details - ${selectedTransaction?.id}`}
         open={showDetailModal}
         onCancel={() => setShowDetailModal(false)}
-        footer={null}
-        width={700}
+        width={800}
+        footer={[
+          <ActionButton key="close" onClick={() => setShowDetailModal(false)}>
+            Close
+          </ActionButton>
+        ]}
       >
         {selectedTransaction && (
           <Space direction="vertical" size="large" className="w-full">
+            {/* Transaction Info */}
             <Descriptions bordered column={2}>
               <Descriptions.Item label="Transaction ID">
                 <Text code>{selectedTransaction.id}</Text>
@@ -249,16 +293,41 @@ export function TransactionHistory() {
               <Descriptions.Item label="Phone">
                 {selectedTransaction.customerPhone || 'N/A'}
               </Descriptions.Item>
+              <Descriptions.Item label="Email">
+                {selectedTransaction.customerEmail || 'N/A'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Address">
+                {selectedTransaction.customerAddress || 'N/A'}
+              </Descriptions.Item>
               <Descriptions.Item label="Cashier">
                 {selectedTransaction.cashier}
               </Descriptions.Item>
               <Descriptions.Item label="Payment Method">
-                <Tag icon={getPaymentMethodIcon(selectedTransaction.paymentMethod)} color="green">
+                <Tag icon={<Icon name={getPaymentMethodIcon(selectedTransaction.paymentMethod)} />} color="green">
                   {selectedTransaction.paymentMethod.toUpperCase()}
                 </Tag>
               </Descriptions.Item>
+              <Descriptions.Item label="Applied Coupon">
+                {selectedTransaction.appliedCoupon || 'None'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Status">
+                <StatusTag status={selectedTransaction.status || 'completed'}>
+                  {(selectedTransaction.status || 'completed').toUpperCase()}
+                </StatusTag>
+              </Descriptions.Item>
             </Descriptions>
 
+            {/* Order Notes */}
+            {selectedTransaction.notes && (
+              <div>
+                <Title level={5}>Order Notes</Title>
+                <div className="p-3 bg-gray-50 rounded border">
+                  <Text>{selectedTransaction.notes}</Text>
+                </div>
+              </div>
+            )}
+
+            {/* Items Purchased */}
             <div>
               <Title level={5}>Items Purchased</Title>
               <List
@@ -269,6 +338,7 @@ export function TransactionHistory() {
                       title={item.product.name}
                       description={
                         <Space>
+                          <Text type="secondary">SKU: {item.product.barcode}</Text>
                           <Text type="secondary">Qty: {item.quantity}</Text>
                           <Text type="secondary">Price: ${item.product.price.toFixed(2)}</Text>
                           <Text strong>Total: ${(item.product.price * item.quantity).toFixed(2)}</Text>
@@ -280,7 +350,52 @@ export function TransactionHistory() {
               />
             </div>
 
+            {/* Order Status Management */}
+            <div>
+              <Title level={5}>Order Status</Title>
+              <div className="flex items-center space-x-2 mb-4">
+                <Text>Current Status:</Text>
+                <StatusTag status={selectedTransaction.status || 'completed'}>
+                  {(selectedTransaction.status || 'completed').toUpperCase()}
+                </StatusTag>
+              </div>
+              
+              <div className="flex space-x-2">
+                <ActionButton
+                  onClick={() => handleUpdateStatus(selectedTransaction.id, 'pending')}
+                  disabled={selectedTransaction.status === 'pending'}
+                  size="small"
+                >
+                  Set Pending
+                </ActionButton>
+                <ActionButton
+                  onClick={() => handleUpdateStatus(selectedTransaction.id, 'processing')}
+                  disabled={selectedTransaction.status === 'processing'}
+                  size="small"
+                >
+                  Set Processing
+                </ActionButton>
+                <ActionButton
+                  onClick={() => handleUpdateStatus(selectedTransaction.id, 'completed')}
+                  disabled={selectedTransaction.status === 'completed'}
+                  size="small"
+                >
+                  Set Completed
+                </ActionButton>
+                <ActionButton
+                  onClick={() => handleUpdateStatus(selectedTransaction.id, 'cancelled')}
+                  disabled={selectedTransaction.status === 'cancelled'}
+                  danger
+                  size="small"
+                >
+                  Cancel Order
+                </ActionButton>
+              </div>
+            </div>
+
+            {/* Financial Summary */}
             <div className="bg-gray-50 p-4 rounded">
+              <Title level={5} className="mb-3">Financial Summary</Title>
               <Row gutter={16}>
                 <Col span={12}>
                   <Text>Subtotal: ${selectedTransaction.subtotal.toFixed(2)}</Text>

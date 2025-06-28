@@ -328,7 +328,11 @@ export const mockTransactions = [
     timestamp: new Date('2024-01-15T10:30:00'),
     cashier: 'Sarah Wilson',
     customerName: 'John Smith',
-    customerPhone: '+1-555-0123'
+    customerPhone: '+1-555-0123',
+    customerEmail: 'john.smith@email.com',
+    customerAddress: '123 Main St, City, State 12345',
+    status: 'completed',
+    notes: 'Customer requested white glove delivery service'
   },
   {
     id: 'TXN-002',
@@ -344,7 +348,29 @@ export const mockTransactions = [
     timestamp: new Date('2024-01-15T14:20:00'),
     cashier: 'Sarah Wilson',
     customerName: 'Jane Doe',
-    customerPhone: '+1-555-0456'
+    customerPhone: '+1-555-0456',
+    customerEmail: 'jane.doe@email.com',
+    status: 'processing',
+    appliedCoupon: 'WELCOME10',
+    notes: 'Assembly required - customer will pick up'
+  },
+  {
+    id: 'TXN-003',
+    items: [
+      { product: mockProducts[1], quantity: 1 }, // Modern Coffee Table
+      { product: mockProducts[8], quantity: 2 }  // Bar Stool
+    ],
+    subtotal: 479.97,
+    tax: 38.40,
+    discount: 0,
+    total: 518.37,
+    paymentMethod: 'digital',
+    timestamp: new Date('2024-01-16T09:15:00'),
+    cashier: 'Sarah Wilson',
+    customerName: 'Mike Johnson',
+    customerPhone: '+1-555-0789',
+    status: 'pending',
+    notes: 'Customer will confirm delivery address later'
   }
 ];
 
@@ -359,7 +385,7 @@ export const mockCoupons = [
     minimumAmount: 100,
     maxDiscount: 50,
     usageLimit: 100,
-    usedCount: 15,
+    usedCount: 16, // Updated to reflect usage
     validFrom: new Date('2024-01-01'),
     validTo: new Date('2024-12-31'),
     isActive: true,

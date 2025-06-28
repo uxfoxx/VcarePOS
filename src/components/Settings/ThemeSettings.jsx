@@ -18,7 +18,7 @@ import {
   Image,
   Alert
 } from 'antd';
-import { Color } from 'antd/es/color-picker/color';
+import Color from 'antd/es/color-picker/color';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';

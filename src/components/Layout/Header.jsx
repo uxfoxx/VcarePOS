@@ -137,13 +137,6 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
             />
           </Badge>
         </Dropdown>
-
-        <Button
-          type="primary"
-          className="bg-orange-500 hover:bg-orange-600 border-orange-500 hover:border-orange-600"
-        >
-          Select Table
-        </Button>
         
         <Dropdown 
           menu={{ items: userMenuItems }} 

@@ -3,7 +3,6 @@ import {
   Table, 
   Input, 
   Space, 
-  Modal, 
   Form, 
   Typography,
   Tag,
@@ -11,8 +10,8 @@ import {
   message,
   Row,
   Col,
-  ColorPicker,
-  Card
+  Card,
+  Switch
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { ActionButton } from '../common/ActionButton';
@@ -39,12 +38,21 @@ export function CategoryManagement() {
 
   const handleSubmit = async (values) => {
     try {
+      // Check for duplicate category names
+      const existingCategory = categories.find(cat => 
+        cat.name.toLowerCase() === values.name.toLowerCase() && 
+        cat.id !== editingCategory?.id
+      );
+
+      if (existingCategory) {
+        message.error('Category name already exists');
+        return;
+      }
+
       const categoryData = {
         id: editingCategory?.id || `CAT-${Date.now()}`,
         name: values.name,
         description: values.description,
-        color: values.color || 'blue',
-        icon: values.icon || 'category',
         isActive: values.isActive !== false,
         createdAt: editingCategory?.createdAt || new Date()
       };
@@ -73,8 +81,9 @@ export function CategoryManagement() {
 
   const handleDelete = (categoryId) => {
     // Check if category is being used by any products
+    const categoryToDelete = categories.find(cat => cat.id === categoryId);
     const productsUsingCategory = state.products.filter(product => 
-      product.category === categories.find(cat => cat.id === categoryId)?.name
+      product.category === categoryToDelete?.name
     );
 
     if (productsUsingCategory.length > 0) {
@@ -86,28 +95,26 @@ export function CategoryManagement() {
     message.success('Category deleted successfully');
   };
 
+  const handleToggleStatus = (category) => {
+    const updatedCategory = { ...category, isActive: !category.isActive };
+    dispatch({ type: 'UPDATE_CATEGORY', payload: updatedCategory });
+    message.success(`Category ${updatedCategory.isActive ? 'activated' : 'deactivated'}`);
+  };
+
   const getProductCount = (categoryName) => {
     return state.products.filter(product => product.category === categoryName).length;
   };
 
   const columns = [
     {
-      title: 'Category',
+      title: 'Category Name',
       dataIndex: 'name',
       key: 'name',
       render: (text, record) => (
-        <div className="flex items-center space-x-3">
-          <div 
-            className="w-10 h-10 rounded-lg flex items-center justify-center text-white"
-            style={{ backgroundColor: record.color }}
-          >
-            <Icon name={record.icon || 'category'} />
-          </div>
-          <div>
-            <Text strong>{record.name}</Text>
-            <br />
-            <Text type="secondary" className="text-xs">{record.description}</Text>
-          </div>
+        <div>
+          <Text strong className="text-base">{record.name}</Text>
+          <br />
+          <Text type="secondary" className="text-sm">{record.description}</Text>
         </div>
       ),
     },
@@ -117,7 +124,7 @@ export function CategoryManagement() {
       render: (record) => {
         const count = getProductCount(record.name);
         return (
-          <Tag color={count > 0 ? 'green' : 'default'}>
+          <Tag color={count > 0 ? 'blue' : 'default'}>
             {count} product{count !== 1 ? 's' : ''}
           </Tag>
         );
@@ -125,12 +132,13 @@ export function CategoryManagement() {
     },
     {
       title: 'Status',
-      dataIndex: 'isActive',
-      key: 'isActive',
-      render: (isActive) => (
-        <Tag color={isActive ? 'green' : 'red'}>
-          {isActive ? 'Active' : 'Inactive'}
-        </Tag>
+      key: 'status',
+      render: (record) => (
+        <Switch
+          checked={record.isActive}
+          onChange={() => handleToggleStatus(record)}
+          size="small"
+        />
       ),
     },
     {
@@ -253,66 +261,34 @@ export function CategoryManagement() {
         width={600}
         submitText={editingCategory ? 'Update Category' : 'Add Category'}
       >
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              name="name"
-              label="Category Name"
-              rules={[{ required: true, message: 'Please enter category name' }]}
-            >
-              <Input placeholder="e.g., Tables, Chairs" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="icon"
-              label="Icon"
-              initialValue="category"
-            >
-              <Input 
-                placeholder="Material icon name"
-                addonBefore={<Icon name={form.getFieldValue('icon') || 'category'} />}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
         <Form.Item
-          name="color"
-          label="Category Color"
-          initialValue="#0E72BD"
+          name="name"
+          label="Category Name"
+          rules={[
+            { required: true, message: 'Please enter category name' },
+            { min: 2, message: 'Category name must be at least 2 characters' },
+            { max: 50, message: 'Category name must be less than 50 characters' }
+          ]}
         >
-          <ColorPicker 
-            showText 
-            format="hex"
-            presets={[
-              {
-                label: 'Recommended',
-                colors: [
-                  '#0E72BD',
-                  '#52c41a',
-                  '#fa8c16',
-                  '#f5222d',
-                  '#722ed1',
-                  '#13c2c2',
-                  '#eb2f96',
-                  '#1890ff'
-                ]
-              }
-            ]}
-          />
+          <Input placeholder="e.g., Tables, Chairs, Storage" />
         </Form.Item>
 
-        <Form.Item name="description" label="Description">
+        <Form.Item 
+          name="description" 
+          label="Description"
+          rules={[
+            { max: 200, message: 'Description must be less than 200 characters' }
+          ]}
+        >
           <TextArea
             rows={3}
-            placeholder="Enter category description"
+            placeholder="Enter category description (optional)"
           />
         </Form.Item>
 
         <Form.Item name="isActive" valuePropName="checked" initialValue={true}>
           <div className="flex items-center space-x-2">
-            <input type="checkbox" />
+            <Switch />
             <Text>Active</Text>
           </div>
         </Form.Item>

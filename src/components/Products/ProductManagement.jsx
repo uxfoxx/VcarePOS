@@ -166,7 +166,7 @@ export function ProductManagement() {
       render: (category) => {
         const categoryData = state.categories?.find(cat => cat.name === category);
         return (
-          <Tag color={categoryData?.color || 'blue'}>
+          <Tag color="blue">
             {category}
           </Tag>
         );
@@ -347,7 +347,7 @@ export function ProductManagement() {
               rules={[{ required: true, message: 'Please select category' }]}
             >
               <Select placeholder="Select category">
-                {state.categories?.map(category => (
+                {state.categories?.filter(cat => cat.isActive).map(category => (
                   <Option key={category.id} value={category.name}>
                     {category.name}
                   </Option>

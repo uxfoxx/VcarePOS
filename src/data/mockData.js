@@ -116,8 +116,6 @@ export const mockCategories = [
     id: 'CAT-001',
     name: 'Tables',
     description: 'All types of tables including dining, coffee, and office tables',
-    color: '#0E72BD',
-    icon: 'table_restaurant',
     isActive: true,
     createdAt: new Date('2024-01-01')
   },
@@ -125,8 +123,6 @@ export const mockCategories = [
     id: 'CAT-002',
     name: 'Chairs',
     description: 'Seating furniture including office chairs, dining chairs, and accent chairs',
-    color: '#52c41a',
-    icon: 'chair',
     isActive: true,
     createdAt: new Date('2024-01-01')
   },
@@ -134,8 +130,6 @@ export const mockCategories = [
     id: 'CAT-003',
     name: 'Storage',
     description: 'Storage solutions including cabinets, shelves, and wardrobes',
-    color: '#fa8c16',
-    icon: 'inventory_2',
     isActive: true,
     createdAt: new Date('2024-01-01')
   },
@@ -143,8 +137,6 @@ export const mockCategories = [
     id: 'CAT-004',
     name: 'Sofas & Seating',
     description: 'Comfortable seating including sofas, loveseats, and recliners',
-    color: '#722ed1',
-    icon: 'weekend',
     isActive: true,
     createdAt: new Date('2024-01-01')
   },
@@ -152,8 +144,6 @@ export const mockCategories = [
     id: 'CAT-005',
     name: 'Bedroom',
     description: 'Bedroom furniture including beds, nightstands, and dressers',
-    color: '#eb2f96',
-    icon: 'bed',
     isActive: true,
     createdAt: new Date('2024-01-01')
   },
@@ -161,8 +151,6 @@ export const mockCategories = [
     id: 'CAT-006',
     name: 'Office Furniture',
     description: 'Professional office furniture and accessories',
-    color: '#13c2c2',
-    icon: 'business_center',
     isActive: false,
     createdAt: new Date('2024-01-01')
   }

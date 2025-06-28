@@ -16,8 +16,6 @@ import { PageHeader } from '../common/PageHeader';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
 
-const { TabPane } = Tabs;
-
 export function ProductGrid({ collapsed }) {
   const { state, dispatch } = usePOS();
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,8 +23,9 @@ export function ProductGrid({ collapsed }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
-  // Categories for furniture
-  const categories = ['All', 'Tables', 'Chairs'];
+  // Get categories from state, including only active ones
+  const activeCategories = state.categories?.filter(cat => cat.isActive) || [];
+  const categoryNames = ['All', ...activeCategories.map(cat => cat.name)];
   
   const filteredProducts = state.products
     .filter(product => {
@@ -58,6 +57,12 @@ export function ProductGrid({ collapsed }) {
     }
   };
 
+  const tabItems = categoryNames.map(category => ({
+    key: category,
+    label: category,
+    children: null
+  }));
+
   return (
     <>
       <Card 
@@ -86,11 +91,8 @@ export function ProductGrid({ collapsed }) {
             onChange={setSelectedCategory}
             type="card"
             size="small"
-          >
-            {categories.map(category => (
-              <TabPane tab={category} key={category} />
-            ))}
-          </Tabs>
+            items={tabItems}
+          />
         </div>
 
         {/* Product Grid */}
@@ -98,7 +100,13 @@ export function ProductGrid({ collapsed }) {
           {filteredProducts.length === 0 ? (
             <Empty
               image={<Icon name="inventory_2" className="text-6xl text-gray-300 mb-4" />}
-              description="No products found"
+              description={
+                searchTerm ? 
+                  `No products found for "${searchTerm}"` : 
+                  selectedCategory === 'All' ? 
+                    'No products available' : 
+                    `No products found in "${selectedCategory}" category`
+              }
             />
           ) : (
             <Row gutter={[16, 16]}>

@@ -9,7 +9,7 @@ import {
   Tooltip,
 } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
-import { usePOS } from '../../contexts/POSContext';
+import { useOptimizedPOS } from '../../contexts/OptimizedPOSContext';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
 
@@ -18,7 +18,7 @@ const { Text, Title } = Typography;
 
 export function Header({ collapsed, onCollapse, activeTab, style }) {
   const { currentUser, logout } = useAuth();
-  const { state } = usePOS();
+  const { state } = useOptimizedPOS();
 
   const userMenuItems = [
     {

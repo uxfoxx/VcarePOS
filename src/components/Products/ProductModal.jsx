@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Modal, 
   Steps, 
@@ -42,11 +42,20 @@ export function ProductModal({
   const [imagePreview, setImagePreview] = useState(null);
 
   // Initialize form data when editing
-  React.useEffect(() => {
+  useEffect(() => {
     if (editingProduct && open) {
+      // Set product form values
       productForm.setFieldsValue({
-        ...editingProduct,
-        dimensions: editingProduct.dimensions
+        name: editingProduct.name || '',
+        category: editingProduct.category || '',
+        price: editingProduct.price || 0,
+        stock: editingProduct.stock || 0,
+        barcode: editingProduct.barcode || '',
+        description: editingProduct.description || '',
+        weight: editingProduct.weight || 0,
+        material: editingProduct.material || '',
+        color: editingProduct.color || '',
+        dimensions: editingProduct.dimensions || {}
       });
       
       // Enrich raw materials with full details from state
@@ -158,26 +167,39 @@ export function ProductModal({
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      const productValues = await productForm.validateFields();
+      
+      // Get all form values
+      const productValues = productForm.getFieldsValue();
+      
+      // Validate required fields manually
+      if (!productValues.name || !productValues.category || !productValues.price || productValues.stock === undefined) {
+        message.error('Please fill in all required fields (Name, Category, Price, Stock)');
+        setLoading(false);
+        return;
+      }
       
       const productData = {
         id: editingProduct?.id || `PROD-${Date.now()}`,
         name: productValues.name,
-        price: productValues.price,
+        price: Number(productValues.price) || 0,
         category: productValues.category,
-        stock: productValues.stock,
-        barcode: productValues.barcode,
-        description: productValues.description,
-        dimensions: productValues.dimensions ? {
-          length: productValues.dimensions.length,
-          width: productValues.dimensions.width,
-          height: productValues.dimensions.height,
-          unit: productValues.dimensions.unit
-        } : undefined,
-        weight: productValues.weight,
-        material: productValues.material,
-        color: productValues.color,
-        image: imagePreview || productValues.image,
+        stock: Number(productValues.stock) || 0,
+        barcode: productValues.barcode || '',
+        description: productValues.description || '',
+        dimensions: productValues.dimensions && (
+          productValues.dimensions.length || 
+          productValues.dimensions.width || 
+          productValues.dimensions.height
+        ) ? {
+          length: Number(productValues.dimensions.length) || 0,
+          width: Number(productValues.dimensions.width) || 0,
+          height: Number(productValues.dimensions.height) || 0,
+          unit: productValues.dimensions.unit || 'cm'
+        } : null,
+        weight: Number(productValues.weight) || 0,
+        material: productValues.material || '',
+        color: productValues.color || '',
+        image: imagePreview || productValues.image || '',
         rawMaterials: selectedMaterials.map(m => ({
           rawMaterialId: m.rawMaterialId,
           quantity: m.quantity
@@ -187,7 +209,8 @@ export function ProductModal({
       await onSubmit(productData);
       handleClose();
     } catch (error) {
-      message.error('Please complete all required fields');
+      console.error('Error submitting product:', error);
+      message.error('Failed to save product. Please try again.');
     } finally {
       setLoading(false);
     }

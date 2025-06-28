@@ -235,6 +235,7 @@ export function ProductGrid({ collapsed }) {
                 width={200}
                 height={150}
                 className="object-cover rounded"
+                preview={false}
               />
               <div className="flex-1">
                 <Title level={4}>{selectedProduct.name}</Title>

@@ -24,58 +24,21 @@ const { Title, Text } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
 
-export function CheckoutModal({ open, onClose, cartItems, orderTotal }) {
+export function CheckoutModal({ open, onClose, cartItems, orderTotal, appliedCoupon, couponDiscount }) {
   const { state, dispatch } = usePOS();
   const [currentStep, setCurrentStep] = useState(0);
   const [customerForm] = Form.useForm();
   const [paymentForm] = Form.useForm();
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [orderNotes, setOrderNotes] = useState('');
-  const [couponCode, setCouponCode] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [loading, setLoading] = useState(false);
   const [completedTransaction, setCompletedTransaction] = useState(null);
   const [showInvoice, setShowInvoice] = useState(false);
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-  const tax = subtotal * 0.08; // 8% tax
-  const couponDiscount = appliedCoupon ? (subtotal * appliedCoupon.discountPercent) / 100 : 0;
-  const total = subtotal + tax - couponDiscount;
-
-  const handleApplyCoupon = () => {
-    const coupon = state.coupons?.find(c => c.code === couponCode && c.isActive);
-    if (coupon) {
-      // Check if coupon is valid
-      const now = new Date();
-      const isExpired = coupon.validTo && new Date(coupon.validTo) < now;
-      const isUsedUp = coupon.usageLimit && coupon.usedCount >= coupon.usageLimit;
-      const meetsMinimum = !coupon.minimumAmount || subtotal >= coupon.minimumAmount;
-
-      if (isExpired) {
-        message.error('Coupon has expired');
-        return;
-      }
-      if (isUsedUp) {
-        message.error('Coupon usage limit reached');
-        return;
-      }
-      if (!meetsMinimum) {
-        message.error(`Minimum order amount is $${coupon.minimumAmount}`);
-        return;
-      }
-
-      setAppliedCoupon(coupon);
-      message.success(`Coupon applied! ${coupon.discountPercent}% discount`);
-      setCouponCode('');
-    } else {
-      message.error('Invalid or expired coupon code');
-    }
-  };
-
-  const handleRemoveCoupon = () => {
-    setAppliedCoupon(null);
-    message.info('Coupon removed');
-  };
+  const taxableAmount = subtotal - (couponDiscount || 0);
+  const tax = taxableAmount * ((state.taxSettings?.rate || 8) / 100);
+  const total = taxableAmount + tax;
 
   const handleNext = () => {
     if (currentStep === 1) {
@@ -105,7 +68,7 @@ export function CheckoutModal({ open, onClose, cartItems, orderTotal }) {
         items: cartItems,
         subtotal,
         tax,
-        discount: couponDiscount,
+        discount: couponDiscount || 0,
         total,
         paymentMethod,
         timestamp: new Date(),
@@ -152,9 +115,7 @@ export function CheckoutModal({ open, onClose, cartItems, orderTotal }) {
       
       // Reset form states
       setCurrentStep(0);
-      setAppliedCoupon(null);
       setOrderNotes('');
-      setCouponCode('');
       setPaymentMethod('card');
       customerForm.resetFields();
       paymentForm.resetFields();
@@ -172,7 +133,7 @@ export function CheckoutModal({ open, onClose, cartItems, orderTotal }) {
       icon: <Icon name="receipt_long" />,
     },
     {
-      title: 'Customer & Details',
+      title: 'Customer Details',
       icon: <Icon name="person" />,
     },
     {
@@ -214,16 +175,16 @@ export function CheckoutModal({ open, onClose, cartItems, orderTotal }) {
           <Text>Subtotal</Text>
           <Text>${subtotal.toFixed(2)}</Text>
         </div>
-        <div className="flex justify-between">
-          <Text>Tax (8%)</Text>
-          <Text>${tax.toFixed(2)}</Text>
-        </div>
         {appliedCoupon && (
           <div className="flex justify-between">
             <Text className="text-green-600">Coupon ({appliedCoupon.code})</Text>
             <Text className="text-green-600">-${couponDiscount.toFixed(2)}</Text>
           </div>
         )}
+        <div className="flex justify-between">
+          <Text>Tax ({state.taxSettings?.rate || 8}%)</Text>
+          <Text>${tax.toFixed(2)}</Text>
+        </div>
         <Divider className="my-2" />
         <div className="flex justify-between">
           <Title level={5} className="m-0">Total</Title>
@@ -237,7 +198,7 @@ export function CheckoutModal({ open, onClose, cartItems, orderTotal }) {
 
   const renderCustomerDetails = () => (
     <div className="space-y-4">
-      <Title level={4}>Customer Information & Order Details</Title>
+      <Title level={4}>Customer Information</Title>
       
       <Form form={customerForm} layout="vertical">
         <Row gutter={16}>
@@ -274,45 +235,6 @@ export function CheckoutModal({ open, onClose, cartItems, orderTotal }) {
           />
         </Form.Item>
       </Form>
-
-      <Divider />
-
-      {/* Coupon Section */}
-      <div className="space-y-3">
-        <Text strong>Apply Coupon Code</Text>
-        {appliedCoupon ? (
-          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <Text strong className="text-green-800">{appliedCoupon.code}</Text>
-                <br />
-                <Text className="text-green-600 text-sm">
-                  {appliedCoupon.discountPercent}% discount applied
-                </Text>
-              </div>
-              <ActionButton.Text 
-                icon="close"
-                danger 
-                size="small"
-                onClick={handleRemoveCoupon}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="flex space-x-2">
-            <Input 
-              placeholder="Enter coupon code"
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value)}
-              prefix={<Icon name="local_offer" className="text-gray-400" />}
-              onPressEnter={handleApplyCoupon}
-            />
-            <ActionButton.Primary onClick={handleApplyCoupon}>
-              Apply
-            </ActionButton.Primary>
-          </div>
-        )}
-      </div>
 
       <Divider />
 
@@ -384,16 +306,16 @@ export function CheckoutModal({ open, onClose, cartItems, orderTotal }) {
             <Text>Items ({cartItems.length})</Text>
             <Text>${subtotal.toFixed(2)}</Text>
           </div>
-          <div className="flex justify-between">
-            <Text>Tax</Text>
-            <Text>${tax.toFixed(2)}</Text>
-          </div>
           {appliedCoupon && (
             <div className="flex justify-between">
               <Text className="text-green-600">Discount</Text>
               <Text className="text-green-600">-${couponDiscount.toFixed(2)}</Text>
             </div>
           )}
+          <div className="flex justify-between">
+            <Text>Tax</Text>
+            <Text>${tax.toFixed(2)}</Text>
+          </div>
           <Divider className="my-2" />
           <div className="flex justify-between">
             <Title level={4} className="m-0">Total</Title>

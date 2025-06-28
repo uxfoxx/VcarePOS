@@ -444,3 +444,39 @@ export const mockCoupons = [
     createdAt: new Date('2023-12-01')
   }
 ];
+
+export const mockTaxes = [
+  {
+    id: 'TAX-001',
+    name: 'Sales Tax',
+    description: 'Standard sales tax for all products',
+    rate: 8.0,
+    type: 'sales',
+    isActive: true,
+    isDefault: true,
+    applicableCategories: [],
+    createdAt: new Date('2024-01-01')
+  },
+  {
+    id: 'TAX-002',
+    name: 'Luxury Tax',
+    description: 'Additional tax for luxury furniture items',
+    rate: 15.0,
+    type: 'luxury',
+    isActive: true,
+    isDefault: false,
+    applicableCategories: ['Tables'],
+    createdAt: new Date('2024-01-01')
+  },
+  {
+    id: 'TAX-003',
+    name: 'Service Tax',
+    description: 'Tax for assembly and delivery services',
+    rate: 5.0,
+    type: 'service',
+    isActive: false,
+    isDefault: false,
+    applicableCategories: [],
+    createdAt: new Date('2024-01-01')
+  }
+];

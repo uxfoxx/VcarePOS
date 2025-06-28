@@ -76,6 +76,7 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
       'transactions': 'Orders',
       'reports': 'Reports & Analytics',
       'coupons': 'Coupon Management',
+      'tax': 'Tax Management',
       'settings': 'Settings'
     };
     return titles[activeTab] || 'VCare POS';

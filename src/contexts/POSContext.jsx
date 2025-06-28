@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer } from 'react';
-import { mockProducts, mockRawMaterials, mockTransactions, mockCoupons } from '../data/mockData';
+import { mockProducts, mockRawMaterials, mockTransactions, mockCoupons, mockTaxes } from '../data/mockData';
 
 const initialState = {
   cart: [],
@@ -7,6 +7,12 @@ const initialState = {
   rawMaterials: mockRawMaterials,
   transactions: mockTransactions,
   coupons: mockCoupons,
+  taxes: mockTaxes,
+  taxSettings: {
+    rate: 8,
+    name: 'Sales Tax',
+    defaultTaxId: 'TAX-001'
+  },
   currentUser: { name: 'Sarah Wilson', role: 'manager' },
   customers: []
 };
@@ -131,6 +137,33 @@ function posReducer(state, action) {
       return {
         ...state,
         coupons: (state.coupons || []).filter(coupon => coupon.id !== action.payload)
+      };
+    case 'ADD_TAX':
+      return {
+        ...state,
+        taxes: [...(state.taxes || []), action.payload]
+      };
+    case 'UPDATE_TAX':
+      return {
+        ...state,
+        taxes: (state.taxes || []).map(tax =>
+          tax.id === action.payload.id ? action.payload : tax
+        )
+      };
+    case 'DELETE_TAX':
+      return {
+        ...state,
+        taxes: (state.taxes || []).filter(tax => tax.id !== action.payload)
+      };
+    case 'CLEAR_DEFAULT_TAX':
+      return {
+        ...state,
+        taxes: (state.taxes || []).map(tax => ({ ...tax, isDefault: false }))
+      };
+    case 'UPDATE_TAX_SETTINGS':
+      return {
+        ...state,
+        taxSettings: { ...state.taxSettings, ...action.payload }
       };
     case 'SET_USER':
       return {

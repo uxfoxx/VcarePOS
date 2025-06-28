@@ -8,7 +8,9 @@ import {
   Divider, 
   Badge,
   Popconfirm,
-  message
+  message,
+  Input,
+  Button
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { ActionButton } from '../common/ActionButton';
@@ -20,10 +22,14 @@ const { Title, Text } = Typography;
 export function Cart() {
   const { state, dispatch } = usePOS();
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponCode, setCouponCode] = useState('');
 
   const subtotal = state.cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-  const tax = subtotal * 0.08; // 8% tax
-  const total = subtotal + tax;
+  const couponDiscount = appliedCoupon ? (subtotal * appliedCoupon.discountPercent) / 100 : 0;
+  const taxableAmount = subtotal - couponDiscount;
+  const tax = taxableAmount * ((state.taxSettings?.rate || 8) / 100);
+  const total = taxableAmount + tax;
 
   const handleQuantityChange = (productId, newQuantity) => {
     if (newQuantity <= 0) {
@@ -31,6 +37,41 @@ export function Cart() {
     } else {
       dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, quantity: newQuantity } });
     }
+  };
+
+  const handleApplyCoupon = () => {
+    const coupon = state.coupons?.find(c => c.code === couponCode && c.isActive);
+    if (coupon) {
+      // Check if coupon is valid
+      const now = new Date();
+      const isExpired = coupon.validTo && new Date(coupon.validTo) < now;
+      const isUsedUp = coupon.usageLimit && coupon.usedCount >= coupon.usageLimit;
+      const meetsMinimum = !coupon.minimumAmount || subtotal >= coupon.minimumAmount;
+
+      if (isExpired) {
+        message.error('Coupon has expired');
+        return;
+      }
+      if (isUsedUp) {
+        message.error('Coupon usage limit reached');
+        return;
+      }
+      if (!meetsMinimum) {
+        message.error(`Minimum order amount is $${coupon.minimumAmount}`);
+        return;
+      }
+
+      setAppliedCoupon(coupon);
+      message.success(`Coupon applied! ${coupon.discountPercent}% discount`);
+      setCouponCode('');
+    } else {
+      message.error('Invalid or expired coupon code');
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    message.info('Coupon removed');
   };
 
   const handleProceedToCheckout = () => {
@@ -124,8 +165,57 @@ export function Cart() {
                   <Text>Subtotal</Text>
                   <Text>${subtotal.toFixed(2)}</Text>
                 </div>
+
+                {/* Coupon Section */}
+                <div className="space-y-2">
+                  {appliedCoupon ? (
+                    <div className="p-2 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Text strong className="text-green-800 text-sm">{appliedCoupon.code}</Text>
+                          <br />
+                          <Text className="text-green-600 text-xs">
+                            {appliedCoupon.discountPercent}% discount
+                          </Text>
+                        </div>
+                        <ActionButton.Text 
+                          icon="close"
+                          danger 
+                          size="small"
+                          onClick={handleRemoveCoupon}
+                        />
+                      </div>
+                      <div className="flex justify-between mt-1">
+                        <Text className="text-green-600 text-sm">Discount</Text>
+                        <Text className="text-green-600 text-sm">-${couponDiscount.toFixed(2)}</Text>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Text className="text-sm font-medium">Apply Coupon</Text>
+                      <div className="flex space-x-1">
+                        <Input 
+                          placeholder="Coupon code"
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value)}
+                          size="small"
+                          onPressEnter={handleApplyCoupon}
+                        />
+                        <Button 
+                          size="small" 
+                          type="primary"
+                          onClick={handleApplyCoupon}
+                          disabled={!couponCode.trim()}
+                        >
+                          Apply
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-between">
-                  <Text>Tax (8%)</Text>
+                  <Text>Tax ({state.taxSettings?.rate || 8}%)</Text>
                   <Text>${tax.toFixed(2)}</Text>
                 </div>
                 <Divider className="my-2" />
@@ -160,6 +250,8 @@ export function Cart() {
         onClose={() => setShowCheckoutModal(false)}
         cartItems={state.cart}
         orderTotal={total}
+        appliedCoupon={appliedCoupon}
+        couponDiscount={couponDiscount}
       />
     </>
   );

@@ -12,6 +12,7 @@ import { TransactionHistory } from './components/Transactions/TransactionHistory
 import { ReportsOverview } from './components/Reports/ReportsOverview';
 import { SettingsPanel } from './components/Settings/SettingsPanel';
 import { CouponManagement } from './components/Coupons/CouponManagement';
+import { TaxManagement } from './components/Tax/TaxManagement';
 
 const { Sider, Content } = Layout;
 
@@ -36,6 +37,7 @@ function App() {
       'transactions': <TransactionHistory />,
       'reports': <ReportsOverview />,
       'coupons': <CouponManagement />,
+      'tax': <TaxManagement />,
       'settings': <SettingsPanel />,
     };
 

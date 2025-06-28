@@ -39,6 +39,11 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
       label: 'Coupons',
     },
     {
+      key: 'tax',
+      icon: <Icon name="receipt" />,
+      label: 'Tax Management',
+    },
+    {
       key: 'settings',
       icon: <Icon name="settings" />,
       label: 'Settings',

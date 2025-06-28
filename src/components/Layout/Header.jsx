@@ -7,7 +7,6 @@ import {
   Button, 
   Space, 
   Typography, 
-  Input,
   Tooltip,
   Divider
 } from 'antd';
@@ -98,34 +97,9 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
         </Tooltip>
 
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-              <img 
-                src="/VCARELogo 1.png" 
-                alt="VCare Logo" 
-                className="w-6 h-6 object-contain"
-              />
-            </div>
-            <div className="hidden sm:block">
-              <Title level={4} className="m-0 text-gray-900">
-                VCare POS
-              </Title>
-              <Text type="secondary" className="text-xs">
-                {getPageTitle()}
-              </Text>
-            </div>
-          </div>
-        </div>
-
-        <Divider type="vertical" className="h-8" />
-        
-        <div className="hidden md:block">
-          <Input
-            placeholder="Search products..."
-            prefix={<span className="material-icons text-gray-400">search</span>}
-            className="w-80"
-            size="large"
-          />
+          <Title level={4} className="m-0 text-gray-900">
+            {getPageTitle()}
+          </Title>
         </div>
       </div>
       

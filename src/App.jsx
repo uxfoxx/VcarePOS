@@ -23,7 +23,7 @@ function App() {
       'pos': (
         <div className="flex h-full gap-6">
           <div className="flex-1">
-            <ProductGrid />
+            <ProductGrid collapsed={collapsed} />
           </div>
           <div className="w-96">
             <Cart />

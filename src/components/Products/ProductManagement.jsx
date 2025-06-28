@@ -145,7 +145,7 @@ export function ProductManagement() {
       title: 'Price',
       dataIndex: 'price',
       key: 'price',
-      render: (price) => <Text strong>${price.toFixed(2)}</Text>,
+      render: (price) => <Text strong>${(price || 0).toFixed(2)}</Text>,
     },
     {
       title: 'Stock',

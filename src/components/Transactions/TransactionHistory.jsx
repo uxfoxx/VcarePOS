@@ -14,7 +14,8 @@ import {
   Modal,
   List,
   Button,
-  message
+  message,
+  Dropdown
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
@@ -22,6 +23,7 @@ import { ActionButton } from '../common/ActionButton';
 import { StatusTag } from '../common/StatusTag';
 import { PageHeader } from '../common/PageHeader';
 import { SearchInput } from '../common/SearchInput';
+import { InvoiceModal } from '../Invoices/InvoiceModal';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -32,6 +34,8 @@ export function TransactionHistory() {
   const [filterPeriod, setFilterPeriod] = useState('all');
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [invoiceType, setInvoiceType] = useState('detailed');
 
   const filteredTransactions = state.transactions.filter(transaction => {
     const matchesSearch = transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -54,6 +58,12 @@ export function TransactionHistory() {
   const handleViewDetails = (transaction) => {
     setSelectedTransaction(transaction);
     setShowDetailModal(true);
+  };
+
+  const handleShowInvoice = (transaction, type = 'detailed') => {
+    setSelectedTransaction(transaction);
+    setInvoiceType(type);
+    setShowInvoiceModal(true);
   };
 
   const handleUpdateStatus = (transactionId, newStatus) => {
@@ -85,16 +95,26 @@ export function TransactionHistory() {
     }
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      'pending': 'orange',
-      'processing': 'blue',
-      'completed': 'green',
-      'cancelled': 'red',
-      'refunded': 'purple'
-    };
-    return colors[status] || 'default';
-  };
+  const getActionMenuItems = (record) => [
+    {
+      key: 'view',
+      icon: <Icon name="visibility" />,
+      label: 'View Details',
+      onClick: () => handleViewDetails(record)
+    },
+    {
+      key: 'invoice',
+      icon: <Icon name="receipt_long" />,
+      label: 'View Invoice',
+      onClick: () => handleShowInvoice(record, 'detailed')
+    },
+    {
+      key: 'labels',
+      icon: <Icon name="label" />,
+      label: 'Print Item Labels',
+      onClick: () => handleShowInvoice(record, 'labels')
+    }
+  ];
 
   const columns = [
     {
@@ -179,11 +199,17 @@ export function TransactionHistory() {
       title: 'Actions',
       key: 'actions',
       render: (record) => (
-        <ActionButton.Text
-          icon="visibility"
-          onClick={() => handleViewDetails(record)}
-          className="text-[#0E72BD] hover:text-blue-700"
-        />
+        <Dropdown
+          menu={{
+            items: getActionMenuItems(record)
+          }}
+          trigger={['click']}
+        >
+          <ActionButton.Text
+            icon="more_vert"
+            className="text-[#0E72BD] hover:text-blue-700"
+          />
+        </Dropdown>
       ),
     },
   ];
@@ -274,6 +300,20 @@ export function TransactionHistory() {
         footer={[
           <ActionButton key="close" onClick={() => setShowDetailModal(false)}>
             Close
+          </ActionButton>,
+          <ActionButton 
+            key="invoice" 
+            icon="receipt_long"
+            onClick={() => handleShowInvoice(selectedTransaction, 'detailed')}
+          >
+            View Invoice
+          </ActionButton>,
+          <ActionButton 
+            key="labels" 
+            icon="label"
+            onClick={() => handleShowInvoice(selectedTransaction, 'labels')}
+          >
+            Print Labels
           </ActionButton>
         ]}
       >
@@ -416,6 +456,17 @@ export function TransactionHistory() {
           </Space>
         )}
       </Modal>
+
+      {/* Invoice Modal */}
+      <InvoiceModal
+        open={showInvoiceModal}
+        onClose={() => {
+          setShowInvoiceModal(false);
+          setSelectedTransaction(null);
+        }}
+        transaction={selectedTransaction}
+        type={invoiceType}
+      />
     </Space>
   );
 }

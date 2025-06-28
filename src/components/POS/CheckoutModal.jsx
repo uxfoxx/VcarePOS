@@ -18,6 +18,7 @@ import {
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
+import { InvoiceModal } from '../Invoices/InvoiceModal';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -33,6 +34,8 @@ export function CheckoutModal({ open, onClose, cartItems, orderTotal }) {
   const [couponCode, setCouponCode] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [loading, setLoading] = useState(false);
+  const [completedTransaction, setCompletedTransaction] = useState(null);
+  const [showInvoice, setShowInvoice] = useState(false);
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
   const tax = subtotal * 0.08; // 8% tax
@@ -113,7 +116,7 @@ export function CheckoutModal({ open, onClose, cartItems, orderTotal }) {
         customerAddress: customerData.customerAddress,
         appliedCoupon: appliedCoupon?.code,
         notes: orderNotes,
-        status: 'completed' // New field for order status
+        status: 'completed'
       };
 
       // Update product stock
@@ -139,6 +142,12 @@ export function CheckoutModal({ open, onClose, cartItems, orderTotal }) {
       dispatch({ type: 'CLEAR_CART' });
       
       message.success('Order completed successfully!');
+      
+      // Set completed transaction and show invoice
+      setCompletedTransaction(transaction);
+      setShowInvoice(true);
+      
+      // Close checkout modal
       onClose();
       
       // Reset form states
@@ -411,53 +420,66 @@ export function CheckoutModal({ open, onClose, cartItems, orderTotal }) {
   };
 
   return (
-    <Modal
-      title="Complete Order"
-      open={open}
-      onCancel={onClose}
-      width={800}
-      footer={null}
-      destroyOnClose
-    >
-      <div className="space-y-6">
-        <Steps current={currentStep} items={steps} />
-        
-        <div className="min-h-[400px]">
-          {renderStepContent()}
-        </div>
-
-        <div className="flex justify-between pt-4 border-t">
-          <div>
-            {currentStep > 0 && (
-              <ActionButton onClick={handlePrev}>
-                <Icon name="arrow_back" className="mr-2" />
-                Previous
-              </ActionButton>
-            )}
-          </div>
+    <>
+      <Modal
+        title="Complete Order"
+        open={open}
+        onCancel={onClose}
+        width={800}
+        footer={null}
+        destroyOnClose
+      >
+        <div className="space-y-6">
+          <Steps current={currentStep} items={steps} />
           
-          <div className="space-x-2">
-            <ActionButton onClick={onClose}>
-              Cancel
-            </ActionButton>
+          <div className="min-h-[400px]">
+            {renderStepContent()}
+          </div>
+
+          <div className="flex justify-between pt-4 border-t">
+            <div>
+              {currentStep > 0 && (
+                <ActionButton onClick={handlePrev}>
+                  <Icon name="arrow_back" className="mr-2" />
+                  Previous
+                </ActionButton>
+              )}
+            </div>
             
-            {currentStep < steps.length - 1 ? (
-              <ActionButton.Primary onClick={handleNext}>
-                Next
-                <Icon name="arrow_forward" className="ml-2" />
-              </ActionButton.Primary>
-            ) : (
-              <ActionButton.Primary 
-                onClick={handleCompleteOrder}
-                loading={loading}
-                icon="check"
-              >
-                Complete Order
-              </ActionButton.Primary>
-            )}
+            <div className="space-x-2">
+              <ActionButton onClick={onClose}>
+                Cancel
+              </ActionButton>
+              
+              {currentStep < steps.length - 1 ? (
+                <ActionButton.Primary onClick={handleNext}>
+                  Next
+                  <Icon name="arrow_forward" className="ml-2" />
+                </ActionButton.Primary>
+              ) : (
+                <ActionButton.Primary 
+                  onClick={handleCompleteOrder}
+                  loading={loading}
+                  icon="check"
+                >
+                  Complete Order
+                </ActionButton.Primary>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </Modal>
+      </Modal>
+
+      {/* Invoice Modal */}
+      <InvoiceModal
+        open={showInvoice}
+        onClose={() => {
+          setShowInvoice(false);
+          setCompletedTransaction(null);
+        }}
+        transaction={completedTransaction}
+        type="detailed"
+      />
+    </>
   );
 }

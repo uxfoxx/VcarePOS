@@ -356,6 +356,44 @@ $spacing-xxl: 48px;
   }
 }
 
+// Invoice Specific Styles
+.invoice-modal {
+  .ant-modal-body {
+    padding: 0;
+  }
+}
+
+// Print Styles
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  #invoice-content,
+  #invoice-content * {
+    visibility: visible;
+  }
+  
+  #invoice-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  // Page break for labels
+  .page-break-after {
+    page-break-after: always;
+  }
+
+  // Hide unnecessary elements when printing
+  .ant-modal,
+  .ant-modal-mask,
+  .ant-modal-wrap {
+    display: none !important;
+  }
+}
+
 // Responsive Design
 @media (max-width: 768px) {
   .vcare-layout {

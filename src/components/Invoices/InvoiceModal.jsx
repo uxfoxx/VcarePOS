@@ -1,0 +1,326 @@
+import React from 'react';
+import { Modal, Button, Typography, Divider, Row, Col, Space, Table } from 'antd';
+import { Icon } from '../common/Icon';
+import { ActionButton } from '../common/ActionButton';
+
+const { Title, Text } = Typography;
+
+export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) {
+  if (!transaction) return null;
+
+  const handlePrint = () => {
+    const printContent = document.getElementById('invoice-content');
+    const originalContent = document.body.innerHTML;
+    
+    document.body.innerHTML = printContent.innerHTML;
+    window.print();
+    document.body.innerHTML = originalContent;
+    window.location.reload();
+  };
+
+  const handleDownload = () => {
+    const element = document.getElementById('invoice-content');
+    const opt = {
+      margin: 1,
+      filename: `${type === 'detailed' ? 'invoice' : 'label'}-${transaction.id}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    
+    // Note: In a real application, you would use html2pdf library
+    // For now, we'll just trigger print
+    handlePrint();
+  };
+
+  const renderDetailedInvoice = () => (
+    <div id="invoice-content" className="p-8 bg-white">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="flex items-center justify-center space-x-4 mb-4">
+          <img 
+            src="/VCARELogo 1.png" 
+            alt="VCare Logo" 
+            className="w-16 h-16 object-contain"
+          />
+          <div>
+            <Title level={2} className="m-0 text-[#0E72BD]">VCare Furniture Store</Title>
+            <Text type="secondary">Premium Furniture Solutions</Text>
+          </div>
+        </div>
+        <Divider />
+        <Title level={3} className="text-gray-800">INVOICE</Title>
+      </div>
+
+      {/* Invoice Details */}
+      <Row gutter={32} className="mb-6">
+        <Col span={12}>
+          <div className="space-y-2">
+            <Text strong>Invoice Number:</Text>
+            <Text className="block">{transaction.id}</Text>
+            
+            <Text strong>Date:</Text>
+            <Text className="block">{new Date(transaction.timestamp).toLocaleDateString()}</Text>
+            
+            <Text strong>Time:</Text>
+            <Text className="block">{new Date(transaction.timestamp).toLocaleTimeString()}</Text>
+            
+            <Text strong>Cashier:</Text>
+            <Text className="block">{transaction.cashier}</Text>
+          </div>
+        </Col>
+        <Col span={12}>
+          <div className="space-y-2">
+            <Text strong>Bill To:</Text>
+            <div className="border-l-4 border-[#0E72BD] pl-4">
+              <Text className="block font-semibold">
+                {transaction.customerName || 'Walk-in Customer'}
+              </Text>
+              {transaction.customerPhone && (
+                <Text className="block">{transaction.customerPhone}</Text>
+              )}
+              {transaction.customerEmail && (
+                <Text className="block">{transaction.customerEmail}</Text>
+              )}
+              {transaction.customerAddress && (
+                <Text className="block">{transaction.customerAddress}</Text>
+              )}
+            </div>
+          </div>
+        </Col>
+      </Row>
+
+      {/* Items Table */}
+      <div className="mb-6">
+        <Title level={4} className="mb-4">Items Purchased</Title>
+        <table className="w-full border-collapse border border-gray-300">
+          <thead>
+            <tr className="bg-gray-50">
+              <th className="border border-gray-300 p-3 text-left">Item</th>
+              <th className="border border-gray-300 p-3 text-left">SKU</th>
+              <th className="border border-gray-300 p-3 text-center">Qty</th>
+              <th className="border border-gray-300 p-3 text-right">Unit Price</th>
+              <th className="border border-gray-300 p-3 text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {transaction.items.map((item, index) => (
+              <tr key={index}>
+                <td className="border border-gray-300 p-3">
+                  <div>
+                    <Text strong>{item.product.name}</Text>
+                    <br />
+                    <Text type="secondary" className="text-sm">
+                      {item.product.description}
+                    </Text>
+                  </div>
+                </td>
+                <td className="border border-gray-300 p-3">
+                  <Text code>{item.product.barcode}</Text>
+                </td>
+                <td className="border border-gray-300 p-3 text-center">
+                  {item.quantity}
+                </td>
+                <td className="border border-gray-300 p-3 text-right">
+                  ${item.product.price.toFixed(2)}
+                </td>
+                <td className="border border-gray-300 p-3 text-right">
+                  ${(item.product.price * item.quantity).toFixed(2)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Totals */}
+      <Row gutter={32}>
+        <Col span={12}>
+          {/* Payment Info */}
+          <div className="space-y-2">
+            <Text strong>Payment Information:</Text>
+            <div className="border-l-4 border-green-500 pl-4">
+              <Text className="block">Method: {transaction.paymentMethod.toUpperCase()}</Text>
+              <Text className="block">Status: PAID</Text>
+              {transaction.appliedCoupon && (
+                <Text className="block">Coupon: {transaction.appliedCoupon}</Text>
+              )}
+            </div>
+          </div>
+        </Col>
+        <Col span={12}>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <Text>Subtotal:</Text>
+              <Text>${transaction.subtotal.toFixed(2)}</Text>
+            </div>
+            <div className="flex justify-between">
+              <Text>Tax (8%):</Text>
+              <Text>${transaction.tax.toFixed(2)}</Text>
+            </div>
+            {transaction.discount > 0 && (
+              <div className="flex justify-between text-green-600">
+                <Text>Discount:</Text>
+                <Text>-${transaction.discount.toFixed(2)}</Text>
+              </div>
+            )}
+            <Divider className="my-2" />
+            <div className="flex justify-between">
+              <Title level={4} className="m-0">Total:</Title>
+              <Title level={4} className="m-0 text-[#0E72BD]">
+                ${transaction.total.toFixed(2)}
+              </Title>
+            </div>
+          </div>
+        </Col>
+      </Row>
+
+      {/* Notes */}
+      {transaction.notes && (
+        <div className="mt-6">
+          <Text strong>Order Notes:</Text>
+          <div className="mt-2 p-3 bg-gray-50 border rounded">
+            <Text>{transaction.notes}</Text>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="mt-8 pt-6 border-t text-center">
+        <Text type="secondary" className="text-sm">
+          Thank you for your business! For any questions, please contact us at support@vcarefurniture.com
+        </Text>
+        <br />
+        <Text type="secondary" className="text-sm">
+          VCare Furniture Store | 123 Main Street, City, State 12345 | (555) 123-4567
+        </Text>
+      </div>
+    </div>
+  );
+
+  const renderItemLabel = () => (
+    <div id="invoice-content" className="p-4 bg-white max-w-md mx-auto">
+      {/* Multiple labels for each item */}
+      {transaction.items.map((item, itemIndex) => 
+        Array.from({ length: item.quantity }, (_, qtyIndex) => (
+          <div key={`${itemIndex}-${qtyIndex}`} className="border-2 border-dashed border-gray-400 p-4 mb-4 page-break-after">
+            {/* Header */}
+            <div className="text-center mb-3">
+              <img 
+                src="/VCARELogo 1.png" 
+                alt="VCare Logo" 
+                className="w-8 h-8 object-contain mx-auto mb-2"
+              />
+              <Text strong className="text-lg">VCare Furniture</Text>
+            </div>
+
+            <Divider className="my-2" />
+
+            {/* Item Info */}
+            <div className="space-y-2">
+              <div>
+                <Text strong className="text-base">{item.product.name}</Text>
+              </div>
+              
+              <div className="flex justify-between">
+                <Text type="secondary">SKU:</Text>
+                <Text code>{item.product.barcode}</Text>
+              </div>
+
+              <div className="flex justify-between">
+                <Text type="secondary">Category:</Text>
+                <Text>{item.product.category}</Text>
+              </div>
+
+              {item.product.material && (
+                <div className="flex justify-between">
+                  <Text type="secondary">Material:</Text>
+                  <Text>{item.product.material}</Text>
+                </div>
+              )}
+
+              {item.product.color && (
+                <div className="flex justify-between">
+                  <Text type="secondary">Color:</Text>
+                  <Text>{item.product.color}</Text>
+                </div>
+              )}
+
+              {item.product.dimensions && (
+                <div className="flex justify-between">
+                  <Text type="secondary">Size:</Text>
+                  <Text className="text-xs">
+                    {item.product.dimensions.length}×{item.product.dimensions.width}×{item.product.dimensions.height} {item.product.dimensions.unit}
+                  </Text>
+                </div>
+              )}
+            </div>
+
+            <Divider className="my-2" />
+
+            {/* Order Info */}
+            <div className="space-y-1">
+              <div className="flex justify-between">
+                <Text type="secondary" className="text-xs">Order:</Text>
+                <Text className="text-xs">{transaction.id}</Text>
+              </div>
+              
+              <div className="flex justify-between">
+                <Text type="secondary" className="text-xs">Customer:</Text>
+                <Text className="text-xs">{transaction.customerName || 'Walk-in'}</Text>
+              </div>
+              
+              <div className="flex justify-between">
+                <Text type="secondary" className="text-xs">Date:</Text>
+                <Text className="text-xs">{new Date(transaction.timestamp).toLocaleDateString()}</Text>
+              </div>
+
+              <div className="flex justify-between">
+                <Text type="secondary" className="text-xs">Item:</Text>
+                <Text className="text-xs">{qtyIndex + 1} of {item.quantity}</Text>
+              </div>
+            </div>
+
+            {/* QR Code placeholder */}
+            <div className="mt-3 text-center">
+              <div className="w-16 h-16 bg-gray-200 mx-auto flex items-center justify-center border">
+                <Text type="secondary" className="text-xs">QR</Text>
+              </div>
+              <Text type="secondary" className="text-xs mt-1">Scan for details</Text>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+
+  return (
+    <Modal
+      title={
+        <Space>
+          <Icon name={type === 'detailed' ? 'receipt_long' : 'label'} className="text-[#0E72BD]" />
+          <span>{type === 'detailed' ? 'Invoice' : 'Item Labels'}</span>
+        </Space>
+      }
+      open={open}
+      onCancel={onClose}
+      width={type === 'detailed' ? 900 : 600}
+      footer={[
+        <ActionButton key="close" onClick={onClose}>
+          Close
+        </ActionButton>,
+        <ActionButton key="download" icon="download" onClick={handleDownload}>
+          Download PDF
+        </ActionButton>,
+        <ActionButton.Primary key="print" icon="print" onClick={handlePrint}>
+          Print
+        </ActionButton.Primary>
+      ]}
+      className="invoice-modal"
+    >
+      <div className="max-h-[70vh] overflow-y-auto">
+        {type === 'detailed' ? renderDetailedInvoice() : renderItemLabel()}
+      </div>
+    </Modal>
+  );
+}

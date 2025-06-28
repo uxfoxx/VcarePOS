@@ -26,7 +26,7 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
     {
       key: 'transactions',
       icon: <Icon name="receipt_long" />,
-      label: 'Transactions',
+      label: 'Orders',
     },
     {
       key: 'reports',

@@ -118,7 +118,7 @@ export function TransactionHistory() {
 
   const columns = [
     {
-      title: 'Transaction ID',
+      title: 'Order ID',
       dataIndex: 'id',
       key: 'id',
       render: (id) => <Text code>{id}</Text>,
@@ -232,7 +232,7 @@ export function TransactionHistory() {
         <Col span={8}>
           <Card>
             <Statistic
-              title="Total Transactions"
+              title="Total Orders"
               value={totalTransactions}
               valueStyle={{ color: '#52c41a' }}
             />
@@ -253,12 +253,12 @@ export function TransactionHistory() {
 
       <Card>
         <PageHeader
-          title="Transaction History"
+          title="Orders"
           icon="receipt_long"
           extra={
             <Space>
               <SearchInput
-                placeholder="Search transactions..."
+                placeholder="Search orders..."
                 value={searchTerm}
                 onSearch={setSearchTerm}
                 className="w-64"
@@ -291,9 +291,9 @@ export function TransactionHistory() {
         />
       </Card>
 
-      {/* Transaction Detail Modal */}
+      {/* Order Detail Modal */}
       <Modal
-        title={`Transaction Details - ${selectedTransaction?.id}`}
+        title={`Order Details - ${selectedTransaction?.id}`}
         open={showDetailModal}
         onCancel={() => setShowDetailModal(false)}
         width={800}
@@ -319,9 +319,9 @@ export function TransactionHistory() {
       >
         {selectedTransaction && (
           <Space direction="vertical" size="large" className="w-full">
-            {/* Transaction Info */}
+            {/* Order Info */}
             <Descriptions bordered column={2}>
-              <Descriptions.Item label="Transaction ID">
+              <Descriptions.Item label="Order ID">
                 <Text code>{selectedTransaction.id}</Text>
               </Descriptions.Item>
               <Descriptions.Item label="Date & Time">

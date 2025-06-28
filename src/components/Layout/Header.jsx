@@ -73,7 +73,7 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
       'pos': 'Point of Sale',
       'products': 'Product Management',
       'raw-materials': 'Raw Materials',
-      'transactions': 'Transaction History',
+      'transactions': 'Orders',
       'reports': 'Reports & Analytics',
       'coupons': 'Coupon Management',
       'settings': 'Settings'

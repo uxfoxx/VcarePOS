@@ -15,7 +15,8 @@ import {
   message,
   Row,
   Col,
-  Dropdown
+  Dropdown,
+  Tabs
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { ActionButton } from '../common/ActionButton';
@@ -24,6 +25,7 @@ import { PageHeader } from '../common/PageHeader';
 import { SearchInput } from '../common/SearchInput';
 import { FormModal } from '../common/FormModal';
 import { ProductDetailsSheet } from '../Invoices/ProductDetailsSheet';
+import { CategoryManagement } from './CategoryManagement';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -161,11 +163,14 @@ export function ProductManagement() {
       title: 'Category',
       dataIndex: 'category',
       key: 'category',
-      render: (category) => (
-        <Tag color={category === 'Tables' ? 'green' : 'orange'}>
-          {category}
-        </Tag>
-      ),
+      render: (category) => {
+        const categoryData = state.categories?.find(cat => cat.name === category);
+        return (
+          <Tag color={categoryData?.color || 'blue'}>
+            {category}
+          </Tag>
+        );
+      },
     },
     {
       title: 'Price',
@@ -236,41 +241,80 @@ export function ProductManagement() {
     },
   ];
 
+  const renderProductsTab = () => (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <Title level={5} className="m-0">Product Inventory</Title>
+          <Text type="secondary">Manage your furniture products</Text>
+        </div>
+        <Space>
+          <SearchInput
+            placeholder="Search products..."
+            value={searchTerm}
+            onSearch={setSearchTerm}
+            className="w-64"
+          />
+          <ActionButton.Primary 
+            icon="add"
+            onClick={() => setShowModal(true)}
+          >
+            Add Product
+          </ActionButton.Primary>
+        </Space>
+      </div>
+      
+      <Table
+        columns={columns}
+        dataSource={filteredProducts}
+        rowKey="id"
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+        }}
+        scroll={{ x: 1200 }}
+      />
+    </div>
+  );
+
+  const tabItems = [
+    {
+      key: 'products',
+      label: (
+        <span className="flex items-center space-x-2">
+          <Icon name="inventory_2" />
+          <span>Products</span>
+        </span>
+      ),
+      children: renderProductsTab()
+    },
+    {
+      key: 'categories',
+      label: (
+        <span className="flex items-center space-x-2">
+          <Icon name="category" />
+          <span>Categories</span>
+        </span>
+      ),
+      children: <CategoryManagement />
+    }
+  ];
+
   return (
     <>
       <Card>
         <PageHeader
           title="Product Management"
           icon="inventory_2"
-          extra={
-            <Space>
-              <SearchInput
-                placeholder="Search products..."
-                value={searchTerm}
-                onSearch={setSearchTerm}
-                className="w-64"
-              />
-              <ActionButton.Primary 
-                icon="add"
-                onClick={() => setShowModal(true)}
-              >
-                Add Product
-              </ActionButton.Primary>
-            </Space>
-          }
+          subtitle="Manage products and categories"
         />
         
-        <Table
-          columns={columns}
-          dataSource={filteredProducts}
-          rowKey="id"
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-          }}
-          scroll={{ x: 1200 }}
+        <Tabs
+          items={tabItems}
+          defaultActiveKey="products"
+          className="mt-4"
         />
       </Card>
 
@@ -303,8 +347,11 @@ export function ProductManagement() {
               rules={[{ required: true, message: 'Please select category' }]}
             >
               <Select placeholder="Select category">
-                <Option value="Tables">Tables</Option>
-                <Option value="Chairs">Chairs</Option>
+                {state.categories?.map(category => (
+                  <Option key={category.id} value={category.name}>
+                    {category.name}
+                  </Option>
+                ))}
               </Select>
             </Form.Item>
 

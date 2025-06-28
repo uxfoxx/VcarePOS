@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer } from 'react';
-import { mockProducts, mockRawMaterials, mockTransactions, mockCoupons, mockTaxes } from '../data/mockData';
+import { mockProducts, mockRawMaterials, mockTransactions, mockCoupons, mockTaxes, mockCategories } from '../data/mockData';
 
 const initialState = {
   cart: [],
@@ -8,6 +8,7 @@ const initialState = {
   transactions: mockTransactions,
   coupons: mockCoupons,
   taxes: mockTaxes,
+  categories: mockCategories,
   taxSettings: {
     rate: 8,
     name: 'Sales Tax',
@@ -164,6 +165,23 @@ function posReducer(state, action) {
       return {
         ...state,
         taxSettings: { ...state.taxSettings, ...action.payload }
+      };
+    case 'ADD_CATEGORY':
+      return {
+        ...state,
+        categories: [...(state.categories || []), action.payload]
+      };
+    case 'UPDATE_CATEGORY':
+      return {
+        ...state,
+        categories: (state.categories || []).map(category =>
+          category.id === action.payload.id ? action.payload : category
+        )
+      };
+    case 'DELETE_CATEGORY':
+      return {
+        ...state,
+        categories: (state.categories || []).filter(category => category.id !== action.payload)
       };
     case 'SET_USER':
       return {

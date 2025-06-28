@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer } from 'react';
+import { useAuth } from './AuthContext';
 import { mockProducts, mockRawMaterials, mockTransactions, mockCoupons, mockTaxes, mockCategories } from '../data/mockData';
 
 // Helper function to get all product variations as individual products
@@ -60,7 +61,6 @@ const initialState = {
     name: 'Sales Tax',
     defaultTaxId: 'TAX-001'
   },
-  currentUser: { name: 'Sarah Wilson', role: 'manager' },
   customers: []
 };
 
@@ -276,11 +276,6 @@ function posReducer(state, action) {
         ...state,
         categories: (state.categories || []).filter(category => category.id !== action.payload)
       };
-    case 'SET_USER':
-      return {
-        ...state,
-        currentUser: action.payload
-      };
     default:
       return state;
   }
@@ -290,9 +285,71 @@ const POSContext = createContext(null);
 
 export function POSProvider({ children }) {
   const [state, dispatch] = useReducer(posReducer, initialState);
+  const { logAction } = useAuth();
+
+  // Enhanced dispatch that logs actions
+  const enhancedDispatch = (action) => {
+    // Log certain actions to audit trail
+    const loggableActions = {
+      'ADD_PRODUCT': { module: 'products', action: 'CREATE' },
+      'UPDATE_PRODUCT': { module: 'products', action: 'UPDATE' },
+      'DELETE_PRODUCT': { module: 'products', action: 'DELETE' },
+      'ADD_RAW_MATERIAL': { module: 'raw-materials', action: 'CREATE' },
+      'UPDATE_RAW_MATERIAL': { module: 'raw-materials', action: 'UPDATE' },
+      'DELETE_RAW_MATERIAL': { module: 'raw-materials', action: 'DELETE' },
+      'ADD_TRANSACTION': { module: 'transactions', action: 'CREATE' },
+      'ADD_COUPON': { module: 'coupons', action: 'CREATE' },
+      'UPDATE_COUPON': { module: 'coupons', action: 'UPDATE' },
+      'DELETE_COUPON': { module: 'coupons', action: 'DELETE' },
+      'ADD_TAX': { module: 'tax', action: 'CREATE' },
+      'UPDATE_TAX': { module: 'tax', action: 'UPDATE' },
+      'DELETE_TAX': { module: 'tax', action: 'DELETE' },
+    };
+
+    const logInfo = loggableActions[action.type];
+    if (logInfo && logAction) {
+      const description = getActionDescription(action);
+      logAction(logInfo.action, logInfo.module, description, action.payload);
+    }
+
+    dispatch(action);
+  };
+
+  const getActionDescription = (action) => {
+    switch (action.type) {
+      case 'ADD_PRODUCT':
+        return `Created new product: ${action.payload.name}`;
+      case 'UPDATE_PRODUCT':
+        return `Updated product: ${action.payload.name}`;
+      case 'DELETE_PRODUCT':
+        return `Deleted product with ID: ${action.payload}`;
+      case 'ADD_RAW_MATERIAL':
+        return `Added raw material: ${action.payload.name}`;
+      case 'UPDATE_RAW_MATERIAL':
+        return `Updated raw material: ${action.payload.name}`;
+      case 'DELETE_RAW_MATERIAL':
+        return `Deleted raw material with ID: ${action.payload}`;
+      case 'ADD_TRANSACTION':
+        return `Completed transaction: ${action.payload.id} ($${action.payload.total.toFixed(2)})`;
+      case 'ADD_COUPON':
+        return `Created coupon: ${action.payload.code}`;
+      case 'UPDATE_COUPON':
+        return `Updated coupon: ${action.payload.code}`;
+      case 'DELETE_COUPON':
+        return `Deleted coupon with ID: ${action.payload}`;
+      case 'ADD_TAX':
+        return `Created tax: ${action.payload.name} (${action.payload.rate}%)`;
+      case 'UPDATE_TAX':
+        return `Updated tax: ${action.payload.name} (${action.payload.rate}%)`;
+      case 'DELETE_TAX':
+        return `Deleted tax with ID: ${action.payload}`;
+      default:
+        return 'System action performed';
+    }
+  };
 
   return (
-    <POSContext.Provider value={{ state, dispatch }}>
+    <POSContext.Provider value={{ state, dispatch: enhancedDispatch }}>
       {children}
     </POSContext.Provider>
   );

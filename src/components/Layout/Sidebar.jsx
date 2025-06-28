@@ -1,54 +1,82 @@
 import React from 'react';
 import { Layout, Menu, Typography, Badge } from 'antd';
+import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
 
 const { Sider } = Layout;
 const { Text, Title } = Typography;
 
 export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
-  const menuItems = [
+  const { hasPermission } = useAuth();
+
+  const allMenuItems = [
     {
       key: 'pos',
       icon: <Icon name="restaurant" />,
       label: 'Point of Sale',
+      module: 'pos'
     },
     {
       key: 'products',
       icon: <Icon name="inventory_2" />,
       label: 'Products',
+      module: 'products'
     },
     {
       key: 'raw-materials',
       icon: <Icon name="category" />,
       label: 'Raw Materials',
+      module: 'raw-materials',
       badge: { count: 3, color: 'red' },
     },
     {
       key: 'transactions',
       icon: <Icon name="receipt_long" />,
       label: 'Orders',
+      module: 'transactions'
     },
     {
       key: 'reports',
       icon: <Icon name="analytics" />,
       label: 'Reports',
+      module: 'reports'
     },
     {
       key: 'coupons',
       icon: <Icon name="local_offer" />,
       label: 'Coupons',
+      module: 'coupons'
     },
     {
       key: 'tax',
       icon: <Icon name="receipt" />,
       label: 'Tax Management',
+      module: 'tax'
+    },
+    {
+      key: 'user-management',
+      icon: <Icon name="people" />,
+      label: 'User Management',
+      module: 'user-management'
+    },
+    {
+      key: 'audit-trail',
+      icon: <Icon name="history" />,
+      label: 'Audit Trail',
+      module: 'audit-trail'
     },
     {
       key: 'settings',
       icon: <Icon name="settings" />,
       label: 'Settings',
+      module: 'settings'
     },
   ];
+
+  // Filter menu items based on user permissions
+  const menuItems = allMenuItems.filter(item => 
+    hasPermission(item.module, 'view')
+  );
 
   const enhancedMenuItems = menuItems.map(item => ({
     key: item.key,

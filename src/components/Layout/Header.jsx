@@ -8,6 +8,7 @@ import {
   Typography, 
   Tooltip,
 } from 'antd';
+import { useAuth } from '../../contexts/AuthContext';
 import { usePOS } from '../../contexts/POSContext';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
@@ -16,6 +17,7 @@ const { Header: AntHeader } = Layout;
 const { Text, Title } = Typography;
 
 export function Header({ collapsed, onCollapse, activeTab, style }) {
+  const { currentUser, logout } = useAuth();
   const { state } = usePOS();
 
   const userMenuItems = [
@@ -42,6 +44,7 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
       icon: <Icon name="logout" />,
       label: 'Sign Out',
       danger: true,
+      onClick: logout
     },
   ];
 
@@ -77,6 +80,8 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
       'reports': 'Reports & Analytics',
       'coupons': 'Coupon Management',
       'tax': 'Tax Management',
+      'user-management': 'User Management',
+      'audit-trail': 'Audit Trail',
       'settings': 'Settings'
     };
     return titles[activeTab] || 'VCare POS';
@@ -134,14 +139,15 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
               style={{ 
                 background: 'linear-gradient(135deg, #0E72BD, #1890ff)',
               }}
-              icon={<Icon name="person" />}
-            />
+            >
+              {currentUser?.firstName?.[0]}{currentUser?.lastName?.[0]}
+            </Avatar>
             <div className="hidden sm:block text-left">
               <Text strong className="text-gray-900 block text-sm">
-                {state.currentUser?.name}
+                {currentUser?.firstName} {currentUser?.lastName}
               </Text>
               <Text type="secondary" className="text-xs capitalize">
-                {state.currentUser?.role}
+                {currentUser?.role}
               </Text>
             </div>
           </div>

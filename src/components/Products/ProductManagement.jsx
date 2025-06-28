@@ -19,7 +19,6 @@ import {
   Divider
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
-import { Product, RawMaterialUsage } from '../../types';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -29,9 +28,8 @@ export function ProductManagement() {
   const { state, dispatch } = usePOS();
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState(null);
   const [form] = Form.useForm();
-  const [selectedRawMaterials, setSelectedRawMaterials] = useState<RawMaterialUsage[]>([]);
 
   const filteredProducts = state.products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -39,9 +37,9 @@ export function ProductManagement() {
     product.barcode?.includes(searchTerm)
   );
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values) => {
     try {
-      const productData: Product = {
+      const productData = {
         id: editingProduct?.id || `PROD-${Date.now()}`,
         name: values.name,
         price: values.price,
@@ -58,7 +56,6 @@ export function ProductManagement() {
         weight: values.weight,
         material: values.material,
         color: values.color,
-        rawMaterials: selectedRawMaterials,
         image: values.image
       };
 
@@ -72,16 +69,14 @@ export function ProductManagement() {
 
       setShowModal(false);
       setEditingProduct(null);
-      setSelectedRawMaterials([]);
       form.resetFields();
     } catch (error) {
       message.error('Please fill in all required fields');
     }
   };
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = (product) => {
     setEditingProduct(product);
-    setSelectedRawMaterials(product.rawMaterials || []);
     form.setFieldsValue({
       ...product,
       dimensions: product.dimensions
@@ -89,23 +84,9 @@ export function ProductManagement() {
     setShowModal(true);
   };
 
-  const handleDelete = (productId: string) => {
+  const handleDelete = (productId) => {
     dispatch({ type: 'DELETE_PRODUCT', payload: productId });
     message.success('Product deleted successfully');
-  };
-
-  const addRawMaterial = () => {
-    setSelectedRawMaterials([...selectedRawMaterials, { rawMaterialId: '', quantity: 0 }]);
-  };
-
-  const updateRawMaterial = (index: number, field: keyof RawMaterialUsage, value: string | number) => {
-    const updated = [...selectedRawMaterials];
-    updated[index] = { ...updated[index], [field]: value };
-    setSelectedRawMaterials(updated);
-  };
-
-  const removeRawMaterial = (index: number) => {
-    setSelectedRawMaterials(selectedRawMaterials.filter((_, i) => i !== index));
   };
 
   const columns = [
@@ -113,7 +94,7 @@ export function ProductManagement() {
       title: 'Product',
       dataIndex: 'name',
       key: 'name',
-      render: (text: string, record: Product) => (
+      render: (text, record) => (
         <div className="flex items-center space-x-3">
           <Image
             src={record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=100'}
@@ -137,62 +118,28 @@ export function ProductManagement() {
       title: 'Category',
       dataIndex: 'category',
       key: 'category',
-      render: (category: string) => <Tag color="blue">{category}</Tag>,
+      render: (category) => <Tag color="blue">{category}</Tag>,
     },
     {
       title: 'Price',
       dataIndex: 'price',
       key: 'price',
-      render: (price: number) => <Text strong>${price.toFixed(2)}</Text>,
+      render: (price) => <Text strong>${price.toFixed(2)}</Text>,
     },
     {
       title: 'Stock',
       dataIndex: 'stock',
       key: 'stock',
-      render: (stock: number) => (
+      render: (stock) => (
         <Tag color={stock > 10 ? 'green' : stock > 0 ? 'orange' : 'red'}>
           {stock} units
         </Tag>
       ),
     },
     {
-      title: 'Specifications',
-      key: 'specs',
-      render: (record: Product) => (
-        <Space direction="vertical" size="small">
-          {record.dimensions && (
-            <div className="flex items-center space-x-1">
-              <span className="material-icons text-gray-400 text-sm">straighten</span>
-              <Text className="text-xs">
-                {record.dimensions.length}×{record.dimensions.width}×{record.dimensions.height} {record.dimensions.unit}
-              </Text>
-            </div>
-          )}
-          {record.material && (
-            <Text className="text-xs">
-              <span className="material-icons text-xs mr-1">texture</span>
-              {record.material}
-            </Text>
-          )}
-          {record.color && (
-            <div className="flex items-center space-x-1">
-              <span className="material-icons text-gray-400 text-sm">palette</span>
-              <Text className="text-xs">{record.color}</Text>
-            </div>
-          )}
-          {record.weight && (
-            <Text className="text-xs">
-              <span className="material-icons text-xs mr-1">scale</span>
-              {record.weight} kg
-            </Text>
-          )}
-        </Space>
-      ),
-    },
-    {
       title: 'Actions',
       key: 'actions',
-      render: (record: Product) => (
+      render: (record) => (
         <Space>
           <Button 
             type="text" 
@@ -259,7 +206,6 @@ export function ProductManagement() {
         onCancel={() => {
           setShowModal(false);
           setEditingProduct(null);
-          setSelectedRawMaterials([]);
           form.resetFields();
         }}
         footer={null}
@@ -274,7 +220,6 @@ export function ProductManagement() {
         >
           <Row gutter={16}>
             <Col span={12}>
-              <Title level={5}>Basic Information</Title>
               <Form.Item
                 name="name"
                 label="Product Name"
@@ -338,105 +283,31 @@ export function ProductManagement() {
             </Col>
 
             <Col span={12}>
-              <Title level={5}>Physical Properties</Title>
-              
-              <Form.Item label="Dimensions">
-                <Input.Group compact>
-                  <Form.Item name={['dimensions', 'length']} noStyle>
-                    <InputNumber placeholder="Length" className="w-1/4" />
-                  </Form.Item>
-                  <Form.Item name={['dimensions', 'width']} noStyle>
-                    <InputNumber placeholder="Width" className="w-1/4" />
-                  </Form.Item>
-                  <Form.Item name={['dimensions', 'height']} noStyle>
-                    <InputNumber placeholder="Height" className="w-1/4" />
-                  </Form.Item>
-                  <Form.Item name={['dimensions', 'unit']} noStyle>
-                    <Select placeholder="Unit" className="w-1/4">
-                      <Option value="cm">cm</Option>
-                      <Option value="inch">inch</Option>
-                    </Select>
-                  </Form.Item>
-                </Input.Group>
+              <Form.Item name="description" label="Description">
+                <TextArea
+                  rows={4}
+                  placeholder="Enter product description"
+                />
               </Form.Item>
-
-              <Row gutter={8}>
-                <Col span={12}>
-                  <Form.Item name="weight" label="Weight (kg)">
-                    <InputNumber
-                      min={0}
-                      step={0.1}
-                      placeholder="0.0"
-                      className="w-full"
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item name="color" label="Color">
-                    <Input placeholder="Enter color" />
-                  </Form.Item>
-                </Col>
-              </Row>
 
               <Form.Item name="material" label="Material">
                 <Input placeholder="Enter material type" />
               </Form.Item>
 
-              <Form.Item name="description" label="Description">
-                <TextArea
-                  rows={3}
-                  placeholder="Enter product description"
+              <Form.Item name="color" label="Color">
+                <Input placeholder="Enter color" />
+              </Form.Item>
+
+              <Form.Item name="weight" label="Weight (kg)">
+                <InputNumber
+                  min={0}
+                  step={0.1}
+                  placeholder="0.0"
+                  className="w-full"
                 />
               </Form.Item>
             </Col>
           </Row>
-
-          <Divider />
-
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <Title level={5}>Raw Materials Required</Title>
-              <Button
-                type="dashed"
-                icon={<span className="material-icons">add</span>}
-                onClick={addRawMaterial}
-              >
-                Add Material
-              </Button>
-            </div>
-            
-            <Space direction="vertical" className="w-full">
-              {selectedRawMaterials.map((usage, index) => (
-                <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded">
-                  <Select
-                    value={usage.rawMaterialId}
-                    onChange={(value) => updateRawMaterial(index, 'rawMaterialId', value)}
-                    placeholder="Select Raw Material"
-                    className="flex-1"
-                  >
-                    {state.rawMaterials.map(material => (
-                      <Option key={material.id} value={material.id}>
-                        {material.name} ({material.unit})
-                      </Option>
-                    ))}
-                  </Select>
-                  <InputNumber
-                    value={usage.quantity}
-                    onChange={(value) => updateRawMaterial(index, 'quantity', value || 0)}
-                    placeholder="Quantity"
-                    min={0}
-                    className="w-24"
-                  />
-                  <Button
-                    type="text"
-                    danger
-                    icon={<span className="material-icons">delete</span>}
-                    onClick={() => removeRawMaterial(index)}
-                  />
-                </div>
-              ))}
-            </Space>
-          </div>
 
           <div className="flex justify-end space-x-2 mt-6">
             <Button onClick={() => setShowModal(false)}>

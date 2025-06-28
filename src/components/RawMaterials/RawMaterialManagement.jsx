@@ -18,7 +18,6 @@ import {
   Col
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
-import { RawMaterial } from '../../types';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -28,7 +27,7 @@ export function RawMaterialManagement() {
   const { state, dispatch } = usePOS();
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [editingMaterial, setEditingMaterial] = useState<RawMaterial | null>(null);
+  const [editingMaterial, setEditingMaterial] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [form] = Form.useForm();
 
@@ -44,9 +43,9 @@ export function RawMaterialManagement() {
 
   const lowStockMaterials = state.rawMaterials.filter(m => m.stockQuantity <= m.minimumStock);
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values) => {
     try {
-      const materialData: RawMaterial = {
+      const materialData = {
         id: editingMaterial?.id || `RM-${Date.now()}`,
         name: values.name,
         category: values.category,
@@ -74,13 +73,13 @@ export function RawMaterialManagement() {
     }
   };
 
-  const handleEdit = (material: RawMaterial) => {
+  const handleEdit = (material) => {
     setEditingMaterial(material);
     form.setFieldsValue(material);
     setShowModal(true);
   };
 
-  const handleDelete = (materialId: string) => {
+  const handleDelete = (materialId) => {
     dispatch({ type: 'DELETE_RAW_MATERIAL', payload: materialId });
     message.success('Raw material deleted successfully');
   };
@@ -90,7 +89,7 @@ export function RawMaterialManagement() {
       title: 'Material',
       dataIndex: 'name',
       key: 'name',
-      render: (text: string, record: RawMaterial) => (
+      render: (text, record) => (
         <div>
           <Text strong>{record.name}</Text>
           <br />
@@ -102,12 +101,12 @@ export function RawMaterialManagement() {
       title: 'Category',
       dataIndex: 'category',
       key: 'category',
-      render: (category: string) => <Tag color="blue">{category}</Tag>,
+      render: (category) => <Tag color="blue">{category}</Tag>,
     },
     {
       title: 'Stock',
       key: 'stock',
-      render: (record: RawMaterial) => (
+      render: (record) => (
         <div>
           <Text strong>{record.stockQuantity} {record.unit}</Text>
           <br />
@@ -121,7 +120,7 @@ export function RawMaterialManagement() {
       title: 'Unit Price',
       dataIndex: 'unitPrice',
       key: 'unitPrice',
-      render: (price: number) => <Text strong>${price.toFixed(2)}</Text>,
+      render: (price) => <Text strong>${price.toFixed(2)}</Text>,
     },
     {
       title: 'Supplier',
@@ -131,7 +130,7 @@ export function RawMaterialManagement() {
     {
       title: 'Status',
       key: 'status',
-      render: (record: RawMaterial) => {
+      render: (record) => {
         const isLowStock = record.stockQuantity <= record.minimumStock;
         const isMediumStock = record.stockQuantity <= record.minimumStock * 2;
         
@@ -145,7 +144,7 @@ export function RawMaterialManagement() {
     {
       title: 'Actions',
       key: 'actions',
-      render: (record: RawMaterial) => (
+      render: (record) => (
         <Space>
           <Button 
             type="text" 

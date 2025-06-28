@@ -76,107 +76,10 @@ export function SettingsPanel() {
     </Form>
   );
 
-  const renderStoreSettings = () => (
-    <Form form={form} layout="vertical" onFinish={handleSave}>
-      <Title level={4}>Store Information</Title>
-      <Form.Item name="storeAddress" label="Store Address" initialValue="123 Main Street, City, State 12345">
-        <TextArea rows={3} />
-      </Form.Item>
-      <Row gutter={16}>
-        <Col span={12}>
-          <Form.Item name="phone" label="Phone Number" initialValue="+1-555-0123">
-            <Input />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item name="email" label="Email" initialValue="store@vcare.com">
-            <Input type="email" />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item name="website" label="Website">
-            <Input placeholder="https://www.vcare.com" />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item name="businessHours" label="Business Hours" initialValue="9:00 AM - 6:00 PM">
-            <Input />
-          </Form.Item>
-        </Col>
-      </Row>
-      <Button type="primary" htmlType="submit">Save Changes</Button>
-    </Form>
-  );
-
-  const renderPaymentSettings = () => (
-    <div>
-      <Title level={4}>Payment Methods</Title>
-      <Space direction="vertical" size="large" className="w-full">
-        {[
-          { name: 'Cash Payments', key: 'cash', enabled: true },
-          { name: 'Credit/Debit Cards', key: 'cards', enabled: true },
-          { name: 'Digital Wallets', key: 'digital', enabled: true },
-          { name: 'Gift Cards', key: 'gift', enabled: false },
-          { name: 'Store Credit', key: 'credit', enabled: false }
-        ].map((method) => (
-          <Card key={method.key} size="small">
-            <div className="flex items-center justify-between">
-              <div>
-                <Text strong>{method.name}</Text>
-                <br />
-                <Text type="secondary" className="text-xs">
-                  {method.enabled ? 'Currently enabled' : 'Currently disabled'}
-                </Text>
-              </div>
-              <Switch defaultChecked={method.enabled} />
-            </div>
-          </Card>
-        ))}
-      </Space>
-      <Divider />
-      <Button type="primary" onClick={handleSave}>Save Payment Settings</Button>
-    </div>
-  );
-
-  const renderNotificationSettings = () => (
-    <div>
-      <Title level={4}>Notification Settings</Title>
-      <Space direction="vertical" size="large" className="w-full">
-        {[
-          { name: 'Low Stock Alerts', description: 'Get notified when inventory is running low' },
-          { name: 'Daily Sales Reports', description: 'Receive daily sales summary via email' },
-          { name: 'New Transaction Alerts', description: 'Real-time notifications for new sales' },
-          { name: 'System Updates', description: 'Notifications about system updates and maintenance' }
-        ].map((notification, index) => (
-          <Card key={index} size="small">
-            <div className="flex items-center justify-between">
-              <div>
-                <Text strong>{notification.name}</Text>
-                <br />
-                <Text type="secondary" className="text-xs">
-                  {notification.description}
-                </Text>
-              </div>
-              <Switch defaultChecked={index < 2} />
-            </div>
-          </Card>
-        ))}
-      </Space>
-      <Divider />
-      <Button type="primary" onClick={handleSave}>Save Notification Settings</Button>
-    </div>
-  );
-
   const renderContent = () => {
     switch (activeSection) {
       case 'general':
         return renderGeneralSettings();
-      case 'store':
-        return renderStoreSettings();
-      case 'payment':
-        return renderPaymentSettings();
-      case 'notifications':
-        return renderNotificationSettings();
       default:
         return (
           <div className="text-center py-12">

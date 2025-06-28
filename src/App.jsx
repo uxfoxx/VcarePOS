@@ -3,6 +3,7 @@ import { ConfigProvider, Layout, theme } from 'antd';
 import { POSProvider } from './contexts/POSContext';
 import { Header } from './components/Layout/Header';
 import { Sidebar } from './components/Layout/Sidebar';
+import { Footer } from './components/Layout/Footer';
 import { ProductGrid } from './components/POS/ProductGrid';
 import { Cart } from './components/POS/Cart';
 import { ProductManagement } from './components/Products/ProductManagement';
@@ -11,7 +12,7 @@ import { TransactionHistory } from './components/Transactions/TransactionHistory
 import { ReportsOverview } from './components/Reports/ReportsOverview';
 import { SettingsPanel } from './components/Settings/SettingsPanel';
 
-const { Content } = Layout;
+const { Sider, Content } = Layout;
 
 function App() {
   const [activeTab, setActiveTab] = useState('pos');
@@ -20,7 +21,7 @@ function App() {
   const renderContent = () => {
     const contentMap = {
       'pos': (
-        <div className="flex h-full gap-4">
+        <div className="flex h-full gap-6">
           <div className="flex-1">
             <ProductGrid />
           </div>
@@ -46,6 +47,55 @@ function App() {
     );
   };
 
+  // Layout styles
+  const layoutStyle = {
+    minHeight: '100vh',
+    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+  };
+
+  const siderStyle = {
+    background: '#ffffff',
+    borderRight: '1px solid #e5e7eb',
+    boxShadow: '2px 0 8px rgba(0, 0, 0, 0.06)',
+    position: 'fixed',
+    height: '100vh',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: 100,
+  };
+
+  const headerStyle = {
+    background: '#ffffff',
+    borderBottom: '1px solid #e5e7eb',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+    padding: '0 24px',
+    position: 'fixed',
+    width: '75%',
+    right: 0,
+    top: 0,
+    zIndex: 50,
+  };
+
+  const contentStyle = {
+    padding: '24px',
+    marginTop: '64px',
+    marginBottom: '64px',
+    minHeight: 'calc(100vh - 128px)',
+    overflow: 'auto',
+  };
+
+  const footerStyle = {
+    background: '#ffffff',
+    borderTop: '1px solid #e5e7eb',
+    textAlign: 'center',
+    position: 'fixed',
+    width: '75%',
+    right: 0,
+    bottom: 0,
+    zIndex: 50,
+  };
+
   return (
     <ConfigProvider
       theme={{
@@ -69,6 +119,7 @@ function App() {
             siderBg: '#ffffff',
             bodyBg: '#f8fafc',
             headerHeight: 64,
+            footerBg: '#ffffff',
           },
           Card: {
             borderRadiusLG: 12,
@@ -103,37 +154,26 @@ function App() {
       }}
     >
       <POSProvider>
-        <Layout className="min-h-screen">
-          {/* Fixed Header */}
-          <Header 
-            collapsed={collapsed} 
-            onCollapse={setCollapsed}
-            activeTab={activeTab}
-          />
-          
-          <Layout hasSider className="relative">
-            {/* Fixed Sidebar */}
+        <Layout style={layoutStyle}>
+          <Sider width="25%" style={siderStyle}>
             <Sidebar 
               activeTab={activeTab} 
               onTabChange={setActiveTab}
               collapsed={collapsed}
               onCollapse={setCollapsed}
             />
-            
-            {/* Main Content Area */}
-            <Layout 
-              className="transition-all duration-300 ease-in-out"
-              style={{ 
-                marginLeft: collapsed ? 80 : 280,
-                minHeight: 'calc(100vh - 64px)'
-              }}
-            >
-              <Content className="p-6 overflow-auto">
-                <div className="h-full">
-                  {renderContent()}
-                </div>
-              </Content>
-            </Layout>
+          </Sider>
+          <Layout>
+            <Header 
+              style={headerStyle}
+              collapsed={collapsed} 
+              onCollapse={setCollapsed}
+              activeTab={activeTab}
+            />
+            <Content style={contentStyle}>
+              {renderContent()}
+            </Content>
+            <Footer style={footerStyle} />
           </Layout>
         </Layout>
       </POSProvider>

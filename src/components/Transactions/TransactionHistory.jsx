@@ -15,7 +15,6 @@ import {
   List
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
-import { Transaction } from '../../types';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -24,7 +23,7 @@ export function TransactionHistory() {
   const { state } = usePOS();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPeriod, setFilterPeriod] = useState('all');
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
   const filteredTransactions = state.transactions.filter(transaction => {
@@ -45,12 +44,12 @@ export function TransactionHistory() {
   const totalTransactions = filteredTransactions.length;
   const averageOrderValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
 
-  const handleViewDetails = (transaction: Transaction) => {
+  const handleViewDetails = (transaction) => {
     setSelectedTransaction(transaction);
     setShowDetailModal(true);
   };
 
-  const getPaymentMethodIcon = (method: string) => {
+  const getPaymentMethodIcon = (method) => {
     switch (method) {
       case 'cash':
         return <span className="material-icons">payments</span>;
@@ -66,13 +65,13 @@ export function TransactionHistory() {
       title: 'Transaction ID',
       dataIndex: 'id',
       key: 'id',
-      render: (id: string) => <Text code>{id}</Text>,
+      render: (id) => <Text code>{id}</Text>,
     },
     {
       title: 'Date & Time',
       dataIndex: 'timestamp',
       key: 'timestamp',
-      render: (timestamp: Date) => (
+      render: (timestamp) => (
         <div>
           <Text>{new Date(timestamp).toLocaleDateString()}</Text>
           <br />
@@ -85,7 +84,7 @@ export function TransactionHistory() {
     {
       title: 'Customer',
       key: 'customer',
-      render: (record: Transaction) => (
+      render: (record) => (
         <div>
           <Text>{record.customerName || 'Walk-in Customer'}</Text>
           {record.customerPhone && (
@@ -101,7 +100,7 @@ export function TransactionHistory() {
       title: 'Items',
       dataIndex: 'items',
       key: 'items',
-      render: (items: any[]) => (
+      render: (items) => (
         <Tag color="blue">{items.length} item(s)</Tag>
       ),
     },
@@ -109,7 +108,7 @@ export function TransactionHistory() {
       title: 'Total',
       dataIndex: 'total',
       key: 'total',
-      render: (total: number) => (
+      render: (total) => (
         <Text strong className="text-[#0E72BD] text-lg">
           ${total.toFixed(2)}
         </Text>
@@ -119,7 +118,7 @@ export function TransactionHistory() {
       title: 'Payment',
       dataIndex: 'paymentMethod',
       key: 'paymentMethod',
-      render: (method: string) => (
+      render: (method) => (
         <Tag icon={getPaymentMethodIcon(method)} color="green">
           {method.toUpperCase()}
         </Tag>
@@ -133,7 +132,7 @@ export function TransactionHistory() {
     {
       title: 'Actions',
       key: 'actions',
-      render: (record: Transaction) => (
+      render: (record) => (
         <Space>
           <span 
             className="material-icons cursor-pointer text-[#0E72BD] hover:text-blue-700"
@@ -299,13 +298,6 @@ export function TransactionHistory() {
                 </Col>
               </Row>
             </div>
-
-            {selectedTransaction.customerAddress && (
-              <div>
-                <Title level={5}>Delivery Address</Title>
-                <Text>{selectedTransaction.customerAddress}</Text>
-              </div>
-            )}
           </Space>
         )}
       </Modal>

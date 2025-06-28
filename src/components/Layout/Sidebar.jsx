@@ -1,15 +1,15 @@
 import React from 'react';
-import { Layout, Menu, Typography, Badge, Button } from 'antd';
+import { Layout, Menu, Typography, Badge, Button, Divider } from 'antd';
 
 const { Sider } = Layout;
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
   const menuItems = [
     {
       key: 'pos',
       icon: <span className="material-icons">restaurant</span>,
-      label: 'POS',
+      label: 'Point of Sale',
     },
     {
       key: 'products',
@@ -25,7 +25,7 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
     {
       key: 'transactions',
       icon: <span className="material-icons">receipt_long</span>,
-      label: 'Orders',
+      label: 'Transactions',
     },
     {
       key: 'reports',
@@ -45,7 +45,7 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
     label: (
       <div className="flex items-center justify-between w-full">
         <span className="font-medium">{item.label}</span>
-        {item.badge && !collapsed && (
+        {item.badge && (
           <Badge 
             count={item.badge.count} 
             size="small" 
@@ -57,101 +57,88 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
   }));
 
   return (
-    <Sider
-      collapsed={collapsed}
-      onCollapse={onCollapse}
-      breakpoint="lg"
-      collapsedWidth={80}
-      width={280}
-      className="fixed left-0 bg-white border-r border-gray-200 shadow-sm z-40"
-      style={{
-        top: 64,
-        height: 'calc(100vh - 64px)',
-        overflow: 'auto',
-      }}
-      trigger={null}
-    >
-      <div className="p-4 h-full flex flex-col">
-        {/* Navigation Menu */}
-        <div className="flex-1">
-          <Menu
-            mode="inline"
-            selectedKeys={[activeTab]}
-            onClick={({ key }) => onTabChange(key)}
-            items={enhancedMenuItems}
-            className="border-none bg-transparent"
-            style={{
-              fontSize: '14px',
-            }}
-          />
+    <div className="h-full flex flex-col">
+      {/* Logo Section */}
+      <div className="p-6 border-b border-gray-200">
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+            <img 
+              src="/VCARELogo 1.png" 
+              alt="VCare Logo" 
+              className="w-8 h-8 object-contain"
+            />
+          </div>
+          <div>
+            <Title level={4} className="m-0 text-gray-900">
+              VCare POS
+            </Title>
+            <Text type="secondary" className="text-xs">
+              Furniture Store Management
+            </Text>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Menu */}
+      <div className="flex-1 p-4">
+        <div className="mb-4">
+          <Text type="secondary" className="text-xs font-semibold uppercase tracking-wider">
+            Main Navigation
+          </Text>
+        </div>
+        
+        <Menu
+          mode="inline"
+          selectedKeys={[activeTab]}
+          onClick={({ key }) => onTabChange(key)}
+          items={enhancedMenuItems}
+          className="border-none bg-transparent"
+          style={{
+            fontSize: '14px',
+          }}
+        />
+      </div>
+
+      {/* Store Status */}
+      <div className="p-4 border-t border-gray-200">
+        <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+              <span className="material-icons text-white text-sm">store</span>
+            </div>
+            <div>
+              <Text strong className="text-sm text-green-800">Store Status</Text>
+              <br />
+              <Text type="secondary" className="text-xs text-green-600">Currently Open</Text>
+            </div>
+          </div>
+          
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between">
+              <Text type="secondary" className="text-green-700">Today's Sales:</Text>
+              <Text strong className="text-green-800">$2,450</Text>
+            </div>
+            <div className="flex justify-between">
+              <Text type="secondary" className="text-green-700">Transactions:</Text>
+              <Text strong className="text-green-800">24</Text>
+            </div>
+            <div className="flex justify-between">
+              <Text type="secondary" className="text-green-700">Low Stock Items:</Text>
+              <Badge count={3} size="small" style={{ backgroundColor: '#ff4d4f' }} />
+            </div>
+          </div>
         </div>
 
-        {/* Bottom Section */}
-        {!collapsed && (
-          <div className="mt-auto space-y-4">
-            {/* Store Status */}
-            <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                  <span className="material-icons text-white text-sm">store</span>
-                </div>
-                <div>
-                  <Text strong className="text-sm text-green-800">Store Open</Text>
-                  <br />
-                  <Text type="secondary" className="text-xs text-green-600">9:00 AM - 10:00 PM</Text>
-                </div>
-              </div>
-              
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between">
-                  <Text type="secondary" className="text-green-700">Today's Sales:</Text>
-                  <Text strong className="text-green-800">$2,450</Text>
-                </div>
-                <div className="flex justify-between">
-                  <Text type="secondary" className="text-green-700">Orders:</Text>
-                  <Text strong className="text-green-800">24</Text>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="space-y-2">
-              <Button 
-                type="primary" 
-                block 
-                icon={<span className="material-icons">add</span>}
-                className="bg-blue-500 hover:bg-blue-600"
-              >
-                Add Customer
-              </Button>
-              <Button 
-                block 
-                icon={<span className="material-icons">inventory_2</span>}
-                className="border-gray-300 text-gray-700 hover:border-blue-500 hover:text-blue-500"
-              >
-                Quick Add Item
-              </Button>
-            </div>
+        <div className="mt-4 p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-100">
+          <div className="flex items-center space-x-2 mb-2">
+            <span className="material-icons text-amber-600 text-sm">lightbulb</span>
+            <Text strong className="text-sm text-amber-800">Quick Tip</Text>
           </div>
-        )}
-
-        {/* Collapsed state bottom icons */}
-        {collapsed && (
-          <div className="mt-auto space-y-2 flex flex-col items-center">
-            <Button 
-              type="primary" 
-              shape="circle"
-              icon={<span className="material-icons">add</span>}
-              className="bg-blue-500 hover:bg-blue-600"
-            />
-            <Button 
-              shape="circle"
-              icon={<span className="material-icons">inventory_2</span>}
-              className="border-gray-300 text-gray-700 hover:border-blue-500 hover:text-blue-500"
-            />
-          </div>
-        )}
+          <Text className="text-xs text-amber-700">
+            Use Ctrl+S to quickly save changes, or Ctrl+N to add new items.
+          </Text>
+        </div>
       </div>
-    </Sider>
+    </div>
   );
 }

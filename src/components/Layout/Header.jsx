@@ -16,7 +16,7 @@ import { usePOS } from '../../contexts/POSContext';
 const { Header: AntHeader } = Layout;
 const { Text, Title } = Typography;
 
-export function Header({ collapsed, onCollapse, activeTab }) {
+export function Header({ collapsed, onCollapse, activeTab, style }) {
   const { state } = usePOS();
 
   const userMenuItems = [
@@ -83,17 +83,10 @@ export function Header({ collapsed, onCollapse, activeTab }) {
 
   return (
     <AntHeader 
-      className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 bg-white border-b border-gray-200 shadow-sm"
-      style={{ height: 64 }}
+      style={style}
+      className="flex items-center justify-between"
     >
       <div className="flex items-center space-x-6">
-        <Button
-          type="text"
-          icon={<span className="material-icons text-lg">{collapsed ? 'menu' : 'menu_open'}</span>}
-          onClick={() => onCollapse(!collapsed)}
-          className="hover:bg-gray-100 transition-colors"
-        />
-        
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">

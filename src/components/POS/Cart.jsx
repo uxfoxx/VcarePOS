@@ -7,24 +7,17 @@ import {
   Space, 
   Typography, 
   Divider, 
-  Input, 
-  Form,
   Badge,
   Popconfirm,
-  message,
-  Select
+  message
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
 export function Cart() {
   const { state, dispatch } = usePOS();
-  const [customerName, setCustomerName] = useState('');
   const [discount, setDiscount] = useState(0);
-  const [couponCode, setCouponCode] = useState('');
-  const [note, setNote] = useState('');
 
   const subtotal = state.cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
   const tax = subtotal * 0.08; // 8% tax
@@ -54,9 +47,7 @@ export function Cart() {
       total,
       paymentMethod: 'card',
       timestamp: new Date(),
-      cashier: state.currentUser?.name || 'Unknown',
-      customerName: customerName || undefined,
-      note: note || undefined
+      cashier: state.currentUser?.name || 'Unknown'
     };
 
     // Update product stock
@@ -69,10 +60,7 @@ export function Cart() {
 
     dispatch({ type: 'ADD_TRANSACTION', payload: transaction });
     dispatch({ type: 'CLEAR_CART' });
-    setCustomerName('');
     setDiscount(0);
-    setCouponCode('');
-    setNote('');
     
     message.success('Order completed successfully!');
   };
@@ -81,9 +69,7 @@ export function Cart() {
     <Card 
       className="h-full"
       bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
-    >
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200">
+      title={
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Title level={5} className="m-0">Current Order</Title>
@@ -97,8 +83,8 @@ export function Cart() {
             Add Customer
           </Button>
         </div>
-      </div>
-
+      }
+    >
       {/* Cart Items */}
       <div className="flex-1 overflow-y-auto p-4" style={{ height: 'calc(100% - 300px)' }}>
         {state.cart.length === 0 ? (
@@ -116,7 +102,6 @@ export function Cart() {
                     <div className="flex items-center space-x-2">
                       <Badge count={index + 1} size="small" color="#0E72BD" />
                       <Text strong className="text-sm">{item.product.name}</Text>
-                      <span className="material-icons text-gray-400 text-sm">close</span>
                     </div>
                     <Popconfirm
                       title="Remove item?"

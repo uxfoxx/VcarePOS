@@ -7,8 +7,10 @@ import {
   Space, 
   Typography, 
   Tooltip,
+  Switch
 } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { usePOS } from '../../contexts/POSContext';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
@@ -19,6 +21,7 @@ const { Text, Title } = Typography;
 export function Header({ collapsed, onCollapse, activeTab, style }) {
   const { currentUser, logout } = useAuth();
   const { state } = usePOS();
+  const { branding, theme, updateTheme } = useTheme();
 
   const userMenuItems = [
     {
@@ -30,6 +33,23 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
       key: 'preferences',
       icon: <Icon name="tune" />,
       label: 'Preferences',
+    },
+    {
+      type: 'divider',
+    },
+    {
+      key: 'theme-toggle',
+      icon: <Icon name={theme.mode === 'dark' ? 'light_mode' : 'dark_mode'} />,
+      label: (
+        <div className="flex items-center justify-between w-full">
+          <span>Dark Mode</span>
+          <Switch
+            size="small"
+            checked={theme.mode === 'dark'}
+            onChange={(checked) => updateTheme({ ...theme, mode: checked ? 'dark' : 'light' })}
+          />
+        </div>
+      ),
     },
     {
       type: 'divider',
@@ -137,7 +157,7 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
             <Avatar 
               size={40}
               style={{ 
-                background: 'linear-gradient(135deg, #0E72BD, #1890ff)',
+                background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})`,
               }}
             >
               {currentUser?.firstName?.[0]}{currentUser?.lastName?.[0]}

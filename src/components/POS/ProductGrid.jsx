@@ -16,7 +16,6 @@ import {
   Skeleton,
   Rate
 } from 'antd';
-import { Product } from '../../types';
 import { usePOS } from '../../contexts/POSContext';
 
 const { Meta } = Card;
@@ -53,13 +52,13 @@ export function ProductGrid() {
       }
     });
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = (product) => {
     if (product.stock > 0) {
       dispatch({ type: 'ADD_TO_CART', payload: product });
     }
   };
 
-  const getStockStatus = (stock: number) => {
+  const getStockStatus = (stock) => {
     if (stock === 0) return { color: 'red', text: 'Out of Stock', status: 'error' };
     if (stock <= 5) return { color: 'orange', text: `Only ${stock} left`, status: 'warning' };
     return { color: 'green', text: 'In Stock', status: 'success' };

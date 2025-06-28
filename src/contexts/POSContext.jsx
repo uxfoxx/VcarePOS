@@ -1,40 +1,16 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { CartItem, Product, RawMaterial, Transaction } from '../types';
+import React, { createContext, useContext, useReducer } from 'react';
 import { mockProducts, mockRawMaterials, mockTransactions } from '../data/mockData';
 
-interface POSState {
-  cart: CartItem[];
-  products: Product[];
-  rawMaterials: RawMaterial[];
-  transactions: Transaction[];
-  currentUser: { name: string; role: string } | null;
-}
-
-type POSAction =
-  | { type: 'ADD_TO_CART'; payload: Product }
-  | { type: 'REMOVE_FROM_CART'; payload: string }
-  | { type: 'UPDATE_QUANTITY'; payload: { productId: string; quantity: number } }
-  | { type: 'CLEAR_CART' }
-  | { type: 'ADD_TRANSACTION'; payload: Transaction }
-  | { type: 'UPDATE_PRODUCT_STOCK'; payload: { productId: string; quantity: number } }
-  | { type: 'ADD_PRODUCT'; payload: Product }
-  | { type: 'UPDATE_PRODUCT'; payload: Product }
-  | { type: 'DELETE_PRODUCT'; payload: string }
-  | { type: 'ADD_RAW_MATERIAL'; payload: RawMaterial }
-  | { type: 'UPDATE_RAW_MATERIAL'; payload: RawMaterial }
-  | { type: 'DELETE_RAW_MATERIAL'; payload: string }
-  | { type: 'UPDATE_RAW_MATERIAL_STOCK'; payload: { materialId: string; quantity: number } }
-  | { type: 'SET_USER'; payload: { name: string; role: string } };
-
-const initialState: POSState = {
+const initialState = {
   cart: [],
   products: mockProducts,
   rawMaterials: mockRawMaterials,
   transactions: mockTransactions,
-  currentUser: { name: 'Sarah Wilson', role: 'manager' }
+  currentUser: { name: 'Sarah Wilson', role: 'manager' },
+  customers: []
 };
 
-function posReducer(state: POSState, action: POSAction): POSState {
+function posReducer(state, action) {
   switch (action.type) {
     case 'ADD_TO_CART': {
       const existingItem = state.cart.find(item => item.product.id === action.payload.id);
@@ -139,12 +115,9 @@ function posReducer(state: POSState, action: POSAction): POSState {
   }
 }
 
-const POSContext = createContext<{
-  state: POSState;
-  dispatch: React.Dispatch<POSAction>;
-} | null>(null);
+const POSContext = createContext(null);
 
-export function POSProvider({ children }: { children: ReactNode }) {
+export function POSProvider({ children }) {
   const [state, dispatch] = useReducer(posReducer, initialState);
 
   return (

@@ -63,7 +63,7 @@ function AppContent() {
       label: 'Preferences',
     },
     {
-      type: 'divider' as const,
+      type: 'divider',
     },
     {
       key: 'help',
@@ -130,7 +130,7 @@ function AppContent() {
       'settings': <SettingsPanel />,
     };
 
-    return contentMap[activeTab as keyof typeof contentMap] || (
+    return contentMap[activeTab] || (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <span className="material-icons text-6xl text-gray-300 mb-4">error_outline</span>

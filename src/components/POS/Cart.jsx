@@ -19,7 +19,6 @@ import {
   Tooltip
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
-import { Transaction } from '../../types';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -27,7 +26,7 @@ const { Step } = Steps;
 
 export function Cart() {
   const { state, dispatch } = usePOS();
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'digital'>('card');
+  const [paymentMethod, setPaymentMethod] = useState('card');
   const [currentStep, setCurrentStep] = useState(0);
   const [form] = Form.useForm();
 
@@ -37,7 +36,7 @@ export function Cart() {
   const discount = 0;
   const total = subtotal + tax - discount;
 
-  const handleQuantityChange = (productId: string, newQuantity: number) => {
+  const handleQuantityChange = (productId, newQuantity) => {
     if (newQuantity <= 0) {
       dispatch({ type: 'REMOVE_FROM_CART', payload: productId });
     } else {
@@ -54,7 +53,7 @@ export function Cart() {
     try {
       const values = await form.validateFields();
       
-      const transaction: Transaction = {
+      const transaction = {
         id: `TXN-${Date.now()}`,
         items: state.cart,
         subtotal,

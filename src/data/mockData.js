@@ -1,6 +1,4 @@
-import { Product, RawMaterial, Transaction } from '../types';
-
-export const mockRawMaterials: RawMaterial[] = [
+export const mockRawMaterials = [
   {
     id: '1',
     name: 'Oak Wood Planks',
@@ -91,7 +89,7 @@ export const mockRawMaterials: RawMaterial[] = [
   }
 ];
 
-export const mockProducts: Product[] = [
+export const mockProducts = [
   {
     id: '1',
     name: 'Executive Office Chair',
@@ -211,7 +209,7 @@ export const mockProducts: Product[] = [
   }
 ];
 
-export const mockTransactions: Transaction[] = [
+export const mockTransactions = [
   {
     id: 'TXN-001',
     items: [

@@ -8,7 +8,7 @@ export const mockRawMaterials = [
     unitPrice: 12.50,
     supplier: 'Premium Wood Co.',
     minimumStock: 50,
-    description: 'High-quality oak wood planks for furniture making'
+    description: 'High-quality oak wood planks for table making'
   },
   {
     id: '2',
@@ -19,7 +19,7 @@ export const mockRawMaterials = [
     unitPrice: 8.75,
     supplier: 'Forest Materials Ltd.',
     minimumStock: 100,
-    description: 'Sustainable pine wood boards'
+    description: 'Sustainable pine wood boards for chairs'
   },
   {
     id: '3',
@@ -30,7 +30,7 @@ export const mockRawMaterials = [
     unitPrice: 3.25,
     supplier: 'MetalWorks Inc.',
     minimumStock: 25,
-    description: 'Heavy-duty steel hinges for cabinets and doors'
+    description: 'Heavy-duty steel hinges for table extensions'
   },
   {
     id: '4',
@@ -41,7 +41,7 @@ export const mockRawMaterials = [
     unitPrice: 0.15,
     supplier: 'FastenRight Co.',
     minimumStock: 100,
-    description: 'Premium wood screws, various sizes'
+    description: 'Premium wood screws for furniture assembly'
   },
   {
     id: '5',
@@ -52,7 +52,7 @@ export const mockRawMaterials = [
     unitPrice: 4.50,
     supplier: 'Comfort Materials',
     minimumStock: 50,
-    description: 'High-density foam for chair and sofa padding'
+    description: 'High-density foam for chair cushions'
   },
   {
     id: '6',
@@ -63,7 +63,7 @@ export const mockRawMaterials = [
     unitPrice: 25.00,
     supplier: 'Premium Leather Co.',
     minimumStock: 20,
-    description: 'Genuine leather fabric for premium furniture'
+    description: 'Genuine leather fabric for premium chairs'
   },
   {
     id: '7',
@@ -74,7 +74,7 @@ export const mockRawMaterials = [
     unitPrice: 18.00,
     supplier: 'ColorCraft Finishes',
     minimumStock: 10,
-    description: 'Professional walnut wood stain'
+    description: 'Professional walnut wood stain for tables'
   },
   {
     id: '8',
@@ -86,17 +86,139 @@ export const mockRawMaterials = [
     supplier: 'ProtectCoat Ltd.',
     minimumStock: 8,
     description: 'Clear polyurethane protective finish'
+  },
+  {
+    id: '9',
+    name: 'Table Legs - Metal',
+    category: 'Hardware',
+    unit: 'pieces',
+    stockQuantity: 80,
+    unitPrice: 15.00,
+    supplier: 'MetalWorks Inc.',
+    minimumStock: 20,
+    description: 'Sturdy metal table legs'
+  },
+  {
+    id: '10',
+    name: 'Chair Casters',
+    category: 'Hardware',
+    unit: 'pieces',
+    stockQuantity: 120,
+    unitPrice: 8.50,
+    supplier: 'RollTech Solutions',
+    minimumStock: 30,
+    description: 'High-quality chair casters for office chairs'
   }
 ];
 
 export const mockProducts = [
+  // Tables
   {
     id: '1',
-    name: 'Executive Office Chair',
-    price: 299.99,
-    category: 'Office Furniture',
-    stock: 15,
+    name: 'Executive Dining Table',
+    price: 899.99,
+    category: 'Tables',
+    stock: 8,
     barcode: '1234567890123',
+    image: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=300',
+    description: '8-seater oak dining table with elegant design',
+    dimensions: { length: 200, width: 100, height: 75, unit: 'cm' },
+    weight: 55.0,
+    material: 'Oak Wood',
+    color: 'Natural Oak',
+    rawMaterials: [
+      { rawMaterialId: '1', quantity: 30 }, // Oak Wood Planks
+      { rawMaterialId: '4', quantity: 60 }, // Wood Screws
+      { rawMaterialId: '7', quantity: 2 },  // Wood Stain
+      { rawMaterialId: '8', quantity: 1 }   // Polyurethane Finish
+    ]
+  },
+  {
+    id: '2',
+    name: 'Modern Coffee Table',
+    price: 299.99,
+    category: 'Tables',
+    stock: 15,
+    barcode: '2345678901234',
+    image: 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=300',
+    description: 'Contemporary glass-top coffee table with metal legs',
+    dimensions: { length: 120, width: 60, height: 45, unit: 'cm' },
+    weight: 25.0,
+    material: 'Glass & Metal',
+    color: 'Clear Glass',
+    rawMaterials: [
+      { rawMaterialId: '9', quantity: 4 },  // Table Legs - Metal
+      { rawMaterialId: '4', quantity: 20 }, // Wood Screws
+      { rawMaterialId: '8', quantity: 1 }   // Polyurethane Finish
+    ]
+  },
+  {
+    id: '3',
+    name: 'Rustic Farmhouse Table',
+    price: 649.99,
+    category: 'Tables',
+    stock: 6,
+    barcode: '3456789012345',
+    image: 'https://images.pexels.com/photos/1395967/pexels-photo-1395967.jpeg?auto=compress&cs=tinysrgb&w=300',
+    description: 'Handcrafted pine farmhouse dining table',
+    dimensions: { length: 180, width: 90, height: 75, unit: 'cm' },
+    weight: 45.0,
+    material: 'Pine Wood',
+    color: 'Natural Pine',
+    rawMaterials: [
+      { rawMaterialId: '2', quantity: 25 }, // Pine Wood Boards
+      { rawMaterialId: '4', quantity: 50 }, // Wood Screws
+      { rawMaterialId: '7', quantity: 2 },  // Wood Stain
+      { rawMaterialId: '8', quantity: 1 }   // Polyurethane Finish
+    ]
+  },
+  {
+    id: '4',
+    name: 'Glass Side Table',
+    price: 199.99,
+    category: 'Tables',
+    stock: 12,
+    barcode: '4567890123456',
+    image: 'https://images.pexels.com/photos/1571468/pexels-photo-1571468.jpeg?auto=compress&cs=tinysrgb&w=300',
+    description: 'Elegant glass side table with chrome legs',
+    dimensions: { length: 50, width: 50, height: 55, unit: 'cm' },
+    weight: 12.0,
+    material: 'Glass & Chrome',
+    color: 'Clear',
+    rawMaterials: [
+      { rawMaterialId: '9', quantity: 4 },  // Table Legs - Metal
+      { rawMaterialId: '4', quantity: 10 }  // Wood Screws
+    ]
+  },
+  {
+    id: '5',
+    name: 'Standing Desk',
+    price: 549.99,
+    category: 'Tables',
+    stock: 10,
+    barcode: '5678901234567',
+    image: 'https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=300',
+    description: 'Adjustable height standing desk for office',
+    dimensions: { length: 140, width: 70, height: 75, unit: 'cm' },
+    weight: 35.0,
+    material: 'Oak Wood & Metal',
+    color: 'Oak Finish',
+    rawMaterials: [
+      { rawMaterialId: '1', quantity: 15 }, // Oak Wood Planks
+      { rawMaterialId: '9', quantity: 4 },  // Table Legs - Metal
+      { rawMaterialId: '4', quantity: 30 }, // Wood Screws
+      { rawMaterialId: '8', quantity: 1 }   // Polyurethane Finish
+    ]
+  },
+
+  // Chairs
+  {
+    id: '6',
+    name: 'Executive Office Chair',
+    price: 399.99,
+    category: 'Chairs',
+    stock: 20,
+    barcode: '6789012345678',
     image: 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Ergonomic executive chair with leather upholstery',
     dimensions: { length: 65, width: 65, height: 120, unit: 'cm' },
@@ -104,107 +226,89 @@ export const mockProducts = [
     material: 'Leather & Steel',
     color: 'Black',
     rawMaterials: [
-      { rawMaterialId: '6', quantity: 3 }, // Leather Fabric
-      { rawMaterialId: '5', quantity: 2 }, // Foam Padding
-      { rawMaterialId: '3', quantity: 4 }  // Steel Hinges
-    ]
-  },
-  {
-    id: '2',
-    name: 'Dining Table Set',
-    price: 899.99,
-    category: 'Dining Room',
-    stock: 8,
-    barcode: '2345678901234',
-    image: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=300',
-    description: '6-seater oak dining table with matching chairs',
-    dimensions: { length: 180, width: 90, height: 75, unit: 'cm' },
-    weight: 45.0,
-    material: 'Oak Wood',
-    color: 'Natural Oak',
-    rawMaterials: [
-      { rawMaterialId: '1', quantity: 25 }, // Oak Wood Planks
-      { rawMaterialId: '4', quantity: 50 }, // Wood Screws
-      { rawMaterialId: '7', quantity: 2 },  // Wood Stain
-      { rawMaterialId: '8', quantity: 1 }   // Polyurethane Finish
-    ]
-  },
-  {
-    id: '3',
-    name: 'Modern Bookshelf',
-    price: 249.99,
-    category: 'Storage',
-    stock: 12,
-    barcode: '3456789012345',
-    image: 'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=300',
-    description: '5-tier modern bookshelf with clean lines',
-    dimensions: { length: 80, width: 30, height: 180, unit: 'cm' },
-    weight: 25.0,
-    material: 'Pine Wood',
-    color: 'White',
-    rawMaterials: [
-      { rawMaterialId: '2', quantity: 15 }, // Pine Wood Boards
-      { rawMaterialId: '4', quantity: 30 }, // Wood Screws
-      { rawMaterialId: '8', quantity: 1 }   // Polyurethane Finish
-    ]
-  },
-  {
-    id: '4',
-    name: 'Leather Sofa 3-Seater',
-    price: 1299.99,
-    category: 'Living Room',
-    stock: 5,
-    barcode: '4567890123456',
-    image: 'https://images.pexels.com/photos/1148955/pexels-photo-1148955.jpeg?auto=compress&cs=tinysrgb&w=300',
-    description: 'Premium leather 3-seater sofa with steel frame',
-    dimensions: { length: 200, width: 90, height: 85, unit: 'cm' },
-    weight: 55.0,
-    material: 'Leather & Steel Frame',
-    color: 'Brown',
-    rawMaterials: [
-      { rawMaterialId: '6', quantity: 12 }, // Leather Fabric
-      { rawMaterialId: '5', quantity: 8 },  // Foam Padding
+      { rawMaterialId: '6', quantity: 3 },  // Leather Fabric
+      { rawMaterialId: '5', quantity: 2 },  // Foam Padding
+      { rawMaterialId: '10', quantity: 5 }, // Chair Casters
       { rawMaterialId: '4', quantity: 25 }  // Wood Screws
     ]
   },
   {
-    id: '5',
-    name: 'Coffee Table',
-    price: 199.99,
-    category: 'Living Room',
-    stock: 20,
-    barcode: '5678901234567',
-    image: 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=300',
-    description: 'Rustic oak coffee table with storage drawer',
-    dimensions: { length: 120, width: 60, height: 45, unit: 'cm' },
-    weight: 22.0,
-    material: 'Oak Wood',
-    color: 'Walnut Stain',
+    id: '7',
+    name: 'Dining Chair Set',
+    price: 159.99,
+    category: 'Chairs',
+    stock: 24,
+    barcode: '7890123456789',
+    image: 'https://images.pexels.com/photos/1148955/pexels-photo-1148955.jpeg?auto=compress&cs=tinysrgb&w=300',
+    description: 'Set of 2 upholstered dining chairs',
+    dimensions: { length: 45, width: 50, height: 85, unit: 'cm' },
+    weight: 8.0,
+    material: 'Fabric & Wood',
+    color: 'Gray',
     rawMaterials: [
-      { rawMaterialId: '1', quantity: 8 },  // Oak Wood Planks
-      { rawMaterialId: '3', quantity: 2 },  // Steel Hinges
+      { rawMaterialId: '2', quantity: 8 },  // Pine Wood Boards
+      { rawMaterialId: '5', quantity: 2 },  // Foam Padding
       { rawMaterialId: '4', quantity: 20 }, // Wood Screws
+      { rawMaterialId: '8', quantity: 1 }   // Polyurethane Finish
+    ]
+  },
+  {
+    id: '8',
+    name: 'Accent Armchair',
+    price: 449.99,
+    category: 'Chairs',
+    stock: 8,
+    barcode: '8901234567890',
+    image: 'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=300',
+    description: 'Comfortable accent chair with wooden frame',
+    dimensions: { length: 70, width: 75, height: 90, unit: 'cm' },
+    weight: 15.0,
+    material: 'Fabric & Oak',
+    color: 'Beige',
+    rawMaterials: [
+      { rawMaterialId: '1', quantity: 10 }, // Oak Wood Planks
+      { rawMaterialId: '5', quantity: 4 },  // Foam Padding
+      { rawMaterialId: '4', quantity: 30 }, // Wood Screws
       { rawMaterialId: '7', quantity: 1 }   // Wood Stain
     ]
   },
   {
-    id: '6',
-    name: 'Wardrobe Cabinet',
-    price: 699.99,
-    category: 'Bedroom',
-    stock: 6,
-    barcode: '6789012345678',
-    image: 'https://images.pexels.com/photos/1571468/pexels-photo-1571468.jpeg?auto=compress&cs=tinysrgb&w=300',
-    description: '3-door wardrobe with hanging space and shelves',
-    dimensions: { length: 150, width: 60, height: 200, unit: 'cm' },
-    weight: 65.0,
-    material: 'Pine Wood',
-    color: 'White',
+    id: '9',
+    name: 'Bar Stool',
+    price: 89.99,
+    category: 'Chairs',
+    stock: 16,
+    barcode: '9012345678901',
+    image: 'https://images.pexels.com/photos/4050302/pexels-photo-4050302.jpeg?auto=compress&cs=tinysrgb&w=300',
+    description: 'Modern bar stool with adjustable height',
+    dimensions: { length: 40, width: 40, height: 110, unit: 'cm' },
+    weight: 6.5,
+    material: 'Metal & Vinyl',
+    color: 'Black',
     rawMaterials: [
-      { rawMaterialId: '2', quantity: 30 }, // Pine Wood Boards
-      { rawMaterialId: '3', quantity: 6 },  // Steel Hinges
-      { rawMaterialId: '4', quantity: 60 }, // Wood Screws
-      { rawMaterialId: '8', quantity: 2 }   // Polyurethane Finish
+      { rawMaterialId: '9', quantity: 1 },  // Table Legs - Metal
+      { rawMaterialId: '5', quantity: 1 },  // Foam Padding
+      { rawMaterialId: '4', quantity: 10 }  // Wood Screws
+    ]
+  },
+  {
+    id: '10',
+    name: 'Recliner Chair',
+    price: 699.99,
+    category: 'Chairs',
+    stock: 5,
+    barcode: '0123456789012',
+    image: 'https://images.pexels.com/photos/1571463/pexels-photo-1571463.jpeg?auto=compress&cs=tinysrgb&w=300',
+    description: 'Luxury leather recliner with massage function',
+    dimensions: { length: 85, width: 90, height: 105, unit: 'cm' },
+    weight: 35.0,
+    material: 'Premium Leather',
+    color: 'Brown',
+    rawMaterials: [
+      { rawMaterialId: '6', quantity: 8 },  // Leather Fabric
+      { rawMaterialId: '5', quantity: 6 },  // Foam Padding
+      { rawMaterialId: '3', quantity: 8 },  // Steel Hinges
+      { rawMaterialId: '4', quantity: 40 }  // Wood Screws
     ]
   }
 ];
@@ -213,17 +317,33 @@ export const mockTransactions = [
   {
     id: 'TXN-001',
     items: [
-      { product: mockProducts[0], quantity: 1 },
-      { product: mockProducts[4], quantity: 1 }
+      { product: mockProducts[0], quantity: 1 }, // Executive Dining Table
+      { product: mockProducts[6], quantity: 4 }  // Dining Chair Set (2 sets = 8 chairs)
     ],
-    subtotal: 499.98,
-    tax: 40.00,
+    subtotal: 1539.95,
+    tax: 123.20,
     discount: 0,
-    total: 539.98,
+    total: 1663.15,
     paymentMethod: 'card',
     timestamp: new Date('2024-01-15T10:30:00'),
     cashier: 'Sarah Wilson',
     customerName: 'John Smith',
     customerPhone: '+1-555-0123'
+  },
+  {
+    id: 'TXN-002',
+    items: [
+      { product: mockProducts[5], quantity: 1 }, // Executive Office Chair
+      { product: mockProducts[4], quantity: 1 }  // Standing Desk
+    ],
+    subtotal: 949.98,
+    tax: 76.00,
+    discount: 50.00,
+    total: 975.98,
+    paymentMethod: 'cash',
+    timestamp: new Date('2024-01-15T14:20:00'),
+    cashier: 'Sarah Wilson',
+    customerName: 'Jane Doe',
+    customerPhone: '+1-555-0456'
   }
 ];

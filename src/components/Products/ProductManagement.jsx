@@ -118,7 +118,11 @@ export function ProductManagement() {
       title: 'Category',
       dataIndex: 'category',
       key: 'category',
-      render: (category) => <Tag color="blue">{category}</Tag>,
+      render: (category) => (
+        <Tag color={category === 'Tables' ? 'green' : 'orange'}>
+          {category}
+        </Tag>
+      ),
     },
     {
       title: 'Price',
@@ -134,6 +138,40 @@ export function ProductManagement() {
         <Tag color={stock > 10 ? 'green' : stock > 0 ? 'orange' : 'red'}>
           {stock} units
         </Tag>
+      ),
+    },
+    {
+      title: 'Specifications',
+      key: 'specs',
+      render: (record) => (
+        <Space direction="vertical" size="small">
+          {record.dimensions && (
+            <div className="flex items-center space-x-1">
+              <span className="material-icons text-gray-400 text-sm">straighten</span>
+              <Text className="text-xs">
+                {record.dimensions.length}×{record.dimensions.width}×{record.dimensions.height} {record.dimensions.unit}
+              </Text>
+            </div>
+          )}
+          {record.material && (
+            <Text className="text-xs">
+              <span className="material-icons text-xs mr-1">texture</span>
+              {record.material}
+            </Text>
+          )}
+          {record.color && (
+            <div className="flex items-center space-x-1">
+              <span className="material-icons text-gray-400 text-sm">palette</span>
+              <Text className="text-xs">{record.color}</Text>
+            </div>
+          )}
+          {record.weight && (
+            <Text className="text-xs">
+              <span className="material-icons text-xs mr-1">scale</span>
+              {record.weight} kg
+            </Text>
+          )}
+        </Space>
       ),
     },
     {
@@ -234,12 +272,8 @@ export function ProductManagement() {
                 rules={[{ required: true, message: 'Please select category' }]}
               >
                 <Select placeholder="Select category">
-                  <Option value="Living Room">Living Room</Option>
-                  <Option value="Bedroom">Bedroom</Option>
-                  <Option value="Dining Room">Dining Room</Option>
-                  <Option value="Office Furniture">Office Furniture</Option>
-                  <Option value="Storage">Storage</Option>
-                  <Option value="Outdoor">Outdoor</Option>
+                  <Option value="Tables">Tables</Option>
+                  <Option value="Chairs">Chairs</Option>
                 </Select>
               </Form.Item>
 
@@ -283,27 +317,52 @@ export function ProductManagement() {
             </Col>
 
             <Col span={12}>
-              <Form.Item name="description" label="Description">
-                <TextArea
-                  rows={4}
-                  placeholder="Enter product description"
-                />
+              <Form.Item label="Dimensions">
+                <Input.Group compact>
+                  <Form.Item name={['dimensions', 'length']} noStyle>
+                    <InputNumber placeholder="Length" className="w-1/4" />
+                  </Form.Item>
+                  <Form.Item name={['dimensions', 'width']} noStyle>
+                    <InputNumber placeholder="Width" className="w-1/4" />
+                  </Form.Item>
+                  <Form.Item name={['dimensions', 'height']} noStyle>
+                    <InputNumber placeholder="Height" className="w-1/4" />
+                  </Form.Item>
+                  <Form.Item name={['dimensions', 'unit']} noStyle>
+                    <Select placeholder="Unit" className="w-1/4">
+                      <Option value="cm">cm</Option>
+                      <Option value="inch">inch</Option>
+                    </Select>
+                  </Form.Item>
+                </Input.Group>
               </Form.Item>
+
+              <Row gutter={8}>
+                <Col span={12}>
+                  <Form.Item name="weight" label="Weight (kg)">
+                    <InputNumber
+                      min={0}
+                      step={0.1}
+                      placeholder="0.0"
+                      className="w-full"
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="color" label="Color">
+                    <Input placeholder="Enter color" />
+                  </Form.Item>
+                </Col>
+              </Row>
 
               <Form.Item name="material" label="Material">
                 <Input placeholder="Enter material type" />
               </Form.Item>
 
-              <Form.Item name="color" label="Color">
-                <Input placeholder="Enter color" />
-              </Form.Item>
-
-              <Form.Item name="weight" label="Weight (kg)">
-                <InputNumber
-                  min={0}
-                  step={0.1}
-                  placeholder="0.0"
-                  className="w-full"
+              <Form.Item name="description" label="Description">
+                <TextArea
+                  rows={3}
+                  placeholder="Enter product description"
                 />
               </Form.Item>
             </Col>

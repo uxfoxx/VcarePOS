@@ -26,22 +26,13 @@ export function ProductGrid() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
-  const categories = ['All', 'Starters', 'Breakfast', 'Lunch', 'Dinner', 'Beverages', 'Desserts'];
+  // Categories for furniture
+  const categories = ['All', 'Tables', 'Chairs'];
   
-  // Map furniture categories to food categories for demo
-  const categoryMapping = {
-    'Office Furniture': 'Lunch',
-    'Dining Room': 'Lunch', 
-    'Storage': 'Breakfast',
-    'Living Room': 'Dinner',
-    'Bedroom': 'Breakfast'
-  };
-
   const filteredProducts = state.products
     .filter(product => {
-      const mappedCategory = categoryMapping[product.category] || 'Lunch';
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = selectedCategory === 'All' || mappedCategory === selectedCategory;
+      const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
 
@@ -63,7 +54,7 @@ export function ProductGrid() {
         bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
         title={
           <div className="flex items-center justify-between">
-            <Title level={4} className="m-0">Menu Items</Title>
+            <Title level={4} className="m-0">Products</Title>
             <Input
               placeholder="Search products..."
               prefix={<span className="material-icons text-gray-400">search</span>}
@@ -93,8 +84,8 @@ export function ProductGrid() {
         <div className="p-4 overflow-y-auto" style={{ height: 'calc(100% - 140px)' }}>
           {filteredProducts.length === 0 ? (
             <Empty
-              image={<span className="material-icons text-6xl text-gray-300">restaurant</span>}
-              description="No items found"
+              image={<span className="material-icons text-6xl text-gray-300">inventory_2</span>}
+              description="No products found"
             />
           ) : (
             <Row gutter={[16, 16]}>
@@ -117,6 +108,12 @@ export function ProductGrid() {
                             style={{ backgroundColor: '#0E72BD' }}
                           />
                         </div>
+                        <div className="absolute top-2 left-2">
+                          <Badge 
+                            count={product.category}
+                            style={{ backgroundColor: product.category === 'Tables' ? '#52c41a' : '#fa8c16' }}
+                          />
+                        </div>
                       </div>
                     }
                     onClick={() => handleProductClick(product)}
@@ -129,6 +126,9 @@ export function ProductGrid() {
                         </Text>
                         <Text type="secondary" className="text-xs block">
                           ${product.price.toFixed(2)}
+                        </Text>
+                        <Text type="secondary" className="text-xs block">
+                          Stock: {product.stock} units
                         </Text>
                       </div>
                       
@@ -143,7 +143,7 @@ export function ProductGrid() {
                         disabled={product.stock === 0}
                         className="bg-[#0E72BD] hover:bg-blue-700"
                       >
-                        Add to Order
+                        {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
                       </Button>
                     </div>
                   </Card>
@@ -174,7 +174,7 @@ export function ProductGrid() {
             disabled={selectedProduct?.stock === 0}
             className="bg-[#0E72BD] hover:bg-blue-700"
           >
-            Add to Order
+            Add to Cart
           </Button>
         ]}
       >
@@ -201,16 +201,25 @@ export function ProductGrid() {
             
             <Descriptions bordered size="small">
               <Descriptions.Item label="Category">
-                {categoryMapping[selectedProduct.category] || 'Lunch'}
+                {selectedProduct.category}
               </Descriptions.Item>
               <Descriptions.Item label="Stock">
                 {selectedProduct.stock} available
               </Descriptions.Item>
-              {selectedProduct.material && (
-                <Descriptions.Item label="Ingredients">
-                  {selectedProduct.material}
+              <Descriptions.Item label="Material">
+                {selectedProduct.material}
+              </Descriptions.Item>
+              <Descriptions.Item label="Color">
+                {selectedProduct.color}
+              </Descriptions.Item>
+              {selectedProduct.dimensions && (
+                <Descriptions.Item label="Dimensions">
+                  {selectedProduct.dimensions.length}×{selectedProduct.dimensions.width}×{selectedProduct.dimensions.height} {selectedProduct.dimensions.unit}
                 </Descriptions.Item>
               )}
+              <Descriptions.Item label="Weight">
+                {selectedProduct.weight} kg
+              </Descriptions.Item>
             </Descriptions>
           </div>
         )}

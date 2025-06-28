@@ -40,12 +40,12 @@ export function ProductModal({
   const [selectedMaterials, setSelectedMaterials] = useState([]);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [productData, setProductData] = useState({});
 
   // Initialize form data when editing
   useEffect(() => {
     if (editingProduct && open) {
-      // Set product form values
-      productForm.setFieldsValue({
+      const formData = {
         name: editingProduct.name || '',
         category: editingProduct.category || '',
         price: editingProduct.price || 0,
@@ -56,7 +56,11 @@ export function ProductModal({
         material: editingProduct.material || '',
         color: editingProduct.color || '',
         dimensions: editingProduct.dimensions || {}
-      });
+      };
+      
+      // Set product form values
+      productForm.setFieldsValue(formData);
+      setProductData(formData);
       
       // Enrich raw materials with full details from state
       const enrichedMaterials = (editingProduct.rawMaterials || []).map(rawMat => {
@@ -87,7 +91,21 @@ export function ProductModal({
       setCurrentStep(0);
     } else if (open && !editingProduct) {
       // Reset for new product
+      const initialData = {
+        name: '',
+        category: '',
+        price: 0,
+        stock: 0,
+        barcode: '',
+        description: '',
+        weight: 0,
+        material: '',
+        color: '',
+        dimensions: {}
+      };
+      
       productForm.resetFields();
+      setProductData(initialData);
       setSelectedMaterials([]);
       setImageFile(null);
       setImagePreview(null);
@@ -102,6 +120,7 @@ export function ProductModal({
     const random = Math.random().toString(36).substring(2, 5).toUpperCase();
     const sku = `SKU-${timestamp}${random}`;
     productForm.setFieldsValue({ barcode: sku });
+    setProductData(prev => ({ ...prev, barcode: sku }));
   };
 
   const handleImageUpload = (file) => {
@@ -110,6 +129,7 @@ export function ProductModal({
     const reader = new FileReader();
     reader.onload = (e) => {
       setImagePreview(e.target.result);
+      setProductData(prev => ({ ...prev, image: e.target.result }));
     };
     reader.readAsDataURL(file);
     setImageFile(file);
@@ -149,14 +169,25 @@ export function ProductModal({
     message.success('Material removed');
   };
 
+  const handleFormChange = (changedValues, allValues) => {
+    // Update productData state whenever form values change
+    setProductData(prev => ({ ...prev, ...allValues }));
+  };
+
   const handleNext = async () => {
     if (currentStep === 0) {
       try {
+        // Validate the form
         const values = await productForm.validateFields();
-        console.log('Product form values:', values); // Debug log
+        console.log('Validated form values:', values);
+        
+        // Update productData with validated values
+        setProductData(prev => ({ ...prev, ...values }));
+        
+        // Move to next step
         setCurrentStep(1);
       } catch (error) {
-        console.error('Validation error:', error); // Debug log
+        console.error('Validation error:', error);
         
         // Extract missing field names from the error
         if (error.errorFields && error.errorFields.length > 0) {
@@ -167,7 +198,12 @@ export function ProductModal({
               'name': 'Product Name',
               'category': 'Category',
               'price': 'Price',
-              'stock': 'Stock'
+              'stock': 'Stock',
+              'barcode': 'SKU/Barcode',
+              'description': 'Description',
+              'weight': 'Weight',
+              'material': 'Material',
+              'color': 'Color'
             };
             return fieldLabels[fieldName] || fieldName;
           });
@@ -188,66 +224,71 @@ export function ProductModal({
     try {
       setLoading(true);
       
-      // Get form values without validation first
-      const productValues = productForm.getFieldsValue();
-      console.log('Form values before validation:', productValues); // Debug log
+      // Get the latest form values
+      const currentFormValues = productForm.getFieldsValue();
+      const finalProductData = { ...productData, ...currentFormValues };
+      
+      console.log('Final product data before submission:', finalProductData);
       
       // Manual validation for required fields
       const requiredFields = ['name', 'category', 'price', 'stock'];
       const missingFields = [];
       
       requiredFields.forEach(field => {
-        if (!productValues[field] || productValues[field] === '' || productValues[field] === 0) {
-          if (field === 'price' || field === 'stock') {
-            // For numeric fields, check if they're actually 0 or just empty
-            if (productValues[field] === undefined || productValues[field] === null || productValues[field] === '') {
-              missingFields.push(field);
-            }
-          } else {
-            missingFields.push(field);
-          }
+        const value = finalProductData[field];
+        if (value === undefined || value === null || value === '') {
+          missingFields.push(field);
+        } else if ((field === 'price' || field === 'stock') && Number(value) < 0) {
+          missingFields.push(field);
         }
       });
 
       if (missingFields.length > 0) {
-        message.error(`Please fill in required fields: ${missingFields.join(', ')}`);
+        const fieldLabels = {
+          'name': 'Product Name',
+          'category': 'Category', 
+          'price': 'Price',
+          'stock': 'Stock'
+        };
+        const missingLabels = missingFields.map(field => fieldLabels[field] || field);
+        message.error(`Please fill in required fields: ${missingLabels.join(', ')}`);
         setCurrentStep(0); // Go back to first step
         return;
       }
 
-      // Prepare the data object
-      const productData = {
+      // Prepare the final product object
+      const productSubmissionData = {
         id: editingProduct?.id || `PROD-${Date.now()}`,
-        name: productValues.name,
-        price: Number(productValues.price) || 0,
-        category: productValues.category,
-        stock: Number(productValues.stock) || 0,
-        barcode: productValues.barcode || '',
-        description: productValues.description || '',
-        dimensions: productValues.dimensions && (
-          productValues.dimensions.length || 
-          productValues.dimensions.width || 
-          productValues.dimensions.height
+        name: finalProductData.name,
+        price: Number(finalProductData.price) || 0,
+        category: finalProductData.category,
+        stock: Number(finalProductData.stock) || 0,
+        barcode: finalProductData.barcode || '',
+        description: finalProductData.description || '',
+        dimensions: finalProductData.dimensions && (
+          finalProductData.dimensions.length || 
+          finalProductData.dimensions.width || 
+          finalProductData.dimensions.height
         ) ? {
-          length: Number(productValues.dimensions.length) || 0,
-          width: Number(productValues.dimensions.width) || 0,
-          height: Number(productValues.dimensions.height) || 0,
-          unit: productValues.dimensions.unit || 'cm'
+          length: Number(finalProductData.dimensions.length) || 0,
+          width: Number(finalProductData.dimensions.width) || 0,
+          height: Number(finalProductData.dimensions.height) || 0,
+          unit: finalProductData.dimensions.unit || 'cm'
         } : null,
-        weight: Number(productValues.weight) || 0,
-        material: productValues.material || '',
-        color: productValues.color || '',
-        image: imagePreview || productValues.image || '',
+        weight: Number(finalProductData.weight) || 0,
+        material: finalProductData.material || '',
+        color: finalProductData.color || '',
+        image: imagePreview || finalProductData.image || '',
         rawMaterials: selectedMaterials.map(m => ({
           rawMaterialId: m.rawMaterialId,
           quantity: m.quantity
         }))
       };
 
-      console.log('Final product data:', productData); // Debug log
+      console.log('Submitting product data:', productSubmissionData);
 
       // Pass the productData to the onSubmit callback
-      await onSubmit(productData);
+      await onSubmit(productSubmissionData);
       handleClose();
     } catch (error) {
       console.error('Error submitting product:', error);
@@ -264,6 +305,7 @@ export function ProductModal({
     setSelectedMaterials([]);
     setImageFile(null);
     setImagePreview(null);
+    setProductData({});
     onClose();
   };
 
@@ -318,13 +360,22 @@ export function ProductModal({
   ];
 
   const renderProductDetails = () => (
-    <Form form={productForm} layout="vertical" className="space-y-4">
+    <Form 
+      form={productForm} 
+      layout="vertical" 
+      className="space-y-4"
+      onValuesChange={handleFormChange}
+      preserve={false}
+    >
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item
             name="name"
             label="Product Name"
-            rules={[{ required: true, message: 'Please enter product name' }]}
+            rules={[
+              { required: true, message: 'Please enter product name' },
+              { min: 2, message: 'Product name must be at least 2 characters' }
+            ]}
           >
             <Input placeholder="Enter product name" />
           </Form.Item>
@@ -335,7 +386,7 @@ export function ProductModal({
             label="Category"
             rules={[{ required: true, message: 'Please select category' }]}
           >
-            <Select placeholder="Select category">
+            <Select placeholder="Select category" allowClear>
               {state.categories?.filter(cat => cat.isActive).map(category => (
                 <Option key={category.id} value={category.name}>
                   {category.name}
@@ -351,10 +402,13 @@ export function ProductModal({
           <Form.Item
             name="price"
             label="Price ($)"
-            rules={[{ required: true, message: 'Please enter price' }]}
+            rules={[
+              { required: true, message: 'Please enter price' },
+              { type: 'number', min: 0.01, message: 'Price must be greater than 0' }
+            ]}
           >
             <InputNumber
-              min={0}
+              min={0.01}
               step={0.01}
               placeholder="0.00"
               className="w-full"
@@ -365,7 +419,10 @@ export function ProductModal({
           <Form.Item
             name="stock"
             label="Stock"
-            rules={[{ required: true, message: 'Please enter stock' }]}
+            rules={[
+              { required: true, message: 'Please enter stock' },
+              { type: 'number', min: 0, message: 'Stock cannot be negative' }
+            ]}
           >
             <InputNumber
               min={0}
@@ -417,13 +474,13 @@ export function ProductModal({
       <Form.Item label="Dimensions">
         <Input.Group compact>
           <Form.Item name={['dimensions', 'length']} noStyle>
-            <InputNumber placeholder="Length" className="w-1/4" />
+            <InputNumber placeholder="Length" className="w-1/4" min={0} />
           </Form.Item>
           <Form.Item name={['dimensions', 'width']} noStyle>
-            <InputNumber placeholder="Width" className="w-1/4" />
+            <InputNumber placeholder="Width" className="w-1/4" min={0} />
           </Form.Item>
           <Form.Item name={['dimensions', 'height']} noStyle>
-            <InputNumber placeholder="Height" className="w-1/4" />
+            <InputNumber placeholder="Height" className="w-1/4" min={0} />
           </Form.Item>
           <Form.Item name={['dimensions', 'unit']} noStyle>
             <Select placeholder="Unit" className="w-1/4">

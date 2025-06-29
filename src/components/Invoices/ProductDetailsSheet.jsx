@@ -196,7 +196,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                   <div>
                     <Text strong className="block text-gray-600">Price:</Text>
                     <Text className="text-xl font-bold text-blue-600">
-                      ${(product.price || product.basePrice || 0).toFixed(2)}
+                      ${(product.price || 0).toFixed(2)}
                     </Text>
                   </div>
                   <div>

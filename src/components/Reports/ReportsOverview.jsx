@@ -12,6 +12,8 @@ import {
   Dropdown,
   DatePicker,
   Select,
+  Tabs,
+  Table,
   Button
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
@@ -21,6 +23,8 @@ import { ActionButton } from '../common/ActionButton';
 import { PageHeader } from '../common/PageHeader';
 import { StockAlert } from '../common/StockAlert';
 import { ExportModal } from '../common/ExportModal';
+import { EnhancedTable } from '../common/EnhancedTable';
+import { SearchInput } from '../common/SearchInput';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -34,6 +38,8 @@ export function ReportsOverview() {
   const [exportDataType, setExportDataType] = useState('comprehensive');
   const [dateFilter, setDateFilter] = useState('all');
   const [dateRange, setDateRange] = useState(null);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Filter transactions based on date
   const getFilteredTransactions = () => {
@@ -56,6 +62,16 @@ export function ReportsOverview() {
       });
     }
     
+    // Apply search filter if provided
+    if (searchTerm) {
+      filtered = filtered.filter(t => 
+        t.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.cashier.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.salesperson?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
     return filtered;
   };
 
@@ -74,8 +90,8 @@ export function ReportsOverview() {
   // Get stock alerts
   const lowStockMaterials = state.rawMaterials.filter(m => m.stockQuantity <= m.minimumStock);
   const outOfStockMaterials = state.rawMaterials.filter(m => m.stockQuantity === 0);
-  const lowStockProducts = state.allProducts.filter(p => p.stock <= 10 && p.stock > 0);
-  const outOfStockProducts = state.allProducts.filter(p => p.stock === 0);
+  const lowStockProducts = state.products.filter(p => p.stock <= 10 && p.stock > 0);
+  const outOfStockProducts = state.products.filter(p => p.stock === 0);
 
   // Calculate top selling products
   const productSales = {};
@@ -206,302 +222,745 @@ export function ReportsOverview() {
     }
   ];
 
-  return (
-    <>
-      <Space direction="vertical" size="large" className="w-full">
-        {/* Stock Alerts */}
-        {outOfStockMaterials.length > 0 && (
-          <StockAlert
-            type="error"
-            title="Critical Stock Alert"
-            materials={outOfStockMaterials}
-            products={outOfStockProducts}
-          />
-        )}
+  // Product Report Table Columns
+  const productColumns = [
+    {
+      title: 'Product',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text, record) => (
+        <div>
+          <Text strong>{text}</Text>
+          <br />
+          <Text type="secondary" className="text-xs">SKU: {record.barcode}</Text>
+        </div>
+      ),
+      sorter: (a, b) => a.name.localeCompare(b.name),
+    },
+    {
+      title: 'Category',
+      dataIndex: 'category',
+      key: 'category',
+      render: (category) => <Tag color="blue">{category}</Tag>,
+      filters: [...new Set(state.products.map(p => p.category))].map(cat => ({
+        text: cat,
+        value: cat
+      })),
+      onFilter: (value, record) => record.category === value,
+    },
+    {
+      title: 'Price',
+      dataIndex: 'price',
+      key: 'price',
+      render: (price) => <Text strong>${price.toFixed(2)}</Text>,
+      sorter: (a, b) => a.price - b.price,
+    },
+    {
+      title: 'Stock',
+      dataIndex: 'stock',
+      key: 'stock',
+      render: (stock) => (
+        <Tag color={stock > 10 ? 'green' : stock > 0 ? 'orange' : 'red'}>
+          {stock} units
+        </Tag>
+      ),
+      sorter: (a, b) => a.stock - b.stock,
+      filters: [
+        { text: 'In Stock (>10)', value: 'in-stock' },
+        { text: 'Low Stock (1-10)', value: 'low-stock' },
+        { text: 'Out of Stock', value: 'out-of-stock' },
+      ],
+      onFilter: (value, record) => {
+        if (value === 'in-stock') return record.stock > 10;
+        if (value === 'low-stock') return record.stock > 0 && record.stock <= 10;
+        if (value === 'out-of-stock') return record.stock === 0;
+        return true;
+      },
+    },
+    {
+      title: 'Has Sizes',
+      dataIndex: 'hasSizes',
+      key: 'hasSizes',
+      render: (hasSizes) => (
+        hasSizes ? <Tag color="purple">Yes</Tag> : <Tag color="default">No</Tag>
+      ),
+      filters: [
+        { text: 'Has Sizes', value: true },
+        { text: 'No Sizes', value: false },
+      ],
+      onFilter: (value, record) => record.hasSizes === value,
+    },
+    {
+      title: 'Total Value',
+      key: 'value',
+      render: (record) => <Text>${(record.price * record.stock).toFixed(2)}</Text>,
+      sorter: (a, b) => (a.price * a.stock) - (b.price * b.stock),
+    }
+  ];
+
+  // Order Report Table Columns
+  const orderColumns = [
+    {
+      title: 'Order ID',
+      dataIndex: 'id',
+      key: 'id',
+      render: (id) => <Text code>{id}</Text>,
+      sorter: (a, b) => a.id.localeCompare(b.id),
+    },
+    {
+      title: 'Date',
+      dataIndex: 'timestamp',
+      key: 'timestamp',
+      render: (timestamp) => (
+        <div>
+          <Text>{new Date(timestamp).toLocaleDateString()}</Text>
+          <br />
+          <Text type="secondary" className="text-xs">
+            {new Date(timestamp).toLocaleTimeString()}
+          </Text>
+        </div>
+      ),
+      sorter: (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
+      defaultSortOrder: 'descend',
+    },
+    {
+      title: 'Customer',
+      key: 'customer',
+      render: (record) => (
+        <Text>{record.customerName || 'Walk-in Customer'}</Text>
+      ),
+    },
+    {
+      title: 'Items',
+      dataIndex: 'items',
+      key: 'items',
+      render: (items) => <Tag color="blue">{items.length} items</Tag>,
+      sorter: (a, b) => a.items.length - b.items.length,
+    },
+    {
+      title: 'Payment',
+      dataIndex: 'paymentMethod',
+      key: 'paymentMethod',
+      render: (method) => <Tag color="green">{method.toUpperCase()}</Tag>,
+      filters: [
+        { text: 'Card', value: 'card' },
+        { text: 'Cash', value: 'cash' },
+        { text: 'Digital', value: 'digital' },
+      ],
+      onFilter: (value, record) => record.paymentMethod === value,
+    },
+    {
+      title: 'Total',
+      dataIndex: 'total',
+      key: 'total',
+      render: (total) => <Text strong className="text-blue-600">${total.toFixed(2)}</Text>,
+      sorter: (a, b) => a.total - b.total,
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status) => (
+        <Tag color={status === 'completed' ? 'green' : status === 'refunded' ? 'red' : 'orange'}>
+          {status.toUpperCase()}
+        </Tag>
+      ),
+      filters: [
+        { text: 'Completed', value: 'completed' },
+        { text: 'Refunded', value: 'refunded' },
+        { text: 'Partially Refunded', value: 'partially-refunded' },
+      ],
+      onFilter: (value, record) => record.status === value,
+    }
+  ];
+
+  // Raw Material Report Table Columns
+  const materialColumns = [
+    {
+      title: 'Material',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text, record) => (
+        <div>
+          <Text strong>{text}</Text>
+          <br />
+          <Text type="secondary" className="text-xs">{record.description}</Text>
+        </div>
+      ),
+      sorter: (a, b) => a.name.localeCompare(b.name),
+    },
+    {
+      title: 'Category',
+      dataIndex: 'category',
+      key: 'category',
+      render: (category) => <Tag color="blue">{category}</Tag>,
+      filters: [...new Set(state.rawMaterials.map(m => m.category))].map(cat => ({
+        text: cat,
+        value: cat
+      })),
+      onFilter: (value, record) => record.category === value,
+    },
+    {
+      title: 'Stock',
+      key: 'stock',
+      render: (record) => (
+        <div>
+          <Text strong>{record.stockQuantity} {record.unit}</Text>
+          <br />
+          <Text type="secondary" className="text-xs">
+            Min: {record.minimumStock} {record.unit}
+          </Text>
+        </div>
+      ),
+      sorter: (a, b) => a.stockQuantity - b.stockQuantity,
+    },
+    {
+      title: 'Status',
+      key: 'status',
+      render: (record) => {
+        const isOutOfStock = record.stockQuantity === 0;
+        const isLowStock = record.stockQuantity <= record.minimumStock;
         
-        {lowStockMaterials.length > 0 && (
-          <StockAlert
-            type="warning"
-            title="Low Stock Warning"
-            materials={lowStockMaterials}
-            products={lowStockProducts}
-          />
-        )}
+        return (
+          <Tag color={isOutOfStock ? 'red' : isLowStock ? 'orange' : 'green'}>
+            {isOutOfStock ? 'Out of Stock' : isLowStock ? 'Low Stock' : 'In Stock'}
+          </Tag>
+        );
+      },
+      filters: [
+        { text: 'In Stock', value: 'in-stock' },
+        { text: 'Low Stock', value: 'low-stock' },
+        { text: 'Out of Stock', value: 'out-of-stock' },
+      ],
+      onFilter: (value, record) => {
+        const isOutOfStock = record.stockQuantity === 0;
+        const isLowStock = record.stockQuantity <= record.minimumStock;
+        
+        if (value === 'out-of-stock') return isOutOfStock;
+        if (value === 'low-stock') return isLowStock && !isOutOfStock;
+        if (value === 'in-stock') return !isLowStock && !isOutOfStock;
+        return true;
+      },
+    },
+    {
+      title: 'Unit Price',
+      dataIndex: 'unitPrice',
+      key: 'unitPrice',
+      render: (price) => <Text>${price.toFixed(2)}</Text>,
+      sorter: (a, b) => a.unitPrice - b.unitPrice,
+    },
+    {
+      title: 'Total Value',
+      key: 'value',
+      render: (record) => <Text>${(record.stockQuantity * record.unitPrice).toFixed(2)}</Text>,
+      sorter: (a, b) => (a.stockQuantity * a.unitPrice) - (b.stockQuantity * b.unitPrice),
+    },
+    {
+      title: 'Supplier',
+      dataIndex: 'supplier',
+      key: 'supplier',
+    }
+  ];
 
-        <Card>
-          <PageHeader
-            title="Furniture Store Analytics"
-            icon="analytics"
-            subtitle="Comprehensive business insights and reports"
-            extra={
-              <Space>
-                <Select
-                  value={dateFilter}
-                  onChange={setDateFilter}
-                  className="w-32"
-                >
-                  <Option value="all">All Time</Option>
-                  <Option value="today">Today</Option>
-                  <Option value="week">This Week</Option>
-                  <Option value="month">This Month</Option>
-                  <Option value="custom">Custom Range</Option>
-                </Select>
-                
-                {dateFilter === 'custom' && (
-                  <RangePicker
-                    value={dateRange}
-                    onChange={setDateRange}
-                    placeholder={['Start Date', 'End Date']}
-                  />
-                )}
-                
-                <Dropdown
-                  menu={{ items: exportMenuItems }}
-                  trigger={['click']}
-                >
-                  <ActionButton.Primary icon="download">
-                    Export Reports
-                  </ActionButton.Primary>
-                </Dropdown>
-              </Space>
-            }
-          />
+  // Dashboard Tab
+  const renderDashboardTab = () => (
+    <Space direction="vertical" size="large" className="w-full">
+      {/* Stock Alerts */}
+      {outOfStockMaterials.length > 0 && (
+        <StockAlert
+          type="error"
+          title="Critical Stock Alert"
+          materials={outOfStockMaterials}
+          products={outOfStockProducts}
+        />
+      )}
+      
+      {lowStockMaterials.length > 0 && (
+        <StockAlert
+          type="warning"
+          title="Low Stock Warning"
+          materials={lowStockMaterials}
+          products={lowStockProducts}
+        />
+      )}
 
-          <Row gutter={[16, 16]}>
-            {stats.map((stat, index) => (
-              <Col key={index} xs={24} sm={12} lg={8} xl={4}>
-                <Card className="text-center">
-                  <div className="flex items-center justify-between mb-2">
-                    <div 
-                      className="flex items-center justify-center w-10 h-10 rounded-lg text-white"
-                      style={{ backgroundColor: stat.color }}
-                    >
-                      <Icon name={stat.icon} />
-                    </div>
-                    <Tag color="green" className="text-xs">{stat.change}</Tag>
-                  </div>
-                  <Statistic
-                    title={stat.title}
-                    value={stat.value}
-                    precision={stat.precision}
-                    prefix={stat.prefix}
-                    valueStyle={{ color: stat.color, fontSize: '20px' }}
-                  />
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        </Card>
-
-        <Row gutter={16}>
-          {/* Top Selling Products */}
-          <Col xs={24} lg={12}>
-            <Card 
-              title={
-                <Space>
-                  <Icon name="inventory_2" className="text-blue-600" />
-                  <Title level={5} className="m-0">Top Selling Furniture</Title>
-                </Space>
-              }
-              extra={
-                <ActionButton.Text 
-                  icon="download"
-                  onClick={() => {
-                    setExportDataType('products');
-                    setShowExportModal(true);
-                  }}
-                >
-                  Export
-                </ActionButton.Text>
-              }
-            >
-              {topProducts.length > 0 ? (
-                <List
-                  dataSource={topProducts}
-                  renderItem={(item, index) => (
-                    <List.Item>
-                      <List.Item.Meta
-                        avatar={
-                          <div className="flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full text-sm font-bold">
-                            {index + 1}
-                          </div>
-                        }
-                        title={
-                          <div className="flex items-center justify-between">
-                            <Text strong>{item.product.name}</Text>
-                            <Text strong className="text-blue-600">
-                              ${item.revenue.toFixed(2)}
-                            </Text>
-                          </div>
-                        }
-                        description={
-                          <div>
-                            <Text type="secondary">{item.product.category}</Text>
-                            <br />
-                            <Text type="secondary" className="text-xs">
-                              {item.soldQuantity} units sold
-                            </Text>
-                            <Progress 
-                              percent={Math.min((item.soldQuantity / (topProducts[0]?.soldQuantity || 1)) * 100, 100)} 
-                              size="small" 
-                              showInfo={false}
-                              className="mt-1"
-                            />
-                          </div>
-                        }
-                      />
-                    </List.Item>
-                  )}
-                />
-              ) : (
-                <div className="text-center py-8">
-                  <Icon name="inventory_2" className="text-4xl text-gray-300 mb-2" />
-                  <Text type="secondary">No sales data for selected period</Text>
-                </div>
-              )}
-            </Card>
-          </Col>
-
-          {/* Raw Material Status */}
-          <Col xs={24} lg={12}>
-            <Card 
-              title={
-                <Space>
-                  <Icon name="category" className="text-blue-600" />
-                  <Title level={5} className="m-0">Raw Material Status</Title>
-                </Space>
-              }
-              extra={
-                <ActionButton.Text 
-                  icon="download"
-                  onClick={() => {
-                    setExportDataType('raw-materials');
-                    setShowExportModal(true);
-                  }}
-                >
-                  Export
-                </ActionButton.Text>
-              }
-            >
-              <List
-                dataSource={state.rawMaterials.slice(0, 5)}
-                renderItem={(material) => {
-                  const stockPercentage = Math.min((material.stockQuantity / (material.minimumStock * 3)) * 100, 100);
-                  const isLowStock = material.stockQuantity <= material.minimumStock;
-                  const isOutOfStock = material.stockQuantity === 0;
-                  
-                  return (
-                    <List.Item>
-                      <List.Item.Meta
-                        avatar={
-                          <div className="flex items-center justify-center w-8 h-8 bg-orange-500 text-white rounded">
-                            <Icon name="category" />
-                          </div>
-                        }
-                        title={
-                          <div className="flex items-center justify-between">
-                            <Text strong>{material.name}</Text>
-                            <Text strong>
-                              {material.stockQuantity} {material.unit}
-                            </Text>
-                          </div>
-                        }
-                        description={
-                          <div>
-                            <Text type="secondary">{material.category}</Text>
-                            <br />
-                            <div className="flex items-center justify-between mt-1">
-                              <Progress 
-                                percent={stockPercentage} 
-                                size="small" 
-                                status={isOutOfStock ? 'exception' : isLowStock ? 'active' : 'normal'}
-                                showInfo={false}
-                                className="flex-1 mr-2"
-                              />
-                              <Tag color={isOutOfStock ? 'red' : isLowStock ? 'orange' : 'green'} className="text-xs">
-                                {isOutOfStock ? 'Out of Stock' : isLowStock ? 'Low Stock' : 'In Stock'}
-                              </Tag>
-                            </div>
-                          </div>
-                        }
-                      />
-                    </List.Item>
-                  );
-                }}
-              />
-            </Card>
-          </Col>
-        </Row>
-
-        {/* Quick Export Actions */}
-        <Card 
-          title={
+      <Card>
+        <PageHeader
+          title="Furniture Store Analytics"
+          icon="analytics"
+          subtitle="Comprehensive business insights and reports"
+          extra={
             <Space>
-              <Icon name="download" className="text-blue-600" />
-              <Title level={5} className="m-0">Quick Export Actions</Title>
+              <Select
+                value={dateFilter}
+                onChange={setDateFilter}
+                className="w-32"
+              >
+                <Option value="all">All Time</Option>
+                <Option value="today">Today</Option>
+                <Option value="week">This Week</Option>
+                <Option value="month">This Month</Option>
+                <Option value="custom">Custom Range</Option>
+              </Select>
+              
+              {dateFilter === 'custom' && (
+                <RangePicker
+                  value={dateRange}
+                  onChange={setDateRange}
+                  placeholder={['Start Date', 'End Date']}
+                />
+              )}
+              
+              <Dropdown
+                menu={{ items: exportMenuItems }}
+                trigger={['click']}
+              >
+                <ActionButton.Primary icon="download">
+                  Export Reports
+                </ActionButton.Primary>
+              </Dropdown>
             </Space>
           }
-        >
-          <Row gutter={16}>
-            <Col xs={24} sm={12} md={8} lg={6}>
-              <Card 
-                size="small" 
-                className="text-center cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => {
-                  setExportDataType('comprehensive');
-                  setShowExportModal(true);
-                }}
-              >
-                <Icon name="analytics" className="text-2xl text-blue-600 mb-2" />
-                <Text strong className="block">All Data</Text>
-                <Text type="secondary" className="text-xs">Comprehensive report</Text>
+        />
+
+        <Row gutter={[16, 16]} data-tour="stats-cards">
+          {stats.map((stat, index) => (
+            <Col key={index} xs={24} sm={12} lg={8} xl={4}>
+              <Card className="text-center">
+                <div className="flex items-center justify-between mb-2">
+                  <div 
+                    className="flex items-center justify-center w-10 h-10 rounded-lg text-white"
+                    style={{ backgroundColor: stat.color }}
+                  >
+                    <Icon name={stat.icon} />
+                  </div>
+                  <Tag color="green" className="text-xs">{stat.change}</Tag>
+                </div>
+                <Statistic
+                  title={stat.title}
+                  value={stat.value}
+                  precision={stat.precision}
+                  prefix={stat.prefix}
+                  valueStyle={{ color: stat.color, fontSize: '20px' }}
+                />
               </Card>
             </Col>
-            <Col xs={24} sm={12} md={8} lg={6}>
-              <Card 
-                size="small" 
-                className="text-center cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => {
-                  setExportDataType('transactions');
-                  setShowExportModal(true);
-                }}
-              >
-                <Icon name="receipt_long" className="text-2xl text-green-600 mb-2" />
-                <Text strong className="block">Sales Data</Text>
-                <Text type="secondary" className="text-xs">Transaction history</Text>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={8} lg={6}>
-              <Card 
-                size="small" 
-                className="text-center cursor-pointer hover:shadow-md transition-shadow"
+          ))}
+        </Row>
+      </Card>
+
+      <Row gutter={16}>
+        {/* Top Selling Products */}
+        <Col xs={24} lg={12}>
+          <Card 
+            title={
+              <Space>
+                <Icon name="inventory_2" className="text-blue-600" />
+                <Title level={5} className="m-0">Top Selling Furniture</Title>
+              </Space>
+            }
+            extra={
+              <ActionButton.Text 
+                icon="download"
                 onClick={() => {
                   setExportDataType('products');
                   setShowExportModal(true);
                 }}
               >
-                <Icon name="inventory_2" className="text-2xl text-purple-600 mb-2" />
-                <Text strong className="block">Inventory</Text>
-                <Text type="secondary" className="text-xs">Product catalog</Text>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={8} lg={6}>
-              <Card 
-                size="small" 
-                className="text-center cursor-pointer hover:shadow-md transition-shadow"
+                Export
+              </ActionButton.Text>
+            }
+          >
+            {topProducts.length > 0 ? (
+              <List
+                dataSource={topProducts}
+                renderItem={(item, index) => (
+                  <List.Item>
+                    <List.Item.Meta
+                      avatar={
+                        <div className="flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full text-sm font-bold">
+                          {index + 1}
+                        </div>
+                      }
+                      title={
+                        <div className="flex items-center justify-between">
+                          <Text strong>{item.product.name}</Text>
+                          <Text strong className="text-blue-600">
+                            ${item.revenue.toFixed(2)}
+                          </Text>
+                        </div>
+                      }
+                      description={
+                        <div>
+                          <Text type="secondary">{item.product.category}</Text>
+                          <br />
+                          <Text type="secondary" className="text-xs">
+                            {item.soldQuantity} units sold
+                          </Text>
+                          <Progress 
+                            percent={Math.min((item.soldQuantity / (topProducts[0]?.soldQuantity || 1)) * 100, 100)} 
+                            size="small" 
+                            showInfo={false}
+                            className="mt-1"
+                          />
+                        </div>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
+            ) : (
+              <div className="text-center py-8">
+                <Icon name="inventory_2" className="text-4xl text-gray-300 mb-2" />
+                <Text type="secondary">No sales data for selected period</Text>
+              </div>
+            )}
+          </Card>
+        </Col>
+
+        {/* Raw Material Status */}
+        <Col xs={24} lg={12}>
+          <Card 
+            title={
+              <Space>
+                <Icon name="category" className="text-blue-600" />
+                <Title level={5} className="m-0">Raw Material Status</Title>
+              </Space>
+            }
+            extra={
+              <ActionButton.Text 
+                icon="download"
                 onClick={() => {
                   setExportDataType('raw-materials');
                   setShowExportModal(true);
                 }}
               >
-                <Icon name="category" className="text-2xl text-orange-600 mb-2" />
-                <Text strong className="block">Materials</Text>
-                <Text type="secondary" className="text-xs">Raw materials stock</Text>
-              </Card>
-            </Col>
-          </Row>
-        </Card>
-      </Space>
+                Export
+              </ActionButton.Text>
+            }
+          >
+            <List
+              dataSource={state.rawMaterials.slice(0, 5)}
+              renderItem={(material) => {
+                const stockPercentage = Math.min((material.stockQuantity / (material.minimumStock * 3)) * 100, 100);
+                const isLowStock = material.stockQuantity <= material.minimumStock;
+                const isOutOfStock = material.stockQuantity === 0;
+                
+                return (
+                  <List.Item>
+                    <List.Item.Meta
+                      avatar={
+                        <div className="flex items-center justify-center w-8 h-8 bg-orange-500 text-white rounded">
+                          <Icon name="category" />
+                        </div>
+                      }
+                      title={
+                        <div className="flex items-center justify-between">
+                          <Text strong>{material.name}</Text>
+                          <Text strong>
+                            {material.stockQuantity} {material.unit}
+                          </Text>
+                        </div>
+                      }
+                      description={
+                        <div>
+                          <Text type="secondary">{material.category}</Text>
+                          <br />
+                          <div className="flex items-center justify-between mt-1">
+                            <Progress 
+                              percent={stockPercentage} 
+                              size="small" 
+                              status={isOutOfStock ? 'exception' : isLowStock ? 'active' : 'normal'}
+                              showInfo={false}
+                              className="flex-1 mr-2"
+                            />
+                            <Tag color={isOutOfStock ? 'red' : isLowStock ? 'orange' : 'green'} className="text-xs">
+                              {isOutOfStock ? 'Out of Stock' : isLowStock ? 'Low Stock' : 'In Stock'}
+                            </Tag>
+                          </div>
+                        </div>
+                      }
+                    />
+                  </List.Item>
+                );
+              }}
+            />
+          </Card>
+        </Col>
+      </Row>
+    </Space>
+  );
+
+  // Product Reports Tab
+  const renderProductReportsTab = () => (
+    <Card>
+      <PageHeader
+        title="Product Reports"
+        icon="inventory_2"
+        subtitle="Detailed product inventory and sales analysis"
+        extra={
+          <Space>
+            <SearchInput
+              placeholder="Search products..."
+              value={searchTerm}
+              onSearch={setSearchTerm}
+              className="w-64"
+            />
+            <Button 
+              type="primary" 
+              icon={<Icon name="download" />}
+              onClick={() => {
+                setExportDataType('products');
+                setShowExportModal(true);
+              }}
+            >
+              Export
+            </Button>
+          </Space>
+        }
+      />
+      
+      <EnhancedTable
+        columns={productColumns}
+        dataSource={state.products.filter(p => 
+          p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          p.barcode?.toLowerCase().includes(searchTerm.toLowerCase())
+        )}
+        rowKey="id"
+        searchFields={['name', 'category', 'barcode']}
+        showSearch={false}
+        emptyDescription="No products found"
+        emptyImage={<Icon name="inventory_2" className="text-6xl text-gray-300" />}
+      />
+    </Card>
+  );
+
+  // Order Reports Tab
+  const renderOrderReportsTab = () => (
+    <Card>
+      <PageHeader
+        title="Order Reports"
+        icon="receipt_long"
+        subtitle="Detailed transaction history and sales analysis"
+        extra={
+          <Space>
+            <Select
+              value={dateFilter}
+              onChange={setDateFilter}
+              className="w-32"
+            >
+              <Option value="all">All Time</Option>
+              <Option value="today">Today</Option>
+              <Option value="week">This Week</Option>
+              <Option value="month">This Month</Option>
+              <Option value="custom">Custom Range</Option>
+            </Select>
+            
+            {dateFilter === 'custom' && (
+              <RangePicker
+                value={dateRange}
+                onChange={setDateRange}
+                placeholder={['Start Date', 'End Date']}
+              />
+            )}
+            
+            <SearchInput
+              placeholder="Search orders..."
+              value={searchTerm}
+              onSearch={setSearchTerm}
+              className="w-64"
+            />
+            
+            <Button 
+              type="primary" 
+              icon={<Icon name="download" />}
+              onClick={() => {
+                setExportDataType('transactions');
+                setShowExportModal(true);
+              }}
+            >
+              Export
+            </Button>
+          </Space>
+        }
+      />
+      
+      <Row gutter={16} className="mb-4">
+        <Col span={6}>
+          <Card size="small" className="text-center">
+            <div className="text-2xl font-bold text-blue-600">{filteredTransactions.length}</div>
+            <div className="text-sm text-gray-500">Total Orders</div>
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card size="small" className="text-center">
+            <div className="text-2xl font-bold text-green-600">
+              ${totalRevenue.toFixed(2)}
+            </div>
+            <div className="text-sm text-gray-500">Total Revenue</div>
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card size="small" className="text-center">
+            <div className="text-2xl font-bold text-orange-600">
+              ${averageOrderValue.toFixed(2)}
+            </div>
+            <div className="text-sm text-gray-500">Average Order</div>
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card size="small" className="text-center">
+            <div className="text-2xl font-bold text-purple-600">
+              {filteredTransactions.reduce((sum, t) => sum + t.items.reduce((s, i) => s + i.quantity, 0), 0)}
+            </div>
+            <div className="text-sm text-gray-500">Items Sold</div>
+          </Card>
+        </Col>
+      </Row>
+      
+      <EnhancedTable
+        columns={orderColumns}
+        dataSource={filteredTransactions}
+        rowKey="id"
+        searchFields={['id', 'customerName', 'cashier', 'salesperson']}
+        showSearch={false}
+        emptyDescription="No orders found"
+        emptyImage={<Icon name="receipt_long" className="text-6xl text-gray-300" />}
+      />
+    </Card>
+  );
+
+  // Raw Material Reports Tab
+  const renderMaterialReportsTab = () => (
+    <Card>
+      <PageHeader
+        title="Raw Material Reports"
+        icon="category"
+        subtitle="Detailed raw material inventory and usage analysis"
+        extra={
+          <Space>
+            <SearchInput
+              placeholder="Search materials..."
+              value={searchTerm}
+              onSearch={setSearchTerm}
+              className="w-64"
+            />
+            <Button 
+              type="primary" 
+              icon={<Icon name="download" />}
+              onClick={() => {
+                setExportDataType('raw-materials');
+                setShowExportModal(true);
+              }}
+            >
+              Export
+            </Button>
+          </Space>
+        }
+      />
+      
+      <Row gutter={16} className="mb-4">
+        <Col span={6}>
+          <Card size="small" className="text-center">
+            <div className="text-2xl font-bold text-blue-600">{state.rawMaterials.length}</div>
+            <div className="text-sm text-gray-500">Total Materials</div>
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card size="small" className="text-center">
+            <div className="text-2xl font-bold text-green-600">
+              ${rawMaterialValue.toFixed(2)}
+            </div>
+            <div className="text-sm text-gray-500">Inventory Value</div>
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card size="small" className="text-center">
+            <div className="text-2xl font-bold text-red-600">
+              {outOfStockMaterials.length}
+            </div>
+            <div className="text-sm text-gray-500">Out of Stock</div>
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card size="small" className="text-center">
+            <div className="text-2xl font-bold text-orange-600">
+              {lowStockMaterials.length}
+            </div>
+            <div className="text-sm text-gray-500">Low Stock</div>
+          </Card>
+        </Col>
+      </Row>
+      
+      <EnhancedTable
+        columns={materialColumns}
+        dataSource={state.rawMaterials.filter(m => 
+          m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          m.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          m.supplier?.toLowerCase().includes(searchTerm.toLowerCase())
+        )}
+        rowKey="id"
+        searchFields={['name', 'category', 'supplier']}
+        showSearch={false}
+        emptyDescription="No materials found"
+        emptyImage={<Icon name="category" className="text-6xl text-gray-300" />}
+      />
+    </Card>
+  );
+
+  const tabItems = [
+    {
+      key: 'dashboard',
+      label: (
+        <span className="flex items-center space-x-2">
+          <Icon name="dashboard" />
+          <span>Dashboard</span>
+        </span>
+      ),
+      children: renderDashboardTab()
+    },
+    {
+      key: 'products',
+      label: (
+        <span className="flex items-center space-x-2">
+          <Icon name="inventory_2" />
+          <span>Product Reports</span>
+        </span>
+      ),
+      children: renderProductReportsTab()
+    },
+    {
+      key: 'orders',
+      label: (
+        <span className="flex items-center space-x-2">
+          <Icon name="receipt_long" />
+          <span>Order Reports</span>
+        </span>
+      ),
+      children: renderOrderReportsTab()
+    },
+    {
+      key: 'materials',
+      label: (
+        <span className="flex items-center space-x-2">
+          <Icon name="category" />
+          <span>Material Reports</span>
+        </span>
+      ),
+      children: renderMaterialReportsTab()
+    }
+  ];
+
+  return (
+    <>
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        items={tabItems}
+        className="reports-tabs"
+        size="large"
+      />
 
       {/* Export Modal */}
       <ExportModal
@@ -509,7 +968,7 @@ export function ReportsOverview() {
         onClose={() => setShowExportModal(false)}
         dataType={exportDataType}
         data={{
-          products: state.allProducts,
+          products: state.products,
           rawMaterials: state.rawMaterials,
           transactions: filteredTransactions,
           coupons: state.coupons,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Typography, Row, Col, Space } from 'antd';
+import { Modal, Typography, Space } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
@@ -146,7 +146,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
         key={index}
         style={{
           width: '1px',
-          height: '30px',
+          height: '40px',
           backgroundColor: bit === '1' ? '#000' : '#fff',
           display: 'inline-block'
         }}
@@ -154,7 +154,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
     ));
     
     return (
-      <div className="flex justify-center items-center bg-white p-2 border">
+      <div className="flex justify-center items-center bg-white p-2">
         <div style={{ fontSize: 0, lineHeight: 0 }}>
           {bars}
         </div>
@@ -164,83 +164,46 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
 
   const renderInventoryLabels = () => (
     <div id="inventory-labels-content" className="p-4 bg-white" style={{ fontFamily: 'Arial, sans-serif' }}>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-6">
         {transaction.items.map((item, itemIndex) => 
           Array.from({ length: item.quantity }, (_, qtyIndex) => (
-            <div key={`${itemIndex}-${qtyIndex}`} className="border-2 border-gray-800 p-4 bg-white" style={{ width: '95mm', height: '65mm', pageBreakInside: 'avoid' }}>
-              {/* Company Header */}
-              <div className="border-b border-gray-400 pb-2 mb-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Text strong className="text-lg">VCare Furniture Ltd.</Text>
-                  </div>
-                  <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-                    <span className="text-white font-bold text-xs">VC</span>
-                  </div>
+            <div key={`${itemIndex}-${qtyIndex}`} className="border-2 border-gray-800 p-4 bg-white" style={{ width: '90mm', height: '60mm', pageBreakInside: 'avoid' }}>
+              
+              {/* Company Header with Logo */}
+              <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-400">
+                <div>
+                  <Text strong className="text-lg">VCare Furniture</Text>
+                </div>
+                <div className="w-10 h-10 bg-blue-600 rounded flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">VC</span>
                 </div>
               </div>
 
-              {/* Label Information Grid */}
-              <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                <div>
-                  <Text strong>Lot:</Text>
-                  <div className="border-b border-gray-400 pb-1">
-                    <Text className="font-mono text-sm">L{String(itemIndex + 1).padStart(5, '0')}</Text>
-                  </div>
-                </div>
-                <div>
-                  <Text strong>Printed:</Text>
-                  <div className="border-b border-gray-400 pb-1">
-                    <Text className="text-xs">{new Date().toLocaleDateString('en-GB')}</Text>
-                  </div>
-                </div>
-                <div>
-                  <Text strong>Part No.:</Text>
-                  <div className="border-b border-gray-400 pb-1">
-                    <Text className="font-mono text-sm">{item.product.barcode || 'A00004'}</Text>
-                  </div>
-                </div>
-                <div>
-                  <Text strong>Quantity:</Text>
-                  <div className="border-b border-gray-400 pb-1">
-                    <Text className="text-sm">{item.quantity} pcs</Text>
-                  </div>
-                </div>
+              {/* Product Name */}
+              <div className="mb-4 text-center">
+                <Text strong className="text-base leading-tight block">
+                  {item.product.name}
+                </Text>
               </div>
 
-              {/* Product Description */}
-              <div className="mb-3">
-                <Text strong className="text-xs">Part description:</Text>
-                <div className="text-center mt-1">
-                  <Text className="text-sm font-semibold">{item.product.name}</Text>
-                </div>
+              {/* SKU */}
+              <div className="mb-4 text-center">
+                <Text className="text-sm text-gray-600 block mb-1">SKU:</Text>
+                <Text strong className="font-mono text-lg">
+                  {item.product.barcode || 'N/A'}
+                </Text>
               </div>
 
               {/* Barcode */}
-              <div className="mt-2">
-                {renderBarcode(item.product.barcode || 'A00004')}
+              <div className="mt-auto">
+                {renderBarcode(item.product.barcode || 'NOBARCODE')}
                 <div className="text-center mt-1">
-                  <Text className="font-mono text-xs">{item.product.barcode || 'A00004'}</Text>
+                  <Text className="font-mono text-xs">
+                    {item.product.barcode || 'N/A'}
+                  </Text>
                 </div>
               </div>
 
-              {/* Additional Info */}
-              <div className="mt-2 text-xs text-gray-600">
-                <div className="flex justify-between">
-                  <span>Order: {transaction.id}</span>
-                  <span>Item {qtyIndex + 1}/{item.quantity}</span>
-                </div>
-                {item.product.material && (
-                  <div className="text-center mt-1">
-                    <Text className="text-xs">Material: {item.product.material}</Text>
-                  </div>
-                )}
-                {item.product.color && (
-                  <div className="text-center">
-                    <Text className="text-xs">Color: {item.product.color}</Text>
-                  </div>
-                )}
-              </div>
             </div>
           ))
         )}
@@ -279,9 +242,9 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
         <div className="mb-4 p-4 bg-blue-50 rounded-lg">
           <Text className="text-sm">
             <Icon name="info" className="mr-2 text-blue-600" />
-            <strong>Inventory Labels:</strong> These labels are designed to be printed on standard label sheets. 
-            Each product in the order will have {transaction?.items?.reduce((sum, item) => sum + item.quantity, 0)} labels generated 
-            (one for each quantity ordered). Cut along the borders and stick to your inventory items.
+            <strong>Inventory Labels:</strong> Simple labels with product name, SKU, and barcode. 
+            Each item will have {transaction?.items?.reduce((sum, item) => sum + item.quantity, 0)} labels generated 
+            (one for each quantity ordered). Perfect for sticking to inventory items.
           </Text>
         </div>
         {renderInventoryLabels()}

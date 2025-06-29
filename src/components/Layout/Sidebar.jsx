@@ -1,6 +1,7 @@
 import React from 'react';
 import { Layout, Menu, Typography, Badge } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { Icon } from '../common/Icon';
 
 const { Sider } = Layout;
@@ -8,6 +9,11 @@ const { Text, Title } = Typography;
 
 export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
   const { hasPermission } = useAuth();
+  const { stockAlerts } = useNotifications();
+
+  // Count alerts by module
+  const materialAlerts = stockAlerts.filter(alert => alert.category === 'raw-material').length;
+  const productAlerts = stockAlerts.filter(alert => alert.category === 'product').length;
 
   const allMenuItems = [
     {
@@ -20,14 +26,15 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
       key: 'products',
       icon: <Icon name="inventory_2" />,
       label: 'Products',
-      module: 'products'
+      module: 'products',
+      badge: productAlerts > 0 ? { count: productAlerts, color: 'red' } : null,
     },
     {
       key: 'raw-materials',
       icon: <Icon name="category" />,
       label: 'Raw Materials',
       module: 'raw-materials',
-      badge: { count: 3, color: 'red' },
+      badge: materialAlerts > 0 ? { count: materialAlerts, color: 'red' } : null,
     },
     {
       key: 'transactions',

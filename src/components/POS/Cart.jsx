@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   List, 
@@ -10,9 +10,11 @@ import {
   Popconfirm,
   message,
   Input,
-  Button
+  Button,
+  Alert
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
 import { CheckoutModal } from './CheckoutModal';
@@ -21,9 +23,21 @@ const { Title, Text } = Typography;
 
 export function Cart() {
   const { state, dispatch } = usePOS();
+  const { checkRawMaterialAvailability } = useNotifications();
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponCode, setCouponCode] = useState('');
+  const [materialWarnings, setMaterialWarnings] = useState({ unavailableMaterials: [], lowMaterials: [] });
+
+  // Check raw material availability whenever cart changes
+  useEffect(() => {
+    if (state.cart.length > 0) {
+      const warnings = checkRawMaterialAvailability(state.cart, state.rawMaterials);
+      setMaterialWarnings(warnings);
+    } else {
+      setMaterialWarnings({ unavailableMaterials: [], lowMaterials: [] });
+    }
+  }, [state.cart, state.rawMaterials, checkRawMaterialAvailability]);
 
   // Calculate taxes for each item and total
   const calculateTaxes = () => {
@@ -117,6 +131,14 @@ export function Cart() {
       message.warning('Cart is empty');
       return;
     }
+    
+    // Show warnings but allow user to proceed
+    if (materialWarnings.unavailableMaterials.length > 0) {
+      message.warning('Some raw materials are out of stock. Production may be delayed.');
+    } else if (materialWarnings.lowMaterials.length > 0) {
+      message.warning('Some raw materials are running low. Consider restocking soon.');
+    }
+    
     setShowCheckoutModal(true);
   };
 
@@ -128,7 +150,7 @@ export function Cart() {
         title={
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Icon name="shopping_cart" className="text-[#0E72BD]" />
+              <Icon name="shopping_cart" className="text-blue-600" />
               <Title level={5} className="m-0">Current Order</Title>
               <Badge count={state.cart.length} size="small" />
             </div>
@@ -136,6 +158,54 @@ export function Cart() {
         }
       >
         <div className="flex flex-col h-full">
+          {/* Raw Material Warnings */}
+          {(materialWarnings.unavailableMaterials.length > 0 || materialWarnings.lowMaterials.length > 0) && (
+            <div className="p-4 border-b">
+              {materialWarnings.unavailableMaterials.length > 0 && (
+                <Alert
+                  type="error"
+                  showIcon
+                  message="Raw Materials Out of Stock"
+                  description={
+                    <div className="space-y-1">
+                      {materialWarnings.unavailableMaterials.map((material, index) => (
+                        <div key={index} className="text-sm">
+                          <Text strong>{material.materialName}</Text> needed for{' '}
+                          <Text>{material.productName}</Text> - Required: {material.required} {material.unit}, Available: {material.available} {material.unit}
+                        </div>
+                      ))}
+                      <Text type="secondary" className="text-xs block mt-2">
+                        You can still proceed with the order, but production may be delayed.
+                      </Text>
+                    </div>
+                  }
+                  className="mb-2"
+                />
+              )}
+              
+              {materialWarnings.lowMaterials.length > 0 && (
+                <Alert
+                  type="warning"
+                  showIcon
+                  message="Raw Materials Running Low"
+                  description={
+                    <div className="space-y-1">
+                      {materialWarnings.lowMaterials.map((material, index) => (
+                        <div key={index} className="text-sm">
+                          <Text strong>{material.materialName}</Text> for{' '}
+                          <Text>{material.productName}</Text> - Required: {material.required} {material.unit}, Available: {material.available} {material.unit}
+                        </div>
+                      ))}
+                      <Text type="secondary" className="text-xs block mt-2">
+                        Consider restocking these materials soon.
+                      </Text>
+                    </div>
+                  }
+                />
+              )}
+            </div>
+          )}
+
           {/* Cart Items */}
           <div className="flex-1 overflow-y-auto p-4">
             {state.cart.length === 0 ? (
@@ -184,7 +254,7 @@ export function Cart() {
                             />
                           </div>
                           <div className="text-right">
-                            <Text strong className="text-[#0E72BD]">
+                            <Text strong className="text-blue-600">
                               ${(item.product.price * item.quantity).toFixed(2)}
                             </Text>
                             {itemTaxAmount > 0 && (
@@ -298,7 +368,7 @@ export function Cart() {
                 <Divider className="my-2" />
                 <div className="flex justify-between">
                   <Title level={5} className="m-0">Total</Title>
-                  <Title level={4} className="m-0 text-[#0E72BD]">
+                  <Title level={4} className="m-0 text-blue-600">
                     ${total.toFixed(2)}
                   </Title>
                 </div>
@@ -314,9 +384,12 @@ export function Cart() {
               block
               onClick={handleProceedToCheckout}
               disabled={state.cart.length === 0}
-              className="bg-[#0E72BD] hover:bg-blue-700 font-semibold"
+              className="bg-blue-600 hover:bg-blue-700 font-semibold"
             >
               Proceed to Checkout
+              {(materialWarnings.unavailableMaterials.length > 0 || materialWarnings.lowMaterials.length > 0) && (
+                <Icon name="warning" className="ml-2 text-yellow-300" />
+              )}
             </ActionButton.Primary>
           </div>
         </div>

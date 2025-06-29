@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { useNotifications } from './NotificationContext';
 import { mockProducts, mockRawMaterials, mockTransactions, mockCoupons, mockTaxes, mockCategories } from '../data/mockData';
 
 // Helper function to get all product variations as individual products
@@ -119,7 +120,7 @@ function posReducer(state, action) {
     case 'UPDATE_PRODUCT_STOCK': {
       const updatedAllProducts = state.allProducts.map(product => {
         if (product.id === action.payload.productId) {
-          return { ...product, stock: product.stock - action.payload.quantity };
+          return { ...product, stock: Math.max(0, product.stock - action.payload.quantity) };
         }
         return product;
       });
@@ -129,13 +130,13 @@ function posReducer(state, action) {
         if (product.hasVariations) {
           const updatedVariations = product.variations.map(variation => {
             if (variation.id === action.payload.productId) {
-              return { ...variation, stock: variation.stock - action.payload.quantity };
+              return { ...variation, stock: Math.max(0, variation.stock - action.payload.quantity) };
             }
             return variation;
           });
           return { ...product, variations: updatedVariations };
         } else if (product.id === action.payload.productId) {
-          return { ...product, stock: product.stock - action.payload.quantity };
+          return { ...product, stock: Math.max(0, product.stock - action.payload.quantity) };
         }
         return product;
       });
@@ -211,7 +212,7 @@ function posReducer(state, action) {
         ...state,
         rawMaterials: state.rawMaterials.map(material =>
           material.id === action.payload.materialId
-            ? { ...material, stockQuantity: material.stockQuantity - action.payload.quantity }
+            ? { ...material, stockQuantity: Math.max(0, material.stockQuantity - action.payload.quantity) }
             : material
         )
       };
@@ -286,6 +287,7 @@ const POSContext = createContext(null);
 export function POSProvider({ children }) {
   const [state, dispatch] = useReducer(posReducer, initialState);
   const { logAction } = useAuth();
+  const { addNotification, checkStockLevels } = useNotifications();
 
   // Enhanced dispatch that logs actions
   const enhancedDispatch = (action) => {
@@ -304,6 +306,8 @@ export function POSProvider({ children }) {
       'ADD_TAX': { module: 'tax', action: 'CREATE' },
       'UPDATE_TAX': { module: 'tax', action: 'UPDATE' },
       'DELETE_TAX': { module: 'tax', action: 'DELETE' },
+      'UPDATE_PRODUCT_STOCK': { module: 'products', action: 'UPDATE' },
+      'UPDATE_RAW_MATERIAL_STOCK': { module: 'raw-materials', action: 'UPDATE' },
     };
 
     const logInfo = loggableActions[action.type];
@@ -312,7 +316,34 @@ export function POSProvider({ children }) {
       logAction(logInfo.action, logInfo.module, description, action.payload);
     }
 
+    // Check for stock-related actions
+    const stockActions = [
+      'UPDATE_PRODUCT_STOCK', 
+      'UPDATE_RAW_MATERIAL_STOCK',
+      'ADD_TRANSACTION'
+    ];
+    
+    // Execute the action
     dispatch(action);
+    
+    // Check stock levels after stock-related actions
+    if (stockActions.includes(action.type) && checkStockLevels) {
+      // Use setTimeout to ensure state is updated first
+      setTimeout(() => {
+        checkStockLevels(state.rawMaterials, state.allProducts);
+      }, 0);
+    }
+    
+    // Send notifications for certain actions
+    if (action.type === 'ADD_TRANSACTION' && addNotification) {
+      addNotification({
+        type: 'success',
+        title: 'Sale Completed',
+        message: `Transaction ${action.payload.id} completed for $${action.payload.total.toFixed(2)}`,
+        icon: 'receipt_long',
+        category: 'transaction'
+      });
+    }
   };
 
   const getActionDescription = (action) => {
@@ -343,6 +374,10 @@ export function POSProvider({ children }) {
         return `Updated tax: ${action.payload.name} (${action.payload.rate}%)`;
       case 'DELETE_TAX':
         return `Deleted tax with ID: ${action.payload}`;
+      case 'UPDATE_PRODUCT_STOCK':
+        return `Updated product stock: ${action.payload.productId} (-${action.payload.quantity} units)`;
+      case 'UPDATE_RAW_MATERIAL_STOCK':
+        return `Updated raw material stock: ${action.payload.materialId} (-${action.payload.quantity} units)`;
       default:
         return 'System action performed';
     }

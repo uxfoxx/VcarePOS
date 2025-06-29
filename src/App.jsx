@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ConfigProvider, Layout, theme } from 'antd';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { POSProvider } from './contexts/POSContext';
+import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
 import { LoginPage } from './components/Auth/LoginPage';
 import { Header } from './components/Layout/Header';
 import { Sidebar } from './components/Layout/Sidebar';
@@ -23,6 +24,7 @@ const { Sider, Content } = Layout;
 
 function AppContent() {
   const { isAuthenticated, hasPermission } = useAuth();
+  const { checkStockLevels } = useNotifications();
   const [activeTab, setActiveTab] = useState('pos');
   const [collapsed, setCollapsed] = useState(false);
 
@@ -81,6 +83,7 @@ function AppContent() {
       ),
       'audit-trail': (
         <ProtectedRoute module="audit-trail" action="view">
+          
           <AuditTrail />
         </ProtectedRoute>
       ),
@@ -192,6 +195,26 @@ function AppContent() {
   );
 }
 
+function AppWithNotifications() {
+  const { state } = usePOS();
+  const { checkStockLevels } = useNotifications();
+  
+  // Check stock levels periodically
+  useEffect(() => {
+    // Initial check
+    checkStockLevels(state.rawMaterials, state.allProducts);
+    
+    // Set up interval for periodic checks (every 5 minutes)
+    const interval = setInterval(() => {
+      checkStockLevels(state.rawMaterials, state.allProducts);
+    }, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [state.rawMaterials, state.allProducts, checkStockLevels]);
+  
+  return <AppContent />;
+}
+
 function App() {
   return (
     <ConfigProvider
@@ -252,7 +275,9 @@ function App() {
     >
       <AuthProvider>
         <POSProvider>
-          <AppContent />
+          <NotificationProvider>
+            <AppWithNotifications />
+          </NotificationProvider>
         </POSProvider>
       </AuthProvider>
     </ConfigProvider>

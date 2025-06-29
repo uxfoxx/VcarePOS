@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Layout, 
   Avatar, 
@@ -7,9 +7,14 @@ import {
   Space, 
   Typography, 
   Tooltip,
+  List,
+  Empty,
+  Divider,
+  Tag
 } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePOS } from '../../contexts/POSContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
 
@@ -19,6 +24,8 @@ const { Text, Title } = Typography;
 export function Header({ collapsed, onCollapse, activeTab, style }) {
   const { currentUser, logout } = useAuth();
   const { state } = usePOS();
+  const { notifications, stockAlerts, markAsRead, clearAllNotifications } = useNotifications();
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const userMenuItems = [
     {
@@ -48,28 +55,75 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
     },
   ];
 
-  const notificationItems = [
-    {
-      key: '1',
-      label: (
-        <div className="p-2">
-          <Text strong className="block">Low Stock Alert</Text>
-          <Text type="secondary" className="text-xs">Oak Wood Planks running low</Text>
-          <Text type="secondary" className="text-xs block">2 minutes ago</Text>
-        </div>
-      ),
-    },
-    {
-      key: '2',
-      label: (
-        <div className="p-2">
-          <Text strong className="block">New Sale</Text>
-          <Text type="secondary" className="text-xs">Executive Office Chair sold</Text>
-          <Text type="secondary" className="text-xs block">5 minutes ago</Text>
-        </div>
-      ),
-    },
-  ];
+  // Combine notifications and stock alerts
+  const allNotifications = [
+    ...stockAlerts.map(alert => ({
+      id: alert.id,
+      title: alert.title,
+      message: alert.message,
+      timestamp: alert.timestamp,
+      icon: alert.type === 'critical' ? 'error' : 'warning',
+      type: alert.type === 'critical' ? 'error' : 'warning',
+      read: false
+    })),
+    ...notifications
+  ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  const unreadCount = allNotifications.filter(n => !n.read).length;
+
+  const handleNotificationClick = (notification) => {
+    markAsRead(notification.id);
+    setShowNotifications(false);
+  };
+
+  const notificationContent = (
+    <div className="w-80 max-h-96 overflow-y-auto">
+      <div className="p-3 border-b flex justify-between items-center">
+        <Title level={5} className="m-0">Notifications</Title>
+        <ActionButton.Text 
+          size="small" 
+          onClick={clearAllNotifications}
+          disabled={allNotifications.length === 0}
+        >
+          Clear All
+        </ActionButton.Text>
+      </div>
+      
+      {allNotifications.length === 0 ? (
+        <Empty 
+          image={Empty.PRESENTED_IMAGE_SIMPLE} 
+          description="No notifications" 
+          className="py-8"
+        />
+      ) : (
+        <List
+          dataSource={allNotifications}
+          renderItem={item => (
+            <List.Item 
+              className={`cursor-pointer hover:bg-gray-50 transition-colors ${item.read ? 'opacity-70' : ''}`}
+              onClick={() => handleNotificationClick(item)}
+            >
+              <div className="flex items-start p-2 w-full">
+                <div className={`flex-shrink-0 mr-3 mt-1 text-${item.type === 'error' ? 'red' : item.type === 'warning' ? 'orange' : 'blue'}-500`}>
+                  <Icon name={item.icon || 'notifications'} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex justify-between">
+                    <Text strong>{item.title}</Text>
+                    {!item.read && <Badge status="processing" color="blue" />}
+                  </div>
+                  <Text type="secondary" className="text-xs block">
+                    {new Date(item.timestamp).toLocaleString()}
+                  </Text>
+                  <Text className="text-sm block mt-1">{item.message}</Text>
+                </div>
+              </div>
+            </List.Item>
+          )}
+        />
+      )}
+    </div>
+  );
 
   const getPageTitle = () => {
     const titles = {
@@ -116,11 +170,13 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
         </Tooltip>
 
         <Dropdown 
-          menu={{ items: notificationItems }} 
+          open={showNotifications}
+          onOpenChange={setShowNotifications}
+          dropdownRender={() => notificationContent}
           placement="bottomRight"
           trigger={['click']}
         >
-          <Badge count={2} size="small" offset={[-2, 2]}>
+          <Badge count={unreadCount} size="small" offset={[-2, 2]}>
             <ActionButton.Text 
               icon="notifications"
               className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all"

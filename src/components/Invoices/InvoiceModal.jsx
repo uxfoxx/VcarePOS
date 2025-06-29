@@ -147,6 +147,13 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
             
             <Text strong>Cashier:</Text>
             <Text className="block">{transaction.cashier}</Text>
+
+            {transaction.salesperson && (
+              <>
+                <Text strong>Sales Person:</Text>
+                <Text className="block">{transaction.salesperson}</Text>
+              </>
+            )}
           </div>
         </Col>
         <Col span={12}>

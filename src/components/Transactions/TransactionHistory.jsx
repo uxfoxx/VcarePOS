@@ -25,6 +25,7 @@ import { PageHeader } from '../common/PageHeader';
 import { SearchInput } from '../common/SearchInput';
 import { InvoiceModal } from '../Invoices/InvoiceModal';
 import { InventoryLabelModal } from '../Invoices/InventoryLabelModal';
+import { DetailModal } from '../common/DetailModal';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -42,7 +43,8 @@ export function TransactionHistory() {
   const filteredTransactions = state.transactions.filter(transaction => {
     const matchesSearch = transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          transaction.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.cashier.toLowerCase().includes(searchTerm.toLowerCase());
+                         transaction.cashier.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         transaction.salesperson?.toLowerCase().includes(searchTerm.toLowerCase());
     
     if (filterPeriod === 'today') {
       const today = new Date();
@@ -58,6 +60,11 @@ export function TransactionHistory() {
   const averageOrderValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
 
   const handleViewDetails = (transaction) => {
+    setSelectedTransaction(transaction);
+    setShowDetailModal(true);
+  };
+
+  const handleRowClick = (transaction) => {
     setSelectedTransaction(transaction);
     setShowDetailModal(true);
   };
@@ -175,6 +182,20 @@ export function TransactionHistory() {
       ),
     },
     {
+      title: 'Sales Person',
+      dataIndex: 'salesperson',
+      key: 'salesperson',
+      render: (salesperson, record) => (
+        <div>
+          <Text>{salesperson || record.cashier}</Text>
+          <br />
+          <Text type="secondary" className="text-xs">
+            {salesperson ? 'Sales' : 'Cashier'}
+          </Text>
+        </div>
+      ),
+    },
+    {
       title: 'Items',
       dataIndex: 'items',
       key: 'items',
@@ -211,11 +232,6 @@ export function TransactionHistory() {
           {(status || 'completed').toUpperCase()}
         </StatusTag>
       ),
-    },
-    {
-      title: 'Cashier',
-      dataIndex: 'cashier',
-      key: 'cashier',
     },
     {
       title: 'Actions',
@@ -303,6 +319,10 @@ export function TransactionHistory() {
           columns={columns}
           dataSource={filteredTransactions}
           rowKey="id"
+          onRow={(record) => ({
+            onClick: () => handleRowClick(record),
+            className: 'cursor-pointer hover:bg-blue-50'
+          })}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
@@ -313,172 +333,37 @@ export function TransactionHistory() {
         />
       </Card>
 
-      {/* Order Detail Modal */}
-      <Modal
-        title={`Order Details - ${selectedTransaction?.id}`}
+      {/* Transaction Detail Modal */}
+      <DetailModal
         open={showDetailModal}
-        onCancel={handleCloseDetailModal}
-        width={800}
-        footer={[
-          <ActionButton key="close" onClick={handleCloseDetailModal}>
-            Close
-          </ActionButton>,
+        onClose={handleCloseDetailModal}
+        title={`Order Details - ${selectedTransaction?.id}`}
+        icon="receipt_long"
+        data={selectedTransaction}
+        type="transaction"
+        actions={[
           <ActionButton 
             key="inventory-labels" 
             icon="label"
-            onClick={() => handleShowInventoryLabels(selectedTransaction)}
+            onClick={() => {
+              setShowDetailModal(false);
+              handleShowInventoryLabels(selectedTransaction);
+            }}
           >
             Print Inventory Labels
           </ActionButton>,
           <ActionButton.Primary 
             key="invoice" 
             icon="receipt_long"
-            onClick={() => handleShowInvoice(selectedTransaction, 'detailed')}
+            onClick={() => {
+              setShowDetailModal(false);
+              handleShowInvoice(selectedTransaction, 'detailed');
+            }}
           >
             View Invoice
           </ActionButton.Primary>
         ]}
-        destroyOnClose
-      >
-        {selectedTransaction && (
-          <Space direction="vertical" size="large" className="w-full">
-            {/* Order Info */}
-            <Descriptions bordered column={2}>
-              <Descriptions.Item label="Order ID">
-                <Text code>{selectedTransaction.id}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="Date & Time">
-                {new Date(selectedTransaction.timestamp).toLocaleString()}
-              </Descriptions.Item>
-              <Descriptions.Item label="Customer">
-                {selectedTransaction.customerName || 'Walk-in Customer'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Phone">
-                {selectedTransaction.customerPhone || 'N/A'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Email">
-                {selectedTransaction.customerEmail || 'N/A'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Address">
-                {selectedTransaction.customerAddress || 'N/A'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Cashier">
-                {selectedTransaction.cashier}
-              </Descriptions.Item>
-              <Descriptions.Item label="Payment Method">
-                <Tag icon={<Icon name={getPaymentMethodIcon(selectedTransaction.paymentMethod)} />} color="green">
-                  {selectedTransaction.paymentMethod.toUpperCase()}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Applied Coupon">
-                {selectedTransaction.appliedCoupon || 'None'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Status">
-                <StatusTag status={selectedTransaction.status || 'completed'}>
-                  {(selectedTransaction.status || 'completed').toUpperCase()}
-                </StatusTag>
-              </Descriptions.Item>
-            </Descriptions>
-
-            {/* Order Notes */}
-            {selectedTransaction.notes && (
-              <div>
-                <Title level={5}>Order Notes</Title>
-                <div className="p-3 bg-gray-50 rounded border">
-                  <Text>{selectedTransaction.notes}</Text>
-                </div>
-              </div>
-            )}
-
-            {/* Items Purchased */}
-            <div>
-              <Title level={5}>Items Purchased</Title>
-              <List
-                dataSource={selectedTransaction.items}
-                renderItem={(item) => (
-                  <List.Item>
-                    <List.Item.Meta
-                      title={item.product.name}
-                      description={
-                        <Space>
-                          <Text type="secondary">SKU: {item.product.barcode}</Text>
-                          <Text type="secondary">Qty: {item.quantity}</Text>
-                          <Text type="secondary">Price: ${item.product.price.toFixed(2)}</Text>
-                          <Text strong>Total: ${(item.product.price * item.quantity).toFixed(2)}</Text>
-                        </Space>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
-            </div>
-
-            {/* Order Status Management */}
-            <div>
-              <Title level={5}>Order Status</Title>
-              <div className="flex items-center space-x-2 mb-4">
-                <Text>Current Status:</Text>
-                <StatusTag status={selectedTransaction.status || 'completed'}>
-                  {(selectedTransaction.status || 'completed').toUpperCase()}
-                </StatusTag>
-              </div>
-              
-              <div className="flex space-x-2">
-                <ActionButton
-                  onClick={() => handleUpdateStatus(selectedTransaction.id, 'pending')}
-                  disabled={selectedTransaction.status === 'pending'}
-                  size="small"
-                >
-                  Set Pending
-                </ActionButton>
-                <ActionButton
-                  onClick={() => handleUpdateStatus(selectedTransaction.id, 'processing')}
-                  disabled={selectedTransaction.status === 'processing'}
-                  size="small"
-                >
-                  Set Processing
-                </ActionButton>
-                <ActionButton
-                  onClick={() => handleUpdateStatus(selectedTransaction.id, 'completed')}
-                  disabled={selectedTransaction.status === 'completed'}
-                  size="small"
-                >
-                  Set Completed
-                </ActionButton>
-                <ActionButton
-                  onClick={() => handleUpdateStatus(selectedTransaction.id, 'cancelled')}
-                  disabled={selectedTransaction.status === 'cancelled'}
-                  danger
-                  size="small"
-                >
-                  Cancel Order
-                </ActionButton>
-              </div>
-            </div>
-
-            {/* Financial Summary */}
-            <div className="bg-gray-50 p-4 rounded">
-              <Title level={5} className="mb-3">Financial Summary</Title>
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Text>Subtotal: ${selectedTransaction.subtotal.toFixed(2)}</Text>
-                </Col>
-                <Col span={12}>
-                  <Text>Tax: ${selectedTransaction.totalTax.toFixed(2)}</Text>
-                </Col>
-                <Col span={12}>
-                  <Text>Discount: ${selectedTransaction.discount.toFixed(2)}</Text>
-                </Col>
-                <Col span={12}>
-                  <Text strong className="text-lg">
-                    Total: ${selectedTransaction.total.toFixed(2)}
-                  </Text>
-                </Col>
-              </Row>
-            </div>
-          </Space>
-        )}
-      </Modal>
+      />
 
       {/* Invoice Modal */}
       <InvoiceModal

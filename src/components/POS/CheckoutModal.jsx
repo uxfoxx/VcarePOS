@@ -16,6 +16,7 @@ import {
   Col
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { InvoiceModal } from '../Invoices/InvoiceModal';
@@ -38,11 +39,13 @@ export function CheckoutModal({
   fullBillTaxTotal
 }) {
   const { state, dispatch } = usePOS();
+  const { users, currentUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [customerForm] = Form.useForm();
   const [paymentForm] = Form.useForm();
   const [orderNotes, setOrderNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('card');
+  const [selectedSalesperson, setSelectedSalesperson] = useState(currentUser?.id);
   const [loading, setLoading] = useState(false);
   const [completedTransaction, setCompletedTransaction] = useState(null);
   const [showInvoice, setShowInvoice] = useState(false);
@@ -51,6 +54,12 @@ export function CheckoutModal({
   const subtotal = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
   const taxableAmount = subtotal + (categoryTaxTotal || 0) - (couponDiscount || 0);
   const total = taxableAmount + (fullBillTaxTotal || 0);
+
+  // Get salesperson details
+  const getSalespersonName = (userId) => {
+    const user = users.find(u => u.id === userId);
+    return user ? `${user.firstName} ${user.lastName}` : 'Unknown';
+  };
 
   const handleNext = () => {
     if (currentStep === 1) {
@@ -74,6 +83,7 @@ export function CheckoutModal({
     setLoading(true);
     try {
       const customerData = customerForm.getFieldsValue();
+      const salesperson = users.find(u => u.id === selectedSalesperson);
       
       const transaction = {
         id: `TXN-${Date.now()}`,
@@ -86,7 +96,9 @@ export function CheckoutModal({
         total,
         paymentMethod,
         timestamp: new Date(),
-        cashier: state.currentUser?.name || 'Unknown',
+        cashier: currentUser?.firstName + ' ' + currentUser?.lastName || 'Unknown',
+        salesperson: salesperson ? `${salesperson.firstName} ${salesperson.lastName}` : getSalespersonName(selectedSalesperson),
+        salespersonId: selectedSalesperson,
         customerName: customerData.customerName || 'Walk-in Customer',
         customerPhone: customerData.customerPhone,
         customerEmail: customerData.customerEmail,
@@ -134,6 +146,7 @@ export function CheckoutModal({
       setCurrentStep(0);
       setOrderNotes('');
       setPaymentMethod('card');
+      setSelectedSalesperson(currentUser?.id);
       customerForm.resetFields();
       paymentForm.resetFields();
       
@@ -176,6 +189,38 @@ export function CheckoutModal({
   const renderOrderSummary = () => (
     <div className="space-y-4">
       <Title level={4}>Order Summary</Title>
+      
+      {/* Salesperson Selection */}
+      <div className="bg-blue-50 p-4 rounded-lg">
+        <Title level={5} className="mb-3">Sales Person</Title>
+        <Select
+          value={selectedSalesperson}
+          onChange={setSelectedSalesperson}
+          className="w-full"
+          placeholder="Select sales person"
+          showSearch
+          filterOption={(input, option) =>
+            option.children.toLowerCase().includes(input.toLowerCase())
+          }
+        >
+          {users.filter(user => user.isActive).map(user => (
+            <Option key={user.id} value={user.id}>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">
+                  {user.firstName[0]}{user.lastName[0]}
+                </div>
+                <div>
+                  <Text strong>{user.firstName} {user.lastName}</Text>
+                  <Text type="secondary" className="ml-2 text-xs">({user.role})</Text>
+                </div>
+              </div>
+            </Option>
+          ))}
+        </Select>
+        <Text type="secondary" className="text-sm mt-2 block">
+          This person will be credited as the sales person for this order
+        </Text>
+      </div>
       
       <div className="max-h-64 overflow-y-auto border rounded-lg p-4">
         <List
@@ -362,6 +407,10 @@ export function CheckoutModal({
         <Title level={5} className="mb-3">Final Order Summary</Title>
         <div className="space-y-2">
           <div className="flex justify-between">
+            <Text>Sales Person:</Text>
+            <Text strong>{getSalespersonName(selectedSalesperson)}</Text>
+          </div>
+          <div className="flex justify-between">
             <Text>Items ({cartItems.length})</Text>
             <Text>${subtotal.toFixed(2)}</Text>
           </div>
@@ -502,13 +551,13 @@ export function CheckoutModal({
             
             <div className="bg-gray-50 p-4 rounded-lg">
               <Row gutter={16}>
-                <Col span={8}>
+                <Col span={6}>
                   <div className="text-center">
                     <Text strong className="text-lg block">{completedTransaction.items.length}</Text>
                     <Text type="secondary" className="text-sm">Items</Text>
                   </div>
                 </Col>
-                <Col span={8}>
+                <Col span={6}>
                   <div className="text-center">
                     <Text strong className="text-lg block">
                       {completedTransaction.items.reduce((sum, item) => sum + item.quantity, 0)}
@@ -516,7 +565,15 @@ export function CheckoutModal({
                     <Text type="secondary" className="text-sm">Total Quantity</Text>
                   </div>
                 </Col>
-                <Col span={8}>
+                <Col span={6}>
+                  <div className="text-center">
+                    <Text strong className="text-lg block">
+                      {completedTransaction.salesperson}
+                    </Text>
+                    <Text type="secondary" className="text-sm">Sales Person</Text>
+                  </div>
+                </Col>
+                <Col span={6}>
                   <div className="text-center">
                     <Text strong className="text-lg block text-blue-600">
                       ${completedTransaction.total.toFixed(2)}

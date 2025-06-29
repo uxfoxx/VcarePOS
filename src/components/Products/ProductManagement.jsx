@@ -24,6 +24,7 @@ import { SearchInput } from '../common/SearchInput';
 import { ProductDetailsSheet } from '../Invoices/ProductDetailsSheet';
 import { CategoryManagement } from './CategoryManagement';
 import { ProductModal } from './ProductModal';
+import { DetailModal } from '../common/DetailModal';
 
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
@@ -35,6 +36,7 @@ export function ProductManagement() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showProductSheet, setShowProductSheet] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [viewMode, setViewMode] = useState('all'); // 'all', 'base', 'variations'
 
   // Filter products based on view mode and search
@@ -110,6 +112,11 @@ export function ProductManagement() {
   const handlePrintProductDetails = (product) => {
     setSelectedProduct(product);
     setShowProductSheet(true);
+  };
+
+  const handleRowClick = (product) => {
+    setSelectedProduct(product);
+    setShowDetailModal(true);
   };
 
   const getActionMenuItems = (record) => [
@@ -282,12 +289,6 @@ export function ProductManagement() {
               </Text>
             </div>
           )}
-          {record.material && (
-            <Text className="text-xs">
-              <Icon name="texture" size="text-xs" className="mr-1" />
-              {record.material}
-            </Text>
-          )}
           {record.color && (
             <div className="flex items-center space-x-1">
               <Icon name="palette" className="text-gray-400" size="text-sm" />
@@ -385,7 +386,7 @@ export function ProductManagement() {
             (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
             (product.category || '').toLowerCase().includes(searchTerm.toLowerCase())
           ).map(product => (
-            <Card key={product.id} size="small">
+            <Card key={product.id} size="small" className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleRowClick(product)}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <Image
@@ -415,6 +416,7 @@ export function ProductManagement() {
                       items: getActionMenuItems(product)
                     }}
                     trigger={['click']}
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <ActionButton.Text
                       icon="more_vert"
@@ -432,7 +434,11 @@ export function ProductManagement() {
                   >
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {product.variations.map(variation => (
-                        <Card key={variation.id} size="small" className="border">
+                        <Card key={variation.id} size="small" className="border cursor-pointer hover:shadow-sm" onClick={(e) => {
+                          e.stopPropagation();
+                          const variationProduct = state.allProducts.find(p => p.id === variation.id);
+                          if (variationProduct) handleRowClick(variationProduct);
+                        }}>
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <Text strong>{variation.name}</Text>
@@ -481,6 +487,10 @@ export function ProductManagement() {
           columns={columns}
           dataSource={filteredProducts}
           rowKey="id"
+          onRow={(record) => ({
+            onClick: () => handleRowClick(record),
+            className: 'cursor-pointer hover:bg-blue-50'
+          })}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
@@ -550,6 +560,41 @@ export function ProductManagement() {
           setSelectedProduct(null);
         }}
         product={selectedProduct}
+      />
+
+      {/* Product Detail Modal */}
+      <DetailModal
+        open={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedProduct(null);
+        }}
+        title={`Product Details - ${selectedProduct?.name}`}
+        icon="inventory_2"
+        data={selectedProduct}
+        type="product"
+        actions={[
+          <ActionButton 
+            key="edit" 
+            icon="edit"
+            onClick={() => {
+              setShowDetailModal(false);
+              handleEdit(selectedProduct);
+            }}
+          >
+            Edit Product
+          </ActionButton>,
+          <ActionButton 
+            key="print" 
+            icon="print"
+            onClick={() => {
+              setShowDetailModal(false);
+              handlePrintProductDetails(selectedProduct);
+            }}
+          >
+            Print Details
+          </ActionButton>
+        ]}
       />
     </>
   );

@@ -22,6 +22,7 @@ import { PageHeader } from '../common/PageHeader';
 import { SearchInput } from '../common/SearchInput';
 import { ActionButton } from '../common/ActionButton';
 import { UserModal } from './UserModal';
+import { DetailModal } from '../common/DetailModal';
 
 const { Title, Text } = Typography;
 
@@ -30,6 +31,8 @@ export function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   const filteredUsers = users.filter(user =>
     user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -77,6 +80,11 @@ export function UserManagement() {
     const updatedUser = { ...user, isActive: !user.isActive };
     updateUser(updatedUser);
     message.success(`User ${updatedUser.isActive ? 'activated' : 'deactivated'}`);
+  };
+
+  const handleRowClick = (user) => {
+    setSelectedUser(user);
+    setShowDetailModal(true);
   };
 
   const getRoleColor = (role) => {
@@ -215,9 +223,12 @@ export function UserManagement() {
           <Tooltip title={hasPermission('user-management', 'edit') ? 'Edit User' : 'No permission'}>
             <ActionButton.Text 
               icon="edit"
-              onClick={() => handleEdit(record)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(record);
+              }}
               disabled={!hasPermission('user-management', 'edit')}
-              className="text-[#0E72BD]"
+              className="text-blue-600"
             />
           </Tooltip>
           
@@ -228,7 +239,10 @@ export function UserManagement() {
             <Popconfirm
               title="Are you sure you want to delete this user?"
               description="This action cannot be undone."
-              onConfirm={() => handleDelete(record.id)}
+              onConfirm={(e) => {
+                e?.stopPropagation();
+                handleDelete(record.id);
+              }}
               okText="Yes, Delete"
               cancelText="Cancel"
               okType="danger"
@@ -238,6 +252,7 @@ export function UserManagement() {
                 icon="delete"
                 danger
                 disabled={record.id === currentUser?.id || !hasPermission('user-management', 'delete')}
+                onClick={(e) => e.stopPropagation()}
               />
             </Popconfirm>
           </Tooltip>
@@ -291,7 +306,7 @@ export function UserManagement() {
         <Row gutter={16} className="mb-6">
           <Col span={6}>
             <Card size="small" className="text-center">
-              <div className="text-2xl font-bold text-[#0E72BD]">{users.length}</div>
+              <div className="text-2xl font-bold text-blue-600">{users.length}</div>
               <div className="text-sm text-gray-500">Total Users</div>
             </Card>
           </Col>
@@ -327,6 +342,10 @@ export function UserManagement() {
           columns={columns}
           dataSource={filteredUsers}
           rowKey="id"
+          onRow={(record) => ({
+            onClick: () => handleRowClick(record),
+            className: 'cursor-pointer hover:bg-blue-50'
+          })}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
@@ -344,6 +363,33 @@ export function UserManagement() {
           setEditingUser(null);
         }}
         editingUser={editingUser}
+      />
+
+      {/* User Detail Modal */}
+      <DetailModal
+        open={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedUser(null);
+        }}
+        title={`User Details - ${selectedUser?.firstName} ${selectedUser?.lastName}`}
+        icon="person"
+        data={selectedUser}
+        type="user"
+        actions={[
+          hasPermission('user-management', 'edit') && (
+            <ActionButton 
+              key="edit" 
+              icon="edit"
+              onClick={() => {
+                setShowDetailModal(false);
+                handleEdit(selectedUser);
+              }}
+            >
+              Edit User
+            </ActionButton>
+          )
+        ].filter(Boolean)}
       />
     </>
   );

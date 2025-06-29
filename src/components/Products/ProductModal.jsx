@@ -58,7 +58,6 @@ export function ProductModal({
         barcode: editingProduct.barcode || '',
         description: editingProduct.description || '',
         weight: editingProduct.baseWeight || editingProduct.weight || 0,
-        material: editingProduct.baseMaterial || editingProduct.material || '',
         color: editingProduct.baseColor || editingProduct.color || '',
         dimensions: editingProduct.baseDimensions || editingProduct.dimensions || {}
       };
@@ -110,7 +109,6 @@ export function ProductModal({
         barcode: '',
         description: '',
         weight: 0,
-        material: '',
         color: '',
         dimensions: {}
       };
@@ -243,7 +241,6 @@ export function ProductModal({
               'barcode': 'SKU/Barcode',
               'description': 'Description',
               'weight': 'Weight',
-              'material': 'Material',
               'color': 'Color'
             };
             return fieldLabels[fieldName] || fieldName;
@@ -325,7 +322,6 @@ export function ProductModal({
           unit: finalProductData.dimensions.unit || 'cm'
         } : undefined,
         baseWeight: hasVariations ? (Number(finalProductData.weight) || 0) : undefined,
-        baseMaterial: hasVariations ? (finalProductData.material || '') : undefined,
         baseColor: hasVariations ? (finalProductData.color || '') : undefined,
         
         // Regular product data (used when hasVariations is false)
@@ -339,7 +335,6 @@ export function ProductModal({
           unit: finalProductData.dimensions.unit || 'cm'
         } : undefined,
         weight: !hasVariations ? (Number(finalProductData.weight) || 0) : undefined,
-        material: !hasVariations ? (finalProductData.material || '') : undefined,
         color: !hasVariations ? (finalProductData.color || '') : undefined,
         rawMaterials: !hasVariations ? selectedMaterials.map(m => ({
           rawMaterialId: m.rawMaterialId,
@@ -640,14 +635,19 @@ export function ProductModal({
           </Form.Item>
         </Col>
         <Col span={hasVariations ? 12 : 8}>
-          <Form.Item name="material" label={hasVariations ? "Base Material" : "Material"}>
-            <Input placeholder="Enter material type" />
+          <Form.Item name="color" label={hasVariations ? "Base Color" : "Color"}>
+            <Input placeholder="Enter color" />
           </Form.Item>
         </Col>
         {!hasVariations && (
           <Col span={8}>
-            <Form.Item name="color" label="Color">
-              <Input placeholder="Enter color" />
+            <Form.Item name="weight" label="Weight (kg)">
+              <InputNumber
+                min={0}
+                step={0.1}
+                placeholder="0.0"
+                className="w-full"
+              />
             </Form.Item>
           </Col>
         )}

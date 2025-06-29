@@ -203,15 +203,15 @@ function AppWithNotifications() {
   // Check stock levels periodically
   useEffect(() => {
     // Initial check
-    checkStockLevels(state.rawMaterials, state.allProducts);
+    checkStockLevels(state.rawMaterials, state.products);
     
     // Set up interval for periodic checks (every 5 minutes)
     const interval = setInterval(() => {
-      checkStockLevels(state.rawMaterials, state.allProducts);
+      checkStockLevels(state.rawMaterials, state.products);
     }, 5 * 60 * 1000);
     
     return () => clearInterval(interval);
-  }, [state.rawMaterials, state.allProducts, checkStockLevels]);
+  }, [state.rawMaterials, state.products, checkStockLevels]);
   
   return <AppContent />;
 }

@@ -104,8 +104,8 @@ export function NotificationProvider({ children }) {
     const alerts = [];
     const now = new Date();
 
-    // Check raw materials
-    rawMaterials.forEach(material => {
+    // Check raw materials - ensure rawMaterials is an array
+    (rawMaterials || []).forEach(material => {
       if (material.stockQuantity <= 0) {
         alerts.push({
           id: `STOCK-${material.id}`,
@@ -137,8 +137,8 @@ export function NotificationProvider({ children }) {
       }
     });
 
-    // Check products
-    products.forEach(product => {
+    // Check products - ensure products is an array
+    (products || []).forEach(product => {
       if (product.stock <= 0) {
         alerts.push({
           id: `STOCK-PROD-${product.id}`,

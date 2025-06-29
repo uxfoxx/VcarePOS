@@ -16,6 +16,8 @@ import { ProductCard } from '../common/ProductCard';
 import { PageHeader } from '../common/PageHeader';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
+import { LoadingSkeleton } from '../common/LoadingSkeleton';
+import { EmptyState } from '../common/EmptyState';
 
 export function ProductGrid({ collapsed }) {
   const { state, dispatch } = usePOS();
@@ -23,6 +25,7 @@ export function ProductGrid({ collapsed }) {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Get categories from state, including only active ones
   const activeCategories = state.categories?.filter(cat => cat.isActive) || [];
@@ -65,6 +68,19 @@ export function ProductGrid({ collapsed }) {
     children: null
   }));
 
+  if (loading) {
+    return (
+      <Card 
+        className="h-full"
+        bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
+      >
+        <div className="p-4">
+          <LoadingSkeleton type="product-grid" />
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <>
       <Card 
@@ -100,8 +116,10 @@ export function ProductGrid({ collapsed }) {
         {/* Product Grid */}
         <div className="p-4 overflow-y-auto" style={{ height: 'calc(100% - 140px)' }}>
           {filteredProducts.length === 0 ? (
-            <Empty
-              image={<Icon name="inventory_2" className="text-6xl text-gray-300 mb-4" />}
+            
+            <EmptyState
+              icon="inventory_2"
+              title="No Products Found"
               description={
                 searchTerm ? 
                   `No products found for "${searchTerm}"` : 
@@ -145,7 +163,7 @@ export function ProductGrid({ collapsed }) {
               setShowDetailModal(false);
             }}
             disabled={selectedProduct?.stock === 0}
-            className="bg-[#0E72BD] hover:bg-blue-700"
+            className="bg-blue-600 hover:bg-blue-700"
           >
             Add to Cart
           </ActionButton.Primary>
@@ -169,7 +187,7 @@ export function ProductGrid({ collapsed }) {
                   level={4}
                 />
                 <div className="mt-2 space-y-2">
-                  <span className="text-xl font-bold text-[#0E72BD]">
+                  <span className="text-xl font-bold text-blue-600">
                     ${selectedProduct.price.toFixed(2)}
                   </span>
                   {selectedProduct.isVariation && (
@@ -196,9 +214,6 @@ export function ProductGrid({ collapsed }) {
               </Descriptions.Item>
               <Descriptions.Item label="Stock">
                 {selectedProduct.stock} available
-              </Descriptions.Item>
-              <Descriptions.Item label="Material">
-                {selectedProduct.material}
               </Descriptions.Item>
               <Descriptions.Item label="Color">
                 {selectedProduct.color}

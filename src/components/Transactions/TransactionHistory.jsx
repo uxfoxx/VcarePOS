@@ -1,19 +1,13 @@
 import React, { useState } from 'react';
 import { 
-  Card, 
-  Table, 
-  Input, 
-  Select, 
   Space, 
   Typography, 
   Tag, 
   Statistic,
   Row,
   Col,
-  Descriptions,
-  Modal,
-  List,
-  Button,
+  Card,
+  Select,
   message,
   Dropdown
 } from 'antd';
@@ -26,6 +20,9 @@ import { SearchInput } from '../common/SearchInput';
 import { InvoiceModal } from '../Invoices/InvoiceModal';
 import { InventoryLabelModal } from '../Invoices/InventoryLabelModal';
 import { DetailModal } from '../common/DetailModal';
+import { EnhancedTable } from '../common/EnhancedTable';
+import { EmptyState } from '../common/EmptyState';
+import { LoadingSkeleton } from '../common/LoadingSkeleton';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -39,6 +36,7 @@ export function TransactionHistory() {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showInventoryLabelsModal, setShowInventoryLabelsModal] = useState(false);
   const [invoiceType, setInvoiceType] = useState('detailed');
+  const [loading, setLoading] = useState(false);
 
   const filteredTransactions = state.transactions.filter(transaction => {
     const matchesSearch = transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -102,7 +100,6 @@ export function TransactionHistory() {
     });
     message.success(`Order status updated to ${newStatus}`);
     
-    // Update the selected transaction if it's currently being viewed
     if (selectedTransaction && selectedTransaction.id === transactionId) {
       setSelectedTransaction({
         ...selectedTransaction,
@@ -150,12 +147,16 @@ export function TransactionHistory() {
       title: 'Order ID',
       dataIndex: 'id',
       key: 'id',
+      fixed: 'left',
+      width: 150,
       render: (id) => <Text code>{id}</Text>,
     },
     {
       title: 'Date & Time',
       dataIndex: 'timestamp',
       key: 'timestamp',
+      width: 150,
+      sorter: (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
       render: (timestamp) => (
         <div>
           <Text>{new Date(timestamp).toLocaleDateString()}</Text>
@@ -169,6 +170,7 @@ export function TransactionHistory() {
     {
       title: 'Customer',
       key: 'customer',
+      width: 200,
       render: (record) => (
         <div>
           <Text>{record.customerName || 'Walk-in Customer'}</Text>
@@ -185,6 +187,7 @@ export function TransactionHistory() {
       title: 'Sales Person',
       dataIndex: 'salesperson',
       key: 'salesperson',
+      width: 150,
       render: (salesperson, record) => (
         <div>
           <Text>{salesperson || record.cashier}</Text>
@@ -199,6 +202,8 @@ export function TransactionHistory() {
       title: 'Items',
       dataIndex: 'items',
       key: 'items',
+      width: 100,
+      sorter: (a, b) => a.items.length - b.items.length,
       render: (items) => (
         <Tag color="blue">{items.length} item(s)</Tag>
       ),
@@ -207,6 +212,8 @@ export function TransactionHistory() {
       title: 'Total',
       dataIndex: 'total',
       key: 'total',
+      width: 120,
+      sorter: (a, b) => a.total - b.total,
       render: (total) => (
         <Text strong className="text-blue-600 text-lg">
           ${total.toFixed(2)}
@@ -217,6 +224,7 @@ export function TransactionHistory() {
       title: 'Payment',
       dataIndex: 'paymentMethod',
       key: 'paymentMethod',
+      width: 120,
       render: (method) => (
         <Tag icon={<Icon name={getPaymentMethodIcon(method)} />} color="green">
           {method.toUpperCase()}
@@ -227,6 +235,7 @@ export function TransactionHistory() {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
+      width: 120,
       render: (status) => (
         <StatusTag status={status || 'completed'}>
           {(status || 'completed').toUpperCase()}
@@ -236,6 +245,8 @@ export function TransactionHistory() {
     {
       title: 'Actions',
       key: 'actions',
+      fixed: 'right',
+      width: 80,
       render: (record) => (
         <Dropdown
           menu={{
@@ -246,11 +257,16 @@ export function TransactionHistory() {
           <ActionButton.Text
             icon="more_vert"
             className="text-blue-600 hover:text-blue-700"
+            onClick={(e) => e.stopPropagation()}
           />
         </Dropdown>
       ),
     },
   ];
+
+  if (loading) {
+    return <LoadingSkeleton type="table" />;
+  }
 
   return (
     <Space direction="vertical" size="large" className="w-full">
@@ -289,49 +305,33 @@ export function TransactionHistory() {
         </Col>
       </Row>
 
-      <Card>
-        <PageHeader
-          title="Orders"
-          icon="receipt_long"
-          extra={
-            <Space>
-              <SearchInput
-                placeholder="Search orders..."
-                value={searchTerm}
-                onSearch={setSearchTerm}
-                className="w-64"
-              />
-              <Select
-                value={filterPeriod}
-                onChange={setFilterPeriod}
-                className="w-32"
-              >
-                <Option value="all">All Time</Option>
-                <Option value="today">Today</Option>
-                <Option value="week">This Week</Option>
-                <Option value="month">This Month</Option>
-              </Select>
-            </Space>
-          }
-        />
-        
-        <Table
-          columns={columns}
-          dataSource={filteredTransactions}
-          rowKey="id"
-          onRow={(record) => ({
-            onClick: () => handleRowClick(record),
-            className: 'cursor-pointer hover:bg-blue-50'
-          })}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-          }}
-          scroll={{ x: 1000 }}
-        />
-      </Card>
+      <EnhancedTable
+        title="Orders"
+        icon="receipt_long"
+        columns={columns}
+        dataSource={filteredTransactions}
+        rowKey="id"
+        onRow={(record) => ({
+          onClick: () => handleRowClick(record),
+          className: 'cursor-pointer hover:bg-blue-50'
+        })}
+        searchFields={['id', 'customerName', 'cashier', 'salesperson']}
+        searchPlaceholder="Search orders..."
+        extra={
+          <Select
+            value={filterPeriod}
+            onChange={setFilterPeriod}
+            className="w-32"
+          >
+            <Option value="all">All Time</Option>
+            <Option value="today">Today</Option>
+            <Option value="week">This Week</Option>
+            <Option value="month">This Month</Option>
+          </Select>
+        }
+        emptyDescription="No orders found"
+        emptyImage={<Icon name="receipt_long" className="text-6xl text-gray-300" />}
+      />
 
       {/* Transaction Detail Modal */}
       <DetailModal

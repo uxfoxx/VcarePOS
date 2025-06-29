@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Modal, 
-  Steps, 
   Form, 
   Input, 
   Select, 
@@ -18,11 +17,14 @@ import {
   Card,
   Divider,
   Switch,
-  Tag
+  Tag,
+  Alert
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
+import { EnhancedStepper } from '../common/EnhancedStepper';
+import { LoadingSkeleton } from '../common/LoadingSkeleton';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -40,6 +42,7 @@ export function ProductModal({
   const [materialsForm] = Form.useForm();
   const [variationsForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [stepError, setStepError] = useState('');
   const [selectedMaterials, setSelectedMaterials] = useState([]);
   const [variations, setVariations] = useState([]);
   const [hasVariations, setHasVariations] = useState(false);
@@ -66,14 +69,12 @@ export function ProductModal({
       setProductData(formData);
       setHasVariations(editingProduct.hasVariations || false);
       
-      // Set variations if they exist
       if (editingProduct.hasVariations && editingProduct.variations) {
         setVariations(editingProduct.variations);
       } else {
         setVariations([]);
       }
       
-      // Enrich raw materials
       const enrichedMaterials = (editingProduct.rawMaterials || []).map(rawMat => {
         const fullMaterial = state.rawMaterials?.find(m => m.id === rawMat.rawMaterialId);
         if (fullMaterial) {
@@ -100,7 +101,6 @@ export function ProductModal({
       setImagePreview(editingProduct.image);
       setCurrentStep(0);
     } else if (open && !editingProduct) {
-      // Reset for new product
       const initialData = {
         name: '',
         category: '',
@@ -124,6 +124,24 @@ export function ProductModal({
       generateSKU();
     }
   }, [editingProduct, open, productForm, state.rawMaterials]);
+
+  const steps = [
+    {
+      title: 'Product Details',
+      description: 'Basic product information',
+      icon: 'inventory_2'
+    },
+    {
+      title: 'Raw Materials',
+      description: 'Materials used in production',
+      icon: 'category'
+    },
+    {
+      title: 'Variations',
+      description: 'Product variations and options',
+      icon: 'tune'
+    }
+  ];
 
   const generateSKU = () => {
     const timestamp = Date.now().toString().slice(-6);
@@ -183,7 +201,6 @@ export function ProductModal({
   };
 
   const handleAddVariation = (values) => {
-    // Check for duplicate SKUs
     const existingVariation = variations.find(v => v.sku === values.sku);
     if (existingVariation) {
       message.error('SKU already exists in variations');
@@ -198,7 +215,6 @@ export function ProductModal({
       stock: values.stock,
       dimensions: values.dimensions || {},
       weight: values.weight || 0,
-      material: values.material || '',
       color: values.color || '',
       description: values.description || '',
       image: values.image || imagePreview || '',
@@ -224,6 +240,8 @@ export function ProductModal({
   };
 
   const handleNext = async () => {
+    setStepError('');
+    
     if (currentStep === 0) {
       try {
         const values = await productForm.validateFields();
@@ -246,9 +264,9 @@ export function ProductModal({
             return fieldLabels[fieldName] || fieldName;
           });
           
-          message.error(`Please fill in the following required fields: ${missingFields.join(', ')}`);
+          setStepError(`Please fill in the following required fields: ${missingFields.join(', ')}`);
         } else {
-          message.error('Please fill in all required product details');
+          setStepError('Please fill in all required product details');
         }
       }
     } else {
@@ -257,17 +275,18 @@ export function ProductModal({
   };
 
   const handlePrev = () => {
+    setStepError('');
     setCurrentStep(currentStep - 1);
   };
 
   const handleSubmit = async () => {
     try {
       setLoading(true);
+      setStepError('');
       
       const currentFormValues = productForm.getFieldsValue();
       const finalProductData = { ...productData, ...currentFormValues };
       
-      // Validation for required fields
       const requiredFields = ['name', 'category'];
       if (!hasVariations) {
         requiredFields.push('price', 'stock');
@@ -291,19 +310,17 @@ export function ProductModal({
           'stock': 'Stock'
         };
         const missingLabels = missingFields.map(field => fieldLabels[field] || field);
-        message.error(`Please fill in required fields: ${missingLabels.join(', ')}`);
+        setStepError(`Please fill in required fields: ${missingLabels.join(', ')}`);
         setCurrentStep(0);
         return;
       }
 
-      // Validate variations if product has variations
       if (hasVariations && variations.length === 0) {
-        message.error('Please add at least one variation for this product');
+        setStepError('Please add at least one variation for this product');
         setCurrentStep(2);
         return;
       }
 
-      // Prepare the final product object
       const productSubmissionData = {
         id: editingProduct?.id || `PROD-${Date.now()}`,
         name: finalProductData.name,
@@ -312,9 +329,8 @@ export function ProductModal({
         image: imagePreview || finalProductData.image || '',
         hasVariations: hasVariations,
         
-        // Base product data (used when hasVariations is true)
         basePrice: hasVariations ? (Number(finalProductData.price) || 0) : undefined,
-        baseStock: hasVariations ? 0 : undefined, // Base product has no stock when it has variations
+        baseStock: hasVariations ? 0 : undefined,
         baseDimensions: hasVariations && finalProductData.dimensions ? {
           length: Number(finalProductData.dimensions.length) || 0,
           width: Number(finalProductData.dimensions.width) || 0,
@@ -324,7 +340,6 @@ export function ProductModal({
         baseWeight: hasVariations ? (Number(finalProductData.weight) || 0) : undefined,
         baseColor: hasVariations ? (finalProductData.color || '') : undefined,
         
-        // Regular product data (used when hasVariations is false)
         price: !hasVariations ? (Number(finalProductData.price) || 0) : undefined,
         stock: !hasVariations ? (Number(finalProductData.stock) || 0) : undefined,
         barcode: !hasVariations ? (finalProductData.barcode || '') : undefined,
@@ -341,7 +356,6 @@ export function ProductModal({
           quantity: m.quantity
         })) : [],
         
-        // Variations data
         variations: hasVariations ? variations : []
       };
 
@@ -349,7 +363,7 @@ export function ProductModal({
       handleClose();
     } catch (error) {
       console.error('Error submitting product:', error);
-      message.error('Failed to save product. Please check all required fields.');
+      setStepError('Failed to save product. Please check all required fields.');
     } finally {
       setLoading(false);
     }
@@ -357,6 +371,7 @@ export function ProductModal({
 
   const handleClose = () => {
     setCurrentStep(0);
+    setStepError('');
     productForm.resetFields();
     materialsForm.resetFields();
     variationsForm.resetFields();
@@ -368,24 +383,6 @@ export function ProductModal({
     setProductData({});
     onClose();
   };
-
-  const steps = [
-    {
-      title: 'Product Details',
-      icon: <Icon name="inventory_2" />,
-      description: 'Basic product information'
-    },
-    {
-      title: 'Raw Materials',
-      icon: <Icon name="category" />,
-      description: 'Materials used in production'
-    },
-    {
-      title: 'Variations',
-      icon: <Icon name="tune" />,
-      description: 'Product variations and options'
-    }
-  ];
 
   const materialColumns = [
     {
@@ -453,9 +450,6 @@ export function ProductModal({
       key: 'specs',
       render: (record) => (
         <div className="space-y-1">
-          {record.material && (
-            <Tag size="small">{record.material}</Tag>
-          )}
           {record.color && (
             <Tag size="small" color="blue">{record.color}</Tag>
           )}
@@ -525,7 +519,7 @@ export function ProductModal({
             <Text strong>Product Variations</Text>
             <br />
             <Text type="secondary" className="text-sm">
-              Enable if this product has multiple variations (size, color, material, etc.)
+              Enable if this product has multiple variations (size, color, etc.)
             </Text>
           </div>
           <Switch
@@ -612,13 +606,12 @@ export function ProductModal({
       )}
 
       {hasVariations && (
-        <div className="bg-yellow-50 p-4 rounded-lg">
-          <Text className="text-sm">
-            <Icon name="info" className="mr-2 text-yellow-600" />
-            Since this product has variations, the base price, stock, and other details will be set for each variation individually.
-            The fields below represent the base/default values for reference.
-          </Text>
-        </div>
+        <Alert
+          message="Product Variations Enabled"
+          description="Since this product has variations, the base price, stock, and other details will be set for each variation individually. The fields below represent the base/default values for reference."
+          type="info"
+          showIcon
+        />
       )}
 
       <Row gutter={16}>
@@ -786,7 +779,7 @@ export function ProductModal({
         </Form>
       </Card>
 
-      {selectedMaterials.length > 0 && (
+      {selectedMaterials.length > 0 ? (
         <div>
           <Title level={5}>Selected Materials</Title>
           <Table
@@ -811,9 +804,7 @@ export function ProductModal({
             }}
           />
         </div>
-      )}
-
-      {selectedMaterials.length === 0 && (
+      ) : (
         <div className="text-center py-8 bg-gray-50 rounded-lg">
           <Icon name="category" className="text-4xl text-gray-300 mb-2" />
           <Text type="secondary">No materials added yet</Text>
@@ -910,13 +901,15 @@ export function ProductModal({
                   </Form.Item>
                 </Col>
                 <Col span={6}>
-                  <Form.Item name="material" label="Material">
-                    <Input placeholder="Material type" />
+                  <Form.Item name="color" label="Color">
+                    <Input placeholder="Color" />
                   </Form.Item>
                 </Col>
                 <Col span={6}>
-                  <Form.Item name="color" label="Color">
-                    <Input placeholder="Color" />
+                  <Form.Item label=" ">
+                    <ActionButton.Primary htmlType="submit" icon="add" block>
+                      Add Variation
+                    </ActionButton.Primary>
                   </Form.Item>
                 </Col>
               </Row>
@@ -941,27 +934,16 @@ export function ProductModal({
                 </Input.Group>
               </Form.Item>
 
-              <Row gutter={16}>
-                <Col span={16}>
-                  <Form.Item name="description" label="Variation Description">
-                    <TextArea
-                      rows={2}
-                      placeholder="Describe this specific variation"
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item label=" ">
-                    <ActionButton.Primary htmlType="submit" icon="add" block>
-                      Add Variation
-                    </ActionButton.Primary>
-                  </Form.Item>
-                </Col>
-              </Row>
+              <Form.Item name="description" label="Variation Description">
+                <TextArea
+                  rows={2}
+                  placeholder="Describe this specific variation"
+                />
+              </Form.Item>
             </Form>
           </Card>
 
-          {variations.length > 0 && (
+          {variations.length > 0 ? (
             <div>
               <Title level={5}>Product Variations ({variations.length})</Title>
               <Table
@@ -972,9 +954,7 @@ export function ProductModal({
                 size="small"
               />
             </div>
-          )}
-
-          {variations.length === 0 && (
+          ) : (
             <div className="text-center py-8 bg-gray-50 rounded-lg">
               <Icon name="tune" className="text-4xl text-gray-300 mb-2" />
               <Text type="secondary">No variations added yet</Text>
@@ -1022,10 +1002,20 @@ export function ProductModal({
       destroyOnClose
     >
       <div className="space-y-6">
-        <Steps current={currentStep} items={steps} />
+        <EnhancedStepper
+          current={currentStep}
+          steps={steps}
+          status={stepError ? 'error' : 'process'}
+          showProgress={true}
+          errorMessage={stepError}
+        />
         
         <div className="min-h-[500px]">
-          {renderStepContent()}
+          {loading ? (
+            <LoadingSkeleton type="form" />
+          ) : (
+            renderStepContent()
+          )}
         </div>
 
         <Divider />

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   Modal, 
-  Steps, 
   Form, 
   Input, 
   Select, 
@@ -13,12 +12,14 @@ import {
   Radio,
   message,
   Row,
-  Col
+  Col,
+  Alert
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
+import { EnhancedStepper } from '../common/EnhancedStepper';
 import { InvoiceModal } from '../Invoices/InvoiceModal';
 import { InventoryLabelModal } from '../Invoices/InventoryLabelModal';
 
@@ -47,6 +48,7 @@ export function CheckoutModal({
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [selectedSalesperson, setSelectedSalesperson] = useState(currentUser?.id);
   const [loading, setLoading] = useState(false);
+  const [stepError, setStepError] = useState('');
   const [completedTransaction, setCompletedTransaction] = useState(null);
   const [showInvoice, setShowInvoice] = useState(false);
   const [showInventoryLabels, setShowInventoryLabels] = useState(false);
@@ -61,26 +63,49 @@ export function CheckoutModal({
     return user ? `${user.firstName} ${user.lastName}` : 'Unknown';
   };
 
-  const handleNext = () => {
+  const steps = [
+    {
+      title: 'Order Summary',
+      description: 'Review items and select sales person',
+      icon: 'receipt_long'
+    },
+    {
+      title: 'Customer Details',
+      description: 'Customer information and notes',
+      icon: 'person'
+    },
+    {
+      title: 'Payment',
+      description: 'Payment method and confirmation',
+      icon: 'payment'
+    }
+  ];
+
+  const handleNext = async () => {
+    setStepError('');
+    
     if (currentStep === 1) {
-      // Validate customer form if needed
-      customerForm.validateFields().then(() => {
+      try {
+        await customerForm.validateFields();
         setCurrentStep(currentStep + 1);
-      }).catch(() => {
-        // Customer details are optional, so we can proceed
-        setCurrentStep(currentStep + 1);
-      });
+      } catch (error) {
+        setStepError('Please fill in the required customer information');
+        return;
+      }
     } else {
       setCurrentStep(currentStep + 1);
     }
   };
 
   const handlePrev = () => {
+    setStepError('');
     setCurrentStep(currentStep - 1);
   };
 
   const handleCompleteOrder = async () => {
     setLoading(true);
+    setStepError('');
+    
     try {
       const customerData = customerForm.getFieldsValue();
       const salesperson = users.find(u => u.id === selectedSalesperson);
@@ -151,6 +176,7 @@ export function CheckoutModal({
       paymentForm.resetFields();
       
     } catch (error) {
+      setStepError('Failed to complete order. Please try again.');
       message.error('Failed to complete order');
     } finally {
       setLoading(false);
@@ -170,21 +196,6 @@ export function CheckoutModal({
   const handleShowInventoryLabels = () => {
     setShowInventoryLabels(true);
   };
-
-  const steps = [
-    {
-      title: 'Order Summary',
-      icon: <Icon name="receipt_long" />,
-    },
-    {
-      title: 'Customer Details',
-      icon: <Icon name="person" />,
-    },
-    {
-      title: 'Payment',
-      icon: <Icon name="payment" />,
-    },
-  ];
 
   const renderOrderSummary = () => (
     <div className="space-y-4">
@@ -226,7 +237,6 @@ export function CheckoutModal({
         <List
           dataSource={cartItems}
           renderItem={(item, index) => {
-            // Get category taxes for this item
             const itemCategoryTaxes = (itemTaxes || []).filter(tax => tax.productId === item.product.id);
             const itemTaxAmount = itemCategoryTaxes.reduce((sum, tax) => sum + tax.amount, 0);
             
@@ -342,7 +352,6 @@ export function CheckoutModal({
 
       <Divider />
 
-      {/* Notes Section */}
       <div className="space-y-3">
         <Text strong>Order Notes</Text>
         <TextArea
@@ -402,7 +411,6 @@ export function CheckoutModal({
         </Form.Item>
       </Form>
 
-      {/* Order Summary */}
       <div className="bg-gray-50 p-4 rounded-lg">
         <Title level={5} className="mb-3">Final Order Summary</Title>
         <div className="space-y-2">
@@ -472,7 +480,13 @@ export function CheckoutModal({
         destroyOnClose
       >
         <div className="space-y-6">
-          <Steps current={currentStep} items={steps} />
+          <EnhancedStepper
+            current={currentStep}
+            steps={steps}
+            status={stepError ? 'error' : 'process'}
+            showProgress={true}
+            errorMessage={stepError}
+          />
           
           <div className="min-h-[400px]">
             {renderStepContent()}

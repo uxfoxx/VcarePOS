@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { 
   Card, 
-  Table, 
-  Button, 
-  Input, 
   Space, 
   Typography,
   Tag,
@@ -13,8 +10,7 @@ import {
   Row,
   Col,
   Switch,
-  Tooltip,
-  Badge
+  Tooltip
 } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
@@ -23,6 +19,9 @@ import { SearchInput } from '../common/SearchInput';
 import { ActionButton } from '../common/ActionButton';
 import { UserModal } from './UserModal';
 import { DetailModal } from '../common/DetailModal';
+import { EnhancedTable } from '../common/EnhancedTable';
+import { EmptyState } from '../common/EmptyState';
+import { LoadingSkeleton } from '../common/LoadingSkeleton';
 
 const { Title, Text } = Typography;
 
@@ -33,6 +32,7 @@ export function UserManagement() {
   const [editingUser, setEditingUser] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const filteredUsers = users.filter(user =>
     user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -110,6 +110,8 @@ export function UserManagement() {
     {
       title: 'User',
       key: 'user',
+      fixed: 'left',
+      width: 250,
       render: (record) => (
         <div className="flex items-center space-x-3">
           <Avatar 
@@ -139,6 +141,7 @@ export function UserManagement() {
       title: 'Role',
       dataIndex: 'role',
       key: 'role',
+      width: 120,
       render: (role) => (
         <Tag color={getRoleColor(role)} className="capitalize">
           {role}
@@ -148,6 +151,7 @@ export function UserManagement() {
     {
       title: 'Permissions',
       key: 'permissions',
+      width: 150,
       render: (record) => {
         const permCount = getPermissionCount(record.permissions);
         const totalModules = Object.keys(record.permissions).length;
@@ -170,6 +174,8 @@ export function UserManagement() {
       title: 'Last Login',
       dataIndex: 'lastLogin',
       key: 'lastLogin',
+      width: 150,
+      sorter: (a, b) => new Date(a.lastLogin || 0) - new Date(b.lastLogin || 0),
       render: (lastLogin) => (
         <div>
           {lastLogin ? (
@@ -191,6 +197,7 @@ export function UserManagement() {
     {
       title: 'Status',
       key: 'status',
+      width: 120,
       render: (record) => (
         <div className="flex items-center space-x-2">
           <Switch
@@ -198,6 +205,7 @@ export function UserManagement() {
             onChange={() => handleToggleStatus(record)}
             size="small"
             disabled={record.id === currentUser?.id || !hasPermission('user-management', 'edit')}
+            onClick={(checked, e) => e.stopPropagation()}
           />
           <Text className="text-sm">
             {record.isActive ? 'Active' : 'Inactive'}
@@ -209,6 +217,8 @@ export function UserManagement() {
       title: 'Created',
       dataIndex: 'createdAt',
       key: 'createdAt',
+      width: 120,
+      sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
       render: (date) => (
         <Text className="text-sm">
           {new Date(date).toLocaleDateString()}
@@ -218,6 +228,8 @@ export function UserManagement() {
     {
       title: 'Actions',
       key: 'actions',
+      fixed: 'right',
+      width: 120,
       render: (record) => (
         <Space>
           <Tooltip title={hasPermission('user-management', 'edit') ? 'Edit User' : 'No permission'}>
@@ -264,15 +276,17 @@ export function UserManagement() {
   if (!hasPermission('user-management', 'view')) {
     return (
       <Card>
-        <div className="text-center py-12">
-          <Icon name="lock" className="text-6xl text-gray-300 mb-4" />
-          <Title level={4} type="secondary">Access Denied</Title>
-          <Text type="secondary">
-            You do not have permission to view user management.
-          </Text>
-        </div>
+        <EmptyState
+          icon="lock"
+          title="Access Denied"
+          description="You do not have permission to view user management."
+        />
       </Card>
     );
+  }
+
+  if (loading) {
+    return <LoadingSkeleton type="table" />;
   }
 
   return (
@@ -338,7 +352,7 @@ export function UserManagement() {
           </Col>
         </Row>
         
-        <Table
+        <EnhancedTable
           columns={columns}
           dataSource={filteredUsers}
           rowKey="id"
@@ -346,13 +360,10 @@ export function UserManagement() {
             onClick: () => handleRowClick(record),
             className: 'cursor-pointer hover:bg-blue-50'
           })}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} users`,
-          }}
-          scroll={{ x: 1000 }}
+          searchFields={['firstName', 'lastName', 'username', 'email', 'role']}
+          showSearch={false}
+          emptyDescription="No users found"
+          emptyImage={<Icon name="people" className="text-6xl text-gray-300" />}
         />
       </Card>
 

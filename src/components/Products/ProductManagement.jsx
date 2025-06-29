@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { 
   Card, 
-  Table, 
-  Input, 
   Space, 
   Typography,
   Tag,
@@ -25,6 +23,9 @@ import { ProductDetailsSheet } from '../Invoices/ProductDetailsSheet';
 import { CategoryManagement } from './CategoryManagement';
 import { ProductModal } from './ProductModal';
 import { DetailModal } from '../common/DetailModal';
+import { EnhancedTable } from '../common/EnhancedTable';
+import { EmptyState } from '../common/EmptyState';
+import { LoadingSkeleton } from '../common/LoadingSkeleton';
 
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
@@ -37,20 +38,17 @@ export function ProductManagement() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showProductSheet, setShowProductSheet] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [viewMode, setViewMode] = useState('all'); // 'all', 'base', 'variations'
+  const [viewMode, setViewMode] = useState('all');
+  const [loading, setLoading] = useState(false);
 
-  // Filter products based on view mode and search
   const getFilteredProducts = () => {
     let productsToShow = [];
     
     if (viewMode === 'all') {
-      // Show all products (base products and individual variations)
       productsToShow = state.allProducts;
     } else if (viewMode === 'base') {
-      // Show only base products (original product structure)
       productsToShow = state.products;
     } else if (viewMode === 'variations') {
-      // Show only products that are variations
       productsToShow = state.allProducts.filter(product => product.isVariation);
     }
 
@@ -65,6 +63,7 @@ export function ProductManagement() {
 
   const handleSubmit = async (productData) => {
     try {
+      setLoading(true);
       if (editingProduct) {
         dispatch({ type: 'UPDATE_PRODUCT', payload: productData });
         message.success('Product updated successfully');
@@ -77,11 +76,12 @@ export function ProductManagement() {
       setEditingProduct(null);
     } catch (error) {
       message.error('Failed to save product');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleEdit = (product) => {
-    // If editing a variation, find and edit the base product
     if (product.isVariation) {
       const baseProduct = state.products.find(p => p.id === product.parentProductId);
       if (baseProduct) {
@@ -97,7 +97,6 @@ export function ProductManagement() {
   };
 
   const handleDelete = (productId) => {
-    // Find if this is a variation or base product
     const product = state.allProducts.find(p => p.id === productId);
     
     if (product?.isVariation) {
@@ -160,6 +159,8 @@ export function ProductManagement() {
       title: 'Product',
       dataIndex: 'name',
       key: 'name',
+      fixed: 'left',
+      width: 300,
       render: (text, record) => (
         <div className="flex items-center space-x-3">
           <Image
@@ -192,6 +193,7 @@ export function ProductManagement() {
       title: 'Category',
       dataIndex: 'category',
       key: 'category',
+      width: 120,
       render: (category) => (
         <Tag color="blue">
           {category}
@@ -202,6 +204,8 @@ export function ProductManagement() {
       title: 'Price',
       dataIndex: 'price',
       key: 'price',
+      width: 120,
+      sorter: (a, b) => (a.price || 0) - (b.price || 0),
       render: (price, record) => {
         if (viewMode === 'base' && record.hasVariations) {
           return (
@@ -221,6 +225,8 @@ export function ProductManagement() {
       title: 'Stock',
       dataIndex: 'stock',
       key: 'stock',
+      width: 120,
+      sorter: (a, b) => (a.stock || 0) - (b.stock || 0),
       render: (stock, record) => {
         if (viewMode === 'base' && record.hasVariations) {
           const totalStock = record.variations?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
@@ -246,6 +252,7 @@ export function ProductManagement() {
     {
       title: 'Type',
       key: 'type',
+      width: 120,
       render: (record) => {
         if (viewMode === 'base') {
           return record.hasVariations ? (
@@ -264,6 +271,7 @@ export function ProductManagement() {
     {
       title: 'Materials',
       key: 'materials',
+      width: 120,
       render: (record) => (
         <div>
           {record.rawMaterials && record.rawMaterials.length > 0 ? (
@@ -279,6 +287,7 @@ export function ProductManagement() {
     {
       title: 'Specifications',
       key: 'specs',
+      width: 200,
       render: (record) => (
         <Space direction="vertical" size="small">
           {record.dimensions && (
@@ -307,6 +316,8 @@ export function ProductManagement() {
     {
       title: 'Actions',
       key: 'actions',
+      fixed: 'right',
+      width: 80,
       render: (record) => (
         <Dropdown
           menu={{
@@ -317,6 +328,7 @@ export function ProductManagement() {
           <ActionButton.Text
             icon="more_vert"
             className="text-blue-600 hover:text-blue-700"
+            onClick={(e) => e.stopPropagation()}
           />
         </Dropdown>
       ),
@@ -380,124 +392,123 @@ export function ProductManagement() {
       </Card>
 
       {/* Products with Variations Expandable View */}
-      {viewMode === 'base' && (
+      {viewMode === 'base' ? (
         <div className="space-y-4">
-          {state.products.filter(product => 
-            (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (product.category || '').toLowerCase().includes(searchTerm.toLowerCase())
-          ).map(product => (
-            <Card key={product.id} size="small" className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleRowClick(product)}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <Image
-                    src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=60'}
-                    alt={product.name}
-                    width={60}
-                    height={60}
-                    className="object-cover rounded"
-                    preview={false}
-                  />
-                  <div>
-                    <Text strong className="text-lg">{product.name}</Text>
-                    <br />
-                    <Tag color="blue">{product.category}</Tag>
-                    {product.hasVariations ? (
-                      <Tag color="purple">Has {product.variations?.length || 0} Variations</Tag>
-                    ) : (
-                      <Tag color="default">Single Product</Tag>
-                    )}
-                    <br />
-                    <Text type="secondary" className="text-sm">{product.description}</Text>
+          {loading ? (
+            <LoadingSkeleton type="list" rows={5} />
+          ) : filteredProducts.length === 0 ? (
+            <EmptyState
+              icon="inventory_2"
+              title="No Products Found"
+              description="No products match your search criteria"
+              actionText="Add Product"
+              onAction={() => setShowModal(true)}
+            />
+          ) : (
+            filteredProducts.map(product => (
+              <Card key={product.id} size="small" className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleRowClick(product)}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <Image
+                      src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=60'}
+                      alt={product.name}
+                      width={60}
+                      height={60}
+                      className="object-cover rounded"
+                      preview={false}
+                    />
+                    <div>
+                      <Text strong className="text-lg">{product.name}</Text>
+                      <br />
+                      <Tag color="blue">{product.category}</Tag>
+                      {product.hasVariations ? (
+                        <Tag color="purple">Has {product.variations?.length || 0} Variations</Tag>
+                      ) : (
+                        <Tag color="default">Single Product</Tag>
+                      )}
+                      <br />
+                      <Text type="secondary" className="text-sm">{product.description}</Text>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Dropdown
+                      menu={{
+                        items: getActionMenuItems(product)
+                      }}
+                      trigger={['click']}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ActionButton.Text
+                        icon="more_vert"
+                        className="text-blue-600 hover:text-blue-700"
+                      />
+                    </Dropdown>
                   </div>
                 </div>
-                <div className="text-right">
-                  <Dropdown
-                    menu={{
-                      items: getActionMenuItems(product)
-                    }}
-                    trigger={['click']}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <ActionButton.Text
-                      icon="more_vert"
-                      className="text-blue-600 hover:text-blue-700"
-                    />
-                  </Dropdown>
-                </div>
-              </div>
 
-              {product.hasVariations && product.variations && product.variations.length > 0 && (
-                <Collapse className="mt-4" size="small">
-                  <Panel 
-                    header={`View ${product.variations.length} Variations`} 
-                    key="variations"
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {product.variations.map(variation => (
-                        <Card key={variation.id} size="small" className="border cursor-pointer hover:shadow-sm" onClick={(e) => {
-                          e.stopPropagation();
-                          const variationProduct = state.allProducts.find(p => p.id === variation.id);
-                          if (variationProduct) handleRowClick(variationProduct);
-                        }}>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Text strong>{variation.name}</Text>
-                              <Tag color={variation.stock > 0 ? 'green' : 'red'} size="small">
-                                {variation.stock} units
-                              </Tag>
+                {product.hasVariations && product.variations && product.variations.length > 0 && (
+                  <Collapse className="mt-4" size="small">
+                    <Panel 
+                      header={`View ${product.variations.length} Variations`} 
+                      key="variations"
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {product.variations.map(variation => (
+                          <Card key={variation.id} size="small" className="border cursor-pointer hover:shadow-sm" onClick={(e) => {
+                            e.stopPropagation();
+                            const variationProduct = state.allProducts.find(p => p.id === variation.id);
+                            if (variationProduct) handleRowClick(variationProduct);
+                          }}>
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <Text strong>{variation.name}</Text>
+                                <Tag color={variation.stock > 0 ? 'green' : 'red'} size="small">
+                                  {variation.stock} units
+                                </Tag>
+                              </div>
+                              <div className="space-y-1">
+                                <Text className="text-sm">
+                                  <strong>SKU:</strong> {variation.sku}
+                                </Text>
+                                <Text className="text-sm">
+                                  <strong>Price:</strong> ${variation.price.toFixed(2)}
+                                </Text>
+                                {variation.color && (
+                                  <Text className="text-sm">
+                                    <strong>Color:</strong> {variation.color}
+                                  </Text>
+                                )}
+                                {variation.dimensions && variation.dimensions.length && (
+                                  <Text className="text-sm">
+                                    <strong>Size:</strong> {variation.dimensions.length}×{variation.dimensions.width}×{variation.dimensions.height} {variation.dimensions.unit}
+                                  </Text>
+                                )}
+                              </div>
                             </div>
-                            <div className="space-y-1">
-                              <Text className="text-sm">
-                                <strong>SKU:</strong> {variation.sku}
-                              </Text>
-                              <Text className="text-sm">
-                                <strong>Price:</strong> ${variation.price.toFixed(2)}
-                              </Text>
-                              {variation.material && (
-                                <Text className="text-sm">
-                                  <strong>Material:</strong> {variation.material}
-                                </Text>
-                              )}
-                              {variation.color && (
-                                <Text className="text-sm">
-                                  <strong>Color:</strong> {variation.color}
-                                </Text>
-                              )}
-                              {variation.dimensions && variation.dimensions.length && (
-                                <Text className="text-sm">
-                                  <strong>Size:</strong> {variation.dimensions.length}×{variation.dimensions.width}×{variation.dimensions.height} {variation.dimensions.unit}
-                                </Text>
-                              )}
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </Panel>
-                </Collapse>
-              )}
-            </Card>
-          ))}
+                          </Card>
+                        ))}
+                      </div>
+                    </Panel>
+                  </Collapse>
+                )}
+              </Card>
+            ))
+          )}
         </div>
-      )}
-
-      {/* Regular Table View */}
-      {viewMode !== 'base' && (
-        <Table
+      ) : (
+        <EnhancedTable
           columns={columns}
           dataSource={filteredProducts}
           rowKey="id"
+          loading={loading}
           onRow={(record) => ({
             onClick: () => handleRowClick(record),
             className: 'cursor-pointer hover:bg-blue-50'
           })}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-          }}
-          scroll={{ x: 1200 }}
+          searchFields={['name', 'category', 'barcode']}
+          showSearch={false}
+          emptyDescription="No products found"
+          emptyImage={<Icon name="inventory_2" className="text-6xl text-gray-300" />}
         />
       )}
     </div>

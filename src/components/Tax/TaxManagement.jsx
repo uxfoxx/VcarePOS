@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   Card, 
-  Table, 
   Button, 
   Input, 
   Space, 
@@ -24,6 +23,10 @@ import { PageHeader } from '../common/PageHeader';
 import { SearchInput } from '../common/SearchInput';
 import { ActionButton } from '../common/ActionButton';
 import { FormModal } from '../common/FormModal';
+import { EnhancedTable } from '../common/EnhancedTable';
+import { DetailModal } from '../common/DetailModal';
+import { EmptyState } from '../common/EmptyState';
+import { LoadingSkeleton } from '../common/LoadingSkeleton';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -34,6 +37,9 @@ export function TaxManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingTax, setEditingTax] = useState(null);
+  const [selectedTax, setSelectedTax] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const [taxType, setTaxType] = useState('full_bill');
 
@@ -47,19 +53,19 @@ export function TaxManagement() {
 
   const handleSubmit = async (values) => {
     try {
+      setLoading(true);
       const taxData = {
         id: editingTax?.id || `TAX-${Date.now()}`,
         name: values.name,
         description: values.description,
         rate: values.rate,
-        taxType: values.taxType, // 'full_bill' or 'category'
+        taxType: values.taxType,
         isActive: values.isActive !== false,
         isDefault: values.isDefault || false,
         applicableCategories: values.taxType === 'category' ? (values.applicableCategories || []) : [],
         createdAt: editingTax?.createdAt || new Date()
       };
 
-      // If this is set as default, remove default from others
       if (taxData.isDefault) {
         dispatch({ type: 'CLEAR_DEFAULT_TAX' });
       }
@@ -72,7 +78,6 @@ export function TaxManagement() {
         message.success('Tax added successfully');
       }
 
-      // Update tax settings if this is the default tax
       if (taxData.isDefault) {
         dispatch({ 
           type: 'UPDATE_TAX_SETTINGS', 
@@ -90,6 +95,8 @@ export function TaxManagement() {
       setTaxType('full_bill');
     } catch (error) {
       message.error('Please fill in all required fields');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -126,14 +133,11 @@ export function TaxManagement() {
   };
 
   const handleSetDefault = (tax) => {
-    // Clear default from all taxes
     dispatch({ type: 'CLEAR_DEFAULT_TAX' });
     
-    // Set this tax as default
     const updatedTax = { ...tax, isDefault: true, isActive: true };
     dispatch({ type: 'UPDATE_TAX', payload: updatedTax });
     
-    // Update global tax settings
     dispatch({ 
       type: 'UPDATE_TAX_SETTINGS', 
       payload: { 
@@ -146,11 +150,15 @@ export function TaxManagement() {
     message.success(`${tax.name} set as default tax`);
   };
 
+  const handleRowClick = (tax) => {
+    setSelectedTax(tax);
+    setShowDetailModal(true);
+  };
+
   const handleTaxTypeChange = (e) => {
     const newTaxType = e.target.value;
     setTaxType(newTaxType);
     
-    // Clear applicable categories if switching to full_bill
     if (newTaxType === 'full_bill') {
       form.setFieldsValue({ applicableCategories: [] });
     }
@@ -161,6 +169,8 @@ export function TaxManagement() {
       title: 'Tax Name',
       dataIndex: 'name',
       key: 'name',
+      fixed: 'left',
+      width: 250,
       render: (text, record) => (
         <div>
           <div className="flex items-center space-x-2">
@@ -174,26 +184,36 @@ export function TaxManagement() {
           <Text type="secondary" className="text-xs">{record.description}</Text>
         </div>
       ),
+      sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
       title: 'Rate',
       dataIndex: 'rate',
       key: 'rate',
+      width: 100,
       render: (rate) => <Text strong>{rate}%</Text>,
+      sorter: (a, b) => a.rate - b.rate,
     },
     {
       title: 'Type',
       dataIndex: 'taxType',
       key: 'taxType',
+      width: 120,
       render: (type) => (
         <Tag color={type === 'full_bill' ? 'green' : 'orange'}>
           {type === 'full_bill' ? 'Full Bill' : 'Category'}
         </Tag>
       ),
+      filters: [
+        { text: 'Full Bill', value: 'full_bill' },
+        { text: 'Category', value: 'category' },
+      ],
+      onFilter: (value, record) => record.taxType === value,
     },
     {
       title: 'Applicable To',
       key: 'applicableTo',
+      width: 200,
       render: (record) => (
         <div>
           {record.taxType === 'full_bill' ? (
@@ -217,36 +237,57 @@ export function TaxManagement() {
     {
       title: 'Status',
       key: 'status',
+      width: 120,
       render: (record) => (
         <Switch
           checked={record.isActive}
-          onChange={() => handleToggleStatus(record)}
+          onChange={(checked, e) => {
+            e?.stopPropagation();
+            handleToggleStatus(record);
+          }}
           size="small"
           disabled={record.isDefault && record.isActive}
+          onClick={(checked, e) => e.stopPropagation()}
         />
       ),
+      filters: [
+        { text: 'Active', value: true },
+        { text: 'Inactive', value: false },
+      ],
+      onFilter: (value, record) => record.isActive === value,
     },
     {
       title: 'Actions',
       key: 'actions',
+      fixed: 'right',
+      width: 150,
       render: (record) => (
         <Space>
           <ActionButton.Text 
             icon="edit"
-            onClick={() => handleEdit(record)}
-            className="text-[#0E72BD]"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(record);
+            }}
+            className="text-blue-600"
           />
           {!record.isDefault && (
             <ActionButton.Text
               icon="star"
-              onClick={() => handleSetDefault(record)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSetDefault(record);
+              }}
               className="text-yellow-500"
               title="Set as default"
             />
           )}
           <Popconfirm
             title="Are you sure you want to delete this tax?"
-            onConfirm={() => handleDelete(record.id)}
+            onConfirm={(e) => {
+              e?.stopPropagation();
+              handleDelete(record.id);
+            }}
             okText="Yes"
             cancelText="No"
             disabled={record.isDefault}
@@ -256,6 +297,7 @@ export function TaxManagement() {
               danger
               disabled={record.isDefault}
               title={record.isDefault ? "Cannot delete default tax" : "Delete tax"}
+              onClick={(e) => e.stopPropagation()}
             />
           </Popconfirm>
         </Space>
@@ -263,43 +305,36 @@ export function TaxManagement() {
     },
   ];
 
+  if (loading) {
+    return <LoadingSkeleton type="table" />;
+  }
+
   return (
     <>
-      <Card>
-        <PageHeader
-          title="Tax Management"
-          icon="receipt"
-          subtitle={`Current default tax: ${state.taxSettings?.name || 'Sales Tax'} (${state.taxSettings?.rate || 8}%)`}
-          extra={
-            <Space>
-              <SearchInput
-                placeholder="Search taxes..."
-                value={searchTerm}
-                onSearch={setSearchTerm}
-                className="w-64"
-              />
-              <ActionButton.Primary 
-                icon="add"
-                onClick={() => setShowModal(true)}
-              >
-                Add Tax
-              </ActionButton.Primary>
-            </Space>
-          }
-        />
-        
-        <Table
-          columns={columns}
-          dataSource={filteredTaxes}
-          rowKey="id"
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-          }}
-        />
-      </Card>
+      <EnhancedTable
+        title="Tax Management"
+        icon="receipt"
+        subtitle={`Current default tax: ${state.taxSettings?.name || 'Sales Tax'} (${state.taxSettings?.rate || 8}%)`}
+        columns={columns}
+        dataSource={filteredTaxes}
+        rowKey="id"
+        onRow={(record) => ({
+          onClick: () => handleRowClick(record),
+          className: 'cursor-pointer hover:bg-blue-50'
+        })}
+        searchFields={['name', 'description']}
+        searchPlaceholder="Search taxes..."
+        extra={
+          <ActionButton.Primary 
+            icon="add"
+            onClick={() => setShowModal(true)}
+          >
+            Add Tax
+          </ActionButton.Primary>
+        }
+        emptyDescription="No taxes found"
+        emptyImage={<Icon name="receipt" className="text-6xl text-gray-300" />}
+      />
 
       <FormModal
         title={editingTax ? 'Edit Tax' : 'Add New Tax'}
@@ -314,6 +349,7 @@ export function TaxManagement() {
         form={form}
         width={700}
         submitText={editingTax ? 'Update Tax' : 'Add Tax'}
+        loading={loading}
       >
         <Row gutter={16}>
           <Col span={12}>
@@ -449,6 +485,31 @@ export function TaxManagement() {
           </div>
         )}
       </FormModal>
+
+      {/* Tax Detail Modal */}
+      <DetailModal
+        open={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedTax(null);
+        }}
+        title={`Tax Details - ${selectedTax?.name}`}
+        icon="receipt"
+        data={selectedTax}
+        type="tax"
+        actions={[
+          <ActionButton 
+            key="edit" 
+            icon="edit"
+            onClick={() => {
+              setShowDetailModal(false);
+              handleEdit(selectedTax);
+            }}
+          >
+            Edit Tax
+          </ActionButton>
+        ]}
+      />
     </>
   );
 }

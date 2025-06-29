@@ -11,7 +11,12 @@ import {
   DatePicker, 
   Tooltip,
   Empty,
-  Skeleton
+  Skeleton,
+  Modal,
+  Form,
+  Switch,
+  Divider,
+  Typography
 } from 'antd';
 import { Icon } from './Icon';
 import { ActionButton } from './ActionButton';
@@ -20,6 +25,7 @@ import { PageHeader } from './PageHeader';
 const { Search } = Input;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
+const { Text } = Typography;
 
 export function EnhancedTable({
   title,
@@ -44,33 +50,58 @@ export function EnhancedTable({
   ...tableProps
 }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showConfigModal, setShowConfigModal] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState(
     initialColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {})
   );
-  const [fixedColumns, setFixedColumns] = useState(
-    initialColumns.reduce((acc, col) => ({ ...acc, [col.key]: col.fixed || false }), {})
-  );
+  const [fixedColumns, setFixedColumns] = useState(() => {
+    const initial = {};
+    initialColumns.forEach(col => {
+      if (col.key === 'actions') {
+        initial[col.key] = 'right'; // Actions column fixed right by default
+      } else {
+        initial[col.key] = col.fixed || false;
+      }
+    });
+    return initial;
+  });
   const [filters, setFilters] = useState({});
   const [sorter, setSorter] = useState({});
+  const [configForm] = Form.useForm();
 
-  // Enhanced columns with visibility and fixed settings
+  // Enhanced columns with visibility, fixed settings, and working filters/sorters
   const columns = useMemo(() => {
     return initialColumns
       .filter(col => visibleColumns[col.key])
       .map(col => ({
         ...col,
         fixed: fixedColumns[col.key] || false,
-        sorter: col.sorter !== false ? (col.sorter || true) : false,
+        sorter: col.sorter !== false ? (
+          col.sorter || ((a, b) => {
+            const aVal = col.dataIndex ? a[col.dataIndex] : '';
+            const bVal = col.dataIndex ? b[col.dataIndex] : '';
+            
+            // Handle different data types
+            if (typeof aVal === 'number' && typeof bVal === 'number') {
+              return aVal - bVal;
+            }
+            if (aVal instanceof Date && bVal instanceof Date) {
+              return aVal.getTime() - bVal.getTime();
+            }
+            // String comparison
+            return String(aVal).localeCompare(String(bVal));
+          })
+        ) : false,
         filterable: col.filterable !== false,
-        ...(col.filterable !== false && {
-          filterDropdown: col.filterDropdown || (({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
-            <div className="p-2">
+        ...(col.filterable !== false && !col.filterDropdown && {
+          filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+            <div className="p-3 w-64">
               <Input
                 placeholder={`Search ${col.title}`}
                 value={selectedKeys[0]}
                 onChange={e => setSelectedKeys(e.target.value ? [e.target.value] : [])}
                 onPressEnter={() => confirm()}
-                className="w-48 mb-2 block"
+                className="mb-2 block"
               />
               <Space>
                 <Button
@@ -78,26 +109,33 @@ export function EnhancedTable({
                   onClick={() => confirm()}
                   icon={<Icon name="search" />}
                   size="small"
-                  className="w-20"
                 >
                   Search
                 </Button>
-                <Button onClick={() => clearFilters()} size="small" className="w-20">
+                <Button onClick={() => clearFilters()} size="small">
                   Reset
                 </Button>
               </Space>
             </div>
-          )),
-          filterIcon: filtered => <Icon name="filter_list" className={filtered ? 'text-blue-600' : ''} />,
+          ),
+          filterIcon: filtered => (
+            <Icon 
+              name="filter_list" 
+              className={filtered ? 'text-blue-600' : 'text-gray-400'} 
+            />
+          ),
           onFilter: col.onFilter || ((value, record) => {
             const dataIndex = col.dataIndex;
+            if (!dataIndex) return true;
+            
+            let fieldValue;
             if (Array.isArray(dataIndex)) {
-              return dataIndex.reduce((obj, key) => obj?.[key], record)
-                ?.toString()
-                ?.toLowerCase()
-                ?.includes(value.toLowerCase());
+              fieldValue = dataIndex.reduce((obj, key) => obj?.[key], record);
+            } else {
+              fieldValue = record[dataIndex];
             }
-            return record[dataIndex]?.toString()?.toLowerCase()?.includes(value.toLowerCase());
+            
+            return fieldValue?.toString()?.toLowerCase()?.includes(value.toLowerCase());
           })
         })
       }));
@@ -138,54 +176,36 @@ export function EnhancedTable({
   };
 
   const resetColumns = () => {
-    setVisibleColumns(initialColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}));
-    setFixedColumns(initialColumns.reduce((acc, col) => ({ ...acc, [col.key]: col.fixed || false }), {}));
+    const defaultVisible = initialColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {});
+    const defaultFixed = {};
+    initialColumns.forEach(col => {
+      if (col.key === 'actions') {
+        defaultFixed[col.key] = 'right';
+      } else {
+        defaultFixed[col.key] = col.fixed || false;
+      }
+    });
+    
+    setVisibleColumns(defaultVisible);
+    setFixedColumns(defaultFixed);
+    configForm.setFieldsValue({
+      visibleColumns: defaultVisible,
+      fixedColumns: defaultFixed
+    });
   };
 
-  const columnConfigMenu = {
-    items: [
-      {
-        key: 'visibility',
-        label: 'Column Visibility',
-        children: initialColumns.map(col => ({
-          key: `visibility-${col.key}`,
-          label: (
-            <Checkbox
-              checked={visibleColumns[col.key]}
-              onChange={e => handleColumnVisibilityChange(col.key, e.target.checked)}
-            >
-              {col.title}
-            </Checkbox>
-          )
-        }))
-      },
-      {
-        key: 'fixed',
-        label: 'Fixed Columns',
-        children: initialColumns.map(col => ({
-          key: `fixed-${col.key}`,
-          label: (
-            <Checkbox
-              checked={fixedColumns[col.key]}
-              onChange={e => handleColumnFixedChange(col.key, e.target.checked ? 'left' : false)}
-            >
-              Fix {col.title}
-            </Checkbox>
-          )
-        }))
-      },
-      {
-        type: 'divider'
-      },
-      {
-        key: 'reset',
-        label: (
-          <Button type="text" onClick={resetColumns} icon={<Icon name="refresh" />}>
-            Reset to Default
-          </Button>
-        )
-      }
-    ]
+  const handleConfigSubmit = (values) => {
+    setVisibleColumns(values.visibleColumns);
+    setFixedColumns(values.fixedColumns);
+    setShowConfigModal(false);
+  };
+
+  const openConfigModal = () => {
+    configForm.setFieldsValue({
+      visibleColumns,
+      fixedColumns
+    });
+    setShowConfigModal(true);
   };
 
   if (loading) {
@@ -200,60 +220,165 @@ export function EnhancedTable({
   }
 
   return (
-    <Card>
-      {(title || icon || extra) && (
-        <PageHeader 
-          title={title}
-          icon={icon}
-          subtitle={subtitle}
-          extra={
-            <Space>
-              {showSearch && (
-                <Search
-                  placeholder={searchPlaceholder}
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  onSearch={setSearchTerm}
-                  className="w-64"
-                  allowClear
-                />
-              )}
-              {showColumnConfig && (
-                <Dropdown menu={columnConfigMenu} trigger={['click']} placement="bottomRight">
+    <>
+      <Card>
+        {(title || icon || extra || showSearch || showColumnConfig) && (
+          <PageHeader 
+            title={title}
+            icon={icon}
+            subtitle={subtitle}
+            extra={
+              <Space>
+                {showSearch && (
+                  <Search
+                    placeholder={searchPlaceholder}
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    onSearch={setSearchTerm}
+                    className="w-64"
+                    allowClear
+                  />
+                )}
+                {showColumnConfig && (
                   <Tooltip title="Configure Columns">
-                    <ActionButton icon="settings" />
+                    <ActionButton 
+                      icon="settings" 
+                      onClick={openConfigModal}
+                    />
                   </Tooltip>
-                </Dropdown>
-              )}
-              {extra}
-            </Space>
-          }
+                )}
+                {extra}
+              </Space>
+            }
+          />
+        )}
+        
+        <Table
+          columns={columns}
+          dataSource={filteredData}
+          rowKey={rowKey}
+          onRow={onRow}
+          onChange={handleTableChange}
+          scroll={scroll}
+          pagination={{
+            pageSize: defaultPageSize,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+            pageSizeOptions: ['10', '20', '50', '100'],
+          }}
+          locale={{
+            emptyText: (
+              <Empty
+                image={emptyImage || Empty.PRESENTED_IMAGE_SIMPLE}
+                description={emptyDescription}
+              />
+            )
+          }}
+          {...tableProps}
         />
-      )}
-      
-      <Table
-        columns={columns}
-        dataSource={filteredData}
-        rowKey={rowKey}
-        onRow={onRow}
-        onChange={handleTableChange}
-        scroll={scroll}
-        pagination={{
-          pageSize: defaultPageSize,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-        }}
-        locale={{
-          emptyText: (
-            <Empty
-              image={emptyImage || Empty.PRESENTED_IMAGE_SIMPLE}
-              description={emptyDescription}
-            />
-          )
-        }}
-        {...tableProps}
-      />
-    </Card>
+      </Card>
+
+      {/* Column Configuration Modal */}
+      <Modal
+        title={
+          <Space>
+            <Icon name="settings" className="text-blue-600" />
+            <span>Configure Table Columns</span>
+          </Space>
+        }
+        open={showConfigModal}
+        onCancel={() => setShowConfigModal(false)}
+        width={600}
+        footer={[
+          <ActionButton key="reset" onClick={resetColumns}>
+            Reset to Default
+          </ActionButton>,
+          <ActionButton key="cancel" onClick={() => setShowConfigModal(false)}>
+            Cancel
+          </ActionButton>,
+          <ActionButton.Primary 
+            key="save" 
+            onClick={() => configForm.submit()}
+          >
+            Apply Changes
+          </ActionButton.Primary>
+        ]}
+      >
+        <Form
+          form={configForm}
+          layout="vertical"
+          onFinish={handleConfigSubmit}
+          initialValues={{
+            visibleColumns,
+            fixedColumns
+          }}
+        >
+          <div className="space-y-6">
+            {/* Column Visibility */}
+            <div>
+              <Text strong className="text-base">Column Visibility</Text>
+              <Text type="secondary" className="block mb-3">
+                Select which columns to display in the table
+              </Text>
+              <Form.Item name="visibleColumns">
+                <Checkbox.Group className="w-full">
+                  <div className="grid grid-cols-2 gap-2">
+                    {initialColumns.map(col => (
+                      <Checkbox 
+                        key={col.key} 
+                        value={col.key}
+                        checked={visibleColumns[col.key]}
+                        onChange={e => handleColumnVisibilityChange(col.key, e.target.checked)}
+                      >
+                        {col.title}
+                      </Checkbox>
+                    ))}
+                  </div>
+                </Checkbox.Group>
+              </Form.Item>
+            </div>
+
+            <Divider />
+
+            {/* Fixed Columns */}
+            <div>
+              <Text strong className="text-base">Fixed Columns</Text>
+              <Text type="secondary" className="block mb-3">
+                Pin columns to the left or right side of the table
+              </Text>
+              <div className="space-y-3">
+                {initialColumns.map(col => (
+                  <div key={col.key} className="flex items-center justify-between p-2 border rounded">
+                    <Text>{col.title}</Text>
+                    <Select
+                      value={fixedColumns[col.key] || 'none'}
+                      onChange={value => handleColumnFixedChange(col.key, value === 'none' ? false : value)}
+                      className="w-32"
+                      size="small"
+                    >
+                      <Option value="none">Not Fixed</Option>
+                      <Option value="left">Fix Left</Option>
+                      <Option value="right">Fix Right</Option>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <Divider />
+
+            {/* Table Info */}
+            <div className="bg-blue-50 p-3 rounded">
+              <Text className="text-sm">
+                <Icon name="info" className="mr-2 text-blue-600" />
+                <strong>Tips:</strong> Fixed columns will remain visible when scrolling horizontally. 
+                The Actions column is fixed to the right by default for better usability.
+              </Text>
+            </div>
+          </div>
+        </Form>
+      </Modal>
+    </>
   );
 }

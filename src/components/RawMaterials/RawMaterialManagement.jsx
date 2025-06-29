@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   Card, 
-  Table, 
   Button, 
   Input, 
   Space, 
@@ -18,6 +17,14 @@ import {
   Col
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
+import { Icon } from '../common/Icon';
+import { PageHeader } from '../common/PageHeader';
+import { SearchInput } from '../common/SearchInput';
+import { ActionButton } from '../common/ActionButton';
+import { EnhancedTable } from '../common/EnhancedTable';
+import { DetailModal } from '../common/DetailModal';
+import { EmptyState } from '../common/EmptyState';
+import { LoadingSkeleton } from '../common/LoadingSkeleton';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -29,6 +36,9 @@ export function RawMaterialManagement() {
   const [showModal, setShowModal] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedMaterial, setSelectedMaterial] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
 
   const categories = ['All', ...new Set(state.rawMaterials.map(m => m.category))];
@@ -45,6 +55,7 @@ export function RawMaterialManagement() {
 
   const handleSubmit = async (values) => {
     try {
+      setLoading(true);
       const materialData = {
         id: editingMaterial?.id || `RM-${Date.now()}`,
         name: values.name,
@@ -70,6 +81,8 @@ export function RawMaterialManagement() {
       form.resetFields();
     } catch (error) {
       message.error('Please fill in all required fields');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -84,11 +97,18 @@ export function RawMaterialManagement() {
     message.success('Raw material deleted successfully');
   };
 
+  const handleRowClick = (material) => {
+    setSelectedMaterial(material);
+    setShowDetailModal(true);
+  };
+
   const columns = [
     {
       title: 'Material',
       dataIndex: 'name',
       key: 'name',
+      fixed: 'left',
+      width: 250,
       render: (text, record) => (
         <div>
           <Text strong>{record.name}</Text>
@@ -96,16 +116,21 @@ export function RawMaterialManagement() {
           <Text type="secondary" className="text-xs">{record.description}</Text>
         </div>
       ),
+      sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
       title: 'Category',
       dataIndex: 'category',
       key: 'category',
+      width: 120,
       render: (category) => <Tag color="blue">{category}</Tag>,
+      filters: categories.filter(cat => cat !== 'All').map(cat => ({ text: cat, value: cat })),
+      onFilter: (value, record) => record.category === value,
     },
     {
       title: 'Stock',
       key: 'stock',
+      width: 150,
       render: (record) => (
         <div>
           <Text strong>{record.stockQuantity} {record.unit}</Text>
@@ -115,21 +140,27 @@ export function RawMaterialManagement() {
           </Text>
         </div>
       ),
+      sorter: (a, b) => a.stockQuantity - b.stockQuantity,
     },
     {
       title: 'Unit Price',
       dataIndex: 'unitPrice',
       key: 'unitPrice',
+      width: 120,
       render: (price) => <Text strong>${price.toFixed(2)}</Text>,
+      sorter: (a, b) => a.unitPrice - b.unitPrice,
     },
     {
       title: 'Supplier',
       dataIndex: 'supplier',
       key: 'supplier',
+      width: 150,
+      sorter: (a, b) => (a.supplier || '').localeCompare(b.supplier || ''),
     },
     {
       title: 'Status',
       key: 'status',
+      width: 120,
       render: (record) => {
         const isLowStock = record.stockQuantity <= record.minimumStock;
         const isMediumStock = record.stockQuantity <= record.minimumStock * 2;
@@ -140,29 +171,59 @@ export function RawMaterialManagement() {
           </Tag>
         );
       },
+      filters: [
+        { text: 'In Stock', value: 'in-stock' },
+        { text: 'Medium Stock', value: 'medium-stock' },
+        { text: 'Low Stock', value: 'low-stock' },
+      ],
+      onFilter: (value, record) => {
+        const isLowStock = record.stockQuantity <= record.minimumStock;
+        const isMediumStock = record.stockQuantity <= record.minimumStock * 2;
+        
+        if (value === 'low-stock') return isLowStock;
+        if (value === 'medium-stock') return isMediumStock && !isLowStock;
+        if (value === 'in-stock') return !isMediumStock;
+        return true;
+      },
     },
     {
       title: 'Actions',
       key: 'actions',
+      fixed: 'right',
+      width: 120,
       render: (record) => (
         <Space>
-          <Button 
-            type="text" 
-            icon={<span className="material-icons">edit</span>} 
-            onClick={() => handleEdit(record)}
+          <ActionButton.Text 
+            icon="edit"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(record);
+            }}
+            className="text-blue-600"
           />
           <Popconfirm
             title="Are you sure you want to delete this raw material?"
-            onConfirm={() => handleDelete(record.id)}
+            onConfirm={(e) => {
+              e?.stopPropagation();
+              handleDelete(record.id);
+            }}
             okText="Yes"
             cancelText="No"
           >
-            <Button type="text" danger icon={<span className="material-icons">delete</span>} />
+            <ActionButton.Text 
+              icon="delete"
+              danger
+              onClick={(e) => e.stopPropagation()}
+            />
           </Popconfirm>
         </Space>
       ),
     },
   ];
+
+  if (loading) {
+    return <LoadingSkeleton type="table" />;
+  }
 
   return (
     <Space direction="vertical" size="large" className="w-full">
@@ -183,28 +244,26 @@ export function RawMaterialManagement() {
             </div>
           }
           type="warning"
-          icon={<span className="material-icons">warning</span>}
+          icon={<Icon name="warning" />}
           showIcon
         />
       )}
 
-      <Card 
-        title={
-          <Space>
-            <span className="material-icons text-[#0E72BD]">category</span>
-            <Title level={4} className="m-0">Raw Materials Management</Title>
-          </Space>
-        }
+      <EnhancedTable
+        title="Raw Materials Management"
+        icon="category"
+        subtitle="Manage raw materials inventory and suppliers"
+        columns={columns}
+        dataSource={filteredMaterials}
+        rowKey="id"
+        onRow={(record) => ({
+          onClick: () => handleRowClick(record),
+          className: 'cursor-pointer hover:bg-blue-50'
+        })}
+        searchFields={['name', 'category', 'supplier']}
+        searchPlaceholder="Search raw materials..."
         extra={
           <Space>
-            <Input
-              placeholder="Search raw materials..."
-              prefix={<span className="material-icons">search</span>}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-64"
-              allowClear
-            />
             <Select
               value={selectedCategory}
               onChange={setSelectedCategory}
@@ -214,28 +273,17 @@ export function RawMaterialManagement() {
                 <Option key={category} value={category}>{category}</Option>
               ))}
             </Select>
-            <Button 
-              type="primary" 
-              icon={<span className="material-icons">add</span>}
+            <ActionButton.Primary 
+              icon="add"
               onClick={() => setShowModal(true)}
             >
               Add Raw Material
-            </Button>
+            </ActionButton.Primary>
           </Space>
         }
-      >
-        <Table
-          columns={columns}
-          dataSource={filteredMaterials}
-          rowKey="id"
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-          }}
-        />
-      </Card>
+        emptyDescription="No raw materials found"
+        emptyImage={<Icon name="category" className="text-6xl text-gray-300" />}
+      />
 
       <Modal
         title={editingMaterial ? 'Edit Raw Material' : 'Add New Raw Material'}
@@ -356,15 +404,40 @@ export function RawMaterialManagement() {
           </Form.Item>
 
           <div className="flex justify-end space-x-2 mt-6">
-            <Button onClick={() => setShowModal(false)}>
+            <ActionButton onClick={() => setShowModal(false)}>
               Cancel
-            </Button>
-            <Button type="primary" htmlType="submit">
+            </ActionButton>
+            <ActionButton.Primary htmlType="submit" loading={loading}>
               {editingMaterial ? 'Update' : 'Add'} Material
-            </Button>
+            </ActionButton.Primary>
           </div>
         </Form>
       </Modal>
+
+      {/* Raw Material Detail Modal */}
+      <DetailModal
+        open={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedMaterial(null);
+        }}
+        title={`Raw Material Details - ${selectedMaterial?.name}`}
+        icon="category"
+        data={selectedMaterial}
+        type="rawMaterial"
+        actions={[
+          <ActionButton 
+            key="edit" 
+            icon="edit"
+            onClick={() => {
+              setShowDetailModal(false);
+              handleEdit(selectedMaterial);
+            }}
+          >
+            Edit Material
+          </ActionButton>
+        ]}
+      />
     </Space>
   );
 }

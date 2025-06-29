@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   Card, 
-  Table, 
   Button, 
   Input, 
   Space, 
@@ -19,6 +18,14 @@ import {
   Col
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
+import { Icon } from '../common/Icon';
+import { PageHeader } from '../common/PageHeader';
+import { SearchInput } from '../common/SearchInput';
+import { ActionButton } from '../common/ActionButton';
+import { EnhancedTable } from '../common/EnhancedTable';
+import { DetailModal } from '../common/DetailModal';
+import { EmptyState } from '../common/EmptyState';
+import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -31,6 +38,9 @@ export function CouponManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState(null);
+  const [selectedCoupon, setSelectedCoupon] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
 
   const coupons = state.coupons || [];
@@ -42,6 +52,7 @@ export function CouponManagement() {
 
   const handleSubmit = async (values) => {
     try {
+      setLoading(true);
       const couponData = {
         id: editingCoupon?.id || `COUPON-${Date.now()}`,
         code: values.code.toUpperCase(),
@@ -73,6 +84,8 @@ export function CouponManagement() {
       form.resetFields();
     } catch (error) {
       message.error('Please fill in all required fields');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -99,6 +112,11 @@ export function CouponManagement() {
     message.success(`Coupon ${updatedCoupon.isActive ? 'activated' : 'deactivated'}`);
   };
 
+  const handleRowClick = (coupon) => {
+    setSelectedCoupon(coupon);
+    setShowDetailModal(true);
+  };
+
   const generateCouponCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let result = '';
@@ -113,6 +131,8 @@ export function CouponManagement() {
       title: 'Coupon Code',
       dataIndex: 'code',
       key: 'code',
+      fixed: 'left',
+      width: 200,
       render: (code, record) => (
         <div>
           <Text strong className="font-mono">{code}</Text>
@@ -120,10 +140,12 @@ export function CouponManagement() {
           <Text type="secondary" className="text-xs">{record.description}</Text>
         </div>
       ),
+      sorter: (a, b) => a.code.localeCompare(b.code),
     },
     {
       title: 'Discount',
       key: 'discount',
+      width: 150,
       render: (record) => (
         <div>
           <Text strong>
@@ -142,16 +164,24 @@ export function CouponManagement() {
           )}
         </div>
       ),
+      sorter: (a, b) => {
+        const aValue = a.discountType === 'percentage' ? a.discountPercent : a.discountAmount;
+        const bValue = b.discountType === 'percentage' ? b.discountPercent : b.discountAmount;
+        return aValue - bValue;
+      },
     },
     {
       title: 'Minimum Amount',
       dataIndex: 'minimumAmount',
       key: 'minimumAmount',
+      width: 150,
       render: (amount) => amount > 0 ? `$${amount.toFixed(2)}` : 'No minimum',
+      sorter: (a, b) => a.minimumAmount - b.minimumAmount,
     },
     {
       title: 'Usage',
       key: 'usage',
+      width: 120,
       render: (record) => (
         <div>
           <Text>{record.usedCount || 0}</Text>
@@ -166,10 +196,12 @@ export function CouponManagement() {
           )}
         </div>
       ),
+      sorter: (a, b) => (a.usedCount || 0) - (b.usedCount || 0),
     },
     {
       title: 'Valid Period',
       key: 'validity',
+      width: 180,
       render: (record) => (
         <div>
           <Text className="text-xs">
@@ -181,10 +213,12 @@ export function CouponManagement() {
           </Text>
         </div>
       ),
+      sorter: (a, b) => new Date(a.validFrom) - new Date(b.validFrom),
     },
     {
       title: 'Status',
       key: 'status',
+      width: 120,
       render: (record) => {
         const isExpired = record.validTo && new Date(record.validTo) < new Date();
         const isUsedUp = record.usageLimit && record.usedCount >= record.usageLimit;
@@ -205,74 +239,96 @@ export function CouponManagement() {
         
         return <Tag color={color}>{status}</Tag>;
       },
+      filters: [
+        { text: 'Active', value: 'active' },
+        { text: 'Inactive', value: 'inactive' },
+        { text: 'Expired', value: 'expired' },
+        { text: 'Used Up', value: 'used-up' },
+      ],
+      onFilter: (value, record) => {
+        const isExpired = record.validTo && new Date(record.validTo) < new Date();
+        const isUsedUp = record.usageLimit && record.usedCount >= record.usageLimit;
+        
+        if (value === 'active') return record.isActive && !isExpired && !isUsedUp;
+        if (value === 'inactive') return !record.isActive;
+        if (value === 'expired') return isExpired;
+        if (value === 'used-up') return isUsedUp;
+        return true;
+      },
     },
     {
       title: 'Actions',
       key: 'actions',
+      fixed: 'right',
+      width: 120,
       render: (record) => (
         <Space>
-          <Button 
-            type="text" 
-            icon={<span className="material-icons">edit</span>} 
-            onClick={() => handleEdit(record)}
+          <ActionButton.Text 
+            icon="edit"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(record);
+            }}
+            className="text-blue-600"
           />
           <Switch
             size="small"
             checked={record.isActive}
-            onChange={() => handleToggleStatus(record)}
+            onChange={(checked, e) => {
+              e?.stopPropagation();
+              handleToggleStatus(record);
+            }}
+            onClick={(checked, e) => e.stopPropagation()}
           />
           <Popconfirm
             title="Are you sure you want to delete this coupon?"
-            onConfirm={() => handleDelete(record.id)}
+            onConfirm={(e) => {
+              e?.stopPropagation();
+              handleDelete(record.id);
+            }}
             okText="Yes"
             cancelText="No"
           >
-            <Button type="text" danger icon={<span className="material-icons">delete</span>} />
+            <ActionButton.Text 
+              icon="delete"
+              danger
+              onClick={(e) => e.stopPropagation()}
+            />
           </Popconfirm>
         </Space>
       ),
     },
   ];
 
+  if (loading) {
+    return <LoadingSkeleton type="table" />;
+  }
+
   return (
-    <Card 
-      title={
-        <Space>
-          <span className="material-icons text-[#0E72BD]">local_offer</span>
-          <Title level={4} className="m-0">Coupon Management</Title>
-        </Space>
-      }
-      extra={
-        <Space>
-          <Input
-            placeholder="Search coupons..."
-            prefix={<span className="material-icons">search</span>}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-64"
-            allowClear
-          />
-          <Button 
-            type="primary" 
-            icon={<span className="material-icons">add</span>}
-            onClick={() => setShowModal(true)}
-          >
-            Create Coupon
-          </Button>
-        </Space>
-      }
-    >
-      <Table
+    <>
+      <EnhancedTable
+        title="Coupon Management"
+        icon="local_offer"
+        subtitle="Create and manage discount coupons"
         columns={columns}
         dataSource={filteredCoupons}
         rowKey="id"
-        pagination={{
-          pageSize: 10,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-        }}
-        scroll={{ x: 1200 }}
+        onRow={(record) => ({
+          onClick: () => handleRowClick(record),
+          className: 'cursor-pointer hover:bg-blue-50'
+        })}
+        searchFields={['code', 'description']}
+        searchPlaceholder="Search coupons..."
+        extra={
+          <ActionButton.Primary 
+            icon="add"
+            onClick={() => setShowModal(true)}
+          >
+            Create Coupon
+          </ActionButton.Primary>
+        }
+        emptyDescription="No coupons found"
+        emptyImage={<Icon name="local_offer" className="text-6xl text-gray-300" />}
       />
 
       <Modal
@@ -308,7 +364,7 @@ export function CouponManagement() {
                       type="text" 
                       size="small"
                       onClick={generateCouponCode}
-                      icon={<span className="material-icons text-sm">refresh</span>}
+                      icon={<Icon name="refresh" size="text-sm" />}
                     />
                   }
                 />
@@ -410,15 +466,40 @@ export function CouponManagement() {
           </Form.Item>
 
           <div className="flex justify-end space-x-2 mt-6">
-            <Button onClick={() => setShowModal(false)}>
+            <ActionButton onClick={() => setShowModal(false)}>
               Cancel
-            </Button>
-            <Button type="primary" htmlType="submit">
+            </ActionButton>
+            <ActionButton.Primary htmlType="submit" loading={loading}>
               {editingCoupon ? 'Update' : 'Create'} Coupon
-            </Button>
+            </ActionButton.Primary>
           </div>
         </Form>
       </Modal>
-    </Card>
+
+      {/* Coupon Detail Modal */}
+      <DetailModal
+        open={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedCoupon(null);
+        }}
+        title={`Coupon Details - ${selectedCoupon?.code}`}
+        icon="local_offer"
+        data={selectedCoupon}
+        type="coupon"
+        actions={[
+          <ActionButton 
+            key="edit" 
+            icon="edit"
+            onClick={() => {
+              setShowDetailModal(false);
+              handleEdit(selectedCoupon);
+            }}
+          >
+            Edit Coupon
+          </ActionButton>
+        ]}
+      />
+    </>
   );
 }

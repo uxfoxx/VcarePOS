@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   Card, 
-  Table, 
   Input, 
   Select, 
   Space, 
@@ -20,6 +19,10 @@ import { Icon } from '../common/Icon';
 import { PageHeader } from '../common/PageHeader';
 import { SearchInput } from '../common/SearchInput';
 import { ActionButton } from '../common/ActionButton';
+import { EnhancedTable } from '../common/EnhancedTable';
+import { DetailModal } from '../common/DetailModal';
+import { EmptyState } from '../common/EmptyState';
+import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -34,6 +37,7 @@ export function AuditTrail() {
   const [dateRange, setDateRange] = useState(null);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const filteredAuditTrail = auditTrail.filter(entry => {
     const matchesSearch = entry.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -94,12 +98,18 @@ export function AuditTrail() {
     setShowDetailModal(true);
   };
 
+  const handleRowClick = (entry) => {
+    setSelectedEntry(entry);
+    setShowDetailModal(true);
+  };
+
   const columns = [
     {
       title: 'Time',
       dataIndex: 'timestamp',
       key: 'timestamp',
       width: 150,
+      fixed: 'left',
       render: (timestamp) => (
         <div>
           <Text className="text-sm">
@@ -111,6 +121,7 @@ export function AuditTrail() {
           </Text>
         </div>
       ),
+      sorter: (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
     },
     {
       title: 'User',
@@ -128,6 +139,7 @@ export function AuditTrail() {
           </div>
         </div>
       ),
+      sorter: (a, b) => a.userName.localeCompare(b.userName),
     },
     {
       title: 'Action',
@@ -142,6 +154,14 @@ export function AuditTrail() {
           {action}
         </Tag>
       ),
+      filters: [
+        { text: 'CREATE', value: 'CREATE' },
+        { text: 'UPDATE', value: 'UPDATE' },
+        { text: 'DELETE', value: 'DELETE' },
+        { text: 'LOGIN', value: 'LOGIN' },
+        { text: 'LOGOUT', value: 'LOGOUT' },
+      ],
+      onFilter: (value, record) => record.action === value,
     },
     {
       title: 'Module',
@@ -154,6 +174,11 @@ export function AuditTrail() {
           <Text className="capitalize">{module.replace('-', ' ')}</Text>
         </div>
       ),
+      filters: [...new Set(auditTrail.map(entry => entry.module))].map(module => ({
+        text: module.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        value: module
+      })),
+      onFilter: (value, record) => record.module === value,
     },
     {
       title: 'Description',
@@ -175,12 +200,16 @@ export function AuditTrail() {
     {
       title: 'Actions',
       key: 'actions',
+      fixed: 'right',
       width: 100,
       render: (record) => (
         <ActionButton.Text
           icon="visibility"
-          onClick={() => handleViewDetails(record)}
-          className="text-[#0E72BD]"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleViewDetails(record);
+          }}
+          className="text-blue-600"
         />
       ),
     },
@@ -192,178 +221,117 @@ export function AuditTrail() {
   if (!hasPermission('audit-trail', 'view')) {
     return (
       <Card>
-        <div className="text-center py-12">
-          <Icon name="lock" className="text-6xl text-gray-300 mb-4" />
-          <Title level={4} type="secondary">Access Denied</Title>
-          <Text type="secondary">
-            You do not have permission to view the audit trail.
-          </Text>
-        </div>
+        <EmptyState
+          icon="lock"
+          title="Access Denied"
+          description="You do not have permission to view the audit trail."
+        />
       </Card>
     );
   }
 
+  if (loading) {
+    return <LoadingSkeleton type="table" />;
+  }
+
   return (
     <>
-      <Card>
-        <PageHeader
-          title="Audit Trail"
-          icon="history"
-          subtitle="Track all system changes and user activities"
-          extra={
-            <Space>
-              <SearchInput
-                placeholder="Search activities..."
-                value={searchTerm}
-                onSearch={setSearchTerm}
-                className="w-64"
-              />
-              <Select
-                value={filterAction}
-                onChange={setFilterAction}
-                className="w-32"
-                placeholder="Action"
-              >
-                <Option value="all">All Actions</Option>
-                {uniqueActions.map(action => (
-                  <Option key={action} value={action}>{action}</Option>
-                ))}
-              </Select>
-              <Select
-                value={filterModule}
-                onChange={setFilterModule}
-                className="w-40"
-                placeholder="Module"
-              >
-                <Option value="all">All Modules</Option>
-                {uniqueModules.map(module => (
-                  <Option key={module} value={module}>
-                    {module.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                  </Option>
-                ))}
-              </Select>
-              <RangePicker
-                value={dateRange}
-                onChange={setDateRange}
-                placeholder={['Start Date', 'End Date']}
-              />
-            </Space>
-          }
-        />
+      <EnhancedTable
+        title="Audit Trail"
+        icon="history"
+        subtitle="Track all system changes and user activities"
+        columns={columns}
+        dataSource={filteredAuditTrail}
+        rowKey="id"
+        onRow={(record) => ({
+          onClick: () => handleRowClick(record),
+          className: 'cursor-pointer hover:bg-blue-50'
+        })}
+        searchFields={['description', 'userName', 'module']}
+        searchPlaceholder="Search activities..."
+        extra={
+          <Space>
+            <Select
+              value={filterAction}
+              onChange={setFilterAction}
+              className="w-32"
+              placeholder="Action"
+            >
+              <Option value="all">All Actions</Option>
+              {uniqueActions.map(action => (
+                <Option key={action} value={action}>{action}</Option>
+              ))}
+            </Select>
+            <Select
+              value={filterModule}
+              onChange={setFilterModule}
+              className="w-40"
+              placeholder="Module"
+            >
+              <Option value="all">All Modules</Option>
+              {uniqueModules.map(module => (
+                <Option key={module} value={module}>
+                  {module.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </Option>
+              ))}
+            </Select>
+            <RangePicker
+              value={dateRange}
+              onChange={setDateRange}
+              placeholder={['Start Date', 'End Date']}
+            />
+          </Space>
+        }
+        emptyDescription="No audit trail entries found"
+        emptyImage={<Icon name="history" className="text-6xl text-gray-300" />}
+      />
 
-        {/* Activity Statistics */}
-        <Row gutter={16} className="mb-6">
-          <Col span={6}>
-            <Card size="small" className="text-center">
-              <div className="text-2xl font-bold text-[#0E72BD]">{auditTrail.length}</div>
-              <div className="text-sm text-gray-500">Total Activities</div>
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card size="small" className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {auditTrail.filter(e => e.action === 'CREATE').length}
-              </div>
-              <div className="text-sm text-gray-500">Created</div>
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card size="small" className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {auditTrail.filter(e => e.action === 'UPDATE').length}
-              </div>
-              <div className="text-sm text-gray-500">Updated</div>
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card size="small" className="text-center">
-              <div className="text-2xl font-bold text-red-600">
-                {auditTrail.filter(e => e.action === 'DELETE').length}
-              </div>
-              <div className="text-sm text-gray-500">Deleted</div>
-            </Card>
-          </Col>
-        </Row>
-        
-        <Table
-          columns={columns}
-          dataSource={filteredAuditTrail}
-          rowKey="id"
-          pagination={{
-            pageSize: 15,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} activities`,
-          }}
-          scroll={{ x: 1000 }}
-        />
-      </Card>
+      {/* Activity Statistics */}
+      <Row gutter={16} className="mb-6">
+        <Col span={6}>
+          <Card size="small" className="text-center">
+            <div className="text-2xl font-bold text-blue-600">{auditTrail.length}</div>
+            <div className="text-sm text-gray-500">Total Activities</div>
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card size="small" className="text-center">
+            <div className="text-2xl font-bold text-green-600">
+              {auditTrail.filter(e => e.action === 'CREATE').length}
+            </div>
+            <div className="text-sm text-gray-500">Created</div>
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card size="small" className="text-center">
+            <div className="text-2xl font-bold text-blue-600">
+              {auditTrail.filter(e => e.action === 'UPDATE').length}
+            </div>
+            <div className="text-sm text-gray-500">Updated</div>
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card size="small" className="text-center">
+            <div className="text-2xl font-bold text-red-600">
+              {auditTrail.filter(e => e.action === 'DELETE').length}
+            </div>
+            <div className="text-sm text-gray-500">Deleted</div>
+          </Card>
+        </Col>
+      </Row>
 
       {/* Detail Modal */}
-      <Modal
-        title="Activity Details"
+      <DetailModal
         open={showDetailModal}
-        onCancel={() => setShowDetailModal(false)}
-        width={600}
-        footer={[
-          <ActionButton key="close" onClick={() => setShowDetailModal(false)}>
-            Close
-          </ActionButton>
-        ]}
-      >
-        {selectedEntry && (
-          <div className="space-y-4">
-            <Descriptions bordered column={1}>
-              <Descriptions.Item label="Activity ID">
-                <Text code>{selectedEntry.id}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="User">
-                <div className="flex items-center space-x-2">
-                  <Avatar size={24} style={{ backgroundColor: '#0E72BD' }}>
-                    {selectedEntry.userName.split(' ').map(n => n[0]).join('')}
-                  </Avatar>
-                  <Text>{selectedEntry.userName}</Text>
-                  <Text type="secondary">({selectedEntry.userId})</Text>
-                </div>
-              </Descriptions.Item>
-              <Descriptions.Item label="Action">
-                <Tag 
-                  color={getActionColor(selectedEntry.action)} 
-                  icon={<Icon name={getActionIcon(selectedEntry.action)} size="text-xs" />}
-                >
-                  {selectedEntry.action}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Module">
-                <div className="flex items-center space-x-2">
-                  <Icon name={getModuleIcon(selectedEntry.module)} className="text-gray-500" />
-                  <Text className="capitalize">{selectedEntry.module.replace('-', ' ')}</Text>
-                </div>
-              </Descriptions.Item>
-              <Descriptions.Item label="Description">
-                {selectedEntry.description}
-              </Descriptions.Item>
-              <Descriptions.Item label="Timestamp">
-                {new Date(selectedEntry.timestamp).toLocaleString()}
-              </Descriptions.Item>
-              <Descriptions.Item label="IP Address">
-                <Text code>{selectedEntry.ipAddress}</Text>
-              </Descriptions.Item>
-            </Descriptions>
-
-            {selectedEntry.details && Object.keys(selectedEntry.details).length > 0 && (
-              <div>
-                <Title level={5}>Additional Details</Title>
-                <Card size="small" className="bg-gray-50">
-                  <pre className="text-sm whitespace-pre-wrap">
-                    {JSON.stringify(selectedEntry.details, null, 2)}
-                  </pre>
-                </Card>
-              </div>
-            )}
-          </div>
-        )}
-      </Modal>
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedEntry(null);
+        }}
+        title={`Activity Details - ${selectedEntry?.id}`}
+        icon="history"
+        data={selectedEntry}
+        type="auditEntry"
+      />
     </>
   );
 }

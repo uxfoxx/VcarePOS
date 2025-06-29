@@ -12,7 +12,8 @@ import {
   Dropdown,
   Tabs,
   Modal,
-  Collapse
+  Collapse,
+  Table
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { ActionButton } from '../common/ActionButton';
@@ -39,7 +40,7 @@ export function ProductManagement() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showProductSheet, setShowProductSheet] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [viewMode, setViewMode] = useState('all');
+  const [viewMode, setViewMode] = useState('base');
   const [loading, setLoading] = useState(false);
 
   const getFilteredProducts = () => {
@@ -352,6 +353,58 @@ export function ProductManagement() {
     },
   ];
 
+  const variantTableColumns = [
+    {
+      title: 'Variant',
+      key: 'variant',
+      render: (variant) => {
+        const variantProduct = state.allProducts.find(p => p.id === variant.id);
+        return (
+          <div>
+            <Text strong>{variantProduct?.variantDisplay || 'Variant'}</Text>
+            <br />
+            <Text code className="text-xs">{variant.sku}</Text>
+          </div>
+        );
+      }
+    },
+    {
+      title: 'Price',
+      dataIndex: 'price',
+      key: 'price',
+      render: (price) => <Text strong>${price.toFixed(2)}</Text>
+    },
+    {
+      title: 'Stock',
+      dataIndex: 'stock',
+      key: 'stock',
+      render: (stock) => (
+        <Tag color={stock > 0 ? 'green' : 'red'}>
+          {stock} units
+        </Tag>
+      )
+    },
+    {
+      title: 'Specifications',
+      key: 'specs',
+      render: (variant) => {
+        const variantProduct = state.allProducts.find(p => p.id === variant.id);
+        return (
+          <div className="space-y-1">
+            {variantProduct?.color && (
+              <Tag size="small" color="blue">{variantProduct.color}</Tag>
+            )}
+            {variantProduct?.dimensions && variantProduct.dimensions.length && (
+              <div className="text-xs text-gray-500">
+                {variantProduct.dimensions.length}×{variantProduct.dimensions.width}×{variantProduct.dimensions.height} {variantProduct.dimensions.unit}
+              </div>
+            )}
+          </div>
+        );
+      }
+    }
+  ];
+
   const renderProductsTab = () => (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -384,18 +437,18 @@ export function ProductManagement() {
           </div>
           <Space>
             <ActionButton 
-              type={viewMode === 'all' ? 'primary' : 'default'}
-              size="small"
-              onClick={() => setViewMode('all')}
-            >
-              All Products ({state.allProducts.length})
-            </ActionButton>
-            <ActionButton 
               type={viewMode === 'base' ? 'primary' : 'default'}
               size="small"
               onClick={() => setViewMode('base')}
             >
               Base Products ({state.products.length})
+            </ActionButton>
+            <ActionButton 
+              type={viewMode === 'all' ? 'primary' : 'default'}
+              size="small"
+              onClick={() => setViewMode('all')}
+            >
+              All Products ({state.allProducts.length})
             </ActionButton>
             <ActionButton 
               type={viewMode === 'variants' ? 'primary' : 'default'}
@@ -469,39 +522,13 @@ export function ProductManagement() {
                       header={`View ${product.variants.length} Variants`} 
                       key="variants"
                     >
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {product.variants.map(variant => {
-                          const variantProduct = state.allProducts.find(p => p.id === variant.id);
-                          return (
-                            <Card key={variant.id} size="small" className="border cursor-pointer hover:shadow-sm" onClick={(e) => {
-                              e.stopPropagation();
-                              if (variantProduct) handleRowClick(variantProduct);
-                            }}>
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <Text strong>{variantProduct?.variantDisplay || 'Variant'}</Text>
-                                  <Tag color={variant.stock > 0 ? 'green' : 'red'} size="small">
-                                    {variant.stock} units
-                                  </Tag>
-                                </div>
-                                <div className="space-y-1">
-                                  <Text className="text-sm">
-                                    <strong>SKU:</strong> {variant.sku}
-                                  </Text>
-                                  <Text className="text-sm">
-                                    <strong>Price:</strong> ${variant.price.toFixed(2)}
-                                  </Text>
-                                  {variant.dimensions && variant.dimensions.length && (
-                                    <Text className="text-sm">
-                                      <strong>Size:</strong> {variant.dimensions.length}×{variant.dimensions.width}×{variant.dimensions.height} {variant.dimensions.unit}
-                                    </Text>
-                                  )}
-                                </div>
-                              </div>
-                            </Card>
-                          );
-                        })}
-                      </div>
+                      <Table
+                        columns={variantTableColumns}
+                        dataSource={product.variants}
+                        rowKey="id"
+                        pagination={false}
+                        size="small"
+                      />
                     </Panel>
                   </Collapse>
                 )}

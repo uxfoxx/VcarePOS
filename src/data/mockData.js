@@ -164,7 +164,7 @@ export const mockProducts = [
     basePrice: 899.99,
     category: 'Tables',
     baseStock: 0, // Base product has no stock, only variations do
-    barcode: '1234567890123',
+    barcode: 'TBL-EXE-001-OM-A7', // Smart SKU: Tables-Executive-001-Oak-Medium-Checksum
     image: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Premium oak dining table with elegant design',
     baseDimensions: { length: 200, width: 100, height: 75, unit: 'cm' },
@@ -176,7 +176,7 @@ export const mockProducts = [
       {
         id: 'VAR-1-1',
         name: '6-Seater',
-        sku: 'EDT-6S-OAK',
+        sku: 'TBL-EXE-001A-O6S-B3', // Variation A of Executive Table
         price: 899.99,
         stock: 5,
         dimensions: { length: 180, width: 90, height: 75, unit: 'cm' },
@@ -195,7 +195,7 @@ export const mockProducts = [
       {
         id: 'VAR-1-2',
         name: '8-Seater',
-        sku: 'EDT-8S-OAK',
+        sku: 'TBL-EXE-001B-O8S-C4', // Variation B of Executive Table
         price: 1099.99,
         stock: 3,
         dimensions: { length: 200, width: 100, height: 75, unit: 'cm' },
@@ -214,7 +214,7 @@ export const mockProducts = [
       {
         id: 'VAR-1-3',
         name: '8-Seater Walnut',
-        sku: 'EDT-8S-WAL',
+        sku: 'TBL-EXE-001C-W8S-D5', // Variation C with Walnut material
         price: 1299.99,
         stock: 2,
         dimensions: { length: 200, width: 100, height: 75, unit: 'cm' },
@@ -239,7 +239,7 @@ export const mockProducts = [
     basePrice: 299.99,
     category: 'Tables',
     baseStock: 0,
-    barcode: '2345678901234',
+    barcode: 'TBL-COF-002-GLM-E6', // Smart SKU: Tables-Coffee-002-Glass-Medium-Checksum
     image: 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Contemporary coffee table with modern design',
     baseDimensions: { length: 120, width: 60, height: 45, unit: 'cm' },
@@ -251,7 +251,7 @@ export const mockProducts = [
       {
         id: 'VAR-2-1',
         name: 'Glass Top',
-        sku: 'MCT-GT-CLR',
+        sku: 'TBL-COF-002A-GLM-F7', // Variation A of Coffee Table
         price: 299.99,
         stock: 8,
         dimensions: { length: 120, width: 60, height: 45, unit: 'cm' },
@@ -268,7 +268,7 @@ export const mockProducts = [
       {
         id: 'VAR-2-2',
         name: 'Wood Top',
-        sku: 'MCT-WT-OAK',
+        sku: 'TBL-COF-002B-OM-G8', // Variation B with Oak material
         price: 349.99,
         stock: 7,
         dimensions: { length: 120, width: 60, height: 45, unit: 'cm' },
@@ -294,7 +294,7 @@ export const mockProducts = [
     basePrice: 399.99,
     category: 'Chairs',
     baseStock: 0,
-    barcode: '6789012345678',
+    barcode: 'CHR-EXE-003-LTM-H9', // Smart SKU: Chairs-Executive-003-Leather-Medium-Checksum
     image: 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Ergonomic executive chair with premium upholstery',
     baseDimensions: { length: 65, width: 65, height: 120, unit: 'cm' },
@@ -306,7 +306,7 @@ export const mockProducts = [
       {
         id: 'VAR-6-1',
         name: 'Black Leather',
-        sku: 'EOC-BL-BLK',
+        sku: 'CHR-EXE-003A-LTM-I1', // Variation A of Executive Chair
         price: 399.99,
         stock: 12,
         dimensions: { length: 65, width: 65, height: 120, unit: 'cm' },
@@ -325,7 +325,7 @@ export const mockProducts = [
       {
         id: 'VAR-6-2',
         name: 'Brown Leather',
-        sku: 'EOC-BL-BRN',
+        sku: 'CHR-EXE-003B-LTM-J2', // Variation B with Brown color
         price: 429.99,
         stock: 8,
         dimensions: { length: 65, width: 65, height: 120, unit: 'cm' },
@@ -344,7 +344,7 @@ export const mockProducts = [
       {
         id: 'VAR-6-3',
         name: 'Fabric Mesh',
-        sku: 'EOC-FM-GRY',
+        sku: 'CHR-EXE-003C-FBM-K3', // Variation C with Fabric material
         price: 349.99,
         stock: 15,
         dimensions: { length: 65, width: 65, height: 120, unit: 'cm' },
@@ -369,7 +369,7 @@ export const mockProducts = [
     price: 649.99,
     category: 'Tables',
     stock: 6,
-    barcode: '3456789012345',
+    barcode: 'TBL-FRM-004-PL-L4', // Smart SKU: Tables-Farmhouse-004-Pine-Large-Checksum
     image: 'https://images.pexels.com/photos/1395967/pexels-photo-1395967.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Handcrafted pine farmhouse dining table',
     dimensions: { length: 180, width: 90, height: 75, unit: 'cm' },
@@ -391,7 +391,7 @@ export const mockProducts = [
     price: 199.99,
     category: 'Tables',
     stock: 12,
-    barcode: '4567890123456',
+    barcode: 'TBL-SID-005-GLS-M5', // Smart SKU: Tables-Side-005-Glass-Small-Checksum
     image: 'https://images.pexels.com/photos/1571468/pexels-photo-1571468.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Elegant glass side table with chrome legs',
     dimensions: { length: 50, width: 50, height: 55, unit: 'cm' },
@@ -411,7 +411,7 @@ export const mockProducts = [
     price: 549.99,
     category: 'Tables',
     stock: 10,
-    barcode: '5678901234567',
+    barcode: 'TBL-STD-006-OM-N6', // Smart SKU: Tables-Standing-006-Oak-Medium-Checksum
     image: 'https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Adjustable height standing desk for office',
     dimensions: { length: 140, width: 70, height: 75, unit: 'cm' },
@@ -440,7 +440,7 @@ export const mockTransactions = [
           id: 'VAR-1-2',
           name: 'Executive Dining Table - 8-Seater',
           price: 1099.99,
-          barcode: 'EDT-8S-OAK',
+          barcode: 'TBL-EXE-001B-O8S-C4',
           variationName: '8-Seater'
         }, 
         quantity: 1 
@@ -452,7 +452,7 @@ export const mockTransactions = [
           id: 'VAR-6-1',
           name: 'Executive Office Chair - Black Leather',
           price: 399.99,
-          barcode: 'EOC-BL-BLK',
+          barcode: 'CHR-EXE-003A-LTM-I1',
           variationName: 'Black Leather'
         }, 
         quantity: 4 
@@ -467,6 +467,7 @@ export const mockTransactions = [
     paymentMethod: 'card',
     timestamp: new Date('2024-01-15T10:30:00'),
     cashier: 'Sarah Wilson',
+    salesperson: 'Jane Smith',
     customerName: 'John Smith',
     customerPhone: '+1-555-0123',
     customerEmail: 'john.smith@email.com',

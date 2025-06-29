@@ -18,13 +18,22 @@ import {
   Divider,
   Switch,
   Tag,
-  Alert
+  Alert,
+  Tooltip
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
 import { EnhancedStepper } from '../common/EnhancedStepper';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
+import { 
+  generateProductSKU, 
+  generateVariationSKU, 
+  parseSKU, 
+  describeSKU, 
+  validateSKU,
+  getSKUSuggestions 
+} from '../../utils/skuGenerator';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -49,6 +58,8 @@ export function ProductModal({
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [productData, setProductData] = useState({});
+  const [skuSuggestions, setSkuSuggestions] = useState([]);
+  const [showSkuSuggestions, setShowSkuSuggestions] = useState(false);
 
   // Initialize form data when editing
   useEffect(() => {
@@ -121,40 +132,104 @@ export function ProductModal({
       setImageFile(null);
       setImagePreview(null);
       setCurrentStep(0);
-      generateSKU();
+      setSkuSuggestions([]);
+      setShowSkuSuggestions(false);
     }
   }, [editingProduct, open, productForm, state.rawMaterials]);
 
   const steps = [
     {
-      title: 'Product Details', // This will be overridden by the stepper
+      title: 'Product Details',
       description: 'Basic product information',
       icon: 'inventory_2'
     },
     {
-      title: 'Raw Materials', // This will be overridden by the stepper
+      title: 'Raw Materials',
       description: 'Materials used in production',
       icon: 'category'
     },
     {
-      title: 'Variations', // This will be overridden by the stepper
+      title: 'Variations',
       description: 'Product variations and options',
       icon: 'tune'
     }
   ];
 
   const generateSKU = () => {
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.random().toString(36).substring(2, 5).toUpperCase();
-    const sku = `SKU-${timestamp}${random}`;
-    productForm.setFieldsValue({ barcode: sku });
-    setProductData(prev => ({ ...prev, barcode: sku }));
+    const currentValues = productForm.getFieldsValue();
+    const productForSKU = { ...productData, ...currentValues };
+    
+    if (!productForSKU.name || !productForSKU.category) {
+      message.warning('Please enter product name and category first');
+      return;
+    }
+
+    const allProducts = [...state.products, ...state.allProducts];
+    const generatedSKU = generateProductSKU(productForSKU, allProducts);
+    
+    productForm.setFieldsValue({ barcode: generatedSKU });
+    setProductData(prev => ({ ...prev, barcode: generatedSKU }));
+    
+    // Show SKU information
+    const skuInfo = parseSKU(generatedSKU);
+    if (skuInfo) {
+      message.success(`Generated SKU: ${generatedSKU} (${describeSKU(generatedSKU)})`);
+    }
   };
 
   const generateVariationSKU = () => {
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.random().toString(36).substring(2, 3).toUpperCase();
-    return `VAR-${timestamp}${random}`;
+    const currentValues = productForm.getFieldsValue();
+    const productForSKU = { ...productData, ...currentValues };
+    
+    if (!productForSKU.name || !productForSKU.category) {
+      message.warning('Please enter product name and category first');
+      return;
+    }
+
+    const allProducts = [...state.products, ...state.allProducts];
+    const variationIndex = variations.length;
+    const generatedSKU = generateVariationSKU(productForSKU, {}, variationIndex, allProducts);
+    
+    variationsForm.setFieldsValue({ sku: generatedSKU });
+    return generatedSKU;
+  };
+
+  const showSKUSuggestions = () => {
+    const currentValues = productForm.getFieldsValue();
+    const productForSKU = { ...productData, ...currentValues };
+    
+    if (!productForSKU.name || !productForSKU.category) {
+      message.warning('Please enter product name and category first');
+      return;
+    }
+
+    const allProducts = [...state.products, ...state.allProducts];
+    const suggestions = getSKUSuggestions(productForSKU, allProducts);
+    setSkuSuggestions(suggestions);
+    setShowSkuSuggestions(true);
+  };
+
+  const applySKUSuggestion = (sku) => {
+    productForm.setFieldsValue({ barcode: sku });
+    setProductData(prev => ({ ...prev, barcode: sku }));
+    setShowSkuSuggestions(false);
+    message.success('SKU applied successfully');
+  };
+
+  const validateCurrentSKU = () => {
+    const currentSKU = productForm.getFieldValue('barcode');
+    if (!currentSKU) {
+      message.warning('Please enter a SKU first');
+      return;
+    }
+
+    const isValid = validateSKU(currentSKU);
+    if (isValid) {
+      const description = describeSKU(currentSKU);
+      message.success(`Valid SKU: ${description}`);
+    } else {
+      message.error('Invalid SKU format or checksum');
+    }
   };
 
   const handleImageUpload = (file) => {
@@ -226,7 +301,16 @@ export function ProductModal({
 
     setVariations([...variations, newVariation]);
     variationsForm.resetFields();
-    variationsForm.setFieldsValue({ sku: generateVariationSKU() });
+    
+    // Auto-generate next variation SKU
+    const nextSKU = generateVariationSKU(
+      { ...productData, ...productForm.getFieldsValue() }, 
+      {}, 
+      variations.length + 1, 
+      [...state.products, ...state.allProducts]
+    );
+    variationsForm.setFieldsValue({ sku: nextSKU });
+    
     message.success('Variation added successfully');
   };
 
@@ -321,6 +405,24 @@ export function ProductModal({
         return;
       }
 
+      // Validate SKU
+      if (finalProductData.barcode && !validateSKU(finalProductData.barcode)) {
+        setStepError('Invalid SKU format. Please generate a valid SKU.');
+        setCurrentStep(0);
+        return;
+      }
+
+      // Validate variation SKUs
+      if (hasVariations) {
+        for (const variation of variations) {
+          if (!validateSKU(variation.sku)) {
+            setStepError(`Invalid SKU format for variation: ${variation.name}`);
+            setCurrentStep(2);
+            return;
+          }
+        }
+      }
+
       const productSubmissionData = {
         id: editingProduct?.id || `PROD-${Date.now()}`,
         name: finalProductData.name,
@@ -381,6 +483,8 @@ export function ProductModal({
     setImageFile(null);
     setImagePreview(null);
     setProductData({});
+    setSkuSuggestions([]);
+    setShowSkuSuggestions(false);
     onClose();
   };
 
@@ -431,6 +535,11 @@ export function ProductModal({
           <Text strong>{text}</Text>
           <br />
           <Text type="secondary" className="text-xs">SKU: {record.sku}</Text>
+          {validateSKU(record.sku) ? (
+            <Tag color="green" size="small" className="ml-2">Valid</Tag>
+          ) : (
+            <Tag color="red" size="small" className="ml-2">Invalid SKU</Tag>
+          )}
         </div>
       ),
     },
@@ -583,15 +692,34 @@ export function ProductModal({
             <Col span={16}>
               <Form.Item name="barcode" label="SKU/Barcode">
                 <Input 
-                  placeholder="Enter SKU or barcode"
+                  placeholder="Enter SKU or generate one"
                   addonAfter={
-                    <Button 
-                      type="text" 
-                      size="small"
-                      onClick={generateSKU}
-                      icon={<Icon name="refresh" size="text-sm" />}
-                      title="Generate SKU"
-                    />
+                    <Space.Compact>
+                      <Tooltip title="Generate Smart SKU">
+                        <Button 
+                          type="text" 
+                          size="small"
+                          onClick={generateSKU}
+                          icon={<Icon name="auto_awesome" size="text-sm" />}
+                        />
+                      </Tooltip>
+                      <Tooltip title="SKU Suggestions">
+                        <Button 
+                          type="text" 
+                          size="small"
+                          onClick={showSKUSuggestions}
+                          icon={<Icon name="lightbulb" size="text-sm" />}
+                        />
+                      </Tooltip>
+                      <Tooltip title="Validate SKU">
+                        <Button 
+                          type="text" 
+                          size="small"
+                          onClick={validateCurrentSKU}
+                          icon={<Icon name="verified" size="text-sm" />}
+                        />
+                      </Tooltip>
+                    </Space.Compact>
                   }
                 />
               </Form.Item>
@@ -709,6 +837,21 @@ export function ProductModal({
           </div>
         </Upload>
       </Form.Item>
+
+      {/* SKU Information Display */}
+      {productForm.getFieldValue('barcode') && (
+        <div className="bg-green-50 p-4 rounded-lg">
+          <Text strong className="block mb-2">SKU Information:</Text>
+          <Text className="text-sm">
+            {describeSKU(productForm.getFieldValue('barcode'))}
+          </Text>
+          {validateSKU(productForm.getFieldValue('barcode')) ? (
+            <Tag color="green" className="mt-2">Valid SKU Format</Tag>
+          ) : (
+            <Tag color="red" className="mt-2">Invalid SKU Format</Tag>
+          )}
+        </div>
+      )}
     </Form>
   );
 
@@ -845,17 +988,18 @@ export function ProductModal({
                     name="sku"
                     label="SKU"
                     rules={[{ required: true, message: 'Please enter SKU' }]}
-                    initialValue={generateVariationSKU()}
                   >
                     <Input 
                       placeholder="Enter unique SKU"
                       addonAfter={
-                        <Button 
-                          type="text" 
-                          size="small"
-                          onClick={() => variationsForm.setFieldsValue({ sku: generateVariationSKU() })}
-                          icon={<Icon name="refresh" size="text-sm" />}
-                        />
+                        <Tooltip title="Generate Variation SKU">
+                          <Button 
+                            type="text" 
+                            size="small"
+                            onClick={generateVariationSKU}
+                            icon={<Icon name="auto_awesome" size="text-sm" />}
+                          />
+                        </Tooltip>
                       }
                     />
                   </Form.Item>
@@ -993,64 +1137,116 @@ export function ProductModal({
   };
 
   return (
-    <Modal
-      title={editingProduct ? 'Edit Product' : 'Add New Product'}
-      open={open}
-      onCancel={handleClose}
-      width={1000}
-      footer={null}
-      destroyOnClose
-    >
-      <div className="space-y-6">
-        <EnhancedStepper
-          current={currentStep}
-          steps={steps}
-          status={stepError ? 'error' : 'process'}
-          errorMessage={stepError}
-        />
-        
-        <div className="min-h-[500px]">
-          {loading ? (
-            <LoadingSkeleton type="form" />
-          ) : (
-            renderStepContent()
-          )}
-        </div>
-
-        <Divider />
-
-        <div className="flex justify-between">
-          <div>
-            {currentStep > 0 && (
-              <ActionButton onClick={handlePrev}>
-                <Icon name="arrow_back" className="mr-2" />
-                Previous
-              </ActionButton>
-            )}
-          </div>
+    <>
+      <Modal
+        title={editingProduct ? 'Edit Product' : 'Add New Product'}
+        open={open}
+        onCancel={handleClose}
+        width={1000}
+        footer={null}
+        destroyOnClose
+      >
+        <div className="space-y-6">
+          <EnhancedStepper
+            current={currentStep}
+            steps={steps}
+            status={stepError ? 'error' : 'process'}
+            errorMessage={stepError}
+          />
           
-          <div className="space-x-2">
-            <ActionButton onClick={handleClose}>
-              Cancel
-            </ActionButton>
-            
-            {currentStep < steps.length - 1 ? (
-              <ActionButton.Primary onClick={handleNext}>
-                Next
-                <Icon name="arrow_forward" className="ml-2" />
-              </ActionButton.Primary>
+          <div className="min-h-[500px]">
+            {loading ? (
+              <LoadingSkeleton type="form" />
             ) : (
-              <ActionButton.Primary 
-                onClick={handleSubmit}
-                loading={loading}
-                icon="check"
-              >
-                {editingProduct ? 'Update Product' : 'Create Product'}
-              </ActionButton.Primary>
+              renderStepContent()
             )}
           </div>
+
+          <Divider />
+
+          <div className="flex justify-between">
+            <div>
+              {currentStep > 0 && (
+                <ActionButton onClick={handlePrev}>
+                  <Icon name="arrow_back" className="mr-2" />
+                  Previous
+                </ActionButton>
+              )}
+            </div>
+            
+            <div className="space-x-2">
+              <ActionButton onClick={handleClose}>
+                Cancel
+              </ActionButton>
+              
+              {currentStep < steps.length - 1 ? (
+                <ActionButton.Primary onClick={handleNext}>
+                  Next
+                  <Icon name="arrow_forward" className="ml-2" />
+                </ActionButton.Primary>
+              ) : (
+                <ActionButton.Primary 
+                  onClick={handleSubmit}
+                  loading={loading}
+                  icon="check"
+                >
+                  {editingProduct ? 'Update Product' : 'Create Product'}
+                </ActionButton.Primary>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-    </Modal>
+      </Modal>
+
+      {/* SKU Suggestions Modal */}
+      <Modal
+        title="SKU Suggestions"
+        open={showSkuSuggestions}
+        onCancel={() => setShowSkuSuggestions(false)}
+        footer={null}
+        width={600}
+      >
+        <div className="space-y-4">
+          <Text type="secondary">
+            Based on your product information, here are some SKU suggestions:
+          </Text>
+          
+          {skuSuggestions.map((suggestion, index) => (
+            <Card 
+              key={index} 
+              size="small" 
+              className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => applySKUSuggestion(suggestion.sku)}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <Text strong className="font-mono">{suggestion.sku}</Text>
+                  <br />
+                  <Text type="secondary" className="text-sm">
+                    {suggestion.description}
+                  </Text>
+                </div>
+                <div>
+                  <Tag color={
+                    suggestion.confidence === 'high' ? 'green' : 
+                    suggestion.confidence === 'medium' ? 'orange' : 'blue'
+                  }>
+                    {suggestion.confidence} confidence
+                  </Tag>
+                </div>
+              </div>
+            </Card>
+          ))}
+          
+          <div className="bg-blue-50 p-3 rounded">
+            <Text className="text-sm">
+              <Icon name="info" className="mr-2 text-blue-600" />
+              Click on any suggestion to apply it to your product. The SKU format encodes 
+              category, type, sequence, material, size, and includes a validation checksum.
+            </Text>
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 }

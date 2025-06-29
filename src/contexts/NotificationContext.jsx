@@ -191,6 +191,8 @@ export function NotificationProvider({ children }) {
     const unavailableMaterials = [];
     const lowMaterials = [];
 
+    if (!cartItems || !rawMaterials) return { unavailableMaterials, lowMaterials };
+
     cartItems.forEach(cartItem => {
       if (cartItem.product.rawMaterials) {
         cartItem.product.rawMaterials.forEach(requiredMaterial => {

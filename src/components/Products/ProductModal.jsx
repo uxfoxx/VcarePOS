@@ -26,14 +26,6 @@ import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
 import { EnhancedStepper } from '../common/EnhancedStepper';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
-import { 
-  generateProductSKU, 
-  generateVariationSKU, 
-  parseSKU, 
-  describeSKU, 
-  validateSKU,
-  getSKUSuggestions 
-} from '../../utils/skuGenerator';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -49,17 +41,15 @@ export function ProductModal({
   const [currentStep, setCurrentStep] = useState(0);
   const [productForm] = Form.useForm();
   const [materialsForm] = Form.useForm();
-  const [variationsForm] = Form.useForm();
+  const [sizesForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [stepError, setStepError] = useState('');
   const [selectedMaterials, setSelectedMaterials] = useState([]);
-  const [variations, setVariations] = useState([]);
-  const [hasVariations, setHasVariations] = useState(false);
+  const [sizes, setSizes] = useState([]);
+  const [hasSizes, setHasSizes] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [productData, setProductData] = useState({});
-  const [skuSuggestions, setSkuSuggestions] = useState([]);
-  const [showSkuSuggestions, setShowSkuSuggestions] = useState(false);
 
   // Initialize form data when editing
   useEffect(() => {
@@ -67,23 +57,23 @@ export function ProductModal({
       const formData = {
         name: editingProduct.name || '',
         category: editingProduct.category || '',
-        price: editingProduct.basePrice || editingProduct.price || 0,
-        stock: editingProduct.baseStock || editingProduct.stock || 0,
+        price: editingProduct.price || 0,
+        stock: editingProduct.stock || 0,
         barcode: editingProduct.barcode || '',
         description: editingProduct.description || '',
-        weight: editingProduct.baseWeight || editingProduct.weight || 0,
-        color: editingProduct.baseColor || editingProduct.color || '',
-        dimensions: editingProduct.baseDimensions || editingProduct.dimensions || {}
+        weight: editingProduct.weight || 0,
+        color: editingProduct.color || '',
+        dimensions: editingProduct.dimensions || {}
       };
       
       productForm.setFieldsValue(formData);
       setProductData(formData);
-      setHasVariations(editingProduct.hasVariations || false);
+      setHasSizes(editingProduct.hasSizes || false);
       
-      if (editingProduct.hasVariations && editingProduct.variations) {
-        setVariations(editingProduct.variations);
+      if (editingProduct.hasSizes && editingProduct.sizes) {
+        setSizes(editingProduct.sizes);
       } else {
-        setVariations([]);
+        setSizes([]);
       }
       
       const enrichedMaterials = (editingProduct.rawMaterials || []).map(rawMat => {
@@ -127,13 +117,11 @@ export function ProductModal({
       productForm.resetFields();
       setProductData(initialData);
       setSelectedMaterials([]);
-      setVariations([]);
-      setHasVariations(false);
+      setSizes([]);
+      setHasSizes(false);
       setImageFile(null);
       setImagePreview(null);
       setCurrentStep(0);
-      setSkuSuggestions([]);
-      setShowSkuSuggestions(false);
     }
   }, [editingProduct, open, productForm, state.rawMaterials]);
 
@@ -149,88 +137,11 @@ export function ProductModal({
       icon: 'category'
     },
     {
-      title: 'Variations',
-      description: 'Product variations and options',
-      icon: 'tune'
+      title: 'Sizes',
+      description: 'Product size variations',
+      icon: 'straighten'
     }
   ];
-
-  const generateSKU = () => {
-    const currentValues = productForm.getFieldsValue();
-    const productForSKU = { ...productData, ...currentValues };
-    
-    if (!productForSKU.name || !productForSKU.category) {
-      message.warning('Please enter product name and category first');
-      return;
-    }
-
-    const allProducts = [...state.products, ...state.allProducts];
-    const generatedSKU = generateProductSKU(productForSKU, allProducts);
-    
-    productForm.setFieldsValue({ barcode: generatedSKU });
-    setProductData(prev => ({ ...prev, barcode: generatedSKU }));
-    
-    // Show SKU information
-    const skuInfo = parseSKU(generatedSKU);
-    if (skuInfo) {
-      message.success(`Generated SKU: ${generatedSKU} (${describeSKU(generatedSKU)})`);
-    }
-  };
-
-  const generateVariationSKU = () => {
-    const currentValues = productForm.getFieldsValue();
-    const productForSKU = { ...productData, ...currentValues };
-    
-    if (!productForSKU.name || !productForSKU.category) {
-      message.warning('Please enter product name and category first');
-      return;
-    }
-
-    const allProducts = [...state.products, ...state.allProducts];
-    const variationIndex = variations.length;
-    const generatedSKU = generateVariationSKU(productForSKU, {}, variationIndex, allProducts);
-    
-    variationsForm.setFieldsValue({ sku: generatedSKU });
-    return generatedSKU;
-  };
-
-  const showSKUSuggestions = () => {
-    const currentValues = productForm.getFieldsValue();
-    const productForSKU = { ...productData, ...currentValues };
-    
-    if (!productForSKU.name || !productForSKU.category) {
-      message.warning('Please enter product name and category first');
-      return;
-    }
-
-    const allProducts = [...state.products, ...state.allProducts];
-    const suggestions = getSKUSuggestions(productForSKU, allProducts);
-    setSkuSuggestions(suggestions);
-    setShowSkuSuggestions(true);
-  };
-
-  const applySKUSuggestion = (sku) => {
-    productForm.setFieldsValue({ barcode: sku });
-    setProductData(prev => ({ ...prev, barcode: sku }));
-    setShowSkuSuggestions(false);
-    message.success('SKU applied successfully');
-  };
-
-  const validateCurrentSKU = () => {
-    const currentSKU = productForm.getFieldValue('barcode');
-    if (!currentSKU) {
-      message.warning('Please enter a SKU first');
-      return;
-    }
-
-    const isValid = validateSKU(currentSKU);
-    if (isValid) {
-      const description = describeSKU(currentSKU);
-      message.success(`Valid SKU: ${description}`);
-    } else {
-      message.error('Invalid SKU format or checksum');
-    }
-  };
 
   const handleImageUpload = (file) => {
     const reader = new FileReader();
@@ -275,48 +186,30 @@ export function ProductModal({
     message.success('Material removed');
   };
 
-  const handleAddVariation = (values) => {
-    const existingVariation = variations.find(v => v.sku === values.sku);
-    if (existingVariation) {
-      message.error('SKU already exists in variations');
+  const handleAddSize = (values) => {
+    const existingSize = sizes.find(s => s.name === values.name);
+    if (existingSize) {
+      message.error('Size name already exists');
       return;
     }
 
-    const newVariation = {
-      id: `VAR-${Date.now()}`,
+    const newSize = {
+      id: `SIZE-${Date.now()}`,
       name: values.name,
-      sku: values.sku,
       price: values.price,
       stock: values.stock,
       dimensions: values.dimensions || {},
-      weight: values.weight || 0,
-      color: values.color || '',
-      description: values.description || '',
-      image: values.image || imagePreview || '',
-      rawMaterials: [...selectedMaterials.map(m => ({
-        rawMaterialId: m.rawMaterialId,
-        quantity: m.quantity
-      }))]
+      weight: values.weight || 0
     };
 
-    setVariations([...variations, newVariation]);
-    variationsForm.resetFields();
-    
-    // Auto-generate next variation SKU
-    const nextSKU = generateVariationSKU(
-      { ...productData, ...productForm.getFieldsValue() }, 
-      {}, 
-      variations.length + 1, 
-      [...state.products, ...state.allProducts]
-    );
-    variationsForm.setFieldsValue({ sku: nextSKU });
-    
-    message.success('Variation added successfully');
+    setSizes([...sizes, newSize]);
+    sizesForm.resetFields();
+    message.success('Size added successfully');
   };
 
-  const handleRemoveVariation = (variationId) => {
-    setVariations(variations.filter(v => v.id !== variationId));
-    message.success('Variation removed');
+  const handleRemoveSize = (sizeId) => {
+    setSizes(sizes.filter(s => s.id !== sizeId));
+    message.success('Size removed');
   };
 
   const handleFormChange = (changedValues, allValues) => {
@@ -372,7 +265,7 @@ export function ProductModal({
       const finalProductData = { ...productData, ...currentFormValues };
       
       const requiredFields = ['name', 'category'];
-      if (!hasVariations) {
+      if (!hasSizes) {
         requiredFields.push('price', 'stock');
       }
       
@@ -399,28 +292,10 @@ export function ProductModal({
         return;
       }
 
-      if (hasVariations && variations.length === 0) {
-        setStepError('Please add at least one variation for this product');
+      if (hasSizes && sizes.length === 0) {
+        setStepError('Please add at least one size for this product');
         setCurrentStep(2);
         return;
-      }
-
-      // Validate SKU
-      if (finalProductData.barcode && !validateSKU(finalProductData.barcode)) {
-        setStepError('Invalid SKU format. Please generate a valid SKU.');
-        setCurrentStep(0);
-        return;
-      }
-
-      // Validate variation SKUs
-      if (hasVariations) {
-        for (const variation of variations) {
-          if (!validateSKU(variation.sku)) {
-            setStepError(`Invalid SKU format for variation: ${variation.name}`);
-            setCurrentStep(2);
-            return;
-          }
-        }
       }
 
       const productSubmissionData = {
@@ -429,36 +304,27 @@ export function ProductModal({
         category: finalProductData.category,
         description: finalProductData.description || '',
         image: imagePreview || finalProductData.image || '',
-        hasVariations: hasVariations,
+        hasSizes: hasSizes,
         
-        basePrice: hasVariations ? (Number(finalProductData.price) || 0) : undefined,
-        baseStock: hasVariations ? 0 : undefined,
-        baseDimensions: hasVariations && finalProductData.dimensions ? {
+        // For products with sizes, calculate total stock from all sizes
+        price: !hasSizes ? (Number(finalProductData.price) || 0) : (sizes.length > 0 ? Math.min(...sizes.map(s => s.price)) : 0),
+        stock: hasSizes ? sizes.reduce((sum, size) => sum + size.stock, 0) : (Number(finalProductData.stock) || 0),
+        barcode: finalProductData.barcode || '',
+        dimensions: finalProductData.dimensions ? {
           length: Number(finalProductData.dimensions.length) || 0,
           width: Number(finalProductData.dimensions.width) || 0,
           height: Number(finalProductData.dimensions.height) || 0,
           unit: finalProductData.dimensions.unit || 'cm'
-        } : undefined,
-        baseWeight: hasVariations ? (Number(finalProductData.weight) || 0) : undefined,
-        baseColor: hasVariations ? (finalProductData.color || '') : undefined,
-        
-        price: !hasVariations ? (Number(finalProductData.price) || 0) : undefined,
-        stock: !hasVariations ? (Number(finalProductData.stock) || 0) : undefined,
-        barcode: !hasVariations ? (finalProductData.barcode || '') : undefined,
-        dimensions: !hasVariations && finalProductData.dimensions ? {
-          length: Number(finalProductData.dimensions.length) || 0,
-          width: Number(finalProductData.dimensions.width) || 0,
-          height: Number(finalProductData.dimensions.height) || 0,
-          unit: finalProductData.dimensions.unit || 'cm'
-        } : undefined,
-        weight: !hasVariations ? (Number(finalProductData.weight) || 0) : undefined,
-        color: !hasVariations ? (finalProductData.color || '') : undefined,
-        rawMaterials: !hasVariations ? selectedMaterials.map(m => ({
+        } : {},
+        weight: Number(finalProductData.weight) || 0,
+        color: finalProductData.color || '',
+        material: finalProductData.material || '',
+        rawMaterials: selectedMaterials.map(m => ({
           rawMaterialId: m.rawMaterialId,
           quantity: m.quantity
-        })) : [],
+        })),
         
-        variations: hasVariations ? variations : []
+        sizes: hasSizes ? sizes : []
       };
 
       await onSubmit(productSubmissionData);
@@ -476,15 +342,13 @@ export function ProductModal({
     setStepError('');
     productForm.resetFields();
     materialsForm.resetFields();
-    variationsForm.resetFields();
+    sizesForm.resetFields();
     setSelectedMaterials([]);
-    setVariations([]);
-    setHasVariations(false);
+    setSizes([]);
+    setHasSizes(false);
     setImageFile(null);
     setImagePreview(null);
     setProductData({});
-    setSkuSuggestions([]);
-    setShowSkuSuggestions(false);
     onClose();
   };
 
@@ -525,23 +389,12 @@ export function ProductModal({
     },
   ];
 
-  const variationColumns = [
+  const sizeColumns = [
     {
-      title: 'Variation Name',
+      title: 'Size Name',
       dataIndex: 'name',
       key: 'name',
-      render: (text, record) => (
-        <div>
-          <Text strong>{text}</Text>
-          <br />
-          <Text type="secondary" className="text-xs">SKU: {record.sku}</Text>
-          {validateSKU(record.sku) ? (
-            <Tag color="green" size="small" className="ml-2">Valid</Tag>
-          ) : (
-            <Tag color="red" size="small" className="ml-2">Invalid SKU</Tag>
-          )}
-        </div>
-      ),
+      render: (text) => <Text strong>{text}</Text>,
     },
     {
       title: 'Price',
@@ -555,28 +408,28 @@ export function ProductModal({
       key: 'stock',
     },
     {
-      title: 'Specifications',
-      key: 'specs',
-      render: (record) => (
-        <div className="space-y-1">
-          {record.color && (
-            <Tag size="small" color="blue">{record.color}</Tag>
-          )}
-          {record.dimensions && record.dimensions.length && (
-            <div className="text-xs text-gray-500">
-              {record.dimensions.length}×{record.dimensions.width}×{record.dimensions.height} {record.dimensions.unit}
-            </div>
-          )}
-        </div>
-      ),
+      title: 'Dimensions',
+      key: 'dimensions',
+      render: (record) => {
+        if (record.dimensions && record.dimensions.length) {
+          return `${record.dimensions.length}×${record.dimensions.width}×${record.dimensions.height} ${record.dimensions.unit}`;
+        }
+        return '-';
+      },
+    },
+    {
+      title: 'Weight',
+      dataIndex: 'weight',
+      key: 'weight',
+      render: (weight) => weight ? `${weight} kg` : '-',
     },
     {
       title: 'Actions',
       key: 'actions',
       render: (record) => (
         <Popconfirm
-          title="Remove this variation?"
-          onConfirm={() => handleRemoveVariation(record.id)}
+          title="Remove this size?"
+          onConfirm={() => handleRemoveSize(record.id)}
         >
           <ActionButton.Text icon="delete" danger size="small" />
         </Popconfirm>
@@ -625,22 +478,22 @@ export function ProductModal({
       <div className="bg-blue-50 p-4 rounded-lg">
         <div className="flex items-center justify-between">
           <div>
-            <Text strong>Product Variations</Text>
+            <Text strong>Product Sizes</Text>
             <br />
             <Text type="secondary" className="text-sm">
-              Enable if this product has multiple variations (size, color, etc.)
+              Enable if this product has multiple sizes with different prices
             </Text>
           </div>
           <Switch
-            checked={hasVariations}
-            onChange={setHasVariations}
+            checked={hasSizes}
+            onChange={setHasSizes}
             checkedChildren="Yes"
             unCheckedChildren="No"
           />
         </div>
       </div>
 
-      {!hasVariations && (
+      {!hasSizes && (
         <>
           <Row gutter={16}>
             <Col span={8}>
@@ -691,37 +544,7 @@ export function ProductModal({
           <Row gutter={16}>
             <Col span={16}>
               <Form.Item name="barcode" label="SKU/Barcode">
-                <Input 
-                  placeholder="Enter SKU or generate one"
-                  addonAfter={
-                    <Space.Compact>
-                      <Tooltip title="Generate Smart SKU">
-                        <Button 
-                          type="text" 
-                          size="small"
-                          onClick={generateSKU}
-                          icon={<Icon name="auto_awesome" size="text-sm" />}
-                        />
-                      </Tooltip>
-                      <Tooltip title="SKU Suggestions">
-                        <Button 
-                          type="text" 
-                          size="small"
-                          onClick={showSKUSuggestions}
-                          icon={<Icon name="lightbulb" size="text-sm" />}
-                        />
-                      </Tooltip>
-                      <Tooltip title="Validate SKU">
-                        <Button 
-                          type="text" 
-                          size="small"
-                          onClick={validateCurrentSKU}
-                          icon={<Icon name="verified" size="text-sm" />}
-                        />
-                      </Tooltip>
-                    </Space.Compact>
-                  }
-                />
+                <Input placeholder="Enter SKU or barcode" />
               </Form.Item>
             </Col>
             <Col span={8}>
@@ -733,48 +556,16 @@ export function ProductModal({
         </>
       )}
 
-      {hasVariations && (
+      {hasSizes && (
         <Alert
-          message="Product Variations Enabled"
-          description="Since this product has variations, the base price, stock, and other details will be set for each variation individually. The fields below represent the base/default values for reference."
+          message="Product Sizes Enabled"
+          description="Since this product has sizes, the price and stock will be set for each size individually. The fields below represent the base values for reference."
           type="info"
           showIcon
         />
       )}
 
-      <Row gutter={16}>
-        <Col span={hasVariations ? 12 : 8}>
-          <Form.Item name={hasVariations ? "price" : undefined} label={hasVariations ? "Base Price ($)" : undefined}>
-            {hasVariations && (
-              <InputNumber
-                min={0.01}
-                step={0.01}
-                placeholder="0.00"
-                className="w-full"
-              />
-            )}
-          </Form.Item>
-        </Col>
-        <Col span={hasVariations ? 12 : 8}>
-          <Form.Item name="color" label={hasVariations ? "Base Color" : "Color"}>
-            <Input placeholder="Enter color" />
-          </Form.Item>
-        </Col>
-        {!hasVariations && (
-          <Col span={8}>
-            <Form.Item name="weight" label="Weight (kg)">
-              <InputNumber
-                min={0}
-                step={0.1}
-                placeholder="0.0"
-                className="w-full"
-              />
-            </Form.Item>
-          </Col>
-        )}
-      </Row>
-
-      <Form.Item label={hasVariations ? "Base Dimensions" : "Dimensions"}>
+      <Form.Item label="Dimensions">
         <Input.Group compact>
           <Form.Item name={['dimensions', 'length']} noStyle>
             <InputNumber placeholder="Length" className="w-1/4" min={0} />
@@ -837,21 +628,6 @@ export function ProductModal({
           </div>
         </Upload>
       </Form.Item>
-
-      {/* SKU Information Display */}
-      {productForm.getFieldValue('barcode') && (
-        <div className="bg-green-50 p-4 rounded-lg">
-          <Text strong className="block mb-2">SKU Information:</Text>
-          <Text className="text-sm">
-            {describeSKU(productForm.getFieldValue('barcode'))}
-          </Text>
-          {validateSKU(productForm.getFieldValue('barcode')) ? (
-            <Tag color="green" className="mt-2">Valid SKU Format</Tag>
-          ) : (
-            <Tag color="red" className="mt-2">Invalid SKU Format</Tag>
-          )}
-        </div>
-      )}
     </Form>
   );
 
@@ -860,10 +636,7 @@ export function ProductModal({
       <div>
         <Title level={5}>Raw Materials</Title>
         <Text type="secondary">
-          {hasVariations 
-            ? "Add base raw materials. You can customize materials for each variation later."
-            : "Specify the raw materials used to manufacture this product"
-          }
+          Specify the raw materials used to manufacture this product
         </Text>
       </div>
 
@@ -960,48 +733,27 @@ export function ProductModal({
     </div>
   );
 
-  const renderVariations = () => (
+  const renderSizes = () => (
     <div className="space-y-6">
       <div>
-        <Title level={5}>Product Variations</Title>
+        <Title level={5}>Product Sizes</Title>
         <Text type="secondary">
-          Create different variations of this product with unique SKUs, prices, and specifications
+          Create different sizes of this product with unique prices and specifications
         </Text>
       </div>
 
-      {hasVariations ? (
+      {hasSizes ? (
         <>
           <Card size="small">
-            <Form form={variationsForm} onFinish={handleAddVariation} layout="vertical">
+            <Form form={sizesForm} onFinish={handleAddSize} layout="vertical">
               <Row gutter={16}>
                 <Col span={8}>
                   <Form.Item
                     name="name"
-                    label="Variation Name"
-                    rules={[{ required: true, message: 'Please enter variation name' }]}
+                    label="Size Name"
+                    rules={[{ required: true, message: 'Please enter size name' }]}
                   >
-                    <Input placeholder="e.g., Large, Red, Premium" />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item
-                    name="sku"
-                    label="SKU"
-                    rules={[{ required: true, message: 'Please enter SKU' }]}
-                  >
-                    <Input 
-                      placeholder="Enter unique SKU"
-                      addonAfter={
-                        <Tooltip title="Generate Variation SKU">
-                          <Button 
-                            type="text" 
-                            size="small"
-                            onClick={generateVariationSKU}
-                            icon={<Icon name="auto_awesome" size="text-sm" />}
-                          />
-                        </Tooltip>
-                      }
-                    />
+                    <Input placeholder="e.g., Small, Medium, Large" />
                   </Form.Item>
                 </Col>
                 <Col span={8}>
@@ -1018,10 +770,7 @@ export function ProductModal({
                     />
                   </Form.Item>
                 </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={6}>
+                <Col span={8}>
                   <Form.Item
                     name="stock"
                     label="Stock"
@@ -1034,7 +783,10 @@ export function ProductModal({
                     />
                   </Form.Item>
                 </Col>
-                <Col span={6}>
+              </Row>
+
+              <Row gutter={16}>
+                <Col span={12}>
                   <Form.Item name="weight" label="Weight (kg)">
                     <InputNumber
                       min={0}
@@ -1044,55 +796,43 @@ export function ProductModal({
                     />
                   </Form.Item>
                 </Col>
-                <Col span={6}>
-                  <Form.Item name="color" label="Color">
-                    <Input placeholder="Color" />
-                  </Form.Item>
-                </Col>
-                <Col span={6}>
-                  <Form.Item label=" ">
-                    <ActionButton.Primary htmlType="submit" icon="add" block>
-                      Add Variation
-                    </ActionButton.Primary>
+                <Col span={12}>
+                  <Form.Item label="Dimensions">
+                    <Input.Group compact>
+                      <Form.Item name={['dimensions', 'length']} noStyle>
+                        <InputNumber placeholder="L" className="w-1/4" min={0} />
+                      </Form.Item>
+                      <Form.Item name={['dimensions', 'width']} noStyle>
+                        <InputNumber placeholder="W" className="w-1/4" min={0} />
+                      </Form.Item>
+                      <Form.Item name={['dimensions', 'height']} noStyle>
+                        <InputNumber placeholder="H" className="w-1/4" min={0} />
+                      </Form.Item>
+                      <Form.Item name={['dimensions', 'unit']} noStyle initialValue="cm">
+                        <Select className="w-1/4">
+                          <Option value="cm">cm</Option>
+                          <Option value="inch">inch</Option>
+                        </Select>
+                      </Form.Item>
+                    </Input.Group>
                   </Form.Item>
                 </Col>
               </Row>
 
-              <Form.Item label="Dimensions">
-                <Input.Group compact>
-                  <Form.Item name={['dimensions', 'length']} noStyle>
-                    <InputNumber placeholder="Length" className="w-1/4" min={0} />
-                  </Form.Item>
-                  <Form.Item name={['dimensions', 'width']} noStyle>
-                    <InputNumber placeholder="Width" className="w-1/4" min={0} />
-                  </Form.Item>
-                  <Form.Item name={['dimensions', 'height']} noStyle>
-                    <InputNumber placeholder="Height" className="w-1/4" min={0} />
-                  </Form.Item>
-                  <Form.Item name={['dimensions', 'unit']} noStyle>
-                    <Select placeholder="Unit" className="w-1/4">
-                      <Option value="cm">cm</Option>
-                      <Option value="inch">inch</Option>
-                    </Select>
-                  </Form.Item>
-                </Input.Group>
-              </Form.Item>
-
-              <Form.Item name="description" label="Variation Description">
-                <TextArea
-                  rows={2}
-                  placeholder="Describe this specific variation"
-                />
+              <Form.Item>
+                <ActionButton.Primary htmlType="submit" icon="add" block>
+                  Add Size
+                </ActionButton.Primary>
               </Form.Item>
             </Form>
           </Card>
 
-          {variations.length > 0 ? (
+          {sizes.length > 0 ? (
             <div>
-              <Title level={5}>Product Variations ({variations.length})</Title>
+              <Title level={5}>Product Sizes ({sizes.length})</Title>
               <Table
-                columns={variationColumns}
-                dataSource={variations}
+                columns={sizeColumns}
+                dataSource={sizes}
                 rowKey="id"
                 pagination={false}
                 size="small"
@@ -1100,11 +840,11 @@ export function ProductModal({
             </div>
           ) : (
             <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <Icon name="tune" className="text-4xl text-gray-300 mb-2" />
-              <Text type="secondary">No variations added yet</Text>
+              <Icon name="straighten" className="text-4xl text-gray-300 mb-2" />
+              <Text type="secondary">No sizes added yet</Text>
               <br />
               <Text type="secondary" className="text-sm">
-                Add variations to create different options for this product
+                Add sizes to create different options for this product
               </Text>
             </div>
           )}
@@ -1112,11 +852,11 @@ export function ProductModal({
       ) : (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <Icon name="info" className="text-4xl text-gray-300 mb-4" />
-          <Title level={4} type="secondary">Product Variations Disabled</Title>
+          <Title level={4} type="secondary">Product Sizes Disabled</Title>
           <Text type="secondary">
-            This product is set as a single product without variations.
+            This product is set as a single product without size variations.
             <br />
-            Go back to Product Details to enable variations if needed.
+            Go back to Product Details to enable sizes if needed.
           </Text>
         </div>
       )}
@@ -1130,123 +870,71 @@ export function ProductModal({
       case 1:
         return renderRawMaterials();
       case 2:
-        return renderVariations();
+        return renderSizes();
       default:
         return null;
     }
   };
 
   return (
-    <>
-      <Modal
-        title={editingProduct ? 'Edit Product' : 'Add New Product'}
-        open={open}
-        onCancel={handleClose}
-        width={1000}
-        footer={null}
-        destroyOnClose
-      >
-        <div className="space-y-6">
-          <EnhancedStepper
-            current={currentStep}
-            steps={steps}
-            status={stepError ? 'error' : 'process'}
-            errorMessage={stepError}
-          />
-          
-          <div className="min-h-[500px]">
-            {loading ? (
-              <LoadingSkeleton type="form" />
-            ) : (
-              renderStepContent()
+    <Modal
+      title={editingProduct ? 'Edit Product' : 'Add New Product'}
+      open={open}
+      onCancel={handleClose}
+      width={1000}
+      footer={null}
+      destroyOnClose
+    >
+      <div className="space-y-6">
+        <EnhancedStepper
+          current={currentStep}
+          steps={steps}
+          status={stepError ? 'error' : 'process'}
+          errorMessage={stepError}
+        />
+        
+        <div className="min-h-[500px]">
+          {loading ? (
+            <LoadingSkeleton type="form" />
+          ) : (
+            renderStepContent()
+          )}
+        </div>
+
+        <Divider />
+
+        <div className="flex justify-between">
+          <div>
+            {currentStep > 0 && (
+              <ActionButton onClick={handlePrev}>
+                <Icon name="arrow_back" className="mr-2" />
+                Previous
+              </ActionButton>
             )}
           </div>
-
-          <Divider />
-
-          <div className="flex justify-between">
-            <div>
-              {currentStep > 0 && (
-                <ActionButton onClick={handlePrev}>
-                  <Icon name="arrow_back" className="mr-2" />
-                  Previous
-                </ActionButton>
-              )}
-            </div>
+          
+          <div className="space-x-2">
+            <ActionButton onClick={handleClose}>
+              Cancel
+            </ActionButton>
             
-            <div className="space-x-2">
-              <ActionButton onClick={handleClose}>
-                Cancel
-              </ActionButton>
-              
-              {currentStep < steps.length - 1 ? (
-                <ActionButton.Primary onClick={handleNext}>
-                  Next
-                  <Icon name="arrow_forward" className="ml-2" />
-                </ActionButton.Primary>
-              ) : (
-                <ActionButton.Primary 
-                  onClick={handleSubmit}
-                  loading={loading}
-                  icon="check"
-                >
-                  {editingProduct ? 'Update Product' : 'Create Product'}
-                </ActionButton.Primary>
-              )}
-            </div>
+            {currentStep < steps.length - 1 ? (
+              <ActionButton.Primary onClick={handleNext}>
+                Next
+                <Icon name="arrow_forward" className="ml-2" />
+              </ActionButton.Primary>
+            ) : (
+              <ActionButton.Primary 
+                onClick={handleSubmit}
+                loading={loading}
+                icon="check"
+              >
+                {editingProduct ? 'Update Product' : 'Create Product'}
+              </ActionButton.Primary>
+            )}
           </div>
         </div>
-      </Modal>
-
-      {/* SKU Suggestions Modal */}
-      <Modal
-        title="SKU Suggestions"
-        open={showSkuSuggestions}
-        onCancel={() => setShowSkuSuggestions(false)}
-        footer={null}
-        width={600}
-      >
-        <div className="space-y-4">
-          <Text type="secondary">
-            Based on your product information, here are some SKU suggestions:
-          </Text>
-          
-          {skuSuggestions.map((suggestion, index) => (
-            <Card 
-              key={index} 
-              size="small" 
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => applySKUSuggestion(suggestion.sku)}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <Text strong className="font-mono">{suggestion.sku}</Text>
-                  <br />
-                  <Text type="secondary" className="text-sm">
-                    {suggestion.description}
-                  </Text>
-                </div>
-                <div>
-                  <Tag color={
-                    suggestion.confidence === 'high' ? 'green' : 
-                    suggestion.confidence === 'medium' ? 'orange' : 'blue'
-                  }>
-                    {suggestion.confidence} confidence
-                  </Tag>
-                </div>
-              </div>
-            </Card>
-          ))}
-          
-          <div className="bg-blue-50 p-3 rounded">
-            <Text className="text-sm">
-              <Icon name="info" className="mr-2 text-blue-600" />
-              Click on any suggestion to apply it to your product. The SKU format encodes 
-              category, type, sequence, material, size, and includes a validation checksum.
-            </Text>
-          </div>
-        </div>
-      </Modal>
-    </>
+      </div>
+    </Modal>
   );
 }

@@ -65,17 +65,17 @@ export function CheckoutModal({
 
   const steps = [
     {
-      title: 'Order Summary', // This will be overridden by the stepper
+      title: 'Order Summary',
       description: 'Review items and select sales person',
       icon: 'receipt_long'
     },
     {
-      title: 'Customer Details', // This will be overridden by the stepper
+      title: 'Customer Details',
       description: 'Customer information and notes',
       icon: 'person'
     },
     {
-      title: 'Payment', // This will be overridden by the stepper
+      title: 'Payment',
       description: 'Payment method and confirmation',
       icon: 'payment'
     }
@@ -141,7 +141,11 @@ export function CheckoutModal({
       cartItems.forEach(item => {
         dispatch({ 
           type: 'UPDATE_PRODUCT_STOCK', 
-          payload: { productId: item.product.id, quantity: item.quantity }
+          payload: { 
+            productId: item.product.id, 
+            quantity: item.quantity,
+            selectedSize: item.selectedSize
+          }
         });
       });
 
@@ -244,7 +248,17 @@ export function CheckoutModal({
               <List.Item className="px-0 py-2">
                 <div className="w-full">
                   <div className="flex items-center justify-between mb-2">
-                    <Text strong className="text-sm">{item.product.name}</Text>
+                    <div>
+                      <Text strong className="text-sm">{item.product.name}</Text>
+                      {item.selectedSize && (
+                        <>
+                          <br />
+                          <Text type="secondary" className="text-xs">
+                            Size: {item.selectedSize}
+                          </Text>
+                        </>
+                      )}
+                    </div>
                     <Text strong className="text-blue-600">
                       ${(item.product.price * item.quantity + itemTaxAmount).toFixed(2)}
                     </Text>

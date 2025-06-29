@@ -208,6 +208,45 @@ export function ProductDetailsSheet({ open, onClose, product }) {
             </Col>
           </Row>
 
+          {/* Size Variations */}
+          {product.hasSizes && product.sizes && product.sizes.length > 0 && (
+            <div className="mb-8">
+              <Title level={4} className="mb-4 text-blue-600">
+                <Icon name="straighten" className="mr-2" />
+                Available Sizes
+              </Title>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {product.sizes.map((size, index) => (
+                  <div key={index} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <Text strong className="text-lg">{size.name}</Text>
+                      <Text className="text-lg font-bold text-blue-600">${size.price.toFixed(2)}</Text>
+                    </div>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <Text type="secondary">Stock:</Text>
+                        <Text>{size.stock} units</Text>
+                      </div>
+                      {size.dimensions && (
+                        <div className="flex justify-between">
+                          <Text type="secondary">Dimensions:</Text>
+                          <Text>{size.dimensions.length}×{size.dimensions.width}×{size.dimensions.height} {size.dimensions.unit}</Text>
+                        </div>
+                      )}
+                      {size.weight && (
+                        <div className="flex justify-between">
+                          <Text type="secondary">Weight:</Text>
+                          <Text>{size.weight} kg</Text>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Detailed Specifications */}
           <div className="mb-8">
             <Title level={4} className="mb-4 text-blue-600">

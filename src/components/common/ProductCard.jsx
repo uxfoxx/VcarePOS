@@ -11,7 +11,6 @@ export function ProductCard({
   onAddToCart,
   onClick,
   showDetails = true,
-  showVariationInfo = false,
   showPriceRange = false,
   className = '',
   ...props
@@ -28,8 +27,8 @@ export function ProductCard({
   };
 
   const renderPrice = () => {
-    if (showPriceRange && product.variants && product.variants.length > 1) {
-      const prices = product.variants.map(v => v.price);
+    if (showPriceRange && product.hasSizes && product.sizes && product.sizes.length > 1) {
+      const prices = product.sizes.map(s => s.price);
       const minPrice = Math.min(...prices);
       const maxPrice = Math.max(...prices);
       
@@ -65,10 +64,10 @@ export function ProductCard({
               {product.category}
             </StatusTag>
           </div>
-          {showVariationInfo && product.hasVariants && (
+          {product.hasSizes && (
             <div className="absolute bottom-2 right-2">
               <Tag color="purple" size="small">
-                {product.variants?.length || 0} Options
+                {product.sizes?.length || 0} Sizes
               </Tag>
             </div>
           )}
@@ -100,9 +99,9 @@ export function ProductCard({
           <Text type="secondary" className="text-sm block mb-1">
             SKU: {product.barcode || 'N/A'}
           </Text>
-          {showVariationInfo && product.hasVariants && (
+          {product.hasSizes && (
             <Text type="secondary" className="text-xs block mb-1">
-              Multiple variants available
+              Multiple sizes available
             </Text>
           )}
           <div className="flex items-center justify-between">
@@ -148,8 +147,8 @@ export function ProductCard({
         >
           {product.stock === 0 
             ? 'Out of Stock' 
-            : product.hasVariants 
-              ? 'Select Options' 
+            : product.hasSizes 
+              ? 'Select Size' 
               : 'Add to Cart'
           }
         </ActionButton.Primary>

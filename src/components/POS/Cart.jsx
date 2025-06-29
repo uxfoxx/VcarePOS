@@ -83,11 +83,17 @@ export function Cart() {
   
   const total = taxableAmount + fullBillTaxTotal;
 
-  const handleQuantityChange = (productId, newQuantity) => {
+  const handleQuantityChange = (productId, selectedSize, newQuantity) => {
     if (newQuantity <= 0) {
-      dispatch({ type: 'REMOVE_FROM_CART', payload: productId });
+      dispatch({ 
+        type: 'REMOVE_FROM_CART', 
+        payload: { productId, selectedSize } 
+      });
     } else {
-      dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, quantity: newQuantity } });
+      dispatch({ 
+        type: 'UPDATE_QUANTITY', 
+        payload: { productId, selectedSize, quantity: newQuantity } 
+      });
     }
   };
 
@@ -227,11 +233,27 @@ export function Cart() {
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center space-x-2">
                             <Badge count={index + 1} size="small" color="#0E72BD" />
-                            <Text strong className="text-sm">{item.product.name}</Text>
+                            <div>
+                              <Text strong className="text-sm">{item.product.name}</Text>
+                              {item.selectedSize && (
+                                <>
+                                  <br />
+                                  <Text type="secondary" className="text-xs">
+                                    Size: {item.selectedSize}
+                                  </Text>
+                                </>
+                              )}
+                            </div>
                           </div>
                           <Popconfirm
                             title="Remove item?"
-                            onConfirm={() => dispatch({ type: 'REMOVE_FROM_CART', payload: item.product.id })}
+                            onConfirm={() => dispatch({ 
+                              type: 'REMOVE_FROM_CART', 
+                              payload: { 
+                                productId: item.product.id, 
+                                selectedSize: item.selectedSize 
+                              } 
+                            })}
                           >
                             <ActionButton.Text 
                               icon="close"
@@ -246,9 +268,9 @@ export function Cart() {
                             <Text className="text-sm">${item.product.price.toFixed(2)}</Text>
                             <InputNumber
                               min={1}
-                              max={item.product.stock + item.quantity}
+                              max={100}
                               value={item.quantity}
-                              onChange={(value) => handleQuantityChange(item.product.id, value || 1)}
+                              onChange={(value) => handleQuantityChange(item.product.id, item.selectedSize, value || 1)}
                               size="small"
                               className="w-16"
                             />
@@ -281,7 +303,7 @@ export function Cart() {
                         
                         <div className="mt-1">
                           <Text type="secondary" className="text-xs">
-                            SKU: {item.product.barcode} | Stock: {item.product.stock}
+                            SKU: {item.product.barcode}
                           </Text>
                         </div>
                       </div>

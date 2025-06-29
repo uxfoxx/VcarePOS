@@ -22,7 +22,6 @@ import { PageHeader } from '../common/PageHeader';
 import { SearchInput } from '../common/SearchInput';
 import { ProductDetailsSheet } from '../Invoices/ProductDetailsSheet';
 import { CategoryManagement } from './CategoryManagement';
-import { VariantManagement } from './VariantManagement';
 import { ProductModal } from './ProductModal';
 import { DetailModal } from '../common/DetailModal';
 import { EnhancedTable } from '../common/EnhancedTable';
@@ -40,28 +39,13 @@ export function ProductManagement() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showProductSheet, setShowProductSheet] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [viewMode, setViewMode] = useState('base');
   const [loading, setLoading] = useState(false);
 
-  const getFilteredProducts = () => {
-    let productsToShow = [];
-    
-    if (viewMode === 'all') {
-      productsToShow = state.allProducts;
-    } else if (viewMode === 'base') {
-      productsToShow = state.products;
-    } else if (viewMode === 'variants') {
-      productsToShow = state.allProducts.filter(product => product.isVariant);
-    }
-
-    return productsToShow.filter(product =>
-      (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (product.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (product.barcode || '').includes(searchTerm)
-    );
-  };
-
-  const filteredProducts = getFilteredProducts();
+  const filteredProducts = state.products.filter(product =>
+    (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.barcode || '').includes(searchTerm)
+  );
 
   const handleSubmit = async (productData) => {
     try {
@@ -84,28 +68,11 @@ export function ProductManagement() {
   };
 
   const handleEdit = (product) => {
-    if (product.isVariant) {
-      const baseProduct = state.products.find(p => p.id === product.parentProductId);
-      if (baseProduct) {
-        setEditingProduct(baseProduct);
-      } else {
-        message.error('Base product not found');
-        return;
-      }
-    } else {
-      setEditingProduct(product);
-    }
+    setEditingProduct(product);
     setShowModal(true);
   };
 
   const handleDelete = (productId) => {
-    const product = state.allProducts.find(p => p.id === productId);
-    
-    if (product?.isVariant) {
-      message.error('Cannot delete individual variants. Edit the base product to manage variants.');
-      return;
-    }
-    
     dispatch({ type: 'DELETE_PRODUCT', payload: productId });
     message.success('Product deleted successfully');
   };
@@ -124,7 +91,7 @@ export function ProductManagement() {
     {
       key: 'edit',
       icon: <Icon name="edit" />,
-      label: record.isVariant ? 'Edit Base Product' : 'Edit Product',
+      label: 'Edit Product',
       onClick: () => handleEdit(record)
     },
     {
@@ -138,12 +105,7 @@ export function ProductManagement() {
       icon: <Icon name="delete" />,
       label: 'Delete Product',
       danger: true,
-      disabled: record.isVariant,
       onClick: () => {
-        if (record.isVariant) {
-          message.error('Cannot delete individual variants');
-          return;
-        }
         Modal.confirm({
           title: 'Are you sure you want to delete this product?',
           content: 'This action cannot be undone.',
@@ -156,21 +118,44 @@ export function ProductManagement() {
     }
   ];
 
-  const getVariantDisplayName = (product) => {
-    if (!product.isVariant || !product.variantCombination) {
-      return null;
-    }
-
-    const variantNames = [];
-    Object.entries(product.variantCombination).forEach(([typeId, optionId]) => {
-      const option = state.variantOptions.find(opt => opt.id === optionId);
-      if (option) {
-        variantNames.push(option.name);
+  const sizeTableColumns = [
+    {
+      title: 'Size',
+      dataIndex: 'name',
+      key: 'name',
+      render: (name) => <Text strong>{name}</Text>
+    },
+    {
+      title: 'Price',
+      dataIndex: 'price',
+      key: 'price',
+      render: (price) => <Text strong>${price.toFixed(2)}</Text>
+    },
+    {
+      title: 'Stock',
+      dataIndex: 'stock',
+      key: 'stock',
+      render: (stock) => (
+        <Tag color={stock > 0 ? 'green' : 'red'}>
+          {stock} units
+        </Tag>
+      )
+    },
+    {
+      title: 'Dimensions',
+      key: 'dimensions',
+      render: (size) => {
+        if (size.dimensions && size.dimensions.length) {
+          return (
+            <Text className="text-xs">
+              {size.dimensions.length}×{size.dimensions.width}×{size.dimensions.height} {size.dimensions.unit}
+            </Text>
+          );
+        }
+        return <Text type="secondary">-</Text>;
       }
-    });
-
-    return variantNames.join(', ');
-  };
+    }
+  ];
 
   const columns = [
     {
@@ -191,14 +176,6 @@ export function ProductManagement() {
           />
           <div>
             <Text strong>{record.name}</Text>
-            {record.isVariant && record.variantDisplay && (
-              <>
-                <br />
-                <Tag color="purple" size="small">
-                  {record.variantDisplay}
-                </Tag>
-              </>
-            )}
             <br />
             <Text type="secondary" className="text-xs">{record.description}</Text>
             <br />
@@ -225,13 +202,20 @@ export function ProductManagement() {
       width: 120,
       sorter: (a, b) => (a.price || 0) - (b.price || 0),
       render: (price, record) => {
-        if (viewMode === 'base' && record.hasVariants) {
+        if (record.hasSizes && record.sizes?.length > 0) {
+          const minPrice = Math.min(...record.sizes.map(s => s.price));
+          const maxPrice = Math.max(...record.sizes.map(s => s.price));
           return (
             <div>
-              <Text type="secondary" className="text-sm">Base: ${(record.basePrice || 0).toFixed(2)}</Text>
+              <Text strong>
+                {minPrice === maxPrice 
+                  ? `$${minPrice.toFixed(2)}`
+                  : `$${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}`
+                }
+              </Text>
               <br />
               <Text type="secondary" className="text-xs">
-                {record.variants?.length || 0} variants
+                {record.sizes.length} sizes
               </Text>
             </div>
           );
@@ -246,8 +230,8 @@ export function ProductManagement() {
       width: 120,
       sorter: (a, b) => (a.stock || 0) - (b.stock || 0),
       render: (stock, record) => {
-        if (viewMode === 'base' && record.hasVariants) {
-          const totalStock = record.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
+        if (record.hasSizes && record.sizes?.length > 0) {
+          const totalStock = record.sizes.reduce((sum, size) => sum + size.stock, 0);
           return (
             <div>
               <Tag color={totalStock > 10 ? 'green' : totalStock > 0 ? 'orange' : 'red'}>
@@ -255,7 +239,7 @@ export function ProductManagement() {
               </Tag>
               <br />
               <Text type="secondary" className="text-xs">
-                Across {record.variants?.length || 0} variants
+                Across {record.sizes.length} sizes
               </Text>
             </div>
           );
@@ -272,17 +256,10 @@ export function ProductManagement() {
       key: 'type',
       width: 120,
       render: (record) => {
-        if (viewMode === 'base') {
-          return record.hasVariants ? (
-            <Tag color="purple">Has Variants</Tag>
-          ) : (
-            <Tag color="default">Single Product</Tag>
-          );
-        }
-        return record.isVariant ? (
-          <Tag color="purple">Variant</Tag>
+        return record.hasSizes ? (
+          <Tag color="purple">Has Sizes</Tag>
         ) : (
-          <Tag color="default">Base Product</Tag>
+          <Tag color="default">Single Product</Tag>
         );
       },
     },
@@ -353,64 +330,12 @@ export function ProductManagement() {
     },
   ];
 
-  const variantTableColumns = [
-    {
-      title: 'Variant',
-      key: 'variant',
-      render: (variant) => {
-        const variantProduct = state.allProducts.find(p => p.id === variant.id);
-        return (
-          <div>
-            <Text strong>{variantProduct?.variantDisplay || 'Variant'}</Text>
-            <br />
-            <Text code className="text-xs">{variant.sku}</Text>
-          </div>
-        );
-      }
-    },
-    {
-      title: 'Price',
-      dataIndex: 'price',
-      key: 'price',
-      render: (price) => <Text strong>${price.toFixed(2)}</Text>
-    },
-    {
-      title: 'Stock',
-      dataIndex: 'stock',
-      key: 'stock',
-      render: (stock) => (
-        <Tag color={stock > 0 ? 'green' : 'red'}>
-          {stock} units
-        </Tag>
-      )
-    },
-    {
-      title: 'Specifications',
-      key: 'specs',
-      render: (variant) => {
-        const variantProduct = state.allProducts.find(p => p.id === variant.id);
-        return (
-          <div className="space-y-1">
-            {variantProduct?.color && (
-              <Tag size="small" color="blue">{variantProduct.color}</Tag>
-            )}
-            {variantProduct?.dimensions && variantProduct.dimensions.length && (
-              <div className="text-xs text-gray-500">
-                {variantProduct.dimensions.length}×{variantProduct.dimensions.width}×{variantProduct.dimensions.height} {variantProduct.dimensions.unit}
-              </div>
-            )}
-          </div>
-        );
-      }
-    }
-  ];
-
   const renderProductsTab = () => (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <Title level={5} className="m-0">Product Inventory</Title>
-          <Text type="secondary">Manage your furniture products and variants</Text>
+          <Text type="secondary">Manage your furniture products and sizes</Text>
         </div>
         <Space>
           <SearchInput
@@ -428,130 +353,80 @@ export function ProductManagement() {
         </Space>
       </div>
 
-      {/* View Mode Selector */}
-      <Card size="small">
-        <div className="flex items-center justify-between">
-          <div>
-            <Text strong>View Mode:</Text>
-            <Text type="secondary" className="ml-2">Choose how to display products</Text>
-          </div>
-          <Space>
-            <ActionButton 
-              type={viewMode === 'base' ? 'primary' : 'default'}
-              size="small"
-              onClick={() => setViewMode('base')}
-            >
-              Base Products ({state.products.length})
-            </ActionButton>
-            <ActionButton 
-              type={viewMode === 'all' ? 'primary' : 'default'}
-              size="small"
-              onClick={() => setViewMode('all')}
-            >
-              All Products ({state.allProducts.length})
-            </ActionButton>
-            <ActionButton 
-              type={viewMode === 'variants' ? 'primary' : 'default'}
-              size="small"
-              onClick={() => setViewMode('variants')}
-            >
-              Variants Only ({state.allProducts.filter(p => p.isVariant).length})
-            </ActionButton>
-          </Space>
-        </div>
-      </Card>
-
-      {/* Products with Variants Expandable View */}
-      {viewMode === 'base' ? (
-        <div className="space-y-4">
-          {loading ? (
-            <LoadingSkeleton type="list" rows={5} />
-          ) : filteredProducts.length === 0 ? (
-            <EmptyState
-              icon="inventory_2"
-              title="No Products Found"
-              description="No products match your search criteria"
-              actionText="Add Product"
-              onAction={() => setShowModal(true)}
-            />
-          ) : (
-            filteredProducts.map(product => (
-              <Card key={product.id} size="small" className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleRowClick(product)}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Image
-                      src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=60'}
-                      alt={product.name}
-                      width={60}
-                      height={60}
-                      className="object-cover rounded"
-                      preview={false}
-                    />
-                    <div>
-                      <Text strong className="text-lg">{product.name}</Text>
-                      <br />
-                      <Tag color="blue">{product.category}</Tag>
-                      {product.hasVariants ? (
-                        <Tag color="purple">Has {product.variants?.length || 0} Variants</Tag>
-                      ) : (
-                        <Tag color="default">Single Product</Tag>
-                      )}
-                      <br />
-                      <Text type="secondary" className="text-sm">{product.description}</Text>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <Dropdown
-                      menu={{
-                        items: getActionMenuItems(product)
-                      }}
-                      trigger={['click']}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <ActionButton.Text
-                        icon="more_vert"
-                        className="text-blue-600 hover:text-blue-700"
-                      />
-                    </Dropdown>
+      {/* Products with Sizes Expandable View */}
+      <div className="space-y-4">
+        {loading ? (
+          <LoadingSkeleton type="list" rows={5} />
+        ) : filteredProducts.length === 0 ? (
+          <EmptyState
+            icon="inventory_2"
+            title="No Products Found"
+            description="No products match your search criteria"
+            actionText="Add Product"
+            onAction={() => setShowModal(true)}
+          />
+        ) : (
+          filteredProducts.map(product => (
+            <Card key={product.id} size="small" className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleRowClick(product)}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <Image
+                    src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=60'}
+                    alt={product.name}
+                    width={60}
+                    height={60}
+                    className="object-cover rounded"
+                    preview={false}
+                  />
+                  <div>
+                    <Text strong className="text-lg">{product.name}</Text>
+                    <br />
+                    <Tag color="blue">{product.category}</Tag>
+                    {product.hasSizes ? (
+                      <Tag color="purple">Has {product.sizes?.length || 0} Sizes</Tag>
+                    ) : (
+                      <Tag color="default">Single Product</Tag>
+                    )}
+                    <br />
+                    <Text type="secondary" className="text-sm">{product.description}</Text>
                   </div>
                 </div>
+                <div className="text-right">
+                  <Dropdown
+                    menu={{
+                      items: getActionMenuItems(product)
+                    }}
+                    trigger={['click']}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ActionButton.Text
+                      icon="more_vert"
+                      className="text-blue-600 hover:text-blue-700"
+                    />
+                  </Dropdown>
+                </div>
+              </div>
 
-                {product.hasVariants && product.variants && product.variants.length > 0 && (
-                  <Collapse className="mt-4" size="small">
-                    <Panel 
-                      header={`View ${product.variants.length} Variants`} 
-                      key="variants"
-                    >
-                      <Table
-                        columns={variantTableColumns}
-                        dataSource={product.variants}
-                        rowKey="id"
-                        pagination={false}
-                        size="small"
-                      />
-                    </Panel>
-                  </Collapse>
-                )}
-              </Card>
-            ))
-          )}
-        </div>
-      ) : (
-        <EnhancedTable
-          columns={columns}
-          dataSource={filteredProducts}
-          rowKey="id"
-          loading={loading}
-          onRow={(record) => ({
-            onClick: () => handleRowClick(record),
-            className: 'cursor-pointer hover:bg-blue-50'
-          })}
-          searchFields={['name', 'category', 'barcode']}
-          showSearch={false}
-          emptyDescription="No products found"
-          emptyImage={<Icon name="inventory_2" className="text-6xl text-gray-300" />}
-        />
-      )}
+              {product.hasSizes && product.sizes && product.sizes.length > 0 && (
+                <Collapse className="mt-4" size="small">
+                  <Panel 
+                    header={`View ${product.sizes.length} Sizes`} 
+                    key="sizes"
+                  >
+                    <Table
+                      columns={sizeTableColumns}
+                      dataSource={product.sizes}
+                      rowKey="id"
+                      pagination={false}
+                      size="small"
+                    />
+                  </Panel>
+                </Collapse>
+              )}
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 
@@ -565,16 +440,6 @@ export function ProductManagement() {
         </span>
       ),
       children: renderProductsTab()
-    },
-    {
-      key: 'variants',
-      label: (
-        <span className="flex items-center space-x-2">
-          <Icon name="tune" />
-          <span>Variants</span>
-        </span>
-      ),
-      children: <VariantManagement />
     },
     {
       key: 'categories',
@@ -594,7 +459,7 @@ export function ProductManagement() {
         <PageHeader
           title="Product Management"
           icon="inventory_2"
-          subtitle="Manage products, variants, and categories"
+          subtitle="Manage products, sizes, and categories"
         />
         
         <Tabs

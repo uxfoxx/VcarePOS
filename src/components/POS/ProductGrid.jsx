@@ -12,9 +12,7 @@ import {
   Select,
   Space,
   Button,
-  Typography,
-  Table,
-  InputNumber
+  Typography
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { SearchInput } from '../common/SearchInput';
@@ -163,176 +161,6 @@ export function ProductGrid({ collapsed }) {
 
   const selectedVariantProduct = getSelectedVariantProduct();
 
-  // Prepare variant table data
-  const variantTableColumns = [
-    {
-      title: 'Variant',
-      key: 'variant',
-      render: (variant) => {
-        const variantNames = [];
-        Object.entries(variant.combination).forEach(([typeId, optionId]) => {
-          const option = state.variantOptions.find(opt => opt.id === optionId);
-          if (option) {
-            variantNames.push(option.name);
-          }
-        });
-        return (
-          <div>
-            <Text strong>{variantNames.join(', ')}</Text>
-            <br />
-            <Text code className="text-xs">{variant.sku}</Text>
-          </div>
-        );
-      }
-    },
-    {
-      title: 'Price',
-      dataIndex: 'price',
-      key: 'price',
-      render: (price) => <Text strong>${price.toFixed(2)}</Text>
-    },
-    {
-      title: 'Stock',
-      dataIndex: 'stock',
-      key: 'stock',
-      render: (stock) => (
-        <Tag color={stock > 0 ? 'green' : 'red'}>
-          {stock} units
-        </Tag>
-      )
-    },
-    {
-      title: 'Action',
-      key: 'action',
-      render: (variant) => {
-        const variantProduct = state.allProducts.find(p => p.id === variant.id);
-        return (
-          <ActionButton.Primary
-            size="small"
-            onClick={() => {
-              if (variantProduct && variantProduct.stock > 0) {
-                dispatch({ type: 'ADD_TO_CART', payload: variantProduct });
-                setShowDetailModal(false);
-                setSelectedProduct(null);
-              }
-            }}
-            disabled={variant.stock === 0}
-          >
-            Add to Cart
-          </ActionButton.Primary>
-        );
-      }
-    }
-  ];
-
-  const modalTabItems = [
-    {
-      key: 'details',
-      label: 'Product Details',
-      children: selectedProduct && (
-        <div className="space-y-6">
-          {/* Product Image and Basic Info */}
-          <div className="flex gap-4">
-            <Image
-              src={selectedProduct.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
-              alt={selectedProduct.name}
-              width={200}
-              height={150}
-              className="object-cover rounded"
-              preview={false}
-            />
-            <div className="flex-1">
-              <PageHeader
-                title={selectedProduct.name}
-                subtitle={selectedProduct.description}
-                level={4}
-              />
-              <div className="mt-2 space-y-2">
-                {selectedProduct.hasVariants ? (
-                  <>
-                    <span className="text-xl font-bold text-blue-600">
-                      From ${selectedProduct.variants?.length > 0 
-                        ? Math.min(...selectedProduct.variants.map(v => v.price)).toFixed(2)
-                        : selectedProduct.basePrice?.toFixed(2) || '0.00'
-                      }
-                    </span>
-                    <div>
-                      <Text type="secondary">Multiple options available</Text>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-xl font-bold text-blue-600">
-                      ${selectedProduct.price?.toFixed(2) || '0.00'}
-                    </span>
-                    <div>
-                      <Tag color={selectedProduct.stock > 0 ? 'green' : 'red'}>
-                        {selectedProduct.stock} in stock
-                      </Tag>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Product Details for non-variant products */}
-          {!selectedProduct.hasVariants && (
-            <Descriptions bordered size="small">
-              <Descriptions.Item label="SKU">
-                {selectedProduct.barcode || 'N/A'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Category">
-                {selectedProduct.category}
-              </Descriptions.Item>
-              <Descriptions.Item label="Stock">
-                {selectedProduct.stock} available
-              </Descriptions.Item>
-              <Descriptions.Item label="Color">
-                {selectedProduct.color}
-              </Descriptions.Item>
-              {selectedProduct.dimensions && (
-                <Descriptions.Item label="Dimensions">
-                  {selectedProduct.dimensions.length}×{selectedProduct.dimensions.width}×{selectedProduct.dimensions.height} {selectedProduct.dimensions.unit}
-                </Descriptions.Item>
-              )}
-              <Descriptions.Item label="Weight">
-                {selectedProduct.weight} kg
-              </Descriptions.Item>
-            </Descriptions>
-          )}
-        </div>
-      )
-    }
-  ];
-
-  // Add variants tab if product has variants
-  if (selectedProduct?.hasVariants && selectedProduct.variants?.length > 0) {
-    modalTabItems.push({
-      key: 'variants',
-      label: `Variants (${selectedProduct.variants.length})`,
-      children: (
-        <div className="space-y-4">
-          <div>
-            <Text strong className="text-lg">Available Variants</Text>
-            <br />
-            <Text type="secondary">
-              Choose from the available variants below to add to your cart
-            </Text>
-          </div>
-          
-          <Table
-            columns={variantTableColumns}
-            dataSource={selectedProduct.variants}
-            rowKey="id"
-            pagination={false}
-            size="small"
-          />
-        </div>
-      )
-    });
-  }
-
   return (
     <>
       <Card 
@@ -412,7 +240,7 @@ export function ProductGrid({ collapsed }) {
         </div>
       </Card>
 
-      {/* Product Detail Modal */}
+      {/* Product Detail/Variant Selection Modal */}
       <Modal
         title={selectedProduct?.name}
         open={showDetailModal}
@@ -421,7 +249,7 @@ export function ProductGrid({ collapsed }) {
           setSelectedProduct(null);
           setSelectedVariants({});
         }}
-        width={800}
+        width={700}
         footer={[
           <ActionButton 
             key="close" 
@@ -433,7 +261,22 @@ export function ProductGrid({ collapsed }) {
           >
             Close
           </ActionButton>,
-          !selectedProduct?.hasVariants && (
+          selectedProduct?.hasVariants ? (
+            <ActionButton.Primary
+              key="add-to-cart"
+              icon="add_shopping_cart"
+              onClick={handleAddSelectedVariantToCart}
+              disabled={!selectedVariantProduct || selectedVariantProduct.stock === 0}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {!selectedVariantProduct 
+                ? 'Select Options' 
+                : selectedVariantProduct.stock === 0 
+                  ? 'Out of Stock' 
+                  : `Add to Cart - $${selectedVariantProduct.price.toFixed(2)}`
+              }
+            </ActionButton.Primary>
+          ) : (
             <ActionButton.Primary
               key="add-to-cart"
               icon="add_shopping_cart"
@@ -448,13 +291,159 @@ export function ProductGrid({ collapsed }) {
             </ActionButton.Primary>
           )
         ].filter(Boolean)}
-        destroyOnClose
       >
         {selectedProduct && (
-          <Tabs
-            items={modalTabItems}
-            defaultActiveKey="details"
-          />
+          <div className="space-y-6">
+            {/* Product Image and Basic Info */}
+            <div className="flex gap-4">
+              <Image
+                src={selectedVariantProduct?.image || selectedProduct.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
+                alt={selectedProduct.name}
+                width={200}
+                height={150}
+                className="object-cover rounded"
+                preview={false}
+              />
+              <div className="flex-1">
+                <PageHeader
+                  title={selectedProduct.name}
+                  subtitle={selectedProduct.description}
+                  level={4}
+                />
+                <div className="mt-2 space-y-2">
+                  {selectedVariantProduct ? (
+                    <>
+                      <span className="text-xl font-bold text-blue-600">
+                        ${selectedVariantProduct.price.toFixed(2)}
+                      </span>
+                      <div>
+                        <Tag color={selectedVariantProduct.stock > 0 ? 'green' : 'red'}>
+                          {selectedVariantProduct.stock} in stock
+                        </Tag>
+                      </div>
+                      {selectedVariantProduct.variantDisplay && (
+                        <div>
+                          <Text type="secondary">Selected: </Text>
+                          <Tag color="blue">{selectedVariantProduct.variantDisplay}</Tag>
+                        </div>
+                      )}
+                    </>
+                  ) : selectedProduct.hasVariants ? (
+                    <>
+                      <span className="text-xl font-bold text-blue-600">
+                        From ${selectedProduct.variants?.length > 0 
+                          ? Math.min(...selectedProduct.variants.map(v => v.price)).toFixed(2)
+                          : selectedProduct.basePrice?.toFixed(2) || '0.00'
+                        }
+                      </span>
+                      <div>
+                        <Text type="secondary">Multiple options available</Text>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-xl font-bold text-blue-600">
+                        ${selectedProduct.price?.toFixed(2) || '0.00'}
+                      </span>
+                      <div>
+                        <Tag color={selectedProduct.stock > 0 ? 'green' : 'red'}>
+                          {selectedProduct.stock} in stock
+                        </Tag>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Variant Selection */}
+            {selectedProduct.hasVariants && (
+              <div className="space-y-4">
+                <Text strong className="text-lg">Select Options:</Text>
+                
+                {selectedProduct.variantTypes?.map(variantTypeId => {
+                  const variantType = state.variantTypes.find(type => type.id === variantTypeId);
+                  const options = getVariantTypeOptions(variantTypeId);
+                  
+                  return (
+                    <div key={variantTypeId} className="space-y-2">
+                      <Text strong>{variantType?.name}:</Text>
+                      <Select
+                        placeholder={`Select ${variantType?.name}`}
+                        value={selectedVariants[variantTypeId]}
+                        onChange={(value) => handleVariantChange(variantTypeId, value)}
+                        className="w-full"
+                        size="large"
+                      >
+                        {options.map(option => (
+                          <Option key={option.id} value={option.id}>
+                            <div className="flex items-center space-x-2">
+                              {option.colorCode && (
+                                <div 
+                                  className="w-4 h-4 rounded border"
+                                  style={{ backgroundColor: option.colorCode }}
+                                />
+                              )}
+                              <span>{option.name}</span>
+                            </div>
+                          </Option>
+                        ))}
+                      </Select>
+                    </div>
+                  );
+                })}
+
+                {/* Show variant details when all options are selected */}
+                {selectedVariantProduct && (
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <Text strong className="block mb-2">Selected Configuration:</Text>
+                    <Descriptions size="small" column={2}>
+                      <Descriptions.Item label="SKU">
+                        {selectedVariantProduct.barcode}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Stock">
+                        {selectedVariantProduct.stock} available
+                      </Descriptions.Item>
+                      {selectedVariantProduct.dimensions && (
+                        <Descriptions.Item label="Dimensions">
+                          {selectedVariantProduct.dimensions.length}×{selectedVariantProduct.dimensions.width}×{selectedVariantProduct.dimensions.height} {selectedVariantProduct.dimensions.unit}
+                        </Descriptions.Item>
+                      )}
+                      <Descriptions.Item label="Weight">
+                        {selectedVariantProduct.weight} kg
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Product Details for non-variant products */}
+            {!selectedProduct.hasVariants && (
+              <Descriptions bordered size="small">
+                <Descriptions.Item label="SKU">
+                  {selectedProduct.barcode || 'N/A'}
+                </Descriptions.Item>
+                <Descriptions.Item label="Category">
+                  {selectedProduct.category}
+                </Descriptions.Item>
+                <Descriptions.Item label="Stock">
+                  {selectedProduct.stock} available
+                </Descriptions.Item>
+                <Descriptions.Item label="Color">
+                  {selectedProduct.color}
+                </Descriptions.Item>
+                {selectedProduct.dimensions && (
+                  <Descriptions.Item label="Dimensions">
+                    {selectedProduct.dimensions.length}×{selectedProduct.dimensions.width}×{selectedProduct.dimensions.height} {selectedProduct.dimensions.unit}
+                  </Descriptions.Item>
+                )}
+                <Descriptions.Item label="Weight">
+                  {selectedProduct.weight} kg
+                </Descriptions.Item>
+              </Descriptions>
+            )}
+          </div>
         )}
       </Modal>
     </>

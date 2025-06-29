@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ConfigProvider, Layout, theme } from 'antd';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { POSProvider } from './contexts/POSContext';
+import { POSProvider, usePOS } from './contexts/POSContext';
 import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
 import { LoginPage } from './components/Auth/LoginPage';
 import { Header } from './components/Layout/Header';
@@ -274,11 +274,11 @@ function App() {
       }}
     >
       <AuthProvider>
-        <POSProvider>
-          <NotificationProvider>
+        <NotificationProvider>
+          <POSProvider>
             <AppWithNotifications />
-          </NotificationProvider>
-        </POSProvider>
+          </POSProvider>
+        </NotificationProvider>
       </AuthProvider>
     </ConfigProvider>
   );

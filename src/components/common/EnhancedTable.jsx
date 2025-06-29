@@ -49,14 +49,24 @@ export function EnhancedTable({
   emptyImage,
   ...tableProps
 }) {
+  // Filter out invalid column objects to prevent errors
+  const safeInitialColumns = useMemo(() => {
+    return initialColumns.filter(col => 
+      col && 
+      typeof col === 'object' && 
+      col.key && 
+      col.title
+    );
+  }, [initialColumns]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState(
-    initialColumns.map(col => col.key)
+    safeInitialColumns.map(col => col.key)
   );
   const [fixedColumns, setFixedColumns] = useState(() => {
     const initial = {};
-    initialColumns.forEach(col => {
+    safeInitialColumns.forEach(col => {
       if (col.key === 'actions') {
         initial[col.key] = 'right'; // Actions column fixed right by default
       } else {
@@ -71,7 +81,7 @@ export function EnhancedTable({
 
   // Enhanced columns with visibility, fixed settings, and working filters/sorters
   const columns = useMemo(() => {
-    return initialColumns
+    return safeInitialColumns
       .filter(col => visibleColumns.includes(col.key))
       .map(col => ({
         ...col,
@@ -139,7 +149,7 @@ export function EnhancedTable({
           })
         })
       }));
-  }, [initialColumns, visibleColumns, fixedColumns]);
+  }, [safeInitialColumns, visibleColumns, fixedColumns]);
 
   // Filter data based on search term
   const filteredData = useMemo(() => {
@@ -176,9 +186,9 @@ export function EnhancedTable({
   };
 
   const resetColumns = () => {
-    const defaultVisible = initialColumns.map(col => col.key);
+    const defaultVisible = safeInitialColumns.map(col => col.key);
     const defaultFixed = {};
-    initialColumns.forEach(col => {
+    safeInitialColumns.forEach(col => {
       if (col.key === 'actions') {
         defaultFixed[col.key] = 'right';
       } else {
@@ -327,7 +337,7 @@ export function EnhancedTable({
                   onChange={handleColumnVisibilityChange}
                 >
                   <div className="grid grid-cols-2 gap-2">
-                    {initialColumns.map(col => (
+                    {safeInitialColumns.map(col => (
                       <Checkbox 
                         key={col.key} 
                         value={col.key}
@@ -349,7 +359,7 @@ export function EnhancedTable({
                 Pin columns to the left or right side of the table
               </Text>
               <div className="space-y-3">
-                {initialColumns.map(col => (
+                {safeInitialColumns.map(col => (
                   <div key={col.key} className="flex items-center justify-between p-2 border rounded">
                     <Text>{col.title}</Text>
                     <Select

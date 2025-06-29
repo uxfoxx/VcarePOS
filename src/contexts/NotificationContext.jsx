@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { notification, message } from 'antd';
+import { notification as antdNotification, message } from 'antd';
 import { Icon } from '../components/common/Icon';
 
 const initialState = {
@@ -88,13 +88,13 @@ export function NotificationProvider({ children }) {
     };
 
     if (notification.type === 'error') {
-      notification.error(antNotification);
+      antdNotification.error(antNotification);
     } else if (notification.type === 'warning') {
-      notification.warning(antNotification);
+      antdNotification.warning(antNotification);
     } else if (notification.type === 'success') {
-      notification.success(antNotification);
+      antdNotification.success(antNotification);
     } else {
-      notification.info(antNotification);
+      antdNotification.info(antNotification);
     }
   };
 

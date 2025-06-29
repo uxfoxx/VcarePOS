@@ -441,7 +441,7 @@ export function TransactionHistory() {
                   <Text>Subtotal: ${selectedTransaction.subtotal.toFixed(2)}</Text>
                 </Col>
                 <Col span={12}>
-                  <Text>Tax: ${selectedTransaction.tax.toFixed(2)}</Text>
+                  <Text>Tax: ${selectedTransaction.totalTax.toFixed(2)}</Text>
                 </Col>
                 <Col span={12}>
                   <Text>Discount: ${selectedTransaction.discount.toFixed(2)}</Text>

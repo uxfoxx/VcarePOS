@@ -156,7 +156,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
             </div>
             <div className="flex justify-between">
               <Text>Tax (8%):</Text>
-              <Text>${transaction.tax.toFixed(2)}</Text>
+              <Text>${transaction.totalTax.toFixed(2)}</Text>
             </div>
             {transaction.discount > 0 && (
               <div className="flex justify-between text-green-600">

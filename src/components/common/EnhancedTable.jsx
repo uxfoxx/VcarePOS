@@ -16,7 +16,8 @@ import {
   Form,
   Switch,
   Divider,
-  Typography
+  Typography,
+  message
 } from 'antd';
 import { Icon } from './Icon';
 import { ActionButton } from './ActionButton';
@@ -78,6 +79,8 @@ export function EnhancedTable({
   const [filters, setFilters] = useState({});
   const [sorter, setSorter] = useState({});
   const [configForm] = Form.useForm();
+  const [tempVisibleColumns, setTempVisibleColumns] = useState([]);
+  const [tempFixedColumns, setTempFixedColumns] = useState({});
 
   // Enhanced columns with visibility, fixed settings, and working filters/sorters
   const columns = useMemo(() => {
@@ -178,11 +181,14 @@ export function EnhancedTable({
   };
 
   const handleColumnVisibilityChange = (columnKeys) => {
-    setVisibleColumns(columnKeys);
+    setTempVisibleColumns(columnKeys);
+    configForm.setFieldsValue({ visibleColumns: columnKeys });
   };
 
   const handleColumnFixedChange = (columnKey, fixed) => {
-    setFixedColumns(prev => ({ ...prev, [columnKey]: fixed }));
+    const newFixedColumns = { ...tempFixedColumns, [columnKey]: fixed };
+    setTempFixedColumns(newFixedColumns);
+    configForm.setFieldsValue({ fixedColumns: newFixedColumns });
   };
 
   const resetColumns = () => {
@@ -196,26 +202,52 @@ export function EnhancedTable({
       }
     });
     
-    setVisibleColumns(defaultVisible);
-    setFixedColumns(defaultFixed);
+    setTempVisibleColumns(defaultVisible);
+    setTempFixedColumns(defaultFixed);
     configForm.setFieldsValue({
       visibleColumns: defaultVisible,
       fixedColumns: defaultFixed
     });
   };
 
-  const handleConfigSubmit = (values) => {
-    setVisibleColumns(values.visibleColumns);
-    setFixedColumns(values.fixedColumns);
-    setShowConfigModal(false);
+  const handleConfigSubmit = () => {
+    try {
+      const values = configForm.getFieldsValue();
+      
+      // Validate that at least one column is visible
+      if (!values.visibleColumns || values.visibleColumns.length === 0) {
+        message.error('At least one column must be visible');
+        return;
+      }
+
+      // Apply the changes
+      setVisibleColumns(values.visibleColumns);
+      setFixedColumns(values.fixedColumns || {});
+      setShowConfigModal(false);
+      message.success('Table configuration updated successfully');
+    } catch (error) {
+      message.error('Failed to update table configuration');
+    }
   };
 
   const openConfigModal = () => {
+    // Initialize temp state with current values
+    setTempVisibleColumns([...visibleColumns]);
+    setTempFixedColumns({ ...fixedColumns });
+    
     configForm.setFieldsValue({
-      visibleColumns,
-      fixedColumns
+      visibleColumns: [...visibleColumns],
+      fixedColumns: { ...fixedColumns }
     });
     setShowConfigModal(true);
+  };
+
+  const handleConfigCancel = () => {
+    // Reset temp state
+    setTempVisibleColumns([]);
+    setTempFixedColumns({});
+    configForm.resetFields();
+    setShowConfigModal(false);
   };
 
   if (loading) {
@@ -298,31 +330,28 @@ export function EnhancedTable({
           </Space>
         }
         open={showConfigModal}
-        onCancel={() => setShowConfigModal(false)}
+        onCancel={handleConfigCancel}
         width={600}
         footer={[
           <ActionButton key="reset" onClick={resetColumns}>
             Reset to Default
           </ActionButton>,
-          <ActionButton key="cancel" onClick={() => setShowConfigModal(false)}>
+          <ActionButton key="cancel" onClick={handleConfigCancel}>
             Cancel
           </ActionButton>,
           <ActionButton.Primary 
-            key="save" 
-            onClick={() => configForm.submit()}
+            key="apply" 
+            onClick={handleConfigSubmit}
           >
             Apply Changes
           </ActionButton.Primary>
         ]}
+        destroyOnClose
       >
         <Form
           form={configForm}
           layout="vertical"
-          onFinish={handleConfigSubmit}
-          initialValues={{
-            visibleColumns,
-            fixedColumns
-          }}
+          preserve={false}
         >
           <div className="space-y-6">
             {/* Column Visibility */}
@@ -334,6 +363,7 @@ export function EnhancedTable({
               <Form.Item name="visibleColumns">
                 <Checkbox.Group 
                   className="w-full"
+                  value={tempVisibleColumns}
                   onChange={handleColumnVisibilityChange}
                 >
                   <div className="grid grid-cols-2 gap-2">
@@ -363,7 +393,7 @@ export function EnhancedTable({
                   <div key={col.key} className="flex items-center justify-between p-2 border rounded">
                     <Text>{col.title}</Text>
                     <Select
-                      value={fixedColumns[col.key] || 'none'}
+                      value={tempFixedColumns[col.key] || 'none'}
                       onChange={value => handleColumnFixedChange(col.key, value === 'none' ? false : value)}
                       className="w-32"
                       size="small"

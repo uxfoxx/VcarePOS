@@ -19,6 +19,7 @@ import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { InvoiceModal } from '../Invoices/InvoiceModal';
+import { InventoryLabelModal } from '../Invoices/InventoryLabelModal';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -45,6 +46,7 @@ export function CheckoutModal({
   const [loading, setLoading] = useState(false);
   const [completedTransaction, setCompletedTransaction] = useState(null);
   const [showInvoice, setShowInvoice] = useState(false);
+  const [showInventoryLabels, setShowInventoryLabels] = useState(false);
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
   const taxableAmount = subtotal + (categoryTaxTotal || 0) - (couponDiscount || 0);
@@ -122,9 +124,8 @@ export function CheckoutModal({
       
       message.success('Order completed successfully!');
       
-      // Set completed transaction and show invoice
+      // Set completed transaction and show options
       setCompletedTransaction(transaction);
-      setShowInvoice(true);
       
       // Close checkout modal
       onClose();
@@ -175,7 +176,7 @@ export function CheckoutModal({
                 <div className="w-full">
                   <div className="flex items-center justify-between mb-2">
                     <Text strong className="text-sm">{item.product.name}</Text>
-                    <Text strong className="text-[#0E72BD]">
+                    <Text strong className="text-blue-600">
                       ${(item.product.price * item.quantity + itemTaxAmount).toFixed(2)}
                     </Text>
                   </div>
@@ -232,7 +233,7 @@ export function CheckoutModal({
         <Divider className="my-2" />
         <div className="flex justify-between">
           <Title level={5} className="m-0">Total</Title>
-          <Title level={4} className="m-0 text-[#0E72BD]">
+          <Title level={4} className="m-0 text-blue-600">
             ${total.toFixed(2)}
           </Title>
         </div>
@@ -375,7 +376,7 @@ export function CheckoutModal({
           <Divider className="my-2" />
           <div className="flex justify-between">
             <Title level={4} className="m-0">Total</Title>
-            <Title level={4} className="m-0 text-[#0E72BD]">
+            <Title level={4} className="m-0 text-blue-600">
               ${total.toFixed(2)}
             </Title>
           </div>
@@ -448,6 +449,79 @@ export function CheckoutModal({
         </div>
       </Modal>
 
+      {/* Post-Order Modals */}
+      {completedTransaction && (
+        <Modal
+          title="Order Completed Successfully!"
+          open={!!completedTransaction}
+          onCancel={() => setCompletedTransaction(null)}
+          width={600}
+          footer={[
+            <ActionButton key="close" onClick={() => setCompletedTransaction(null)}>
+              Close
+            </ActionButton>,
+            <ActionButton 
+              key="inventory-labels" 
+              icon="label"
+              onClick={() => setShowInventoryLabels(true)}
+            >
+              Print Inventory Labels
+            </ActionButton>,
+            <ActionButton.Primary 
+              key="invoice" 
+              icon="receipt_long"
+              onClick={() => setShowInvoice(true)}
+            >
+              View Invoice
+            </ActionButton.Primary>
+          ]}
+        >
+          <div className="text-center py-8">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Icon name="check" className="text-green-600 text-2xl" />
+            </div>
+            <Title level={3} className="text-green-600 mb-2">Order Completed!</Title>
+            <Text type="secondary" className="text-lg block mb-4">
+              Order {completedTransaction.id} has been processed successfully.
+            </Text>
+            
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <Row gutter={16}>
+                <Col span={8}>
+                  <div className="text-center">
+                    <Text strong className="text-lg block">{completedTransaction.items.length}</Text>
+                    <Text type="secondary" className="text-sm">Items</Text>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <div className="text-center">
+                    <Text strong className="text-lg block">
+                      {completedTransaction.items.reduce((sum, item) => sum + item.quantity, 0)}
+                    </Text>
+                    <Text type="secondary" className="text-sm">Total Quantity</Text>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <div className="text-center">
+                    <Text strong className="text-lg block text-blue-600">
+                      ${completedTransaction.total.toFixed(2)}
+                    </Text>
+                    <Text type="secondary" className="text-sm">Total Amount</Text>
+                  </div>
+                </Col>
+              </Row>
+            </div>
+            
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <Text className="text-sm">
+                <Icon name="info" className="mr-2 text-blue-600" />
+                You can now print inventory labels for each item or view the detailed invoice.
+              </Text>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {/* Invoice Modal */}
       <InvoiceModal
         open={showInvoice}
@@ -457,6 +531,16 @@ export function CheckoutModal({
         }}
         transaction={completedTransaction}
         type="detailed"
+      />
+
+      {/* Inventory Labels Modal */}
+      <InventoryLabelModal
+        open={showInventoryLabels}
+        onClose={() => {
+          setShowInventoryLabels(false);
+          setCompletedTransaction(null);
+        }}
+        transaction={completedTransaction}
       />
     </>
   );

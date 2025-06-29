@@ -24,6 +24,7 @@ import { StatusTag } from '../common/StatusTag';
 import { PageHeader } from '../common/PageHeader';
 import { SearchInput } from '../common/SearchInput';
 import { InvoiceModal } from '../Invoices/InvoiceModal';
+import { InventoryLabelModal } from '../Invoices/InventoryLabelModal';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -35,6 +36,7 @@ export function TransactionHistory() {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showInventoryLabelsModal, setShowInventoryLabelsModal] = useState(false);
   const [invoiceType, setInvoiceType] = useState('detailed');
 
   const filteredTransactions = state.transactions.filter(transaction => {
@@ -64,6 +66,11 @@ export function TransactionHistory() {
     setSelectedTransaction(transaction);
     setInvoiceType(type);
     setShowInvoiceModal(true);
+  };
+
+  const handleShowInventoryLabels = (transaction) => {
+    setSelectedTransaction(transaction);
+    setShowInventoryLabelsModal(true);
   };
 
   const handleUpdateStatus = (transactionId, newStatus) => {
@@ -109,10 +116,10 @@ export function TransactionHistory() {
       onClick: () => handleShowInvoice(record, 'detailed')
     },
     {
-      key: 'labels',
+      key: 'inventory-labels',
       icon: <Icon name="label" />,
-      label: 'Print Item Labels',
-      onClick: () => handleShowInvoice(record, 'labels')
+      label: 'Print Inventory Labels',
+      onClick: () => handleShowInventoryLabels(record)
     }
   ];
 
@@ -165,7 +172,7 @@ export function TransactionHistory() {
       dataIndex: 'total',
       key: 'total',
       render: (total) => (
-        <Text strong className="text-[#0E72BD] text-lg">
+        <Text strong className="text-blue-600 text-lg">
           ${total.toFixed(2)}
         </Text>
       ),
@@ -207,7 +214,7 @@ export function TransactionHistory() {
         >
           <ActionButton.Text
             icon="more_vert"
-            className="text-[#0E72BD] hover:text-blue-700"
+            className="text-blue-600 hover:text-blue-700"
           />
         </Dropdown>
       ),
@@ -302,19 +309,19 @@ export function TransactionHistory() {
             Close
           </ActionButton>,
           <ActionButton 
+            key="inventory-labels" 
+            icon="label"
+            onClick={() => handleShowInventoryLabels(selectedTransaction)}
+          >
+            Print Inventory Labels
+          </ActionButton>,
+          <ActionButton.Primary 
             key="invoice" 
             icon="receipt_long"
             onClick={() => handleShowInvoice(selectedTransaction, 'detailed')}
           >
             View Invoice
-          </ActionButton>,
-          <ActionButton 
-            key="labels" 
-            icon="label"
-            onClick={() => handleShowInvoice(selectedTransaction, 'labels')}
-          >
-            Print Labels
-          </ActionButton>
+          </ActionButton.Primary>
         ]}
       >
         {selectedTransaction && (
@@ -466,6 +473,16 @@ export function TransactionHistory() {
         }}
         transaction={selectedTransaction}
         type={invoiceType}
+      />
+
+      {/* Inventory Labels Modal */}
+      <InventoryLabelModal
+        open={showInventoryLabelsModal}
+        onClose={() => {
+          setShowInventoryLabelsModal(false);
+          setSelectedTransaction(null);
+        }}
+        transaction={selectedTransaction}
       />
     </Space>
   );

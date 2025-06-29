@@ -363,6 +363,13 @@ $spacing-xxl: 48px;
   }
 }
 
+// Inventory Labels Specific Styles
+.inventory-labels-modal {
+  .ant-modal-body {
+    padding: 0;
+  }
+}
+
 // Print Styles
 @media print {
   body * {
@@ -370,11 +377,17 @@ $spacing-xxl: 48px;
   }
   
   #invoice-content,
-  #invoice-content * {
+  #invoice-content *,
+  #inventory-labels-content,
+  #inventory-labels-content *,
+  #product-sheet-content,
+  #product-sheet-content * {
     visibility: visible;
   }
   
-  #invoice-content {
+  #invoice-content,
+  #inventory-labels-content,
+  #product-sheet-content {
     position: absolute;
     left: 0;
     top: 0;
@@ -391,6 +404,12 @@ $spacing-xxl: 48px;
   .ant-modal-mask,
   .ant-modal-wrap {
     display: none !important;
+  }
+
+  // Inventory label specific print styles
+  .inventory-label {
+    page-break-inside: avoid;
+    margin-bottom: 10mm;
   }
 }
 

@@ -64,14 +64,9 @@ export function TaxManagement() {
         rate: values.rate,
         taxType: values.taxType,
         isActive: values.isActive !== false,
-        isDefault: values.isDefault || false,
         applicableCategories: values.taxType === 'category' ? (values.applicableCategories || []) : [],
         createdAt: editingTax?.createdAt || new Date()
       };
-
-      if (taxData.isDefault) {
-        dispatch({ type: 'CLEAR_DEFAULT_TAX' });
-      }
 
       if (editingTax) {
         dispatch({ type: 'UPDATE_TAX', payload: taxData });
@@ -79,17 +74,6 @@ export function TaxManagement() {
       } else {
         dispatch({ type: 'ADD_TAX', payload: taxData });
         message.success('Tax added successfully');
-      }
-
-      if (taxData.isDefault) {
-        dispatch({ 
-          type: 'UPDATE_TAX_SETTINGS', 
-          payload: { 
-            rate: taxData.rate, 
-            name: taxData.name,
-            defaultTaxId: taxData.id
-          } 
-        });
       }
 
       setShowModal(false);
@@ -114,43 +98,14 @@ export function TaxManagement() {
   };
 
   const handleDelete = (taxId) => {
-    const taxToDelete = taxes.find(t => t.id === taxId);
-    if (taxToDelete?.isDefault) {
-      message.error('Cannot delete default tax. Please set another tax as default first.');
-      return;
-    }
-    
     dispatch({ type: 'DELETE_TAX', payload: taxId });
     message.success('Tax deleted successfully');
   };
 
   const handleToggleStatus = (tax) => {
-    if (tax.isDefault && !tax.isActive) {
-      message.error('Cannot deactivate default tax. Please set another tax as default first.');
-      return;
-    }
-    
     const updatedTax = { ...tax, isActive: !tax.isActive };
     dispatch({ type: 'UPDATE_TAX', payload: updatedTax });
     message.success(`Tax ${updatedTax.isActive ? 'activated' : 'deactivated'}`);
-  };
-
-  const handleSetDefault = (tax) => {
-    dispatch({ type: 'CLEAR_DEFAULT_TAX' });
-    
-    const updatedTax = { ...tax, isDefault: true, isActive: true };
-    dispatch({ type: 'UPDATE_TAX', payload: updatedTax });
-    
-    dispatch({ 
-      type: 'UPDATE_TAX_SETTINGS', 
-      payload: { 
-        rate: tax.rate, 
-        name: tax.name,
-        defaultTaxId: tax.id
-      } 
-    });
-    
-    message.success(`${tax.name} set as default tax`);
   };
 
   const handleRowClick = (tax) => {
@@ -181,13 +136,20 @@ export function TaxManagement() {
       
       message.success('All taxes have been disabled');
     } else {
-      // If enabling taxes, make sure the default tax is active
-      const defaultTax = taxes.find(tax => tax.isDefault);
-      if (defaultTax && !defaultTax.isActive) {
-        const updatedTax = { ...defaultTax, isActive: true };
-        dispatch({ type: 'UPDATE_TAX', payload: updatedTax });
+      // If enabling taxes, make sure at least one tax is active
+      if (taxes.every(tax => !tax.isActive)) {
+        // Activate the first tax if none are active
+        if (taxes.length > 0) {
+          const firstTax = taxes[0];
+          const updatedTax = { ...firstTax, isActive: true };
+          dispatch({ type: 'UPDATE_TAX', payload: updatedTax });
+          message.success(`${firstTax.name} has been activated`);
+        } else {
+          message.info('No taxes available to activate. Please create a tax first.');
+        }
+      } else {
+        message.success('Taxes have been enabled');
       }
-      message.success('Taxes have been enabled');
     }
     
     setShowGlobalTaxSettings(false);
@@ -202,14 +164,8 @@ export function TaxManagement() {
       width: 250,
       render: (text, record) => (
         <div>
-          <div className="flex items-center space-x-2">
-            <Text strong>{record.name}</Text>
-            {record.isDefault && (
-              <Tag color="blue" icon={<Icon name="star" size="text-xs" />}>
-                Default
-              </Tag>
-            )}
-          </div>
+          <Text strong>{record.name}</Text>
+          <br />
           <Text type="secondary" className="text-xs">{record.description}</Text>
         </div>
       ),
@@ -275,7 +231,6 @@ export function TaxManagement() {
             handleToggleStatus(record);
           }}
           size="small"
-          disabled={record.isDefault && record.isActive}
           onClick={(checked, e) => e.stopPropagation()}
         />
       ),
@@ -300,17 +255,6 @@ export function TaxManagement() {
             }}
             className="text-blue-600"
           />
-          {!record.isDefault && (
-            <ActionButton.Text
-              icon="star"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSetDefault(record);
-              }}
-              className="text-yellow-500"
-              title="Set as default"
-            />
-          )}
           <Popconfirm
             title="Are you sure you want to delete this tax?"
             onConfirm={(e) => {
@@ -319,13 +263,10 @@ export function TaxManagement() {
             }}
             okText="Yes"
             cancelText="No"
-            disabled={record.isDefault}
           >
             <ActionButton.Text 
               icon="delete"
               danger
-              disabled={record.isDefault}
-              title={record.isDefault ? "Cannot delete default tax" : "Delete tax"}
               onClick={(e) => e.stopPropagation()}
             />
           </Popconfirm>
@@ -346,7 +287,7 @@ export function TaxManagement() {
       <EnhancedTable
         title="Tax Management"
         icon="receipt"
-        subtitle={areTaxesDisabled ? "All taxes are currently disabled" : `Current default tax: ${state.taxSettings?.name || 'Sales Tax'} (${state.taxSettings?.rate || 8}%)`}
+        subtitle={areTaxesDisabled ? "All taxes are currently disabled" : "Manage tax rates and settings"}
         columns={columns}
         dataSource={filteredTaxes}
         rowKey="id"
@@ -491,24 +432,12 @@ export function TaxManagement() {
           />
         </Form.Item>
 
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item name="isActive" valuePropName="checked" initialValue={true}>
-              <div className="flex items-center space-x-2">
-                <Switch />
-                <Text>Active</Text>
-              </div>
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item name="isDefault" valuePropName="checked">
-              <div className="flex items-center space-x-2">
-                <Switch />
-                <Text>Set as Default Tax</Text>
-              </div>
-            </Form.Item>
-          </Col>
-        </Row>
+        <Form.Item name="isActive" valuePropName="checked" initialValue={true}>
+          <div className="flex items-center space-x-2">
+            <Switch />
+            <Text>Active</Text>
+          </div>
+        </Form.Item>
 
         {taxType === 'full_bill' && (
           <div className="bg-blue-50 p-3 rounded-lg">

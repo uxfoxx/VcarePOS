@@ -108,6 +108,13 @@ function posReducer(state, action) {
         ...state,
         transactions: [action.payload, ...state.transactions]
       };
+    case 'UPDATE_TRANSACTION':
+      return {
+        ...state,
+        transactions: state.transactions.map(transaction =>
+          transaction.id === action.payload.id ? action.payload : transaction
+        )
+      };
     case 'UPDATE_TRANSACTION_STATUS':
       return {
         ...state,
@@ -151,6 +158,53 @@ function posReducer(state, action) {
             return {
               ...rawMaterial,
               stockQuantity: Math.max(0, rawMaterial.stockQuantity - totalUsed)
+            };
+          }
+        }
+        return rawMaterial;
+      });
+
+      return {
+        ...state,
+        products: updatedProducts,
+        allProducts: updatedAllProducts,
+        rawMaterials: updatedRawMaterials
+      };
+    }
+    case 'RESTORE_PRODUCT_STOCK': {
+      const updatedAllProducts = state.allProducts.map(product => {
+        if (product.id === action.payload.productId) {
+          return { ...product, stock: product.stock + action.payload.quantity };
+        }
+        return product;
+      });
+
+      // Also update the original products structure
+      const updatedProducts = state.products.map(product => {
+        if (product.hasVariations) {
+          const updatedVariations = product.variations.map(variation => {
+            if (variation.id === action.payload.productId) {
+              return { ...variation, stock: variation.stock + action.payload.quantity };
+            }
+            return variation;
+          });
+          return { ...product, variations: updatedVariations };
+        } else if (product.id === action.payload.productId) {
+          return { ...product, stock: product.stock + action.payload.quantity };
+        }
+        return product;
+      });
+
+      // Restore raw materials stock
+      const productToRestore = updatedAllProducts.find(p => p.id === action.payload.productId);
+      const updatedRawMaterials = state.rawMaterials.map(rawMaterial => {
+        if (productToRestore && productToRestore.rawMaterials) {
+          const materialUsage = productToRestore.rawMaterials.find(m => m.rawMaterialId === rawMaterial.id);
+          if (materialUsage) {
+            const totalRestored = materialUsage.quantity * action.payload.quantity;
+            return {
+              ...rawMaterial,
+              stockQuantity: rawMaterial.stockQuantity + totalRestored
             };
           }
         }
@@ -300,6 +354,7 @@ export function POSProvider({ children }) {
       'UPDATE_RAW_MATERIAL': { module: 'raw-materials', action: 'UPDATE' },
       'DELETE_RAW_MATERIAL': { module: 'raw-materials', action: 'DELETE' },
       'ADD_TRANSACTION': { module: 'transactions', action: 'CREATE' },
+      'UPDATE_TRANSACTION': { module: 'transactions', action: 'UPDATE' },
       'ADD_COUPON': { module: 'coupons', action: 'CREATE' },
       'UPDATE_COUPON': { module: 'coupons', action: 'UPDATE' },
       'DELETE_COUPON': { module: 'coupons', action: 'DELETE' },
@@ -307,6 +362,7 @@ export function POSProvider({ children }) {
       'UPDATE_TAX': { module: 'tax', action: 'UPDATE' },
       'DELETE_TAX': { module: 'tax', action: 'DELETE' },
       'UPDATE_PRODUCT_STOCK': { module: 'products', action: 'UPDATE' },
+      'RESTORE_PRODUCT_STOCK': { module: 'products', action: 'UPDATE' },
       'UPDATE_RAW_MATERIAL_STOCK': { module: 'raw-materials', action: 'UPDATE' },
     };
 
@@ -319,6 +375,7 @@ export function POSProvider({ children }) {
     // Check for stock-related actions
     const stockActions = [
       'UPDATE_PRODUCT_STOCK', 
+      'RESTORE_PRODUCT_STOCK',
       'UPDATE_RAW_MATERIAL_STOCK',
       'ADD_TRANSACTION'
     ];
@@ -341,7 +398,8 @@ export function POSProvider({ children }) {
         title: 'Sale Completed',
         message: `Transaction ${action.payload.id} completed for $${action.payload.total.toFixed(2)}`,
         icon: 'receipt_long',
-        category: 'transaction'
+        category: 'transaction',
+        navigateTo: 'transactions'
       });
     }
   };
@@ -362,6 +420,8 @@ export function POSProvider({ children }) {
         return `Deleted raw material with ID: ${action.payload}`;
       case 'ADD_TRANSACTION':
         return `Completed transaction: ${action.payload.id} ($${action.payload.total.toFixed(2)})`;
+      case 'UPDATE_TRANSACTION':
+        return `Updated transaction: ${action.payload.id}`;
       case 'ADD_COUPON':
         return `Created coupon: ${action.payload.code}`;
       case 'UPDATE_COUPON':
@@ -376,6 +436,8 @@ export function POSProvider({ children }) {
         return `Deleted tax with ID: ${action.payload}`;
       case 'UPDATE_PRODUCT_STOCK':
         return `Updated product stock: ${action.payload.productId} (-${action.payload.quantity} units)`;
+      case 'RESTORE_PRODUCT_STOCK':
+        return `Restored product stock: ${action.payload.productId} (+${action.payload.quantity} units)`;
       case 'UPDATE_RAW_MATERIAL_STOCK':
         return `Updated raw material stock: ${action.payload.materialId} (-${action.payload.quantity} units)`;
       default:

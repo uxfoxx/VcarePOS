@@ -37,10 +37,10 @@ function AppContent() {
       'pos': (
         <ProtectedRoute module="pos" action="view">
           <div className="flex h-full gap-6">
-            <div className="flex-1">
+            <div className="flex-1" data-tour="product-grid">
               <ProductGrid collapsed={collapsed} />
             </div>
-            <div className="w-96">
+            <div className="w-96" data-tour="cart">
               <Cart />
             </div>
           </div>
@@ -185,6 +185,7 @@ function AppContent() {
           collapsed={collapsed} 
           onCollapse={setCollapsed}
           activeTab={activeTab}
+          onTabChange={setActiveTab}
         />
         <Content style={contentStyle}>
           {renderContent()}

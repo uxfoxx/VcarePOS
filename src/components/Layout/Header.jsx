@@ -10,7 +10,8 @@ import {
   List,
   Empty,
   Divider,
-  Tag
+  Tag,
+  Tour
 } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePOS } from '../../contexts/POSContext';
@@ -21,11 +22,12 @@ import { Icon } from '../common/Icon';
 const { Header: AntHeader } = Layout;
 const { Text, Title } = Typography;
 
-export function Header({ collapsed, onCollapse, activeTab, style }) {
+export function Header({ collapsed, onCollapse, activeTab, style, onTabChange }) {
   const { currentUser, logout } = useAuth();
   const { state } = usePOS();
-  const { notifications, stockAlerts, markAsRead, clearAllNotifications } = useNotifications();
+  const { notifications, stockAlerts, markAsRead, clearAllNotifications, markAllAsRead } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
 
   const userMenuItems = [
     {
@@ -64,7 +66,8 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
       timestamp: alert.timestamp,
       icon: alert.type === 'critical' ? 'error' : 'warning',
       type: alert.type === 'critical' ? 'error' : 'warning',
-      read: false
+      read: false,
+      navigateTo: alert.navigateTo
     })),
     ...notifications
   ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -73,20 +76,114 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
 
   const handleNotificationClick = (notification) => {
     markAsRead(notification.id);
+    
+    // Navigate to relevant page if specified
+    if (notification.navigateTo && onTabChange) {
+      onTabChange(notification.navigateTo);
+    }
+    
     setShowNotifications(false);
+  };
+
+  const handleClearAll = () => {
+    clearAllNotifications();
+    setShowNotifications(false);
+  };
+
+  const handleMarkAllRead = () => {
+    markAllAsRead();
+  };
+
+  // Tour steps for different pages
+  const getTourSteps = () => {
+    const commonSteps = [
+      {
+        title: 'Navigation Menu',
+        description: 'Use this sidebar to navigate between different sections of the system.',
+        target: () => document.querySelector('.ant-layout-sider'),
+      },
+      {
+        title: 'Notifications',
+        description: 'Check your notifications here for stock alerts and system updates.',
+        target: () => document.querySelector('[data-tour="notifications"]'),
+      },
+      {
+        title: 'User Menu',
+        description: 'Access your profile settings and logout from here.',
+        target: () => document.querySelector('[data-tour="user-menu"]'),
+      },
+    ];
+
+    const pageSpecificSteps = {
+      'pos': [
+        {
+          title: 'Product Grid',
+          description: 'Browse and select products to add to your cart.',
+          target: () => document.querySelector('[data-tour="product-grid"]'),
+        },
+        {
+          title: 'Shopping Cart',
+          description: 'Review selected items and proceed to checkout.',
+          target: () => document.querySelector('[data-tour="cart"]'),
+        },
+      ],
+      'products': [
+        {
+          title: 'Product Management',
+          description: 'Add, edit, and manage your product inventory here.',
+          target: () => document.querySelector('[data-tour="product-table"]'),
+        },
+        {
+          title: 'Add Product',
+          description: 'Click here to add new products to your inventory.',
+          target: () => document.querySelector('[data-tour="add-product"]'),
+        },
+      ],
+      'transactions': [
+        {
+          title: 'Order History',
+          description: 'View all completed transactions and their details.',
+          target: () => document.querySelector('[data-tour="transaction-table"]'),
+        },
+      ],
+      'reports': [
+        {
+          title: 'Analytics Dashboard',
+          description: 'Monitor your business performance with these key metrics.',
+          target: () => document.querySelector('[data-tour="stats-cards"]'),
+        },
+        {
+          title: 'Export Reports',
+          description: 'Download detailed reports in CSV format.',
+          target: () => document.querySelector('[data-tour="export-reports"]'),
+        },
+      ],
+    };
+
+    return [...commonSteps, ...(pageSpecificSteps[activeTab] || [])];
   };
 
   const notificationContent = (
     <div className="w-80 max-h-96 overflow-y-auto">
       <div className="p-3 border-b flex justify-between items-center">
         <Title level={5} className="m-0">Notifications</Title>
-        <ActionButton.Text 
-          size="small" 
-          onClick={clearAllNotifications}
-          disabled={allNotifications.length === 0}
-        >
-          Clear All
-        </ActionButton.Text>
+        <Space size="small">
+          {allNotifications.length > 0 && unreadCount > 0 && (
+            <ActionButton.Text 
+              size="small" 
+              onClick={handleMarkAllRead}
+            >
+              Mark All Read
+            </ActionButton.Text>
+          )}
+          <ActionButton.Text 
+            size="small" 
+            onClick={handleClearAll}
+            disabled={allNotifications.length === 0}
+          >
+            Clear All
+          </ActionButton.Text>
+        </Space>
       </div>
       
       {allNotifications.length === 0 ? (
@@ -108,14 +205,23 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
                   <Icon name={item.icon || 'notifications'} />
                 </div>
                 <div className="flex-1">
-                  <div className="flex justify-between">
-                    <Text strong>{item.title}</Text>
+                  <div className="flex justify-between items-start">
+                    <Text strong className={item.read ? 'text-gray-500' : 'text-gray-900'}>
+                      {item.title}
+                    </Text>
                     {!item.read && <Badge status="processing" color="blue" />}
                   </div>
                   <Text type="secondary" className="text-xs block">
                     {new Date(item.timestamp).toLocaleString()}
                   </Text>
-                  <Text className="text-sm block mt-1">{item.message}</Text>
+                  <Text className={`text-sm block mt-1 ${item.read ? 'text-gray-500' : 'text-gray-700'}`}>
+                    {item.message}
+                  </Text>
+                  {item.navigateTo && (
+                    <Tag color="blue" size="small" className="mt-1">
+                      Click to view
+                    </Tag>
+                  )}
                 </div>
               </div>
             </List.Item>
@@ -142,73 +248,98 @@ export function Header({ collapsed, onCollapse, activeTab, style }) {
   };
 
   return (
-    <AntHeader 
-      style={style}
-      className="flex items-center justify-between"
-    >
-      <div className="flex items-center space-x-6">
-        {/* Expand/Collapse Button */}
-        <Tooltip title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}>
-          <ActionButton.Text
-            icon={collapsed ? 'menu_open' : 'menu'}
-            onClick={() => onCollapse(!collapsed)}
-            className="hover:bg-blue-50 transition-colors"
-            size="large"
-          />
-        </Tooltip>
-
-        <div className="flex items-center space-x-4">
-          <Title level={4} className="m-0 text-gray-900">
-            {getPageTitle()}
-          </Title>
-        </div>
-      </div>
-      
-      <Space size="middle" className="flex items-center">
-        <Tooltip title="WiFi Connected">
-          <Icon name="wifi" className="text-green-500" />
-        </Tooltip>
-
-        <Dropdown 
-          open={showNotifications}
-          onOpenChange={setShowNotifications}
-          dropdownRender={() => notificationContent}
-          placement="bottomRight"
-          trigger={['click']}
-        >
-          <Badge count={unreadCount} size="small" offset={[-2, 2]}>
-            <ActionButton.Text 
-              icon="notifications"
-              className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all"
+    <>
+      <AntHeader 
+        style={style}
+        className="flex items-center justify-between"
+      >
+        <div className="flex items-center space-x-6">
+          {/* Expand/Collapse Button */}
+          <Tooltip title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}>
+            <ActionButton.Text
+              icon={collapsed ? 'menu_open' : 'menu'}
+              onClick={() => onCollapse(!collapsed)}
+              className="hover:bg-blue-50 transition-colors"
+              size="large"
             />
-          </Badge>
-        </Dropdown>
-        
-        <Dropdown 
-          menu={{ items: userMenuItems }} 
-          placement="bottomRight"
-          trigger={['click']}
-        >
-          <div className="flex items-center space-x-3 cursor-pointer">
-            <Avatar 
-              size={40}
-              style={{ 
-                background: 'linear-gradient(135deg, #0E72BD, #1890ff)',
-              }}
-            >
-              {currentUser?.firstName?.[0]}{currentUser?.lastName?.[0]}
-            </Avatar>
-            <div className="hidden sm:block text-left">
-              <Text strong className="text-gray-900 block text-sm">
-                {currentUser?.firstName} {currentUser?.lastName}
-              </Text>
-              <Text type="secondary" className="text-xs capitalize">
-                {currentUser?.role}
-              </Text>
-            </div>
+          </Tooltip>
+
+          <div className="flex items-center space-x-4">
+            <Title level={4} className="m-0 text-gray-900">
+              {getPageTitle()}
+            </Title>
           </div>
-        </Dropdown>
-      </Space>
-    </AntHeader>
+        </div>
+        
+        <Space size="middle" className="flex items-center">
+          <Tooltip title="WiFi Connected">
+            <Icon name="wifi" className="text-green-500" />
+          </Tooltip>
+
+          {/* Help Tour Button */}
+          <Tooltip title="Take a Tour">
+            <ActionButton.Text 
+              icon="help_outline"
+              onClick={() => setTourOpen(true)}
+              className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all"
+              data-tour="help"
+            />
+          </Tooltip>
+
+          <Dropdown 
+            open={showNotifications}
+            onOpenChange={setShowNotifications}
+            dropdownRender={() => notificationContent}
+            placement="bottomRight"
+            trigger={['click']}
+          >
+            <Badge count={unreadCount} size="small" offset={[-2, 2]}>
+              <ActionButton.Text 
+                icon="notifications"
+                className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                data-tour="notifications"
+              />
+            </Badge>
+          </Dropdown>
+          
+          <Dropdown 
+            menu={{ items: userMenuItems }} 
+            placement="bottomRight"
+            trigger={['click']}
+          >
+            <div className="flex items-center space-x-3 cursor-pointer" data-tour="user-menu">
+              <Avatar 
+                size={40}
+                style={{ 
+                  background: 'linear-gradient(135deg, #0E72BD, #1890ff)',
+                }}
+              >
+                {currentUser?.firstName?.[0]}{currentUser?.lastName?.[0]}
+              </Avatar>
+              <div className="hidden sm:block text-left">
+                <Text strong className="text-gray-900 block text-sm">
+                  {currentUser?.firstName} {currentUser?.lastName}
+                </Text>
+                <Text type="secondary" className="text-xs capitalize">
+                  {currentUser?.role}
+                </Text>
+              </div>
+            </div>
+          </Dropdown>
+        </Space>
+      </AntHeader>
+
+      {/* Tour Component */}
+      <Tour
+        open={tourOpen}
+        onClose={() => setTourOpen(false)}
+        steps={getTourSteps()}
+        indicatorsRender={(current, total) => (
+          <span className="text-blue-600">
+            {current + 1} / {total}
+          </span>
+        )}
+      />
+    </>
   );
 }

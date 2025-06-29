@@ -48,6 +48,8 @@ export function EnhancedTable({
   scroll = { x: 1000 },
   emptyDescription = "No data available",
   emptyImage,
+  defaultSortField = null,
+  defaultSortOrder = 'descend', // Latest first by default
   ...tableProps
 }) {
   // Filter out invalid column objects to prevent errors
@@ -77,7 +79,16 @@ export function EnhancedTable({
     return initial;
   });
   const [filters, setFilters] = useState({});
-  const [sorter, setSorter] = useState({});
+  const [sorter, setSorter] = useState(() => {
+    // Set default sort if specified
+    if (defaultSortField) {
+      return {
+        field: defaultSortField,
+        order: defaultSortOrder
+      };
+    }
+    return {};
+  });
   const [configForm] = Form.useForm();
   const [tempVisibleColumns, setTempVisibleColumns] = useState([]);
   const [tempFixedColumns, setTempFixedColumns] = useState({});
@@ -105,6 +116,8 @@ export function EnhancedTable({
             return String(aVal).localeCompare(String(bVal));
           })
         ) : false,
+        // Set default sort order for the default sort field
+        defaultSortOrder: col.key === defaultSortField ? defaultSortOrder : undefined,
         filterable: col.filterable !== false,
         ...(col.filterable !== false && !col.filterDropdown && {
           filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
@@ -152,7 +165,7 @@ export function EnhancedTable({
           })
         })
       }));
-  }, [safeInitialColumns, visibleColumns, fixedColumns]);
+  }, [safeInitialColumns, visibleColumns, fixedColumns, defaultSortField, defaultSortOrder]);
 
   // Filter data based on search term
   const filteredData = useMemo(() => {

@@ -26,16 +26,31 @@ function notificationReducer(state, action) {
           notif.id === action.payload ? { ...notif, read: true } : notif
         )
       };
+    case 'MARK_ALL_READ':
+      return {
+        ...state,
+        notifications: state.notifications.map(notif => ({ ...notif, read: true }))
+      };
     case 'CLEAR_NOTIFICATIONS':
       return {
         ...state,
         notifications: []
+      };
+    case 'REMOVE_NOTIFICATION':
+      return {
+        ...state,
+        notifications: state.notifications.filter(notif => notif.id !== action.payload)
       };
     case 'UPDATE_STOCK_ALERTS':
       return {
         ...state,
         stockAlerts: action.payload,
         lastChecked: new Date()
+      };
+    case 'CLEAR_STOCK_ALERTS':
+      return {
+        ...state,
+        stockAlerts: []
       };
     case 'UPDATE_SETTINGS':
       return {
@@ -54,7 +69,7 @@ export function NotificationProvider({ children }) {
 
   const addNotification = (notification) => {
     const newNotification = {
-      id: `NOTIF-${Date.now()}`,
+      id: `NOTIF-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date(),
       read: false,
       ...notification
@@ -69,6 +84,7 @@ export function NotificationProvider({ children }) {
       icon: <Icon name={notification.icon || 'notifications'} className={`text-${notification.type === 'error' ? 'red' : notification.type === 'warning' ? 'orange' : 'blue'}-500`} />,
       placement: 'topRight',
       duration: notification.persistent ? 0 : 4.5,
+      onClick: notification.onClick,
     };
 
     if (notification.type === 'error') {
@@ -101,7 +117,8 @@ export function NotificationProvider({ children }) {
           materialName: material.name,
           currentStock: material.stockQuantity,
           minimumStock: material.minimumStock,
-          timestamp: now
+          timestamp: now,
+          navigateTo: 'raw-materials'
         });
       } else if (material.stockQuantity <= material.minimumStock) {
         alerts.push({
@@ -114,7 +131,8 @@ export function NotificationProvider({ children }) {
           materialName: material.name,
           currentStock: material.stockQuantity,
           minimumStock: material.minimumStock,
-          timestamp: now
+          timestamp: now,
+          navigateTo: 'raw-materials'
         });
       }
     });
@@ -131,7 +149,8 @@ export function NotificationProvider({ children }) {
           productId: product.id,
           productName: product.name,
           currentStock: product.stock,
-          timestamp: now
+          timestamp: now,
+          navigateTo: 'products'
         });
       } else if (product.stock <= state.criticalStockThreshold) {
         alerts.push({
@@ -143,7 +162,8 @@ export function NotificationProvider({ children }) {
           productId: product.id,
           productName: product.name,
           currentStock: product.stock,
-          timestamp: now
+          timestamp: now,
+          navigateTo: 'products'
         });
       }
     });
@@ -160,7 +180,8 @@ export function NotificationProvider({ children }) {
           message: alert.message,
           icon: 'warning',
           persistent: true,
-          category: 'stock-alert'
+          category: 'stock-alert',
+          navigateTo: alert.navigateTo
         });
       }
     });
@@ -208,8 +229,21 @@ export function NotificationProvider({ children }) {
     dispatch({ type: 'MARK_READ', payload: notificationId });
   };
 
+  const markAllAsRead = () => {
+    dispatch({ type: 'MARK_ALL_READ' });
+  };
+
   const clearAllNotifications = () => {
     dispatch({ type: 'CLEAR_NOTIFICATIONS' });
+    message.success('All notifications cleared');
+  };
+
+  const removeNotification = (notificationId) => {
+    dispatch({ type: 'REMOVE_NOTIFICATION', payload: notificationId });
+  };
+
+  const clearStockAlerts = () => {
+    dispatch({ type: 'CLEAR_STOCK_ALERTS' });
   };
 
   const updateSettings = (settings) => {
@@ -223,7 +257,10 @@ export function NotificationProvider({ children }) {
       checkStockLevels,
       checkRawMaterialAvailability,
       markAsRead,
+      markAllAsRead,
       clearAllNotifications,
+      removeNotification,
+      clearStockAlerts,
       updateSettings
     }}>
       {children}

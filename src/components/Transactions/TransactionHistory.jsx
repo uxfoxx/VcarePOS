@@ -9,9 +9,11 @@ import {
   Card,
   Select,
   message,
-  Dropdown
+  Dropdown,
+  Modal
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { StatusTag } from '../common/StatusTag';
@@ -23,22 +25,30 @@ import { DetailModal } from '../common/DetailModal';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
+import { RefundModal } from './RefundModal';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 export function TransactionHistory() {
   const { state, dispatch } = usePOS();
+  const { logAction } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPeriod, setFilterPeriod] = useState('all');
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showInventoryLabelsModal, setShowInventoryLabelsModal] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
   const [invoiceType, setInvoiceType] = useState('detailed');
   const [loading, setLoading] = useState(false);
 
-  const filteredTransactions = state.transactions.filter(transaction => {
+  // Sort transactions by timestamp (latest first) by default
+  const sortedTransactions = [...state.transactions].sort((a, b) => 
+    new Date(b.timestamp) - new Date(a.timestamp)
+  );
+
+  const filteredTransactions = sortedTransactions.filter(transaction => {
     const matchesSearch = transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          transaction.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          transaction.cashier.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -78,6 +88,11 @@ export function TransactionHistory() {
     setShowInventoryLabelsModal(true);
   };
 
+  const handleShowRefund = (transaction) => {
+    setSelectedTransaction(transaction);
+    setShowRefundModal(true);
+  };
+
   const handleCloseDetailModal = () => {
     setShowDetailModal(false);
     setSelectedTransaction(null);
@@ -91,6 +106,61 @@ export function TransactionHistory() {
   const handleCloseInventoryLabelsModal = () => {
     setShowInventoryLabelsModal(false);
     setSelectedTransaction(null);
+  };
+
+  const handleCloseRefundModal = () => {
+    setShowRefundModal(false);
+    setSelectedTransaction(null);
+  };
+
+  const handleProcessRefund = async (refundData) => {
+    try {
+      // Add refund to transaction
+      const updatedTransaction = {
+        ...selectedTransaction,
+        refunds: [...(selectedTransaction.refunds || []), refundData],
+        status: refundData.refundType === 'full' ? 'refunded' : 'partially-refunded'
+      };
+
+      // Update transaction in state
+      dispatch({
+        type: 'UPDATE_TRANSACTION',
+        payload: updatedTransaction
+      });
+
+      // Restore inventory for refunded items
+      if (refundData.refundItems && refundData.refundItems.length > 0) {
+        refundData.refundItems.forEach(item => {
+          dispatch({
+            type: 'RESTORE_PRODUCT_STOCK',
+            payload: {
+              productId: item.product.id,
+              quantity: item.refundQuantity
+            }
+          });
+        });
+      }
+
+      // Log the refund action
+      if (logAction) {
+        logAction(
+          'CREATE',
+          'transactions',
+          `Processed ${refundData.refundType} refund for transaction ${selectedTransaction.id}`,
+          {
+            transactionId: selectedTransaction.id,
+            refundId: refundData.id,
+            refundAmount: refundData.refundAmount,
+            refundType: refundData.refundType
+          }
+        );
+      }
+
+      message.success('Refund processed successfully');
+    } catch (error) {
+      message.error('Failed to process refund');
+      throw error;
+    }
   };
 
   const handleUpdateStatus = (transactionId, newStatus) => {
@@ -121,26 +191,76 @@ export function TransactionHistory() {
     }
   };
 
-  const getActionMenuItems = (record) => [
-    {
-      key: 'view',
-      icon: <Icon name="visibility" />,
-      label: 'View Details',
-      onClick: () => handleViewDetails(record)
-    },
-    {
-      key: 'invoice',
-      icon: <Icon name="receipt_long" />,
-      label: 'View Invoice',
-      onClick: () => handleShowInvoice(record, 'detailed')
-    },
-    {
-      key: 'inventory-labels',
-      icon: <Icon name="label" />,
-      label: 'Print Inventory Labels',
-      onClick: () => handleShowInventoryLabels(record)
+  const getActionMenuItems = (record) => {
+    const items = [
+      {
+        key: 'view',
+        icon: <Icon name="visibility" />,
+        label: 'View Details',
+        onClick: () => handleViewDetails(record)
+      },
+      {
+        key: 'invoice',
+        icon: <Icon name="receipt_long" />,
+        label: 'View Invoice',
+        onClick: () => handleShowInvoice(record, 'detailed')
+      },
+      {
+        key: 'inventory-labels',
+        icon: <Icon name="label" />,
+        label: 'Print Inventory Labels',
+        onClick: () => handleShowInventoryLabels(record)
+      }
+    ];
+
+    // Add refund option if transaction is not already fully refunded
+    if (record.status !== 'refunded') {
+      items.push({
+        key: 'refund',
+        icon: <Icon name="undo" />,
+        label: 'Process Refund',
+        onClick: () => handleShowRefund(record),
+        danger: true
+      });
     }
-  ];
+
+    return items;
+  };
+
+  const getStatusColor = (status, refunds) => {
+    if (refunds && refunds.length > 0) {
+      const totalRefunded = refunds.reduce((sum, refund) => sum + refund.refundAmount, 0);
+      const transaction = filteredTransactions.find(t => t.refunds === refunds);
+      if (transaction && totalRefunded >= transaction.total) {
+        return 'red'; // Fully refunded
+      } else if (totalRefunded > 0) {
+        return 'orange'; // Partially refunded
+      }
+    }
+    
+    switch (status) {
+      case 'completed': return 'green';
+      case 'pending': return 'orange';
+      case 'cancelled': return 'red';
+      case 'refunded': return 'red';
+      case 'partially-refunded': return 'orange';
+      default: return 'blue';
+    }
+  };
+
+  const getStatusText = (status, refunds) => {
+    if (refunds && refunds.length > 0) {
+      const totalRefunded = refunds.reduce((sum, refund) => sum + refund.refundAmount, 0);
+      const transaction = filteredTransactions.find(t => t.refunds === refunds);
+      if (transaction && totalRefunded >= transaction.total) {
+        return 'REFUNDED';
+      } else if (totalRefunded > 0) {
+        return 'PARTIAL REFUND';
+      }
+    }
+    
+    return (status || 'completed').toUpperCase();
+  };
 
   const columns = [
     {
@@ -150,13 +270,15 @@ export function TransactionHistory() {
       fixed: 'left',
       width: 150,
       render: (id) => <Text code>{id}</Text>,
+      sorter: (a, b) => a.id.localeCompare(b.id),
     },
     {
       title: 'Date & Time',
       dataIndex: 'timestamp',
       key: 'timestamp',
       width: 150,
-      sorter: (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
+      sorter: (a, b) => new Date(b.timestamp) - new Date(a.timestamp), // Latest first by default
+      defaultSortOrder: 'ascend',
       render: (timestamp) => (
         <div>
           <Text>{new Date(timestamp).toLocaleDateString()}</Text>
@@ -214,10 +336,20 @@ export function TransactionHistory() {
       key: 'total',
       width: 120,
       sorter: (a, b) => a.total - b.total,
-      render: (total) => (
-        <Text strong className="text-blue-600 text-lg">
-          ${total.toFixed(2)}
-        </Text>
+      render: (total, record) => (
+        <div>
+          <Text strong className="text-blue-600 text-lg">
+            ${total.toFixed(2)}
+          </Text>
+          {record.refunds && record.refunds.length > 0 && (
+            <>
+              <br />
+              <Text type="secondary" className="text-xs text-red-500">
+                Refunded: ${record.refunds.reduce((sum, refund) => sum + refund.refundAmount, 0).toFixed(2)}
+              </Text>
+            </>
+          )}
+        </div>
       ),
     },
     {
@@ -233,13 +365,12 @@ export function TransactionHistory() {
     },
     {
       title: 'Status',
-      dataIndex: 'status',
       key: 'status',
       width: 120,
-      render: (status) => (
-        <StatusTag status={status || 'completed'}>
-          {(status || 'completed').toUpperCase()}
-        </StatusTag>
+      render: (record) => (
+        <Tag color={getStatusColor(record.status, record.refunds)}>
+          {getStatusText(record.status, record.refunds)}
+        </Tag>
       ),
     },
     {
@@ -271,7 +402,7 @@ export function TransactionHistory() {
   return (
     <Space direction="vertical" size="large" className="w-full">
       {/* Statistics */}
-      <Row gutter={16}>
+      <Row gutter={16} data-tour="stats-cards">
         <Col span={8}>
           <Card>
             <Statistic
@@ -331,6 +462,7 @@ export function TransactionHistory() {
         }
         emptyDescription="No orders found"
         emptyImage={<Icon name="receipt_long" className="text-6xl text-gray-300" />}
+        data-tour="transaction-table"
       />
 
       {/* Transaction Detail Modal */}
@@ -342,6 +474,19 @@ export function TransactionHistory() {
         data={selectedTransaction}
         type="transaction"
         actions={[
+          selectedTransaction?.status !== 'refunded' && (
+            <ActionButton 
+              key="refund" 
+              icon="undo"
+              danger
+              onClick={() => {
+                setShowDetailModal(false);
+                handleShowRefund(selectedTransaction);
+              }}
+            >
+              Process Refund
+            </ActionButton>
+          ),
           <ActionButton 
             key="inventory-labels" 
             icon="label"
@@ -362,7 +507,7 @@ export function TransactionHistory() {
           >
             View Invoice
           </ActionButton.Primary>
-        ]}
+        ].filter(Boolean)}
       />
 
       {/* Invoice Modal */}
@@ -378,6 +523,14 @@ export function TransactionHistory() {
         open={showInventoryLabelsModal}
         onClose={handleCloseInventoryLabelsModal}
         transaction={selectedTransaction}
+      />
+
+      {/* Refund Modal */}
+      <RefundModal
+        open={showRefundModal}
+        onClose={handleCloseRefundModal}
+        transaction={selectedTransaction}
+        onRefund={handleProcessRefund}
       />
     </Space>
   );

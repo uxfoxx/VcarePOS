@@ -409,7 +409,15 @@ $spacing-xxl: 48px;
   // Inventory label specific print styles
   .inventory-label {
     page-break-inside: avoid;
-    margin-bottom: 10mm;
+    margin-bottom: 2mm;
+    border: 1px solid #000 !important;
+  }
+
+  // Ensure proper sizing for print
+  #inventory-labels-content {
+    width: 210mm !important;
+    margin: 0 !important;
+    padding: 5mm !important;
   }
 }
 

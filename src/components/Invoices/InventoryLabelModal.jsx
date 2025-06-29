@@ -145,8 +145,8 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
       <div
         key={index}
         style={{
-          width: '1px',
-          height: '40px',
+          width: '0.8px',
+          height: '20px',
           backgroundColor: bit === '1' ? '#000' : '#fff',
           display: 'inline-block'
         }}
@@ -154,7 +154,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
     ));
     
     return (
-      <div className="flex justify-center items-center bg-white p-2">
+      <div className="flex justify-center items-center bg-white">
         <div style={{ fontSize: 0, lineHeight: 0 }}>
           {bars}
         </div>
@@ -163,44 +163,80 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
   };
 
   const renderInventoryLabels = () => (
-    <div id="inventory-labels-content" className="p-4 bg-white" style={{ fontFamily: 'Arial, sans-serif' }}>
-      <div className="grid grid-cols-2 gap-6">
+    <div id="inventory-labels-content" className="bg-white" style={{ fontFamily: 'Arial, sans-serif', padding: '5mm' }}>
+      {/* Grid layout: 4 columns x 6 rows = 24 labels per A4 page */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(4, 1fr)', 
+        gap: '2mm',
+        width: '200mm', // A4 width minus margins
+        minHeight: '287mm' // A4 height minus margins
+      }}>
         {transaction.items.map((item, itemIndex) => 
           Array.from({ length: item.quantity }, (_, qtyIndex) => (
-            <div key={`${itemIndex}-${qtyIndex}`} className="border-2 border-gray-800 p-4 bg-white" style={{ width: '90mm', height: '60mm', pageBreakInside: 'avoid' }}>
+            <div 
+              key={`${itemIndex}-${qtyIndex}`} 
+              className="inventory-label border border-gray-800 bg-white flex flex-col"
+              style={{ 
+                width: '48mm', 
+                height: '45mm',
+                padding: '2mm',
+                pageBreakInside: 'avoid',
+                fontSize: '8px',
+                lineHeight: '1.2'
+              }}
+            >
               
               {/* Company Header with Logo */}
-              <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-400">
+              <div className="flex items-center justify-between mb-1 pb-1 border-b border-gray-400">
                 <div>
-                  <Text strong className="text-lg">VCare Furniture</Text>
+                  <span style={{ fontWeight: 'bold', fontSize: '9px' }}>VCare Furniture</span>
                 </div>
-                <div className="w-10 h-10 bg-blue-600 rounded flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">VC</span>
+                <div style={{ 
+                  width: '12px', 
+                  height: '12px', 
+                  backgroundColor: '#2563eb', 
+                  borderRadius: '2px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <span style={{ color: 'white', fontWeight: 'bold', fontSize: '6px' }}>VC</span>
                 </div>
               </div>
 
               {/* Product Name */}
-              <div className="mb-4 text-center">
-                <Text strong className="text-base leading-tight block">
+              <div className="mb-2 text-center flex-1">
+                <div style={{ 
+                  fontWeight: 'bold', 
+                  fontSize: '9px', 
+                  lineHeight: '1.1',
+                  overflow: 'hidden',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical'
+                }}>
                   {item.product.name}
-                </Text>
+                </div>
               </div>
 
               {/* SKU */}
-              <div className="mb-4 text-center">
-                <Text className="text-sm text-gray-600 block mb-1">SKU:</Text>
-                <Text strong className="font-mono text-lg">
+              <div className="mb-2 text-center">
+                <div style={{ fontSize: '6px', color: '#666', marginBottom: '1px' }}>SKU:</div>
+                <div style={{ fontWeight: 'bold', fontFamily: 'monospace', fontSize: '8px' }}>
                   {item.product.barcode || 'N/A'}
-                </Text>
+                </div>
               </div>
 
               {/* Barcode */}
               <div className="mt-auto">
-                {renderBarcode(item.product.barcode || 'NOBARCODE')}
-                <div className="text-center mt-1">
-                  <Text className="font-mono text-xs">
+                <div style={{ maxWidth: '100%', overflow: 'hidden' }}>
+                  {renderBarcode(item.product.barcode || 'NOBARCODE')}
+                </div>
+                <div className="text-center" style={{ marginTop: '1px' }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: '6px' }}>
                     {item.product.barcode || 'N/A'}
-                  </Text>
+                  </span>
                 </div>
               </div>
 
@@ -221,7 +257,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
       }
       open={open}
       onCancel={onClose}
-      width={900}
+      width={1000}
       footer={[
         <ActionButton key="close" onClick={onClose}>
           Close
@@ -237,14 +273,15 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
         </ActionButton.Primary>
       ]}
       className="inventory-labels-modal"
+      destroyOnClose
     >
       <div className="max-h-[70vh] overflow-y-auto">
         <div className="mb-4 p-4 bg-blue-50 rounded-lg">
           <Text className="text-sm">
             <Icon name="info" className="mr-2 text-blue-600" />
-            <strong>Inventory Labels:</strong> Simple labels with product name, SKU, and barcode. 
+            <strong>Inventory Labels:</strong> Optimized for A4 printing with 24 labels per page (4×6 grid). 
             Each item will have {transaction?.items?.reduce((sum, item) => sum + item.quantity, 0)} labels generated 
-            (one for each quantity ordered). Perfect for sticking to inventory items.
+            (one for each quantity ordered). Perfect size for sticking to inventory items.
           </Text>
         </div>
         {renderInventoryLabels()}

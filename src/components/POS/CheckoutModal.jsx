@@ -144,6 +144,20 @@ export function CheckoutModal({
     }
   };
 
+  const handleCloseOrderComplete = () => {
+    setCompletedTransaction(null);
+    setShowInvoice(false);
+    setShowInventoryLabels(false);
+  };
+
+  const handleShowInvoice = () => {
+    setShowInvoice(true);
+  };
+
+  const handleShowInventoryLabels = () => {
+    setShowInventoryLabels(true);
+  };
+
   const steps = [
     {
       title: 'Order Summary',
@@ -449,32 +463,33 @@ export function CheckoutModal({
         </div>
       </Modal>
 
-      {/* Post-Order Modals */}
+      {/* Post-Order Success Modal */}
       {completedTransaction && (
         <Modal
           title="Order Completed Successfully!"
-          open={!!completedTransaction}
-          onCancel={() => setCompletedTransaction(null)}
+          open={!!completedTransaction && !showInvoice && !showInventoryLabels}
+          onCancel={handleCloseOrderComplete}
           width={600}
           footer={[
-            <ActionButton key="close" onClick={() => setCompletedTransaction(null)}>
+            <ActionButton key="close" onClick={handleCloseOrderComplete}>
               Close
             </ActionButton>,
             <ActionButton 
               key="inventory-labels" 
               icon="label"
-              onClick={() => setShowInventoryLabels(true)}
+              onClick={handleShowInventoryLabels}
             >
               Print Inventory Labels
             </ActionButton>,
             <ActionButton.Primary 
               key="invoice" 
               icon="receipt_long"
-              onClick={() => setShowInvoice(true)}
+              onClick={handleShowInvoice}
             >
               View Invoice
             </ActionButton.Primary>
           ]}
+          destroyOnClose
         >
           <div className="text-center py-8">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">

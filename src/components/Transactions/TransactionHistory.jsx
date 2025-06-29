@@ -73,6 +73,21 @@ export function TransactionHistory() {
     setShowInventoryLabelsModal(true);
   };
 
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedTransaction(null);
+  };
+
+  const handleCloseInvoiceModal = () => {
+    setShowInvoiceModal(false);
+    setSelectedTransaction(null);
+  };
+
+  const handleCloseInventoryLabelsModal = () => {
+    setShowInventoryLabelsModal(false);
+    setSelectedTransaction(null);
+  };
+
   const handleUpdateStatus = (transactionId, newStatus) => {
     dispatch({
       type: 'UPDATE_TRANSACTION_STATUS',
@@ -302,10 +317,10 @@ export function TransactionHistory() {
       <Modal
         title={`Order Details - ${selectedTransaction?.id}`}
         open={showDetailModal}
-        onCancel={() => setShowDetailModal(false)}
+        onCancel={handleCloseDetailModal}
         width={800}
         footer={[
-          <ActionButton key="close" onClick={() => setShowDetailModal(false)}>
+          <ActionButton key="close" onClick={handleCloseDetailModal}>
             Close
           </ActionButton>,
           <ActionButton 
@@ -323,6 +338,7 @@ export function TransactionHistory() {
             View Invoice
           </ActionButton.Primary>
         ]}
+        destroyOnClose
       >
         {selectedTransaction && (
           <Space direction="vertical" size="large" className="w-full">
@@ -467,10 +483,7 @@ export function TransactionHistory() {
       {/* Invoice Modal */}
       <InvoiceModal
         open={showInvoiceModal}
-        onClose={() => {
-          setShowInvoiceModal(false);
-          setSelectedTransaction(null);
-        }}
+        onClose={handleCloseInvoiceModal}
         transaction={selectedTransaction}
         type={invoiceType}
       />
@@ -478,10 +491,7 @@ export function TransactionHistory() {
       {/* Inventory Labels Modal */}
       <InventoryLabelModal
         open={showInventoryLabelsModal}
-        onClose={() => {
-          setShowInventoryLabelsModal(false);
-          setSelectedTransaction(null);
-        }}
+        onClose={handleCloseInventoryLabelsModal}
         transaction={selectedTransaction}
       />
     </Space>

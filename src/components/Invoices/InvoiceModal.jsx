@@ -2,6 +2,8 @@ import React from 'react';
 import { Modal, Button, Typography, Divider, Row, Col, Space, Table } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const { Title, Text } = Typography;
 
@@ -9,42 +11,69 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
   if (!transaction) return null;
 
   const handlePrint = () => {
-    const printContent = document.getElementById('invoice-content');
-    const originalContent = document.body.innerHTML;
-    
-    document.body.innerHTML = printContent.innerHTML;
     window.print();
-    document.body.innerHTML = originalContent;
-    window.location.reload();
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const element = document.getElementById('invoice-content');
-    const opt = {
-      margin: 1,
-      filename: `${type === 'detailed' ? 'invoice' : 'label'}-${transaction.id}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-    };
-    
-    // Note: In a real application, you would use html2pdf library
-    // For now, we'll just trigger print
-    handlePrint();
+    if (!element) {
+      console.error('Invoice content element not found');
+      return;
+    }
+
+    try {
+      // Create canvas from the element
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: element.scrollWidth,
+        height: element.scrollHeight
+      });
+
+      // Calculate PDF dimensions
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 295; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      // Create PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Add additional pages if needed
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      // Download the PDF
+      const filename = `${type === 'detailed' ? 'invoice' : 'labels'}-${transaction.id}.pdf`;
+      pdf.save(filename);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      // Fallback to print
+      handlePrint();
+    }
   };
 
   const renderDetailedInvoice = () => (
-    <div id="invoice-content" className="p-8 bg-white">
+    <div id="invoice-content" className="p-8 bg-white" style={{ fontFamily: 'Arial, sans-serif' }}>
       {/* Header */}
       <div className="text-center mb-8">
         <div className="flex items-center justify-center space-x-4 mb-4">
-          <img 
-            src="/VCARELogo 1.png" 
-            alt="VCare Logo" 
-            className="w-16 h-16 object-contain"
-          />
+          <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center">
+            <span className="text-white font-bold text-xl">VC</span>
+          </div>
           <div>
-            <Title level={2} className="m-0 text-[#0E72BD]">VCare Furniture Store</Title>
+            <Title level={2} className="m-0 text-blue-600">VCare Furniture Store</Title>
             <Text type="secondary">Premium Furniture Solutions</Text>
           </div>
         </div>
@@ -72,7 +101,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
         <Col span={12}>
           <div className="space-y-2">
             <Text strong>Bill To:</Text>
-            <div className="border-l-4 border-[#0E72BD] pl-4">
+            <div className="border-l-4 border-blue-600 pl-4">
               <Text className="block font-semibold">
                 {transaction.customerName || 'Walk-in Customer'}
               </Text>
@@ -155,7 +184,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
               <Text>${transaction.subtotal.toFixed(2)}</Text>
             </div>
             <div className="flex justify-between">
-              <Text>Tax (8%):</Text>
+              <Text>Tax:</Text>
               <Text>${transaction.totalTax.toFixed(2)}</Text>
             </div>
             {transaction.discount > 0 && (
@@ -167,7 +196,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
             <Divider className="my-2" />
             <div className="flex justify-between">
               <Title level={4} className="m-0">Total:</Title>
-              <Title level={4} className="m-0 text-[#0E72BD]">
+              <Title level={4} className="m-0 text-blue-600">
                 ${transaction.total.toFixed(2)}
               </Title>
             </div>
@@ -206,11 +235,9 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
           <div key={`${itemIndex}-${qtyIndex}`} className="border-2 border-dashed border-gray-400 p-4 mb-4 page-break-after">
             {/* Header */}
             <div className="text-center mb-3">
-              <img 
-                src="/VCARELogo 1.png" 
-                alt="VCare Logo" 
-                className="w-8 h-8 object-contain mx-auto mb-2"
-              />
+              <div className="w-8 h-8 bg-blue-600 rounded mx-auto mb-2 flex items-center justify-center">
+                <span className="text-white font-bold text-sm">VC</span>
+              </div>
               <Text strong className="text-lg">VCare Furniture</Text>
             </div>
 

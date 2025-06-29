@@ -2,6 +2,8 @@ import React from 'react';
 import { Modal, Typography, Divider, Row, Col, Space, Image } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const { Title, Text } = Typography;
 
@@ -9,19 +11,57 @@ export function ProductDetailsSheet({ open, onClose, product }) {
   if (!product) return null;
 
   const handlePrint = () => {
-    const printContent = document.getElementById('product-sheet-content');
-    const originalContent = document.body.innerHTML;
-    
-    document.body.innerHTML = printContent.innerHTML;
     window.print();
-    document.body.innerHTML = originalContent;
-    window.location.reload();
   };
 
-  const handleDownload = () => {
-    // Note: In a real application, you would use html2pdf library
-    // For now, we'll just trigger print
-    handlePrint();
+  const handleDownload = async () => {
+    const element = document.getElementById('product-sheet-content');
+    if (!element) {
+      console.error('Product sheet content element not found');
+      return;
+    }
+
+    try {
+      // Create canvas from the element
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: element.scrollWidth,
+        height: element.scrollHeight
+      });
+
+      // Calculate PDF dimensions
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 295; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      // Create PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Add additional pages if needed
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      // Download the PDF
+      const filename = `product-details-${product.name.replace(/\s+/g, '-').toLowerCase()}.pdf`;
+      pdf.save(filename);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      // Fallback to print
+      handlePrint();
+    }
   };
 
   return (
@@ -49,17 +89,15 @@ export function ProductDetailsSheet({ open, onClose, product }) {
       className="invoice-modal"
     >
       <div className="max-h-[70vh] overflow-y-auto">
-        <div id="product-sheet-content" className="p-8 bg-white">
+        <div id="product-sheet-content" className="p-8 bg-white" style={{ fontFamily: 'Arial, sans-serif' }}>
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center space-x-4 mb-4">
-              <img 
-                src="/VCARELogo 1.png" 
-                alt="VCare Logo" 
-                className="w-16 h-16 object-contain"
-              />
+              <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center">
+                <span className="text-white font-bold text-xl">VC</span>
+              </div>
               <div>
-                <Title level={2} className="m-0 text-[#0E72BD]">VCare Furniture Store</Title>
+                <Title level={2} className="m-0 text-blue-600">VCare Furniture Store</Title>
                 <Text type="secondary">Premium Furniture Solutions</Text>
               </div>
             </div>
@@ -84,7 +122,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
             <Col span={14}>
               <div className="space-y-4">
                 <div>
-                  <Title level={3} className="m-0 text-[#0E72BD]">
+                  <Title level={3} className="m-0 text-blue-600">
                     {product.name}
                   </Title>
                   <Text type="secondary" className="text-lg">
@@ -103,7 +141,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                   </div>
                   <div>
                     <Text strong className="block text-gray-600">Price:</Text>
-                    <Text className="text-xl font-bold text-[#0E72BD]">
+                    <Text className="text-xl font-bold text-blue-600">
                       ${product.price.toFixed(2)}
                     </Text>
                   </div>
@@ -118,7 +156,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
 
           {/* Detailed Specifications */}
           <div className="mb-8">
-            <Title level={4} className="mb-4 text-[#0E72BD]">
+            <Title level={4} className="mb-4 text-blue-600">
               <Icon name="info" className="mr-2" />
               Detailed Specifications
             </Title>
@@ -194,7 +232,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
 
           {/* Care Instructions */}
           <div className="mb-8">
-            <Title level={4} className="mb-4 text-[#0E72BD]">
+            <Title level={4} className="mb-4 text-blue-600">
               <Icon name="cleaning_services" className="mr-2" />
               Care & Maintenance Instructions
             </Title>
@@ -225,7 +263,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
 
           {/* Assembly Information */}
           <div className="mb-8">
-            <Title level={4} className="mb-4 text-[#0E72BD]">
+            <Title level={4} className="mb-4 text-blue-600">
               <Icon name="build" className="mr-2" />
               Assembly Information
             </Title>

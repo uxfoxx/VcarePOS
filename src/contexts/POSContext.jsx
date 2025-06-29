@@ -1,46 +1,66 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { useNotifications } from './NotificationContext';
-import { mockProducts, mockRawMaterials, mockTransactions, mockCoupons, mockTaxes, mockCategories } from '../data/mockData';
+import { 
+  mockProducts, 
+  mockRawMaterials, 
+  mockTransactions, 
+  mockCoupons, 
+  mockTaxes, 
+  mockCategories,
+  mockVariantTypes,
+  mockVariantOptions
+} from '../data/mockData';
 
-// Helper function to get all product variations as individual products
-const getAllProductVariations = (products) => {
+// Helper function to get all product variants as individual products for display
+const getAllProductVariations = (products, variantTypes, variantOptions) => {
   const allProducts = [];
   
   products.forEach(product => {
-    if (product.hasVariations && product.variations && product.variations.length > 0) {
-      // Add each variation as a separate product
-      product.variations.forEach(variation => {
+    if (product.hasVariants && product.variants && product.variants.length > 0) {
+      // Add each variant as a separate product
+      product.variants.forEach(variant => {
+        // Build variant display name
+        const variantNames = [];
+        Object.entries(variant.combination).forEach(([typeId, optionId]) => {
+          const option = variantOptions.find(opt => opt.id === optionId);
+          if (option) {
+            variantNames.push(option.name);
+          }
+        });
+        
         allProducts.push({
-          id: variation.id,
-          name: `${product.name} - ${variation.name}`,
-          price: variation.price,
+          id: variant.id,
+          name: `${product.name}`,
+          price: variant.price,
           category: product.category,
-          stock: variation.stock,
-          barcode: variation.sku,
-          image: variation.image || product.image,
-          description: variation.description || product.description,
-          dimensions: variation.dimensions || product.baseDimensions,
-          weight: variation.weight || product.baseWeight,
-          material: variation.material || product.baseMaterial,
-          color: variation.color || product.baseColor,
-          rawMaterials: variation.rawMaterials || [],
-          // Additional fields for variation tracking
+          stock: variant.stock,
+          barcode: variant.sku,
+          image: variant.image || product.image,
+          description: product.description,
+          dimensions: variant.dimensions || product.baseDimensions,
+          weight: variant.weight || product.baseWeight,
+          material: variant.material || product.baseMaterial,
+          color: variant.color || product.baseColor,
+          rawMaterials: variant.rawMaterials || [],
+          // Additional fields for variant tracking
           parentProductId: product.id,
           parentProductName: product.name,
-          variationId: variation.id,
-          variationName: variation.name,
-          isVariation: true
+          variantId: variant.id,
+          variantCombination: variant.combination,
+          variantDisplay: variantNames.join(', '),
+          isVariant: true
         });
       });
     } else {
-      // Add regular product without variations
+      // Add regular product without variants
       allProducts.push({
         ...product,
-        isVariation: false,
+        isVariant: false,
         parentProductId: null,
-        variationId: null,
-        variationName: null
+        variantId: null,
+        variantCombination: null,
+        variantDisplay: null
       });
     }
   });
@@ -50,13 +70,15 @@ const getAllProductVariations = (products) => {
 
 const initialState = {
   cart: [],
-  products: mockProducts, // Original products with variations
-  allProducts: getAllProductVariations(mockProducts), // Flattened list for display
+  products: mockProducts, // Original products with variants
+  allProducts: getAllProductVariations(mockProducts, mockVariantTypes, mockVariantOptions), // Flattened list for display
   rawMaterials: mockRawMaterials,
   transactions: mockTransactions,
   coupons: mockCoupons,
   taxes: mockTaxes,
   categories: mockCategories,
+  variantTypes: mockVariantTypes,
+  variantOptions: mockVariantOptions,
   taxSettings: {
     rate: 8,
     name: 'Sales Tax',
@@ -134,14 +156,14 @@ function posReducer(state, action) {
 
       // Also update the original products structure
       const updatedProducts = state.products.map(product => {
-        if (product.hasVariations) {
-          const updatedVariations = product.variations.map(variation => {
-            if (variation.id === action.payload.productId) {
-              return { ...variation, stock: Math.max(0, variation.stock - action.payload.quantity) };
+        if (product.hasVariants) {
+          const updatedVariants = product.variants.map(variant => {
+            if (variant.id === action.payload.productId) {
+              return { ...variant, stock: Math.max(0, variant.stock - action.payload.quantity) };
             }
-            return variation;
+            return variant;
           });
-          return { ...product, variations: updatedVariations };
+          return { ...product, variants: updatedVariants };
         } else if (product.id === action.payload.productId) {
           return { ...product, stock: Math.max(0, product.stock - action.payload.quantity) };
         }
@@ -181,14 +203,14 @@ function posReducer(state, action) {
 
       // Also update the original products structure
       const updatedProducts = state.products.map(product => {
-        if (product.hasVariations) {
-          const updatedVariations = product.variations.map(variation => {
+        if (product.hasVariants) {
+          const updatedVariants = product.variants.map(variation => {
             if (variation.id === action.payload.productId) {
               return { ...variation, stock: variation.stock + action.payload.quantity };
             }
             return variation;
           });
-          return { ...product, variations: updatedVariations };
+          return { ...product, variants: updatedVariants };
         } else if (product.id === action.payload.productId) {
           return { ...product, stock: product.stock + action.payload.quantity };
         }
@@ -223,7 +245,7 @@ function posReducer(state, action) {
       return {
         ...state,
         products: newProducts,
-        allProducts: getAllProductVariations(newProducts)
+        allProducts: getAllProductVariations(newProducts, state.variantTypes, state.variantOptions)
       };
     }
     case 'UPDATE_PRODUCT': {
@@ -233,7 +255,7 @@ function posReducer(state, action) {
       return {
         ...state,
         products: updatedProducts,
-        allProducts: getAllProductVariations(updatedProducts)
+        allProducts: getAllProductVariations(updatedProducts, state.variantTypes, state.variantOptions)
       };
     }
     case 'DELETE_PRODUCT': {
@@ -241,7 +263,7 @@ function posReducer(state, action) {
       return {
         ...state,
         products: updatedProducts,
-        allProducts: getAllProductVariations(updatedProducts)
+        allProducts: getAllProductVariations(updatedProducts, state.variantTypes, state.variantOptions)
       };
     }
     case 'ADD_RAW_MATERIAL':
@@ -331,6 +353,41 @@ function posReducer(state, action) {
         ...state,
         categories: (state.categories || []).filter(category => category.id !== action.payload)
       };
+    case 'ADD_VARIANT_TYPE':
+      return {
+        ...state,
+        variantTypes: [...state.variantTypes, action.payload]
+      };
+    case 'UPDATE_VARIANT_TYPE':
+      return {
+        ...state,
+        variantTypes: state.variantTypes.map(type =>
+          type.id === action.payload.id ? action.payload : type
+        )
+      };
+    case 'DELETE_VARIANT_TYPE':
+      return {
+        ...state,
+        variantTypes: state.variantTypes.filter(type => type.id !== action.payload),
+        variantOptions: state.variantOptions.filter(option => option.variantTypeId !== action.payload)
+      };
+    case 'ADD_VARIANT_OPTION':
+      return {
+        ...state,
+        variantOptions: [...state.variantOptions, action.payload]
+      };
+    case 'UPDATE_VARIANT_OPTION':
+      return {
+        ...state,
+        variantOptions: state.variantOptions.map(option =>
+          option.id === action.payload.id ? action.payload : option
+        )
+      };
+    case 'DELETE_VARIANT_OPTION':
+      return {
+        ...state,
+        variantOptions: state.variantOptions.filter(option => option.id !== action.payload)
+      };
     default:
       return state;
   }
@@ -364,6 +421,12 @@ export function POSProvider({ children }) {
       'UPDATE_PRODUCT_STOCK': { module: 'products', action: 'UPDATE' },
       'RESTORE_PRODUCT_STOCK': { module: 'products', action: 'UPDATE' },
       'UPDATE_RAW_MATERIAL_STOCK': { module: 'raw-materials', action: 'UPDATE' },
+      'ADD_VARIANT_TYPE': { module: 'products', action: 'CREATE' },
+      'UPDATE_VARIANT_TYPE': { module: 'products', action: 'UPDATE' },
+      'DELETE_VARIANT_TYPE': { module: 'products', action: 'DELETE' },
+      'ADD_VARIANT_OPTION': { module: 'products', action: 'CREATE' },
+      'UPDATE_VARIANT_OPTION': { module: 'products', action: 'UPDATE' },
+      'DELETE_VARIANT_OPTION': { module: 'products', action: 'DELETE' },
     };
 
     const logInfo = loggableActions[action.type];
@@ -440,6 +503,18 @@ export function POSProvider({ children }) {
         return `Restored product stock: ${action.payload.productId} (+${action.payload.quantity} units)`;
       case 'UPDATE_RAW_MATERIAL_STOCK':
         return `Updated raw material stock: ${action.payload.materialId} (-${action.payload.quantity} units)`;
+      case 'ADD_VARIANT_TYPE':
+        return `Created variant type: ${action.payload.name}`;
+      case 'UPDATE_VARIANT_TYPE':
+        return `Updated variant type: ${action.payload.name}`;
+      case 'DELETE_VARIANT_TYPE':
+        return `Deleted variant type with ID: ${action.payload}`;
+      case 'ADD_VARIANT_OPTION':
+        return `Created variant option: ${action.payload.name}`;
+      case 'UPDATE_VARIANT_OPTION':
+        return `Updated variant option: ${action.payload.name}`;
+      case 'DELETE_VARIANT_OPTION':
+        return `Deleted variant option with ID: ${action.payload}`;
       default:
         return 'System action performed';
     }

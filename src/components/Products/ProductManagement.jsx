@@ -21,6 +21,7 @@ import { PageHeader } from '../common/PageHeader';
 import { SearchInput } from '../common/SearchInput';
 import { ProductDetailsSheet } from '../Invoices/ProductDetailsSheet';
 import { CategoryManagement } from './CategoryManagement';
+import { VariantManagement } from './VariantManagement';
 import { ProductModal } from './ProductModal';
 import { DetailModal } from '../common/DetailModal';
 import { EnhancedTable } from '../common/EnhancedTable';
@@ -48,8 +49,8 @@ export function ProductManagement() {
       productsToShow = state.allProducts;
     } else if (viewMode === 'base') {
       productsToShow = state.products;
-    } else if (viewMode === 'variations') {
-      productsToShow = state.allProducts.filter(product => product.isVariation);
+    } else if (viewMode === 'variants') {
+      productsToShow = state.allProducts.filter(product => product.isVariant);
     }
 
     return productsToShow.filter(product =>
@@ -82,7 +83,7 @@ export function ProductManagement() {
   };
 
   const handleEdit = (product) => {
-    if (product.isVariation) {
+    if (product.isVariant) {
       const baseProduct = state.products.find(p => p.id === product.parentProductId);
       if (baseProduct) {
         setEditingProduct(baseProduct);
@@ -99,8 +100,8 @@ export function ProductManagement() {
   const handleDelete = (productId) => {
     const product = state.allProducts.find(p => p.id === productId);
     
-    if (product?.isVariation) {
-      message.error('Cannot delete individual variations. Edit the base product to manage variations.');
+    if (product?.isVariant) {
+      message.error('Cannot delete individual variants. Edit the base product to manage variants.');
       return;
     }
     
@@ -122,7 +123,7 @@ export function ProductManagement() {
     {
       key: 'edit',
       icon: <Icon name="edit" />,
-      label: record.isVariation ? 'Edit Base Product' : 'Edit Product',
+      label: record.isVariant ? 'Edit Base Product' : 'Edit Product',
       onClick: () => handleEdit(record)
     },
     {
@@ -136,10 +137,10 @@ export function ProductManagement() {
       icon: <Icon name="delete" />,
       label: 'Delete Product',
       danger: true,
-      disabled: record.isVariation,
+      disabled: record.isVariant,
       onClick: () => {
-        if (record.isVariation) {
-          message.error('Cannot delete individual variations');
+        if (record.isVariant) {
+          message.error('Cannot delete individual variants');
           return;
         }
         Modal.confirm({
@@ -153,6 +154,22 @@ export function ProductManagement() {
       }
     }
   ];
+
+  const getVariantDisplayName = (product) => {
+    if (!product.isVariant || !product.variantCombination) {
+      return null;
+    }
+
+    const variantNames = [];
+    Object.entries(product.variantCombination).forEach(([typeId, optionId]) => {
+      const option = state.variantOptions.find(opt => opt.id === optionId);
+      if (option) {
+        variantNames.push(option.name);
+      }
+    });
+
+    return variantNames.join(', ');
+  };
 
   const columns = [
     {
@@ -173,11 +190,11 @@ export function ProductManagement() {
           />
           <div>
             <Text strong>{record.name}</Text>
-            {record.isVariation && (
+            {record.isVariant && record.variantDisplay && (
               <>
                 <br />
                 <Tag color="purple" size="small">
-                  {record.variationName}
+                  {record.variantDisplay}
                 </Tag>
               </>
             )}
@@ -207,13 +224,13 @@ export function ProductManagement() {
       width: 120,
       sorter: (a, b) => (a.price || 0) - (b.price || 0),
       render: (price, record) => {
-        if (viewMode === 'base' && record.hasVariations) {
+        if (viewMode === 'base' && record.hasVariants) {
           return (
             <div>
               <Text type="secondary" className="text-sm">Base: ${(record.basePrice || 0).toFixed(2)}</Text>
               <br />
               <Text type="secondary" className="text-xs">
-                {record.variations?.length || 0} variations
+                {record.variants?.length || 0} variants
               </Text>
             </div>
           );
@@ -228,8 +245,8 @@ export function ProductManagement() {
       width: 120,
       sorter: (a, b) => (a.stock || 0) - (b.stock || 0),
       render: (stock, record) => {
-        if (viewMode === 'base' && record.hasVariations) {
-          const totalStock = record.variations?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
+        if (viewMode === 'base' && record.hasVariants) {
+          const totalStock = record.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
           return (
             <div>
               <Tag color={totalStock > 10 ? 'green' : totalStock > 0 ? 'orange' : 'red'}>
@@ -237,7 +254,7 @@ export function ProductManagement() {
               </Tag>
               <br />
               <Text type="secondary" className="text-xs">
-                Across {record.variations?.length || 0} variations
+                Across {record.variants?.length || 0} variants
               </Text>
             </div>
           );
@@ -255,14 +272,14 @@ export function ProductManagement() {
       width: 120,
       render: (record) => {
         if (viewMode === 'base') {
-          return record.hasVariations ? (
-            <Tag color="purple">Has Variations</Tag>
+          return record.hasVariants ? (
+            <Tag color="purple">Has Variants</Tag>
           ) : (
             <Tag color="default">Single Product</Tag>
           );
         }
-        return record.isVariation ? (
-          <Tag color="purple">Variation</Tag>
+        return record.isVariant ? (
+          <Tag color="purple">Variant</Tag>
         ) : (
           <Tag color="default">Base Product</Tag>
         );
@@ -340,7 +357,7 @@ export function ProductManagement() {
       <div className="flex items-center justify-between">
         <div>
           <Title level={5} className="m-0">Product Inventory</Title>
-          <Text type="secondary">Manage your furniture products and variations</Text>
+          <Text type="secondary">Manage your furniture products and variants</Text>
         </div>
         <Space>
           <SearchInput
@@ -381,17 +398,17 @@ export function ProductManagement() {
               Base Products ({state.products.length})
             </ActionButton>
             <ActionButton 
-              type={viewMode === 'variations' ? 'primary' : 'default'}
+              type={viewMode === 'variants' ? 'primary' : 'default'}
               size="small"
-              onClick={() => setViewMode('variations')}
+              onClick={() => setViewMode('variants')}
             >
-              Variations Only ({state.allProducts.filter(p => p.isVariation).length})
+              Variants Only ({state.allProducts.filter(p => p.isVariant).length})
             </ActionButton>
           </Space>
         </div>
       </Card>
 
-      {/* Products with Variations Expandable View */}
+      {/* Products with Variants Expandable View */}
       {viewMode === 'base' ? (
         <div className="space-y-4">
           {loading ? (
@@ -421,8 +438,8 @@ export function ProductManagement() {
                       <Text strong className="text-lg">{product.name}</Text>
                       <br />
                       <Tag color="blue">{product.category}</Tag>
-                      {product.hasVariations ? (
-                        <Tag color="purple">Has {product.variations?.length || 0} Variations</Tag>
+                      {product.hasVariants ? (
+                        <Tag color="purple">Has {product.variants?.length || 0} Variants</Tag>
                       ) : (
                         <Tag color="default">Single Product</Tag>
                       )}
@@ -446,47 +463,44 @@ export function ProductManagement() {
                   </div>
                 </div>
 
-                {product.hasVariations && product.variations && product.variations.length > 0 && (
+                {product.hasVariants && product.variants && product.variants.length > 0 && (
                   <Collapse className="mt-4" size="small">
                     <Panel 
-                      header={`View ${product.variations.length} Variations`} 
-                      key="variations"
+                      header={`View ${product.variants.length} Variants`} 
+                      key="variants"
                     >
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {product.variations.map(variation => (
-                          <Card key={variation.id} size="small" className="border cursor-pointer hover:shadow-sm" onClick={(e) => {
-                            e.stopPropagation();
-                            const variationProduct = state.allProducts.find(p => p.id === variation.id);
-                            if (variationProduct) handleRowClick(variationProduct);
-                          }}>
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <Text strong>{variation.name}</Text>
-                                <Tag color={variation.stock > 0 ? 'green' : 'red'} size="small">
-                                  {variation.stock} units
-                                </Tag>
-                              </div>
-                              <div className="space-y-1">
-                                <Text className="text-sm">
-                                  <strong>SKU:</strong> {variation.sku}
-                                </Text>
-                                <Text className="text-sm">
-                                  <strong>Price:</strong> ${variation.price.toFixed(2)}
-                                </Text>
-                                {variation.color && (
+                        {product.variants.map(variant => {
+                          const variantProduct = state.allProducts.find(p => p.id === variant.id);
+                          return (
+                            <Card key={variant.id} size="small" className="border cursor-pointer hover:shadow-sm" onClick={(e) => {
+                              e.stopPropagation();
+                              if (variantProduct) handleRowClick(variantProduct);
+                            }}>
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Text strong>{variantProduct?.variantDisplay || 'Variant'}</Text>
+                                  <Tag color={variant.stock > 0 ? 'green' : 'red'} size="small">
+                                    {variant.stock} units
+                                  </Tag>
+                                </div>
+                                <div className="space-y-1">
                                   <Text className="text-sm">
-                                    <strong>Color:</strong> {variation.color}
+                                    <strong>SKU:</strong> {variant.sku}
                                   </Text>
-                                )}
-                                {variation.dimensions && variation.dimensions.length && (
                                   <Text className="text-sm">
-                                    <strong>Size:</strong> {variation.dimensions.length}×{variation.dimensions.width}×{variation.dimensions.height} {variation.dimensions.unit}
+                                    <strong>Price:</strong> ${variant.price.toFixed(2)}
                                   </Text>
-                                )}
+                                  {variant.dimensions && variant.dimensions.length && (
+                                    <Text className="text-sm">
+                                      <strong>Size:</strong> {variant.dimensions.length}×{variant.dimensions.width}×{variant.dimensions.height} {variant.dimensions.unit}
+                                    </Text>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          </Card>
-                        ))}
+                            </Card>
+                          );
+                        })}
                       </div>
                     </Panel>
                   </Collapse>
@@ -526,6 +540,16 @@ export function ProductManagement() {
       children: renderProductsTab()
     },
     {
+      key: 'variants',
+      label: (
+        <span className="flex items-center space-x-2">
+          <Icon name="tune" />
+          <span>Variants</span>
+        </span>
+      ),
+      children: <VariantManagement />
+    },
+    {
       key: 'categories',
       label: (
         <span className="flex items-center space-x-2">
@@ -543,7 +567,7 @@ export function ProductManagement() {
         <PageHeader
           title="Product Management"
           icon="inventory_2"
-          subtitle="Manage products, variations, and categories"
+          subtitle="Manage products, variants, and categories"
         />
         
         <Tabs

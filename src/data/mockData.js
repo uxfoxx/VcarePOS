@@ -156,34 +156,201 @@ export const mockCategories = [
   }
 ];
 
+// Variant Types - Define the types of variants available
+export const mockVariantTypes = [
+  {
+    id: 'VT-001',
+    name: 'Size',
+    description: 'Product size variations',
+    isActive: true,
+    createdAt: new Date('2024-01-01')
+  },
+  {
+    id: 'VT-002',
+    name: 'Color',
+    description: 'Product color variations',
+    isActive: true,
+    createdAt: new Date('2024-01-01')
+  },
+  {
+    id: 'VT-003',
+    name: 'Material',
+    description: 'Product material variations',
+    isActive: true,
+    createdAt: new Date('2024-01-01')
+  },
+  {
+    id: 'VT-004',
+    name: 'Style',
+    description: 'Product style variations',
+    isActive: true,
+    createdAt: new Date('2024-01-01')
+  },
+  {
+    id: 'VT-005',
+    name: 'Finish',
+    description: 'Product finish variations',
+    isActive: true,
+    createdAt: new Date('2024-01-01')
+  }
+];
+
+// Variant Options - Specific options for each variant type
+export const mockVariantOptions = [
+  // Size options
+  {
+    id: 'VO-001',
+    variantTypeId: 'VT-001',
+    name: 'Small',
+    value: 'small',
+    sortOrder: 1,
+    isActive: true
+  },
+  {
+    id: 'VO-002',
+    variantTypeId: 'VT-001',
+    name: 'Medium',
+    value: 'medium',
+    sortOrder: 2,
+    isActive: true
+  },
+  {
+    id: 'VO-003',
+    variantTypeId: 'VT-001',
+    name: 'Large',
+    value: 'large',
+    sortOrder: 3,
+    isActive: true
+  },
+  {
+    id: 'VO-004',
+    variantTypeId: 'VT-001',
+    name: 'Extra Large',
+    value: 'xl',
+    sortOrder: 4,
+    isActive: true
+  },
+  // Color options
+  {
+    id: 'VO-005',
+    variantTypeId: 'VT-002',
+    name: 'Natural Oak',
+    value: 'natural-oak',
+    colorCode: '#D2B48C',
+    sortOrder: 1,
+    isActive: true
+  },
+  {
+    id: 'VO-006',
+    variantTypeId: 'VT-002',
+    name: 'Dark Walnut',
+    value: 'dark-walnut',
+    colorCode: '#5D4037',
+    sortOrder: 2,
+    isActive: true
+  },
+  {
+    id: 'VO-007',
+    variantTypeId: 'VT-002',
+    name: 'Black',
+    value: 'black',
+    colorCode: '#000000',
+    sortOrder: 3,
+    isActive: true
+  },
+  {
+    id: 'VO-008',
+    variantTypeId: 'VT-002',
+    name: 'White',
+    value: 'white',
+    colorCode: '#FFFFFF',
+    sortOrder: 4,
+    isActive: true
+  },
+  {
+    id: 'VO-009',
+    variantTypeId: 'VT-002',
+    name: 'Brown Leather',
+    value: 'brown-leather',
+    colorCode: '#8B4513',
+    sortOrder: 5,
+    isActive: true
+  },
+  {
+    id: 'VO-010',
+    variantTypeId: 'VT-002',
+    name: 'Gray Fabric',
+    value: 'gray-fabric',
+    colorCode: '#808080',
+    sortOrder: 6,
+    isActive: true
+  },
+  // Material options
+  {
+    id: 'VO-011',
+    variantTypeId: 'VT-003',
+    name: 'Oak Wood',
+    value: 'oak-wood',
+    sortOrder: 1,
+    isActive: true
+  },
+  {
+    id: 'VO-012',
+    variantTypeId: 'VT-003',
+    name: 'Pine Wood',
+    value: 'pine-wood',
+    sortOrder: 2,
+    isActive: true
+  },
+  {
+    id: 'VO-013',
+    variantTypeId: 'VT-003',
+    name: 'Metal Frame',
+    value: 'metal-frame',
+    sortOrder: 3,
+    isActive: true
+  },
+  {
+    id: 'VO-014',
+    variantTypeId: 'VT-003',
+    name: 'Leather',
+    value: 'leather',
+    sortOrder: 4,
+    isActive: true
+  },
+  {
+    id: 'VO-015',
+    variantTypeId: 'VT-003',
+    name: 'Fabric',
+    value: 'fabric',
+    sortOrder: 5,
+    isActive: true
+  }
+];
+
 export const mockProducts = [
-  // Tables with variations
+  // Product with multiple variant types (Size + Color)
   {
     id: '1',
     name: 'Executive Dining Table',
     basePrice: 899.99,
     category: 'Tables',
-    baseStock: 0, // Base product has no stock, only variations do
-    barcode: 'TE01MZ', // Compact SKU: Tables-Executive-001-Checksum
+    barcode: 'TE01MZ',
     image: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Premium oak dining table with elegant design',
     baseDimensions: { length: 200, width: 100, height: 75, unit: 'cm' },
     baseWeight: 55.0,
-    baseMaterial: 'Oak Wood',
-    baseColor: 'Natural Oak',
-    hasVariations: true,
-    variations: [
+    hasVariants: true,
+    variantTypes: ['VT-001', 'VT-002'], // Size and Color
+    variants: [
       {
         id: 'VAR-1-1',
-        name: '6-Seater',
-        sku: 'TE01A3K', // Variation A of Executive Table
+        sku: 'TE01A3K',
+        combination: { 'VT-001': 'VO-002', 'VT-002': 'VO-005' }, // Medium + Natural Oak
         price: 899.99,
         stock: 5,
         dimensions: { length: 180, width: 90, height: 75, unit: 'cm' },
         weight: 50.0,
-        material: 'Oak Wood',
-        color: 'Natural Oak',
-        description: '6-seater oak dining table',
         image: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=300',
         rawMaterials: [
           { rawMaterialId: '1', quantity: 25 },
@@ -194,15 +361,12 @@ export const mockProducts = [
       },
       {
         id: 'VAR-1-2',
-        name: '8-Seater',
-        sku: 'TE01B4L', // Variation B of Executive Table
+        sku: 'TE01B4L',
+        combination: { 'VT-001': 'VO-003', 'VT-002': 'VO-005' }, // Large + Natural Oak
         price: 1099.99,
         stock: 3,
         dimensions: { length: 200, width: 100, height: 75, unit: 'cm' },
         weight: 55.0,
-        material: 'Oak Wood',
-        color: 'Natural Oak',
-        description: '8-seater oak dining table',
         image: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=300',
         rawMaterials: [
           { rawMaterialId: '1', quantity: 30 },
@@ -213,15 +377,12 @@ export const mockProducts = [
       },
       {
         id: 'VAR-1-3',
-        name: '8-Seater Walnut',
-        sku: 'TE01C5M', // Variation C with Walnut material
+        sku: 'TE01C5M',
+        combination: { 'VT-001': 'VO-003', 'VT-002': 'VO-006' }, // Large + Dark Walnut
         price: 1299.99,
         stock: 2,
         dimensions: { length: 200, width: 100, height: 75, unit: 'cm' },
         weight: 55.0,
-        material: 'Walnut Wood',
-        color: 'Dark Walnut',
-        description: '8-seater walnut dining table with premium finish',
         image: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=300',
         rawMaterials: [
           { rawMaterialId: '1', quantity: 30 },
@@ -231,89 +392,30 @@ export const mockProducts = [
         ]
       }
     ],
-    rawMaterials: [] // Base product materials are in variations
-  },
-  {
-    id: '2',
-    name: 'Modern Coffee Table',
-    basePrice: 299.99,
-    category: 'Tables',
-    baseStock: 0,
-    barcode: 'T202N1', // Compact SKU: Tables-Coffee-002-Checksum
-    image: 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=300',
-    description: 'Contemporary coffee table with modern design',
-    baseDimensions: { length: 120, width: 60, height: 45, unit: 'cm' },
-    baseWeight: 25.0,
-    baseMaterial: 'Glass & Metal',
-    baseColor: 'Clear Glass',
-    hasVariations: true,
-    variations: [
-      {
-        id: 'VAR-2-1',
-        name: 'Glass Top',
-        sku: 'T202A6N', // Variation A of Coffee Table
-        price: 299.99,
-        stock: 8,
-        dimensions: { length: 120, width: 60, height: 45, unit: 'cm' },
-        weight: 25.0,
-        material: 'Glass & Metal',
-        color: 'Clear Glass',
-        description: 'Glass top coffee table with metal legs',
-        image: 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=300',
-        rawMaterials: [
-          { rawMaterialId: '9', quantity: 4 },
-          { rawMaterialId: '4', quantity: 20 }
-        ]
-      },
-      {
-        id: 'VAR-2-2',
-        name: 'Wood Top',
-        sku: 'T202B7P', // Variation B with Oak material
-        price: 349.99,
-        stock: 7,
-        dimensions: { length: 120, width: 60, height: 45, unit: 'cm' },
-        weight: 28.0,
-        material: 'Oak & Metal',
-        color: 'Natural Oak',
-        description: 'Oak wood top coffee table with metal legs',
-        image: 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=300',
-        rawMaterials: [
-          { rawMaterialId: '1', quantity: 8 },
-          { rawMaterialId: '9', quantity: 4 },
-          { rawMaterialId: '4', quantity: 25 },
-          { rawMaterialId: '8', quantity: 0.5 }
-        ]
-      }
-    ],
     rawMaterials: []
   },
-  // Chairs with variations
+  // Product with Color + Material variants
   {
     id: '6',
     name: 'Executive Office Chair',
     basePrice: 399.99,
     category: 'Chairs',
-    baseStock: 0,
-    barcode: 'CE01Q2', // Compact SKU: Chairs-Executive-001-Checksum
+    barcode: 'CE01Q2',
     image: 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Ergonomic executive chair with premium upholstery',
     baseDimensions: { length: 65, width: 65, height: 120, unit: 'cm' },
     baseWeight: 18.5,
-    baseMaterial: 'Leather & Steel',
-    baseColor: 'Black',
-    hasVariations: true,
-    variations: [
+    hasVariants: true,
+    variantTypes: ['VT-002', 'VT-003'], // Color and Material
+    variants: [
       {
         id: 'VAR-6-1',
-        name: 'Black Leather',
-        sku: 'CE01AR3', // Variation A of Executive Chair
+        sku: 'CE01AR3',
+        combination: { 'VT-002': 'VO-007', 'VT-003': 'VO-014' }, // Black + Leather
         price: 399.99,
         stock: 12,
         dimensions: { length: 65, width: 65, height: 120, unit: 'cm' },
         weight: 18.5,
-        material: 'Black Leather & Steel',
-        color: 'Black',
-        description: 'Black leather executive chair',
         image: 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300',
         rawMaterials: [
           { rawMaterialId: '6', quantity: 3 },
@@ -324,15 +426,12 @@ export const mockProducts = [
       },
       {
         id: 'VAR-6-2',
-        name: 'Brown Leather',
-        sku: 'CE01BS4', // Variation B with Brown color
+        sku: 'CE01BS4',
+        combination: { 'VT-002': 'VO-009', 'VT-003': 'VO-014' }, // Brown Leather + Leather
         price: 429.99,
         stock: 8,
         dimensions: { length: 65, width: 65, height: 120, unit: 'cm' },
         weight: 18.5,
-        material: 'Brown Leather & Steel',
-        color: 'Brown',
-        description: 'Brown leather executive chair',
         image: 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300',
         rawMaterials: [
           { rawMaterialId: '6', quantity: 3.5 },
@@ -343,15 +442,12 @@ export const mockProducts = [
       },
       {
         id: 'VAR-6-3',
-        name: 'Fabric Mesh',
-        sku: 'CE01CT5', // Variation C with Fabric material
+        sku: 'CE01CT5',
+        combination: { 'VT-002': 'VO-010', 'VT-003': 'VO-015' }, // Gray Fabric + Fabric
         price: 349.99,
         stock: 15,
         dimensions: { length: 65, width: 65, height: 120, unit: 'cm' },
         weight: 16.0,
-        material: 'Mesh Fabric & Steel',
-        color: 'Gray',
-        description: 'Breathable mesh fabric executive chair',
         image: 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300',
         rawMaterials: [
           { rawMaterialId: '5', quantity: 1.5 },
@@ -362,22 +458,23 @@ export const mockProducts = [
     ],
     rawMaterials: []
   },
-  // Single product without variations
+  // Single product without variants
   {
     id: '3',
     name: 'Rustic Farmhouse Table',
     price: 649.99,
     category: 'Tables',
     stock: 6,
-    barcode: 'TF03U6', // Compact SKU: Tables-Farmhouse-003-Checksum
+    barcode: 'TF03U6',
     image: 'https://images.pexels.com/photos/1395967/pexels-photo-1395967.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Handcrafted pine farmhouse dining table',
     dimensions: { length: 180, width: 90, height: 75, unit: 'cm' },
     weight: 45.0,
     material: 'Pine Wood',
     color: 'Natural Pine',
-    hasVariations: false,
-    variations: [],
+    hasVariants: false,
+    variantTypes: [],
+    variants: [],
     rawMaterials: [
       { rawMaterialId: '2', quantity: 25 },
       { rawMaterialId: '4', quantity: 50 },
@@ -391,15 +488,16 @@ export const mockProducts = [
     price: 199.99,
     category: 'Tables',
     stock: 12,
-    barcode: 'T404V7', // Compact SKU: Tables-Side-004-Checksum
+    barcode: 'T404V7',
     image: 'https://images.pexels.com/photos/1571468/pexels-photo-1571468.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Elegant glass side table with chrome legs',
     dimensions: { length: 50, width: 50, height: 55, unit: 'cm' },
     weight: 12.0,
     material: 'Glass & Chrome',
     color: 'Clear',
-    hasVariations: false,
-    variations: [],
+    hasVariants: false,
+    variantTypes: [],
+    variants: [],
     rawMaterials: [
       { rawMaterialId: '9', quantity: 4 },
       { rawMaterialId: '4', quantity: 10 }
@@ -411,15 +509,16 @@ export const mockProducts = [
     price: 549.99,
     category: 'Tables',
     stock: 10,
-    barcode: 'TS05W8', // Compact SKU: Tables-Standing-005-Checksum
+    barcode: 'TS05W8',
     image: 'https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Adjustable height standing desk for office',
     dimensions: { length: 140, width: 70, height: 75, unit: 'cm' },
     weight: 35.0,
     material: 'Oak Wood & Metal',
     color: 'Oak Finish',
-    hasVariations: false,
-    variations: [],
+    hasVariants: false,
+    variantTypes: [],
+    variants: [],
     rawMaterials: [
       { rawMaterialId: '1', quantity: 15 },
       { rawMaterialId: '9', quantity: 4 },
@@ -435,25 +534,25 @@ export const mockTransactions = [
     items: [
       { 
         product: {
-          ...mockProducts[0],
-          // Override with variation data for the transaction
           id: 'VAR-1-2',
-          name: 'Executive Dining Table - 8-Seater',
+          name: 'Executive Dining Table',
           price: 1099.99,
           barcode: 'TE01B4L',
-          variationName: '8-Seater'
+          category: 'Tables',
+          selectedVariants: { 'VT-001': 'VO-003', 'VT-002': 'VO-005' }, // Large + Natural Oak
+          variantDisplay: 'Large, Natural Oak'
         }, 
         quantity: 1 
       },
       { 
         product: {
-          ...mockProducts[2],
-          // Override with variation data
           id: 'VAR-6-1',
-          name: 'Executive Office Chair - Black Leather',
+          name: 'Executive Office Chair',
           price: 399.99,
           barcode: 'CE01AR3',
-          variationName: 'Black Leather'
+          category: 'Chairs',
+          selectedVariants: { 'VT-002': 'VO-007', 'VT-003': 'VO-014' }, // Black + Leather
+          variantDisplay: 'Black, Leather'
         }, 
         quantity: 4 
       }

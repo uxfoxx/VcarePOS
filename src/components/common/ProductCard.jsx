@@ -12,6 +12,7 @@ export function ProductCard({
   onClick,
   showDetails = true,
   showVariationInfo = false,
+  showPriceRange = false,
   className = '',
   ...props
 }) {
@@ -24,6 +25,21 @@ export function ProductCard({
     if (stock === 0) return 'out-of-stock';
     if (stock <= 5) return 'low-stock';
     return 'in-stock';
+  };
+
+  const renderPrice = () => {
+    if (showPriceRange && product.variants && product.variants.length > 1) {
+      const prices = product.variants.map(v => v.price);
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      
+      if (minPrice === maxPrice) {
+        return `$${minPrice.toFixed(2)}`;
+      }
+      return `$${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}`;
+    }
+    
+    return `$${(product.price || 0).toFixed(2)}`;
   };
 
   return (
@@ -40,7 +56,7 @@ export function ProductCard({
           />
           <div className="absolute top-2 right-2">
             <Badge 
-              count={`$${product.price.toFixed(2)}`}
+              count={renderPrice()}
               style={{ backgroundColor: '#0E72BD' }}
             />
           </div>
@@ -49,10 +65,10 @@ export function ProductCard({
               {product.category}
             </StatusTag>
           </div>
-          {showVariationInfo && product.isVariation && (
+          {showVariationInfo && product.hasVariants && (
             <div className="absolute bottom-2 right-2">
               <Tag color="purple" size="small">
-                {product.variationName}
+                {product.variants?.length || 0} Options
               </Tag>
             </div>
           )}
@@ -60,6 +76,13 @@ export function ProductCard({
             <div className="absolute bottom-2 left-2">
               <StatusTag status="low-stock">
                 Low Stock
+              </StatusTag>
+            </div>
+          )}
+          {product.stock === 0 && (
+            <div className="absolute bottom-2 left-2">
+              <StatusTag status="out-of-stock">
+                Out of Stock
               </StatusTag>
             </div>
           )}
@@ -77,14 +100,14 @@ export function ProductCard({
           <Text type="secondary" className="text-sm block mb-1">
             SKU: {product.barcode || 'N/A'}
           </Text>
-          {showVariationInfo && product.isVariation && (
+          {showVariationInfo && product.hasVariants && (
             <Text type="secondary" className="text-xs block mb-1">
-              Base Product: {product.parentProductName}
+              Multiple variants available
             </Text>
           )}
           <div className="flex items-center justify-between">
             <Text strong className="text-lg text-[#0E72BD]">
-              ${product.price.toFixed(2)}
+              {renderPrice()}
             </Text>
             <Text type="secondary" className="text-sm">
               Stock: {product.stock}
@@ -123,7 +146,12 @@ export function ProductCard({
           disabled={product.stock === 0}
           className="bg-[#0E72BD] hover:bg-blue-700 font-semibold"
         >
-          {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+          {product.stock === 0 
+            ? 'Out of Stock' 
+            : product.hasVariants 
+              ? 'Select Options' 
+              : 'Add to Cart'
+          }
         </ActionButton.Primary>
       </div>
     </Card>

@@ -65,17 +65,17 @@ export function CheckoutModal({
 
   const steps = [
     {
-      title: 'Order Summary',
+      title: 'Order Summary', // This will be overridden by the stepper
       description: 'Review items and select sales person',
       icon: 'receipt_long'
     },
     {
-      title: 'Customer Details',
+      title: 'Customer Details', // This will be overridden by the stepper
       description: 'Customer information and notes',
       icon: 'person'
     },
     {
-      title: 'Payment',
+      title: 'Payment', // This will be overridden by the stepper
       description: 'Payment method and confirmation',
       icon: 'payment'
     }
@@ -484,7 +484,6 @@ export function CheckoutModal({
             current={currentStep}
             steps={steps}
             status={stepError ? 'error' : 'process'}
-            showProgress={true}
             errorMessage={stepError}
           />
           

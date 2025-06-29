@@ -1,5 +1,5 @@
 import React from 'react';
-import { Steps, Progress, Alert } from 'antd';
+import { Steps, Alert } from 'antd';
 import { Icon } from './Icon';
 
 export function EnhancedStepper({
@@ -8,8 +8,6 @@ export function EnhancedStepper({
   status = 'process', // 'wait' | 'process' | 'finish' | 'error'
   direction = 'horizontal',
   size = 'default',
-  showProgress = false,
-  progressPercent,
   errorMessage,
   className = '',
   onChange,
@@ -21,27 +19,27 @@ export function EnhancedStepper({
     return 'wait';
   };
 
+  const getStepTitle = (step, stepIndex) => {
+    // Change the title based on the current step
+    if (stepIndex < current) {
+      return 'Finished';
+    } else if (stepIndex === current) {
+      return 'In Progress';
+    } else {
+      return 'Waiting';
+    }
+  };
+
   const enhancedSteps = steps.map((step, index) => ({
     ...step,
+    title: getStepTitle(step, index),
+    description: step.description, // Keep original description
     status: getStepStatus(index),
     icon: step.icon ? <Icon name={step.icon} /> : undefined
   }));
 
-  const progressValue = progressPercent || ((current + 1) / steps.length) * 100;
-
   return (
     <div className={`space-y-4 ${className}`}>
-      {showProgress && (
-        <Progress
-          percent={progressValue}
-          status={status === 'error' ? 'exception' : status === 'finish' ? 'success' : 'active'}
-          strokeColor={{
-            '0%': '#108ee9',
-            '100%': '#87d068',
-          }}
-        />
-      )}
-      
       {status === 'error' && errorMessage && (
         <Alert
           message="Step Error"

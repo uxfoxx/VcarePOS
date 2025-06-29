@@ -127,17 +127,17 @@ export function ProductModal({
 
   const steps = [
     {
-      title: 'Product Details',
+      title: 'Product Details', // This will be overridden by the stepper
       description: 'Basic product information',
       icon: 'inventory_2'
     },
     {
-      title: 'Raw Materials',
+      title: 'Raw Materials', // This will be overridden by the stepper
       description: 'Materials used in production',
       icon: 'category'
     },
     {
-      title: 'Variations',
+      title: 'Variations', // This will be overridden by the stepper
       description: 'Product variations and options',
       icon: 'tune'
     }
@@ -246,7 +246,7 @@ export function ProductModal({
       try {
         const values = await productForm.validateFields();
         setProductData(prev => ({ ...prev, ...values }));
-        setCurrentStep(1);
+        setCurrentStep(currentStep + 1);
       } catch (error) {
         if (error.errorFields && error.errorFields.length > 0) {
           const missingFields = error.errorFields.map(field => {
@@ -1006,7 +1006,6 @@ export function ProductModal({
           current={currentStep}
           steps={steps}
           status={stepError ? 'error' : 'process'}
-          showProgress={true}
           errorMessage={stepError}
         />
         

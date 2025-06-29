@@ -52,7 +52,7 @@ export function EnhancedTable({
   const [searchTerm, setSearchTerm] = useState('');
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState(
-    initialColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {})
+    initialColumns.map(col => col.key)
   );
   const [fixedColumns, setFixedColumns] = useState(() => {
     const initial = {};
@@ -72,7 +72,7 @@ export function EnhancedTable({
   // Enhanced columns with visibility, fixed settings, and working filters/sorters
   const columns = useMemo(() => {
     return initialColumns
-      .filter(col => visibleColumns[col.key])
+      .filter(col => visibleColumns.includes(col.key))
       .map(col => ({
         ...col,
         fixed: fixedColumns[col.key] || false,
@@ -167,8 +167,8 @@ export function EnhancedTable({
     setSorter(sorter);
   };
 
-  const handleColumnVisibilityChange = (columnKey, visible) => {
-    setVisibleColumns(prev => ({ ...prev, [columnKey]: visible }));
+  const handleColumnVisibilityChange = (columnKeys) => {
+    setVisibleColumns(columnKeys);
   };
 
   const handleColumnFixedChange = (columnKey, fixed) => {
@@ -176,7 +176,7 @@ export function EnhancedTable({
   };
 
   const resetColumns = () => {
-    const defaultVisible = initialColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {});
+    const defaultVisible = initialColumns.map(col => col.key);
     const defaultFixed = {};
     initialColumns.forEach(col => {
       if (col.key === 'actions') {
@@ -322,14 +322,15 @@ export function EnhancedTable({
                 Select which columns to display in the table
               </Text>
               <Form.Item name="visibleColumns">
-                <Checkbox.Group className="w-full">
+                <Checkbox.Group 
+                  className="w-full"
+                  onChange={handleColumnVisibilityChange}
+                >
                   <div className="grid grid-cols-2 gap-2">
                     {initialColumns.map(col => (
                       <Checkbox 
                         key={col.key} 
                         value={col.key}
-                        checked={visibleColumns[col.key]}
-                        onChange={e => handleColumnVisibilityChange(col.key, e.target.checked)}
                       >
                         {col.title}
                       </Checkbox>

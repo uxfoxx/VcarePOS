@@ -11,8 +11,7 @@ import {
   message,
   Input,
   Button,
-  Alert,
-  Switch
+  Alert
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { useNotifications } from '../../contexts/NotificationContext';
@@ -29,7 +28,6 @@ export function Cart() {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponCode, setCouponCode] = useState('');
   const [materialWarnings, setMaterialWarnings] = useState({ unavailableMaterials: [], lowMaterials: [] });
-  const [taxesEnabled, setTaxesEnabled] = useState(true);
 
   // Check raw material availability whenever cart changes
   useEffect(() => {
@@ -43,10 +41,6 @@ export function Cart() {
 
   // Calculate taxes for each item and total
   const calculateTaxes = () => {
-    if (!taxesEnabled) {
-      return { itemTaxes: [], fullBillTaxes: [] };
-    }
-    
     const activeTaxes = state.taxes?.filter(tax => tax.isActive) || [];
     let itemTaxes = [];
     let billTaxes = [];
@@ -329,25 +323,8 @@ export function Cart() {
                   <Text>${subtotal.toFixed(2)}</Text>
                 </div>
 
-                {/* Tax Toggle */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Text>Apply Taxes</Text>
-                    <Switch 
-                      checked={taxesEnabled} 
-                      onChange={setTaxesEnabled} 
-                      size="small" 
-                    />
-                  </div>
-                  {taxesEnabled ? (
-                    <Text>${(categoryTaxTotal + fullBillTaxTotal).toFixed(2)}</Text>
-                  ) : (
-                    <Text>$0.00</Text>
-                  )}
-                </div>
-
                 {/* Category Taxes */}
-                {taxesEnabled && categoryTaxTotal > 0 && (
+                {categoryTaxTotal > 0 && (
                   <div className="flex justify-between">
                     <Text>Category Taxes</Text>
                     <Text>${categoryTaxTotal.toFixed(2)}</Text>
@@ -403,7 +380,7 @@ export function Cart() {
                 </div>
 
                 {/* Full Bill Taxes */}
-                {taxesEnabled && fullBillTaxes.map(tax => (
+                {fullBillTaxes.map(tax => (
                   <div key={tax.id} className="flex justify-between">
                     <Text>{tax.name} ({tax.rate}%)</Text>
                     <Text>${((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
@@ -447,10 +424,10 @@ export function Cart() {
         orderTotal={total}
         appliedCoupon={appliedCoupon}
         couponDiscount={couponDiscount}
-        itemTaxes={taxesEnabled ? itemTaxes : []}
-        fullBillTaxes={taxesEnabled ? fullBillTaxes : []}
-        categoryTaxTotal={taxesEnabled ? categoryTaxTotal : 0}
-        fullBillTaxTotal={taxesEnabled ? fullBillTaxTotal : 0}
+        itemTaxes={itemTaxes}
+        fullBillTaxes={fullBillTaxes}
+        categoryTaxTotal={categoryTaxTotal}
+        fullBillTaxTotal={fullBillTaxTotal}
       />
     </>
   );

@@ -15,7 +15,8 @@ import {
   Col,
   Select,
   Radio,
-  Tag
+  Tag,
+  Alert
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
@@ -42,6 +43,8 @@ export function TaxManagement() {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const [taxType, setTaxType] = useState('full_bill');
+  const [showGlobalTaxSettings, setShowGlobalTaxSettings] = useState(false);
+  const [globalTaxEnabled, setGlobalTaxEnabled] = useState(true);
 
   const taxes = state.taxes || [];
   const categories = state.categories?.filter(cat => cat.isActive) || [];
@@ -162,6 +165,32 @@ export function TaxManagement() {
     if (newTaxType === 'full_bill') {
       form.setFieldsValue({ applicableCategories: [] });
     }
+  };
+
+  const handleSaveGlobalTaxSettings = () => {
+    // Update all taxes to be inactive if global tax is disabled
+    if (!globalTaxEnabled) {
+      const updatedTaxes = taxes.map(tax => ({
+        ...tax,
+        isActive: false
+      }));
+      
+      updatedTaxes.forEach(tax => {
+        dispatch({ type: 'UPDATE_TAX', payload: tax });
+      });
+      
+      message.success('All taxes have been disabled');
+    } else {
+      // If enabling taxes, make sure the default tax is active
+      const defaultTax = taxes.find(tax => tax.isDefault);
+      if (defaultTax && !defaultTax.isActive) {
+        const updatedTax = { ...defaultTax, isActive: true };
+        dispatch({ type: 'UPDATE_TAX', payload: updatedTax });
+      }
+      message.success('Taxes have been enabled');
+    }
+    
+    setShowGlobalTaxSettings(false);
   };
 
   const columns = [
@@ -305,6 +334,9 @@ export function TaxManagement() {
     },
   ];
 
+  // Check if all taxes are inactive
+  const areTaxesDisabled = taxes.every(tax => !tax.isActive);
+
   if (loading) {
     return <LoadingSkeleton type="table" />;
   }
@@ -314,7 +346,7 @@ export function TaxManagement() {
       <EnhancedTable
         title="Tax Management"
         icon="receipt"
-        subtitle={`Current default tax: ${state.taxSettings?.name || 'Sales Tax'} (${state.taxSettings?.rate || 8}%)`}
+        subtitle={areTaxesDisabled ? "All taxes are currently disabled" : `Current default tax: ${state.taxSettings?.name || 'Sales Tax'} (${state.taxSettings?.rate || 8}%)`}
         columns={columns}
         dataSource={filteredTaxes}
         rowKey="id"
@@ -325,12 +357,23 @@ export function TaxManagement() {
         searchFields={['name', 'description']}
         searchPlaceholder="Search taxes..."
         extra={
-          <ActionButton.Primary 
-            icon="add"
-            onClick={() => setShowModal(true)}
-          >
-            Add Tax
-          </ActionButton.Primary>
+          <Space>
+            <ActionButton 
+              icon={areTaxesDisabled ? "toggle_off" : "toggle_on"}
+              onClick={() => {
+                setGlobalTaxEnabled(!areTaxesDisabled);
+                setShowGlobalTaxSettings(true);
+              }}
+            >
+              {areTaxesDisabled ? "Enable Taxes" : "Disable All Taxes"}
+            </ActionButton>
+            <ActionButton.Primary 
+              icon="add"
+              onClick={() => setShowModal(true)}
+            >
+              Add Tax
+            </ActionButton.Primary>
+          </Space>
         }
         emptyDescription="No taxes found"
         emptyImage={<Icon name="receipt" className="text-6xl text-gray-300" />}
@@ -485,6 +528,72 @@ export function TaxManagement() {
           </div>
         )}
       </FormModal>
+
+      {/* Global Tax Settings Modal */}
+      <Modal
+        title={
+          <Space>
+            <Icon name={globalTaxEnabled ? "toggle_on" : "toggle_off"} className={globalTaxEnabled ? "text-green-600" : "text-red-600"} />
+            <span>{globalTaxEnabled ? "Enable" : "Disable"} All Taxes</span>
+          </Space>
+        }
+        open={showGlobalTaxSettings}
+        onCancel={() => setShowGlobalTaxSettings(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setShowGlobalTaxSettings(false)}>
+            Cancel
+          </Button>,
+          <Button 
+            key="save" 
+            type="primary" 
+            onClick={handleSaveGlobalTaxSettings}
+          >
+            {globalTaxEnabled ? "Enable Taxes" : "Disable All Taxes"}
+          </Button>
+        ]}
+        width={500}
+      >
+        <div className="space-y-4">
+          <Alert
+            message={globalTaxEnabled ? "Enable Tax Collection" : "Disable All Taxes"}
+            description={
+              globalTaxEnabled 
+                ? "This will enable tax collection based on your configured tax rules."
+                : "This will disable ALL taxes in the system. No taxes will be applied to any orders."
+            }
+            type={globalTaxEnabled ? "info" : "warning"}
+            showIcon
+          />
+          
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div>
+              <Text strong>Tax Collection</Text>
+              <br />
+              <Text type="secondary">
+                {globalTaxEnabled 
+                  ? "Taxes will be applied to orders according to your tax rules" 
+                  : "No taxes will be applied to any orders"
+                }
+              </Text>
+            </div>
+            <Switch 
+              checked={globalTaxEnabled} 
+              onChange={setGlobalTaxEnabled}
+              size="default"
+            />
+          </div>
+          
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <Text className="text-sm">
+              <Icon name="info" className="mr-2 text-blue-600" />
+              <strong>Note:</strong> {globalTaxEnabled 
+                ? "Individual taxes can still be enabled or disabled in the tax management table." 
+                : "This will override individual tax settings and disable all taxes in the system."
+              }
+            </Text>
+          </div>
+        </div>
+      </Modal>
 
       {/* Tax Detail Modal */}
       <DetailModal

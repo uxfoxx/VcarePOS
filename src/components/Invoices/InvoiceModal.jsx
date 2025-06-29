@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Button, Typography, Divider, Row, Col, Space, Table } from 'antd';
+import { Modal, Typography, Divider, Row, Col, Space, Image } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
@@ -12,6 +12,57 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleView = async () => {
+    const element = document.getElementById('invoice-content');
+    if (!element) {
+      console.error('Invoice content element not found');
+      return;
+    }
+
+    try {
+      // Create canvas from the element
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: element.scrollWidth,
+        height: element.scrollHeight
+      });
+
+      // Calculate PDF dimensions
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 295; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      // Create PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Add additional pages if needed
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      // Open PDF in new tab
+      const pdfBlob = pdf.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      window.open(pdfUrl, '_blank');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      // Fallback to print
+      handlePrint();
+    }
   };
 
   const handleDownload = async () => {
@@ -325,7 +376,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
     <Modal
       title={
         <Space>
-          <Icon name={type === 'detailed' ? 'receipt_long' : 'label'} className="text-[#0E72BD]" />
+          <Icon name={type === 'detailed' ? 'receipt_long' : 'label'} className="text-blue-600" />
           <span>{type === 'detailed' ? 'Invoice' : 'Item Labels'}</span>
         </Space>
       }
@@ -335,6 +386,9 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
       footer={[
         <ActionButton key="close" onClick={onClose}>
           Close
+        </ActionButton>,
+        <ActionButton key="view" icon="visibility" onClick={handleView}>
+          View PDF
         </ActionButton>,
         <ActionButton key="download" icon="download" onClick={handleDownload}>
           Download PDF

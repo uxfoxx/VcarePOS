@@ -122,7 +122,7 @@ export function ProductManagement() {
     {
       key: 'print',
       icon: <Icon name="print" />,
-      label: 'Print Details Sheet',
+      label: 'Product Details Sheet',
       onClick: () => handlePrintProductDetails(record)
     },
     {
@@ -315,7 +315,7 @@ export function ProductManagement() {
         >
           <ActionButton.Text
             icon="more_vert"
-            className="text-[#0E72BD] hover:text-blue-700"
+            className="text-blue-600 hover:text-blue-700"
           />
         </Dropdown>
       ),
@@ -418,7 +418,7 @@ export function ProductManagement() {
                   >
                     <ActionButton.Text
                       icon="more_vert"
-                      className="text-[#0E72BD] hover:text-blue-700"
+                      className="text-blue-600 hover:text-blue-700"
                     />
                   </Dropdown>
                 </div>

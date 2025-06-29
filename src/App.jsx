@@ -1,45 +1,30 @@
-import React, { useState, Suspense, lazy } from 'react';
-import { ConfigProvider, Layout, theme, Spin } from 'antd';
+import React, { useState } from 'react';
+import { ConfigProvider, Layout, theme } from 'antd';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { OptimizedPOSProvider } from './contexts/OptimizedPOSContext';
+import { POSProvider } from './contexts/POSContext';
 import { LoginPage } from './components/Auth/LoginPage';
 import { Header } from './components/Layout/Header';
 import { Sidebar } from './components/Layout/Sidebar';
 import { Footer } from './components/Layout/Footer';
 import { ProtectedRoute } from './components/Layout/ProtectedRoute';
-import { performanceMonitor } from './utils/performance';
-
-// Lazy load components for better performance
-const OptimizedProductGrid = lazy(() => import('./components/POS/OptimizedProductGrid').then(module => ({ default: module.OptimizedProductGrid })));
-const Cart = lazy(() => import('./components/POS/Cart').then(module => ({ default: module.Cart })));
-const ProductManagement = lazy(() => import('./components/Products/ProductManagement').then(module => ({ default: module.ProductManagement })));
-const RawMaterialManagement = lazy(() => import('./components/RawMaterials/RawMaterialManagement').then(module => ({ default: module.RawMaterialManagement })));
-const TransactionHistory = lazy(() => import('./components/Transactions/TransactionHistory').then(module => ({ default: module.TransactionHistory })));
-const ReportsOverview = lazy(() => import('./components/Reports/ReportsOverview').then(module => ({ default: module.ReportsOverview })));
-const SettingsPanel = lazy(() => import('./components/Settings/SettingsPanel').then(module => ({ default: module.SettingsPanel })));
-const CouponManagement = lazy(() => import('./components/Coupons/CouponManagement').then(module => ({ default: module.CouponManagement })));
-const TaxManagement = lazy(() => import('./components/Tax/TaxManagement').then(module => ({ default: module.TaxManagement })));
-const UserManagement = lazy(() => import('./components/Users/UserManagement').then(module => ({ default: module.UserManagement })));
-const AuditTrail = lazy(() => import('./components/AuditTrail/AuditTrail').then(module => ({ default: module.AuditTrail })));
+import { ProductGrid } from './components/POS/ProductGrid';
+import { Cart } from './components/POS/Cart';
+import { ProductManagement } from './components/Products/ProductManagement';
+import { RawMaterialManagement } from './components/RawMaterials/RawMaterialManagement';
+import { TransactionHistory } from './components/Transactions/TransactionHistory';
+import { ReportsOverview } from './components/Reports/ReportsOverview';
+import { SettingsPanel } from './components/Settings/SettingsPanel';
+import { CouponManagement } from './components/Coupons/CouponManagement';
+import { TaxManagement } from './components/Tax/TaxManagement';
+import { UserManagement } from './components/Users/UserManagement';
+import { AuditTrail } from './components/AuditTrail/AuditTrail';
 
 const { Sider, Content } = Layout;
-
-// Loading component
-const LoadingSpinner = () => (
-  <div className="flex items-center justify-center h-64">
-    <Spin size="large" />
-  </div>
-);
 
 function AppContent() {
   const { isAuthenticated, hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState('pos');
   const [collapsed, setCollapsed] = useState(false);
-
-  // Track component renders for performance monitoring - MUST be called before any conditional returns
-  React.useEffect(() => {
-    performanceMonitor.trackRender('AppContent');
-  });
 
   if (!isAuthenticated) {
     return <LoginPage />;
@@ -51,79 +36,57 @@ function AppContent() {
         <ProtectedRoute module="pos" action="view">
           <div className="flex h-full gap-6">
             <div className="flex-1">
-              <Suspense fallback={<LoadingSpinner />}>
-                <OptimizedProductGrid collapsed={collapsed} />
-              </Suspense>
+              <ProductGrid collapsed={collapsed} />
             </div>
             <div className="w-96">
-              <Suspense fallback={<LoadingSpinner />}>
-                <Cart />
-              </Suspense>
+              <Cart />
             </div>
           </div>
         </ProtectedRoute>
       ),
       'products': (
         <ProtectedRoute module="products" action="view">
-          <Suspense fallback={<LoadingSpinner />}>
-            <ProductManagement />
-          </Suspense>
+          <ProductManagement />
         </ProtectedRoute>
       ),
       'raw-materials': (
         <ProtectedRoute module="raw-materials" action="view">
-          <Suspense fallback={<LoadingSpinner />}>
-            <RawMaterialManagement />
-          </Suspense>
+          <RawMaterialManagement />
         </ProtectedRoute>
       ),
       'transactions': (
         <ProtectedRoute module="transactions" action="view">
-          <Suspense fallback={<LoadingSpinner />}>
-            <TransactionHistory />
-          </Suspense>
+          <TransactionHistory />
         </ProtectedRoute>
       ),
       'reports': (
         <ProtectedRoute module="reports" action="view">
-          <Suspense fallback={<LoadingSpinner />}>
-            <ReportsOverview />
-          </Suspense>
+          <ReportsOverview />
         </ProtectedRoute>
       ),
       'coupons': (
         <ProtectedRoute module="coupons" action="view">
-          <Suspense fallback={<LoadingSpinner />}>
-            <CouponManagement />
-          </Suspense>
+          <CouponManagement />
         </ProtectedRoute>
       ),
       'tax': (
         <ProtectedRoute module="tax" action="view">
-          <Suspense fallback={<LoadingSpinner />}>
-            <TaxManagement />
-          </Suspense>
+          <TaxManagement />
         </ProtectedRoute>
       ),
       'user-management': (
         <ProtectedRoute module="user-management" action="view">
-          <Suspense fallback={<LoadingSpinner />}>
-            <UserManagement />
-          </Suspense>
+          <UserManagement />
         </ProtectedRoute>
       ),
       'audit-trail': (
         <ProtectedRoute module="audit-trail" action="view">
-          <Suspense fallback={<LoadingSpinner />}>
-            <AuditTrail />
-          </Suspense>
+          <AuditTrail />
         </ProtectedRoute>
       ),
       'settings': (
         <ProtectedRoute module="settings" action="view">
-          <Suspense fallback={<LoadingSpinner />}>
-            <SettingsPanel />
-          </Suspense>
+          <SettingsPanel />
         </ProtectedRoute>
       ),
     };
@@ -221,9 +184,7 @@ function AppContent() {
           activeTab={activeTab}
         />
         <Content style={contentStyle}>
-          <Suspense fallback={<LoadingSpinner />}>
-            {renderContent()}
-          </Suspense>
+          {renderContent()}
         </Content>
         <Footer style={footerStyle} />
       </Layout>
@@ -290,9 +251,9 @@ function App() {
       }}
     >
       <AuthProvider>
-        <OptimizedPOSProvider>
+        <POSProvider>
           <AppContent />
-        </OptimizedPOSProvider>
+        </POSProvider>
       </AuthProvider>
     </ConfigProvider>
   );

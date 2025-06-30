@@ -1,5 +1,5 @@
-import React from 'react';
-import { Modal, Typography, Divider, Row, Col, Space, Image } from 'antd';
+import React, { useState } from 'react';
+import { Modal, Typography, Divider, Row, Col, Space, Image, Button } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
@@ -8,6 +8,8 @@ import html2canvas from 'html2canvas';
 const { Title, Text } = Typography;
 
 export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) {
+  const [loading, setLoading] = useState(false);
+  
   if (!transaction) return null;
 
   const handlePrint = () => {
@@ -15,9 +17,11 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
   };
 
   const handleView = async () => {
+    setLoading(true);
     const element = document.getElementById('invoice-content');
     if (!element) {
       console.error('Invoice content element not found');
+      setLoading(false);
       return;
     }
 
@@ -62,13 +66,17 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
       console.error('Error generating PDF:', error);
       // Fallback to print
       handlePrint();
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDownload = async () => {
+    setLoading(true);
     const element = document.getElementById('invoice-content');
     if (!element) {
       console.error('Invoice content element not found');
+      setLoading(false);
       return;
     }
 
@@ -112,6 +120,8 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
       console.error('Error generating PDF:', error);
       // Fallback to print
       handlePrint();
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -209,10 +219,10 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
                   {item.quantity}
                 </td>
                 <td className="border border-gray-300 p-3 text-right">
-                  ${item.product.price.toFixed(2)}
+                  LKR {item.product.price.toFixed(2)}
                 </td>
                 <td className="border border-gray-300 p-3 text-right">
-                  ${(item.product.price * item.quantity).toFixed(2)}
+                  LKR {(item.product.price * item.quantity).toFixed(2)}
                 </td>
               </tr>
             ))}
@@ -239,23 +249,23 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
           <div className="space-y-2">
             <div className="flex justify-between">
               <Text>Subtotal:</Text>
-              <Text>${transaction.subtotal.toFixed(2)}</Text>
+              <Text>LKR {transaction.subtotal.toFixed(2)}</Text>
             </div>
             <div className="flex justify-between">
               <Text>Tax:</Text>
-              <Text>${transaction.totalTax.toFixed(2)}</Text>
+              <Text>LKR {transaction.totalTax.toFixed(2)}</Text>
             </div>
             {transaction.discount > 0 && (
               <div className="flex justify-between text-green-600">
                 <Text>Discount:</Text>
-                <Text>-${transaction.discount.toFixed(2)}</Text>
+                <Text>-LKR {transaction.discount.toFixed(2)}</Text>
               </div>
             )}
             <Divider className="my-2" />
             <div className="flex justify-between">
               <Title level={4} className="m-0">Total:</Title>
               <Title level={4} className="m-0 text-blue-600">
-                ${transaction.total.toFixed(2)}
+                LKR {transaction.total.toFixed(2)}
               </Title>
             </div>
           </div>
@@ -391,18 +401,34 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
       onCancel={onClose}
       width={type === 'detailed' ? 900 : 600}
       footer={[
-        <ActionButton key="close" onClick={onClose}>
+        <Button key="close" onClick={onClose}>
           Close
-        </ActionButton>,
-        <ActionButton key="view" icon="visibility" onClick={handleView}>
+        </Button>,
+        <Button 
+          key="view" 
+          icon={<Icon name="visibility" />} 
+          onClick={handleView}
+          loading={loading}
+        >
           View PDF
-        </ActionButton>,
-        <ActionButton key="download" icon="download" onClick={handleDownload}>
+        </Button>,
+        <Button 
+          key="download" 
+          icon={<Icon name="download" />} 
+          onClick={handleDownload}
+          loading={loading}
+        >
           Download PDF
-        </ActionButton>,
-        <ActionButton.Primary key="print" icon="print" onClick={handlePrint}>
+        </Button>,
+        <Button 
+          type="primary" 
+          key="print" 
+          icon={<Icon name="print" />} 
+          onClick={handlePrint}
+          className="bg-blue-600"
+        >
           Print
-        </ActionButton.Primary>
+        </Button>
       ]}
       className="invoice-modal"
     >

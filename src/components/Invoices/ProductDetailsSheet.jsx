@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Typography, Divider, Row, Col, Space, Image } from 'antd';
+import { Modal, Typography, Divider, Row, Col, Space, Image, Button } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
@@ -8,8 +8,9 @@ import html2canvas from 'html2canvas';
 const { Title, Text } = Typography;
 
 export function ProductDetailsSheet({ open, onClose, product }) {
-  if (!product) return null;
   const [loading, setLoading] = useState(false);
+  
+  if (!product) return null;
 
   const handlePrint = () => {
     window.print();
@@ -136,18 +137,34 @@ export function ProductDetailsSheet({ open, onClose, product }) {
       onCancel={onClose}
       width={800}
       footer={[
-        <ActionButton key="close" onClick={onClose}>
+        <Button key="close" onClick={onClose}>
           Close
-        </ActionButton>,
-        <ActionButton key="view" icon="visibility" onClick={handleView} loading={loading}>
+        </Button>,
+        <Button 
+          key="view" 
+          icon={<Icon name="visibility" />} 
+          onClick={handleView}
+          loading={loading}
+        >
           View PDF
-        </ActionButton>,
-        <ActionButton key="download" icon="download" onClick={handleDownload} loading={loading}>
+        </Button>,
+        <Button 
+          key="download" 
+          icon={<Icon name="download" />} 
+          onClick={handleDownload}
+          loading={loading}
+        >
           Download PDF
-        </ActionButton>,
-        <ActionButton.Primary key="print" icon="print" onClick={handlePrint}>
+        </Button>,
+        <Button 
+          type="primary" 
+          key="print" 
+          icon={<Icon name="print" />} 
+          onClick={handlePrint}
+          className="bg-blue-600"
+        >
           Print
-        </ActionButton.Primary>
+        </Button>
       ]}
       className="invoice-modal"
       destroyOnClose
@@ -206,7 +223,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                   <div>
                     <Text strong className="block text-gray-600">Price:</Text>
                     <Text className="text-xl font-bold text-blue-600">
-                      ${(product.price || 0).toFixed(2)}
+                      LKR {(product.price || 0).toFixed(2)}
                     </Text>
                   </div>
                   <div>
@@ -231,7 +248,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                   <div key={index} className="border rounded-lg p-4">
                     <div className="flex justify-between items-center mb-2">
                       <Text strong className="text-lg">{size.name}</Text>
-                      <Text className="text-lg font-bold text-blue-600">${size.price.toFixed(2)}</Text>
+                      <Text className="text-lg font-bold text-blue-600">LKR {size.price.toFixed(2)}</Text>
                     </div>
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
@@ -387,7 +404,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
               <Col span={12}>
                 <div className="border rounded-lg p-4">
                   <Text strong className="block mb-2">Professional Assembly:</Text>
-                  <Text>Available for additional $50</Text>
+                  <Text>Available for additional LKR 5,000</Text>
                   
                   <Text strong className="block mb-2 mt-3">Delivery Options:</Text>
                   <Text>Standard delivery, White glove service</Text>

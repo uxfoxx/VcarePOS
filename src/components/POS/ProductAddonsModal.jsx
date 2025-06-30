@@ -140,7 +140,7 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
               </div>
             </div>
             <div className="text-right">
-              <Text strong className="text-xl text-blue-600">${product.price.toFixed(2)}</Text>
+              <Text strong className="text-xl text-blue-600">LKR {product.price.toFixed(2)}</Text>
               <div className="mt-2">
                 <Text strong>Quantity:</Text>
                 <InputNumber
@@ -149,6 +149,7 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
                   value={quantity}
                   onChange={setQuantity}
                   className="ml-2"
+                  step={1}
                 />
               </div>
             </div>
@@ -183,7 +184,7 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
                         <Text strong>{material.name}</Text>
                         <div>
                           <Text type="secondary" className="text-sm">
-                            ${material.unitPrice.toFixed(2)} per {material.unit}
+                            LKR {material.unitPrice.toFixed(2)} per {material.unit}
                           </Text>
                         </div>
                       </div>
@@ -198,6 +199,7 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
                           onChange={(value) => handleAddonQuantityChange(material.id, value)}
                           size="small"
                           className="w-16"
+                          step={1}
                         />
                         <Text className="ml-2">{material.unit}</Text>
                       </div>
@@ -214,7 +216,7 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
           <div className="space-y-2">
             <div className="flex justify-between">
               <Text>Base Price:</Text>
-              <Text>${product.price.toFixed(2)}</Text>
+              <Text>LKR {product.price.toFixed(2)}</Text>
             </div>
             
             {selectedAddons.length > 0 && (
@@ -222,7 +224,7 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
                 <div className="flex justify-between">
                   <Text>Addons:</Text>
                   <Text>
-                    ${selectedAddons.reduce((sum, addon) => {
+                    LKR {selectedAddons.reduce((sum, addon) => {
                       const material = state.rawMaterials.find(m => m.id === addon.id);
                       return sum + (material ? material.unitPrice * addon.quantity : 0);
                     }, 0).toFixed(2)}
@@ -239,7 +241,7 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
             
             <div className="flex justify-between">
               <Text strong>Total:</Text>
-              <Text strong className="text-blue-600 text-lg">${totalPrice.toFixed(2)}</Text>
+              <Text strong className="text-blue-600 text-lg">LKR {totalPrice.toFixed(2)}</Text>
             </div>
           </div>
         </div>

@@ -213,7 +213,10 @@ export function ProductGrid({ collapsed }) {
               {filteredProducts.map((product) => (
                 <Col key={product.id} {...getColSpan()}>
                   <ProductCard
-                    product={product}
+                    product={{
+                      ...product,
+                      price: product.price // Price is already in LKR
+                    }}
                     onAddToCart={handleAddToCart}
                     onClick={handleProductClick}
                     showDetails={true}
@@ -254,13 +257,13 @@ export function ProductGrid({ collapsed }) {
               icon={<Icon name="add_shopping_cart" />}
               onClick={handleAddSelectedSizeToCart}
               disabled={!selectedSizeData || selectedSizeData.stock === 0}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600"
             >
               {!selectedSizeData 
                 ? 'Select Size' 
                 : selectedSizeData.stock === 0 
                   ? 'Out of Stock' 
-                  : `Add to Cart - $${selectedSizeData.price.toFixed(2)}`
+                  : `Add to Cart - LKR ${selectedSizeData.price.toFixed(2)}`
               }
             </Button>
           ) : (
@@ -273,7 +276,7 @@ export function ProductGrid({ collapsed }) {
                 setShowDetailModal(false);
               }}
               disabled={selectedProduct?.stock === 0}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600"
             >
               Add to Cart
             </Button>
@@ -302,7 +305,7 @@ export function ProductGrid({ collapsed }) {
                   {selectedSizeData ? (
                     <>
                       <span className="text-xl font-bold text-blue-600">
-                        ${selectedSizeData.price.toFixed(2)}
+                        LKR {selectedSizeData.price.toFixed(2)}
                       </span>
                       <div>
                         <Tag color={selectedSizeData.stock > 0 ? 'green' : 'red'}>
@@ -317,7 +320,7 @@ export function ProductGrid({ collapsed }) {
                   ) : selectedProduct.hasSizes ? (
                     <>
                       <span className="text-xl font-bold text-blue-600">
-                        From ${selectedProduct.sizes?.length > 0 
+                        From LKR {selectedProduct.sizes?.length > 0 
                           ? Math.min(...selectedProduct.sizes.map(s => s.price)).toFixed(2)
                           : selectedProduct.price?.toFixed(2) || '0.00'
                         }
@@ -329,7 +332,7 @@ export function ProductGrid({ collapsed }) {
                   ) : (
                     <>
                       <span className="text-xl font-bold text-blue-600">
-                        ${selectedProduct.price?.toFixed(2) || '0.00'}
+                        LKR {selectedProduct.price?.toFixed(2) || '0.00'}
                       </span>
                       <div>
                         <Tag color={selectedProduct.stock > 0 ? 'green' : 'red'}>
@@ -359,7 +362,7 @@ export function ProductGrid({ collapsed }) {
                       <div className="flex items-center justify-between">
                         <span>{size.name}</span>
                         <div className="flex items-center space-x-2">
-                          <span>${size.price.toFixed(2)}</span>
+                          <span>LKR {size.price.toFixed(2)}</span>
                           <Tag color={size.stock > 0 ? 'green' : 'red'} size="small">
                             {size.stock > 0 ? `${size.stock} available` : 'Out of stock'}
                           </Tag>
@@ -375,7 +378,7 @@ export function ProductGrid({ collapsed }) {
                     <Text strong className="block mb-2">Size Details:</Text>
                     <Descriptions size="small" column={2}>
                       <Descriptions.Item label="Price">
-                        ${selectedSizeData.price.toFixed(2)}
+                        LKR {selectedSizeData.price.toFixed(2)}
                       </Descriptions.Item>
                       <Descriptions.Item label="Stock">
                         {selectedSizeData.stock} available

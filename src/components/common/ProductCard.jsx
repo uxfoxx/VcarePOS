@@ -31,12 +31,12 @@ export function ProductCard({
       const maxPrice = Math.max(...prices);
       
       if (minPrice === maxPrice) {
-        return `$${minPrice.toFixed(2)}`;
+        return `LKR ${minPrice.toFixed(2)}`;
       }
-      return `$${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}`;
+      return `LKR ${minPrice.toFixed(2)} - LKR ${maxPrice.toFixed(2)}`;
     }
     
-    return `$${(product.price || 0).toFixed(2)}`;
+    return `LKR ${(product.price || 0).toFixed(2)}`;
   };
 
   return (

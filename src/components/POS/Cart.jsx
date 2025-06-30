@@ -130,7 +130,7 @@ export function Cart() {
         return;
       }
       if (!meetsMinimum) {
-        message.error(`Minimum order amount is $${coupon.minimumAmount}`);
+        message.error(`Minimum order amount is LKR ${coupon.minimumAmount}`);
         return;
       }
 
@@ -290,7 +290,7 @@ export function Cart() {
                         
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
-                            <Text className="text-sm">${item.product.price.toFixed(2)}</Text>
+                            <Text className="text-sm">LKR {item.product.price.toFixed(2)}</Text>
                             <InputNumber
                               min={1}
                               max={100}
@@ -302,13 +302,13 @@ export function Cart() {
                           </div>
                           <div className="text-right">
                             <Text strong className="text-blue-600">
-                              ${itemTotalPrice.toFixed(2)}
+                              LKR {itemTotalPrice.toFixed(2)}
                             </Text>
                             {itemTaxAmount > 0 && (
                               <>
                                 <br />
                                 <Text type="secondary" className="text-xs">
-                                  +${itemTaxAmount.toFixed(2)} tax
+                                  +LKR {itemTaxAmount.toFixed(2)} tax
                                 </Text>
                               </>
                             )}
@@ -325,7 +325,7 @@ export function Cart() {
                                   {addon.name} × {addon.quantity}
                                 </Text>
                                 <Text type="secondary">
-                                  +${addon.price.toFixed(2)}
+                                  +LKR {addon.price.toFixed(2)}
                                 </Text>
                               </div>
                             ))}
@@ -337,7 +337,7 @@ export function Cart() {
                           <div className="mt-1">
                             {itemCategoryTaxes.map(tax => (
                               <Text key={tax.taxId} type="secondary" className="text-xs block">
-                                {tax.taxName} ({tax.rate}%): +${tax.amount.toFixed(2)}
+                                {tax.taxName} ({tax.rate}%): +LKR {tax.amount.toFixed(2)}
                               </Text>
                             ))}
                           </div>
@@ -361,14 +361,14 @@ export function Cart() {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <Text>Subtotal</Text>
-                <Text>${subtotal.toFixed(2)}</Text>
+                <Text>LKR {subtotal.toFixed(2)}</Text>
               </div>
 
               {/* Category Taxes */}
               {categoryTaxTotal > 0 && (
                 <div className="flex justify-between">
                   <Text>Category Taxes</Text>
-                  <Text>${categoryTaxTotal.toFixed(2)}</Text>
+                  <Text>LKR {categoryTaxTotal.toFixed(2)}</Text>
                 </div>
               )}
 
@@ -393,7 +393,7 @@ export function Cart() {
                     </div>
                     <div className="flex justify-between mt-1">
                       <Text className="text-green-600 text-sm">Discount</Text>
-                      <Text className="text-green-600 text-sm">-${couponDiscount.toFixed(2)}</Text>
+                      <Text className="text-green-600 text-sm">-LKR {couponDiscount.toFixed(2)}</Text>
                     </div>
                   </div>
                 ) : (
@@ -423,7 +423,7 @@ export function Cart() {
               {fullBillTaxes.map(tax => (
                 <div key={tax.id} className="flex justify-between">
                   <Text>{tax.name} ({tax.rate}%)</Text>
-                  <Text>${((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
+                  <Text>LKR {((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
                 </div>
               ))}
 
@@ -431,7 +431,7 @@ export function Cart() {
               <div className="flex justify-between">
                 <Title level={5} className="m-0">Total</Title>
                 <Title level={4} className="m-0 text-blue-600">
-                  ${total.toFixed(2)}
+                  LKR {total.toFixed(2)}
                 </Title>
               </div>
             </div>

@@ -368,13 +368,13 @@ export function ProductModal({
       title: 'Unit Cost',
       dataIndex: 'unitPrice',
       key: 'unitPrice',
-      render: (price) => `$${(price || 0).toFixed(2)}`,
+      render: (price) => `LKR ${(price || 0).toFixed(2)}`,
     },
     {
       title: 'Total Cost',
       dataIndex: 'totalCost',
       key: 'totalCost',
-      render: (cost) => `$${(cost || 0).toFixed(2)}`,
+      render: (cost) => `LKR ${(cost || 0).toFixed(2)}`,
     },
     {
       title: 'Actions',
@@ -401,7 +401,7 @@ export function ProductModal({
       title: 'Price',
       dataIndex: 'price',
       key: 'price',
-      render: (price) => `$${(price || 0).toFixed(2)}`,
+      render: (price) => `LKR ${(price || 0).toFixed(2)}`,
     },
     {
       title: 'Stock',
@@ -500,7 +500,7 @@ export function ProductModal({
             <Col span={8}>
               <Form.Item
                 name="price"
-                label="Price ($)"
+                label="Price (LKR)"
                 rules={[
                   { required: true, message: 'Please enter price' },
                   { type: 'number', min: 0.01, message: 'Price must be greater than 0' }
@@ -508,9 +508,11 @@ export function ProductModal({
               >
                 <InputNumber
                   min={0.01}
-                  step={0.01}
+                  step={100}
                   placeholder="0.00"
                   className="w-full"
+                  formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  parser={value => value.replace(/LKR\s?|(,*)/g, '')}
                 />
               </Form.Item>
             </Col>
@@ -527,6 +529,7 @@ export function ProductModal({
                   min={0}
                   placeholder="0"
                   className="w-full"
+                  step={1}
                 />
               </Form.Item>
             </Col>
@@ -663,7 +666,7 @@ export function ProductModal({
                         <Text strong>{material.name}</Text>
                         <br />
                         <Text type="secondary" className="text-xs">
-                          {material.category} • ${material.unitPrice}/{material.unit} • Stock: {material.stockQuantity}
+                          {material.category} • LKR {material.unitPrice}/{material.unit} • Stock: {material.stockQuantity}
                         </Text>
                       </div>
                     </Option>
@@ -687,7 +690,7 @@ export function ProductModal({
             </Col>
             <Col span={4}>
               <Form.Item label=" ">
-                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
+                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block className="bg-blue-600">
                   Add
                 </Button>
               </Form.Item>
@@ -713,7 +716,7 @@ export function ProductModal({
                     <Text strong>Total Material Cost</Text>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell>
-                    <Text strong>${totalCost.toFixed(2)}</Text>
+                    <Text strong>LKR {totalCost.toFixed(2)}</Text>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell />
                 </Table.Summary.Row>
@@ -760,14 +763,16 @@ export function ProductModal({
                 <Col span={8}>
                   <Form.Item
                     name="price"
-                    label="Price ($)"
+                    label="Price (LKR)"
                     rules={[{ required: true, message: 'Please enter price' }]}
                   >
                     <InputNumber
                       min={0.01}
-                      step={0.01}
+                      step={100}
                       placeholder="0.00"
                       className="w-full"
+                      formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                      parser={value => value.replace(/LKR\s?|(,*)/g, '')}
                     />
                   </Form.Item>
                 </Col>
@@ -781,6 +786,7 @@ export function ProductModal({
                       min={0}
                       placeholder="0"
                       className="w-full"
+                      step={1}
                     />
                   </Form.Item>
                 </Col>
@@ -821,7 +827,7 @@ export function ProductModal({
               </Row>
 
               <Form.Item>
-                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
+                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block className="bg-blue-600">
                   Add Size
                 </Button>
               </Form.Item>

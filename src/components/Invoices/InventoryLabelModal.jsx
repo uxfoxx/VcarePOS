@@ -1,13 +1,14 @@
-import React from 'react';
-import { Modal, Typography, Space } from 'antd';
+import React, { useState } from 'react';
+import { Modal, Typography, Space, Button } from 'antd';
 import { Icon } from '../common/Icon';
-import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 const { Title, Text } = Typography;
 
 export function InventoryLabelModal({ open, onClose, transaction }) {
+  const [loading, setLoading] = useState(false);
+  
   if (!transaction) return null;
 
   const handlePrint = () => {
@@ -15,9 +16,11 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
   };
 
   const handleView = async () => {
+    setLoading(true);
     const element = document.getElementById('inventory-labels-content');
     if (!element) {
       console.error('Inventory labels content element not found');
+      setLoading(false);
       return;
     }
 
@@ -62,13 +65,17 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
       console.error('Error generating PDF:', error);
       // Fallback to print
       handlePrint();
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDownload = async () => {
+    setLoading(true);
     const element = document.getElementById('inventory-labels-content');
     if (!element) {
       console.error('Inventory labels content element not found');
+      setLoading(false);
       return;
     }
 
@@ -112,6 +119,8 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
       console.error('Error generating PDF:', error);
       // Fallback to print
       handlePrint();
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -259,18 +268,34 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
       onCancel={onClose}
       width={1000}
       footer={[
-        <ActionButton key="close" onClick={onClose}>
+        <Button key="close" onClick={onClose}>
           Close
-        </ActionButton>,
-        <ActionButton key="view" icon="visibility" onClick={handleView}>
+        </Button>,
+        <Button 
+          key="view" 
+          icon={<Icon name="visibility" />} 
+          onClick={handleView}
+          loading={loading}
+        >
           View PDF
-        </ActionButton>,
-        <ActionButton key="download" icon="download" onClick={handleDownload}>
+        </Button>,
+        <Button 
+          key="download" 
+          icon={<Icon name="download" />} 
+          onClick={handleDownload}
+          loading={loading}
+        >
           Download PDF
-        </ActionButton>,
-        <ActionButton.Primary key="print" icon="print" onClick={handlePrint}>
+        </Button>,
+        <Button 
+          type="primary" 
+          key="print" 
+          icon={<Icon name="print" />} 
+          onClick={handlePrint}
+          className="bg-blue-600"
+        >
           Print Labels
-        </ActionButton.Primary>
+        </Button>
       ]}
       className="inventory-labels-modal"
       destroyOnClose

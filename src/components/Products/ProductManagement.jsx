@@ -136,6 +136,7 @@ export function ProductManagement() {
             height={50}
             className="object-cover rounded"
             preview={false}
+            style={{ aspectRatio: '1/1', objectFit: 'cover' }}
           />
           <div>
             <Text strong>{record.name}</Text>
@@ -427,7 +428,7 @@ export function ProductManagement() {
 
       {/* Product Details Sheet Modal */}
       <ProductDetailsSheet
-        open={showProductSheet}
+        open={showProductSheet && !showDetailModal}
         onClose={() => {
           setShowProductSheet(false);
           setSelectedProduct(null);

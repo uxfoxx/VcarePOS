@@ -136,16 +136,27 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
         {/* Product Info */}
         <div className="bg-blue-50 p-4 rounded-lg">
           <div className="flex justify-between items-center">
-            <div>
-              <Text strong className="text-lg">{product.name}</Text>
+            <div className="flex items-center space-x-4">
+              <Image
+                src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
+                alt={product.name}
+                width={80}
+                height={80}
+                className="object-cover rounded"
+                preview={false}
+                style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+              />
               <div>
-                <Text type="secondary">{product.description}</Text>
-              </div>
-              <div className="mt-1">
-                <Tag color="blue">{product.category}</Tag>
-                <Tag color={product.stock > 10 ? 'green' : product.stock > 0 ? 'orange' : 'red'}>
-                  {product.stock} in stock
-                </Tag>
+                <Text strong className="text-lg">{product.name}</Text>
+                <div>
+                  <Text type="secondary">{product.description}</Text>
+                </div>
+                <div className="mt-1">
+                  <Tag color="blue">{product.category}</Tag>
+                  <Tag color={product.stock > 10 ? 'green' : product.stock > 0 ? 'orange' : 'red'}>
+                    {product.stock} in stock
+                  </Tag>
+                </div>
               </div>
             </div>
             <div className="text-right">
@@ -200,12 +211,17 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
                           onChange={(e) => handleAddonChange(material.id, e.target.checked)}
                           className="mr-3"
                         />
-                        <div>
-                          <Text strong>{material.name}</Text>
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <Icon name="category" className="text-blue-600" />
+                          </div>
                           <div>
-                            <Text type="secondary" className="text-sm">
-                              LKR {material.unitPrice.toFixed(2)} per {material.unit}
-                            </Text>
+                            <Text strong>{material.name}</Text>
+                            <div>
+                              <Text type="secondary" className="text-sm">
+                                LKR {material.unitPrice.toFixed(2)} per {material.unit}
+                              </Text>
+                            </div>
                           </div>
                         </div>
                       </div>

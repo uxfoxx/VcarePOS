@@ -194,6 +194,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                   height={250}
                   className="object-cover rounded-lg border"
                   preview={false}
+                  style={{ aspectRatio: '4/3', objectFit: 'cover' }}
                 />
               </div>
             </Col>

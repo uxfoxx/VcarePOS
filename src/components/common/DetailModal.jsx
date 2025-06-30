@@ -28,6 +28,7 @@ export function DetailModal({
             height={150}
             className="object-cover rounded-lg"
             preview={false}
+            style={{ aspectRatio: '4/3', objectFit: 'cover' }}
           />
         </div>
         <div className="flex-1">
@@ -38,7 +39,7 @@ export function DetailModal({
           <div className="space-y-2">
             <div className="flex items-center space-x-4">
               <Text strong className="text-2xl text-blue-600">
-                ${(data.price || 0).toFixed(2)}
+                LKR {(data.price || 0).toFixed(2)}
               </Text>
               <Tag color={data.stock > 10 ? 'green' : data.stock > 0 ? 'orange' : 'red'}>
                 {data.stock} in stock
@@ -106,7 +107,7 @@ export function DetailModal({
           </div>
           <div className="text-right">
             <Title level={3} className="mb-0 text-blue-600">
-              ${data.total.toFixed(2)}
+              LKR {data.total.toFixed(2)}
             </Title>
             <Tag color="green">PAID</Tag>
           </div>
@@ -152,19 +153,30 @@ export function DetailModal({
           {data.items.map((item, index) => (
             <div key={index} className="border rounded-lg p-3">
               <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <Text strong className="block">{item.product.name}</Text>
-                  <Text type="secondary" className="text-sm">
-                    SKU: {item.product.barcode} | Qty: {item.quantity}
-                  </Text>
+                <div className="flex items-center space-x-3">
+                  <Image
+                    src={item.product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=100'}
+                    alt={item.product.name}
+                    width={50}
+                    height={50}
+                    className="object-cover rounded"
+                    preview={false}
+                    style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                  />
+                  <div className="flex-1">
+                    <Text strong className="block">{item.product.name}</Text>
+                    <Text type="secondary" className="text-sm">
+                      SKU: {item.product.barcode} | Qty: {item.quantity}
+                    </Text>
+                  </div>
                 </div>
                 <div className="text-right">
                   <Text strong className="text-blue-600">
-                    ${(item.product.price * item.quantity).toFixed(2)}
+                    LKR {(item.product.price * item.quantity).toFixed(2)}
                   </Text>
                   <br />
                   <Text type="secondary" className="text-sm">
-                    ${item.product.price.toFixed(2)} each
+                    LKR {item.product.price.toFixed(2)} each
                   </Text>
                 </div>
               </div>
@@ -179,23 +191,23 @@ export function DetailModal({
         <div className="space-y-2">
           <div className="flex justify-between">
             <Text>Subtotal:</Text>
-            <Text>${data.subtotal.toFixed(2)}</Text>
+            <Text>LKR {data.subtotal.toFixed(2)}</Text>
           </div>
           <div className="flex justify-between">
             <Text>Tax:</Text>
-            <Text>${data.totalTax.toFixed(2)}</Text>
+            <Text>LKR {data.totalTax.toFixed(2)}</Text>
           </div>
           {data.discount > 0 && (
             <div className="flex justify-between text-green-600">
               <Text>Discount:</Text>
-              <Text>-${data.discount.toFixed(2)}</Text>
+              <Text>-LKR {data.discount.toFixed(2)}</Text>
             </div>
           )}
           <Divider className="my-2" />
           <div className="flex justify-between">
             <Text strong className="text-lg">Total:</Text>
             <Text strong className="text-lg text-blue-600">
-              ${data.total.toFixed(2)}
+              LKR {data.total.toFixed(2)}
             </Text>
           </div>
         </div>

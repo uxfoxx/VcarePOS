@@ -254,6 +254,7 @@ export function ProductGrid({ collapsed }) {
                   alt={selectedProduct.name}
                   className="w-full h-auto object-cover rounded-lg"
                   preview={false}
+                  style={{ aspectRatio: '4/3', objectFit: 'cover' }}
                 />
               </div>
               

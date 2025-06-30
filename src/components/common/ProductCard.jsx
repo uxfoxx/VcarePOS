@@ -50,6 +50,7 @@ export function ProductCard({
             src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
             className="w-full h-full object-cover"
             preview={false}
+            style={{ objectFit: 'cover', aspectRatio: '4/3' }}
           />
           <div className="absolute top-2 right-2">
             <Badge 

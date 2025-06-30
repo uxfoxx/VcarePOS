@@ -12,15 +12,20 @@ import {
   Tag,
   Button,
   message,
-  Steps
+  Steps,
+  Card,
+  Row,
+  Col
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
+import { EnhancedStepper } from '../common/EnhancedStepper';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
+const { Search } = Input;
 
 export function CustomProductModal({ open, onClose, onAddToCart }) {
   const { state } = usePOS();
@@ -33,6 +38,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
   const [customDescription, setCustomDescription] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
   const [editablePrice, setEditablePrice] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Reset form when modal opens
   useEffect(() => {
@@ -44,6 +50,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
       setCustomName('');
       setCustomDescription('');
       setCurrentStep(0);
+      setSearchTerm('');
     }
   }, [open, form]);
 
@@ -55,6 +62,12 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
     setTotalPrice(calculatedPrice);
     setEditablePrice(calculatedPrice);
   }, [selectedMaterials]);
+
+  // Filter materials based on search term
+  const filteredMaterials = state.rawMaterials.filter(material => 
+    material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    material.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleAddMaterial = (values) => {
     const material = state.rawMaterials.find(m => m.id === values.materialId);
@@ -150,6 +163,8 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
   const steps = [
     {
       title: 'Product Info',
+      description: 'Basic details',
+      icon: 'info',
       content: (
         <div className="space-y-4">
           <Title level={5}>Custom Product Information</Title>
@@ -161,6 +176,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
                 value={customName}
                 onChange={(e) => setCustomName(e.target.value)}
                 className="mt-1"
+                size="large"
               />
             </div>
             <div>
@@ -172,6 +188,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
                 formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                 parser={value => value.replace(/LKR\s?|(,*)/g, '')}
                 step={100}
+                size="large"
               />
               <Text type="secondary" className="text-xs block mt-1">
                 Price is calculated based on materials (50% markup) but can be adjusted
@@ -193,9 +210,50 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
     },
     {
       title: 'Add Materials',
+      description: 'Select materials',
+      icon: 'category',
       content: (
         <div className="space-y-4">
           <Title level={5}>Add Raw Materials</Title>
+          
+          <Search
+            placeholder="Search materials..."
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="mb-4"
+          />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+            {filteredMaterials.map(material => (
+              <Card 
+                key={material.id} 
+                size="small" 
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => {
+                  materialsForm.setFieldsValue({
+                    materialId: material.id,
+                    quantity: 1
+                  });
+                }}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Icon name="category" className="text-blue-600" />
+                  </div>
+                  <div>
+                    <Text strong className="block">{material.name}</Text>
+                    <Text type="secondary" className="text-xs">
+                      LKR {material.unitPrice.toFixed(2)} per {material.unit}
+                    </Text>
+                    <br />
+                    <Text type="secondary" className="text-xs">
+                      Stock: {material.stockQuantity} {material.unit}
+                    </Text>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+          
           <Form
             form={materialsForm}
             layout="horizontal"
@@ -299,20 +357,17 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
       }
       open={open}
       onCancel={onClose}
-      width={700}
+      width={800}
       footer={null}
       destroyOnClose
     >
       <div className="space-y-6">
-        <Steps 
-          current={currentStep} 
-          items={[
-            { title: 'Product Info' },
-            { title: 'Add Materials' }
-          ]}
+        <EnhancedStepper
+          current={currentStep}
+          steps={steps}
         />
         
-        <div className="min-h-[300px] mt-6">
+        <div className="min-h-[400px] mt-6">
           {steps[currentStep].content}
         </div>
 
@@ -333,9 +388,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
               Cancel
             </ActionButton>
             {currentStep < steps.length - 1 ? (
-              <ActionButton.Primary 
-                onClick={handleNext}
-              >
+              <ActionButton.Primary onClick={handleNext}>
                 Next
                 <Icon name="arrow_forward" className="ml-2" />
               </ActionButton.Primary>

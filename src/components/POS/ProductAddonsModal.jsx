@@ -10,7 +10,11 @@ import {
   Tag,
   InputNumber,
   message,
-  Button
+  Button,
+  Card,
+  Row,
+  Col,
+  Input
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
@@ -18,6 +22,7 @@ import { ActionButton } from '../common/ActionButton';
 
 const { Title, Text } = Typography;
 const { Group: CheckboxGroup } = Checkbox;
+const { Search } = Input;
 
 export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
   const { state } = usePOS();
@@ -25,10 +30,12 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
   const [selectedAddons, setSelectedAddons] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Filter raw materials that can be used as addons (only those with enough stock)
   const availableAddons = state.rawMaterials.filter(material => 
-    material.stockQuantity > 0
+    material.stockQuantity > 0 &&
+    material.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Reset selections when modal opens or product changes
@@ -36,6 +43,7 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
     if (open) {
       setSelectedAddons([]);
       setQuantity(1);
+      setSearchTerm('');
     }
   }, [open, product]);
 
@@ -120,7 +128,7 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
       }
       open={open}
       onCancel={onClose}
-      width={600}
+      width={800}
       footer={null}
       destroyOnClose
     >
@@ -159,7 +167,15 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
 
         {/* Addons Selection */}
         <div className="space-y-4">
-          <Title level={5}>Available Addons</Title>
+          <div className="flex justify-between items-center">
+            <Title level={5}>Available Addons</Title>
+            <Search
+              placeholder="Search addons..."
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-64"
+              allowClear
+            />
+          </div>
           
           {availableAddons.length === 0 ? (
             <div className="text-center py-4 bg-gray-50 rounded-lg">
@@ -167,50 +183,86 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
               <Text type="secondary">No addons available</Text>
             </div>
           ) : (
-            <List
-              dataSource={availableAddons}
-              renderItem={material => {
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {availableAddons.map(material => {
                 const isSelected = selectedAddons.some(addon => addon.id === material.id);
                 return (
-                  <List.Item
+                  <Card
                     key={material.id}
-                    className="flex justify-between items-center border rounded-lg p-3 mb-2"
+                    size="small"
+                    className={`cursor-pointer transition-all ${isSelected ? 'border-blue-500 bg-blue-50' : 'hover:border-blue-300'}`}
+                    onClick={() => handleAddonChange(material.id, !isSelected)}
                   >
-                    <div className="flex items-center">
-                      <Checkbox
-                        checked={isSelected}
-                        onChange={(e) => handleAddonChange(material.id, e.target.checked)}
-                      />
-                      <div className="ml-3">
-                        <Text strong>{material.name}</Text>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Checkbox
+                          checked={isSelected}
+                          onChange={(e) => handleAddonChange(material.id, e.target.checked)}
+                          className="mr-3"
+                        />
                         <div>
-                          <Text type="secondary" className="text-sm">
-                            LKR {material.unitPrice.toFixed(2)} per {material.unit}
-                          </Text>
+                          <Text strong>{material.name}</Text>
+                          <div>
+                            <Text type="secondary" className="text-sm">
+                              LKR {material.unitPrice.toFixed(2)} per {material.unit}
+                            </Text>
+                          </div>
                         </div>
                       </div>
+                      
+                      {isSelected && (
+                        <div>
+                          <InputNumber
+                            min={1}
+                            max={material.stockQuantity}
+                            value={selectedAddons.find(addon => addon.id === material.id)?.quantity || 1}
+                            onChange={(value) => handleAddonQuantityChange(material.id, value)}
+                            size="small"
+                            className="w-16"
+                            step={1}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <Text className="ml-2">{material.unit}</Text>
+                        </div>
+                      )}
                     </div>
-                    
-                    {isSelected && (
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Selected Addons Summary */}
+        {selectedAddons.length > 0 && (
+          <div className="border rounded-lg p-4">
+            <Title level={5}>Selected Addons</Title>
+            <List
+              dataSource={selectedAddons}
+              renderItem={addon => {
+                const material = state.rawMaterials.find(m => m.id === addon.id);
+                if (!material) return null;
+                
+                return (
+                  <List.Item
+                    key={addon.id}
+                    className="flex justify-between items-center"
+                  >
+                    <div>
+                      <Text strong>{material.name}</Text>
                       <div>
-                        <InputNumber
-                          min={1}
-                          max={material.stockQuantity}
-                          value={selectedAddons.find(addon => addon.id === material.id)?.quantity || 1}
-                          onChange={(value) => handleAddonQuantityChange(material.id, value)}
-                          size="small"
-                          className="w-16"
-                          step={1}
-                        />
-                        <Text className="ml-2">{material.unit}</Text>
+                        <Text type="secondary" className="text-sm">
+                          {addon.quantity} {material.unit} × LKR {material.unitPrice.toFixed(2)}
+                        </Text>
                       </div>
-                    )}
+                    </div>
+                    <Text strong>LKR {(material.unitPrice * addon.quantity).toFixed(2)}</Text>
                   </List.Item>
                 );
               }}
             />
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Price Summary */}
         <div className="bg-gray-50 p-4 rounded-lg">

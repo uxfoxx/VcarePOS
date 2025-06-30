@@ -18,15 +18,16 @@ import { usePOS } from '../../contexts/POSContext';
 import { SearchInput } from '../common/SearchInput';
 import { ProductCard } from '../common/ProductCard';
 import { PageHeader } from '../common/PageHeader';
-import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
+import { ActionButton } from '../common/ActionButton';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { EmptyState } from '../common/EmptyState';
 import { CustomProductModal } from './CustomProductModal';
 import { ProductAddonsModal } from './ProductAddonsModal';
 
 const { Option } = Select;
-const { Text } = Typography;
+const { Text, Title } = Typography;
+const { Search } = Input;
 
 export function ProductGrid({ collapsed }) {
   const { state, dispatch } = usePOS();
@@ -126,12 +127,6 @@ export function ProductGrid({ collapsed }) {
     }
   };
 
-  const tabItems = categoryNames.map(category => ({
-    key: category,
-    label: category,
-    children: null
-  }));
-
   if (loading) {
     return (
       <Card 
@@ -159,7 +154,7 @@ export function ProductGrid({ collapsed }) {
               <h2 className="text-2xl font-bold m-0">Products</h2>
             </div>
             <Space>
-              <Input.Search
+              <Search
                 placeholder="Search by product name or SKU..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -229,7 +224,7 @@ export function ProductGrid({ collapsed }) {
 
       {/* Product Detail/Size Selection Modal */}
       <Modal
-        title={selectedProduct?.name}
+        title={null}
         open={showDetailModal}
         onCancel={() => {
           setShowDetailModal(false);
@@ -237,187 +232,203 @@ export function ProductGrid({ collapsed }) {
           setSelectedSize(null);
         }}
         width={700}
-        footer={[
-          <Button 
-            key="close" 
-            onClick={() => {
-              setShowDetailModal(false);
-              setSelectedProduct(null);
-              setSelectedSize(null);
-            }}
-          >
-            Close
-          </Button>,
-          selectedProduct?.hasSizes ? (
-            <Button
-              key="add-to-cart"
-              type="primary"
-              icon={<Icon name="add_shopping_cart" />}
-              onClick={handleAddSelectedSizeToCart}
-              disabled={!selectedSizeData || selectedSizeData.stock === 0}
-            >
-              {!selectedSizeData 
-                ? 'Select Size' 
-                : selectedSizeData.stock === 0 
-                  ? 'Out of Stock' 
-                  : `Add to Cart - LKR ${selectedSizeData.price.toFixed(2)}`
-              }
-            </Button>
-          ) : (
-            <Button
-              key="add-to-cart"
-              type="primary"
-              icon={<Icon name="add_shopping_cart" />}
-              onClick={() => {
-                handleAddToCart(selectedProduct);
-                setShowDetailModal(false);
-              }}
-              disabled={selectedProduct?.stock === 0}
-            >
-              Add to Cart
-            </Button>
-          )
-        ]}
+        footer={null}
+        closable={true}
+        className="product-detail-modal"
       >
         {selectedProduct && (
           <div className="space-y-6">
+            {/* Product Header */}
+            <div>
+              <Title level={3}>{selectedProduct.name}</Title>
+              <Text type="secondary" className="text-base">
+                {selectedProduct.description}
+              </Text>
+            </div>
+            
             {/* Product Image and Basic Info */}
-            <div className="flex gap-4">
-              <Image
-                src={selectedProduct.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
-                alt={selectedProduct.name}
-                width={200}
-                height={150}
-                className="object-cover rounded"
-                preview={false}
-              />
-              <div className="flex-1">
-                <PageHeader
-                  title={selectedProduct.name}
-                  subtitle={selectedProduct.description}
-                  level={4}
+            <div className="flex gap-6">
+              <div className="w-1/3">
+                <Image
+                  src={selectedProduct.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
+                  alt={selectedProduct.name}
+                  className="w-full h-auto object-cover rounded-lg"
+                  preview={false}
                 />
-                <div className="mt-2 space-y-2">
-                  {selectedSizeData ? (
-                    <>
-                      <span className="text-xl font-bold text-blue-600">
-                        LKR {selectedSizeData.price.toFixed(2)}
-                      </span>
-                      <div>
-                        <Tag color={selectedSizeData.stock > 0 ? 'green' : 'red'}>
-                          {selectedSizeData.stock} in stock
-                        </Tag>
-                      </div>
-                      <div>
-                        <Text type="secondary">Selected Size: </Text>
-                        <Tag color="blue">{selectedSize}</Tag>
-                      </div>
-                    </>
-                  ) : selectedProduct.hasSizes ? (
-                    <>
-                      <span className="text-xl font-bold text-blue-600">
-                        From LKR {selectedProduct.sizes?.length > 0 
-                          ? Math.min(...selectedProduct.sizes.map(s => s.price)).toFixed(2)
-                          : selectedProduct.price?.toFixed(2) || '0.00'
-                        }
-                      </span>
-                      <div>
-                        <Text type="secondary">Multiple sizes available</Text>
-                      </div>
-                    </>
+              </div>
+              
+              <div className="w-2/3">
+                {/* Price and Stock */}
+                <div className="mb-6">
+                  <Title level={2} className="text-green-600 mb-2">
+                    {selectedSizeData 
+                      ? `LKR ${selectedSizeData.price.toFixed(2)}`
+                      : selectedProduct.hasSizes
+                        ? `From LKR ${Math.min(...selectedProduct.sizes.map(s => s.price)).toFixed(2)}`
+                        : `LKR ${selectedProduct.price.toFixed(2)}`
+                    }
+                  </Title>
+                  
+                  <Tag color={
+                    selectedSizeData
+                      ? selectedSizeData.stock > 0 ? 'green' : 'red'
+                      : selectedProduct.stock > 0 ? 'green' : 'red'
+                  } className="text-base px-3 py-1">
+                    {selectedSizeData
+                      ? `${selectedSizeData.stock} in stock`
+                      : `${selectedProduct.stock} in stock`
+                    }
+                  </Tag>
+                </div>
+                
+                {/* Size Selection */}
+                {selectedProduct.hasSizes && (
+                  <div className="mb-6">
+                    <Title level={5}>Select Size:</Title>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {selectedProduct.sizes?.map(size => (
+                        <Button
+                          key={size.id}
+                          type={selectedSize === size.name ? 'primary' : 'default'}
+                          onClick={() => handleSizeChange(size.name)}
+                          disabled={size.stock === 0}
+                          className={selectedSize === size.name ? 'bg-blue-600' : ''}
+                          size="large"
+                        >
+                          {size.name}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Size Details */}
+                {selectedSizeData && (
+                  <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                    <Title level={5} className="mb-3">Size Details:</Title>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <div className="mb-2">
+                          <Text type="secondary">Price:</Text>
+                          <br />
+                          <Text strong>LKR {selectedSizeData.price.toFixed(2)}</Text>
+                        </div>
+                      </Col>
+                      <Col span={12}>
+                        <div className="mb-2">
+                          <Text type="secondary">Stock:</Text>
+                          <br />
+                          <Text strong>{selectedSizeData.stock} available</Text>
+                        </div>
+                      </Col>
+                      {selectedSizeData.dimensions && (
+                        <Col span={12}>
+                          <div className="mb-2">
+                            <Text type="secondary">Dimensions:</Text>
+                            <br />
+                            <Text strong>
+                              {selectedSizeData.dimensions.length}×{selectedSizeData.dimensions.width}×{selectedSizeData.dimensions.height} {selectedSizeData.dimensions.unit}
+                            </Text>
+                          </div>
+                        </Col>
+                      )}
+                      <Col span={12}>
+                        <div className="mb-2">
+                          <Text type="secondary">Weight:</Text>
+                          <br />
+                          <Text strong>{selectedSizeData.weight} kg</Text>
+                        </div>
+                      </Col>
+                    </Row>
+                  </div>
+                )}
+                
+                {/* Product Details for non-size products */}
+                {!selectedProduct.hasSizes && (
+                  <div className="mb-6">
+                    <Title level={5} className="mb-3">Product Details:</Title>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <div className="mb-2">
+                          <Text type="secondary">SKU:</Text>
+                          <br />
+                          <Text strong>{selectedProduct.barcode || 'N/A'}</Text>
+                        </div>
+                      </Col>
+                      <Col span={12}>
+                        <div className="mb-2">
+                          <Text type="secondary">Category:</Text>
+                          <br />
+                          <Text strong>{selectedProduct.category}</Text>
+                        </div>
+                      </Col>
+                      {selectedProduct.dimensions && (
+                        <Col span={12}>
+                          <div className="mb-2">
+                            <Text type="secondary">Dimensions:</Text>
+                            <br />
+                            <Text strong>
+                              {selectedProduct.dimensions.length}×{selectedProduct.dimensions.width}×{selectedProduct.dimensions.height} {selectedProduct.dimensions.unit}
+                            </Text>
+                          </div>
+                        </Col>
+                      )}
+                      <Col span={12}>
+                        <div className="mb-2">
+                          <Text type="secondary">Weight:</Text>
+                          <br />
+                          <Text strong>{selectedProduct.weight} kg</Text>
+                        </div>
+                      </Col>
+                    </Row>
+                  </div>
+                )}
+                
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-3 mt-6">
+                  <Button 
+                    size="large"
+                    onClick={() => {
+                      setShowDetailModal(false);
+                      setSelectedProduct(null);
+                      setSelectedSize(null);
+                    }}
+                  >
+                    Close
+                  </Button>
+                  
+                  {selectedProduct.hasSizes ? (
+                    <Button
+                      type="primary"
+                      size="large"
+                      icon={<Icon name="add_shopping_cart" />}
+                      onClick={handleAddSelectedSizeToCart}
+                      disabled={!selectedSizeData || selectedSizeData.stock === 0}
+                    >
+                      {!selectedSizeData 
+                        ? 'Select Size' 
+                        : selectedSizeData.stock === 0 
+                          ? 'Out of Stock' 
+                          : `Add to Cart - LKR ${selectedSizeData.price.toFixed(2)}`
+                      }
+                    </Button>
                   ) : (
-                    <>
-                      <span className="text-xl font-bold text-blue-600">
-                        LKR {selectedProduct.price?.toFixed(2) || '0.00'}
-                      </span>
-                      <div>
-                        <Tag color={selectedProduct.stock > 0 ? 'green' : 'red'}>
-                          {selectedProduct.stock} in stock
-                        </Tag>
-                      </div>
-                    </>
+                    <Button
+                      type="primary"
+                      size="large"
+                      icon={<Icon name="add_shopping_cart" />}
+                      onClick={() => {
+                        handleAddToCart(selectedProduct);
+                        setShowDetailModal(false);
+                      }}
+                      disabled={selectedProduct?.stock === 0}
+                    >
+                      Add to Cart
+                    </Button>
                   )}
                 </div>
               </div>
             </div>
-
-            {/* Size Selection */}
-            {selectedProduct.hasSizes && (
-              <div className="space-y-4">
-                <Text strong className="text-lg">Select Size:</Text>
-                
-                <Select
-                  placeholder="Choose a size"
-                  value={selectedSize}
-                  onChange={handleSizeChange}
-                  className="w-full"
-                  size="large"
-                >
-                  {selectedProduct.sizes?.map(size => (
-                    <Option key={size.id} value={size.name} disabled={size.stock === 0}>
-                      <div className="flex items-center justify-between">
-                        <span>{size.name}</span>
-                        <div className="flex items-center space-x-2">
-                          <span>LKR {size.price.toFixed(2)}</span>
-                          <Tag color={size.stock > 0 ? 'green' : 'red'} size="small">
-                            {size.stock > 0 ? `${size.stock} available` : 'Out of stock'}
-                          </Tag>
-                        </div>
-                      </div>
-                    </Option>
-                  ))}
-                </Select>
-
-                {/* Show size details when selected */}
-                {selectedSizeData && (
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <Text strong className="block mb-2">Size Details:</Text>
-                    <Descriptions size="small" column={2}>
-                      <Descriptions.Item label="Price">
-                        LKR {selectedSizeData.price.toFixed(2)}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Stock">
-                        {selectedSizeData.stock} available
-                      </Descriptions.Item>
-                      {selectedSizeData.dimensions && (
-                        <Descriptions.Item label="Dimensions">
-                          {selectedSizeData.dimensions.length}×{selectedSizeData.dimensions.width}×{selectedSizeData.dimensions.height} {selectedSizeData.dimensions.unit}
-                        </Descriptions.Item>
-                      )}
-                      <Descriptions.Item label="Weight">
-                        {selectedSizeData.weight} kg
-                      </Descriptions.Item>
-                    </Descriptions>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Product Details for non-size products */}
-            {!selectedProduct.hasSizes && (
-              <Descriptions bordered size="small">
-                <Descriptions.Item label="SKU">
-                  {selectedProduct.barcode || 'N/A'}
-                </Descriptions.Item>
-                <Descriptions.Item label="Category">
-                  {selectedProduct.category}
-                </Descriptions.Item>
-                <Descriptions.Item label="Stock">
-                  {selectedProduct.stock} available
-                </Descriptions.Item>
-                <Descriptions.Item label="Color">
-                  {selectedProduct.color}
-                </Descriptions.Item>
-                {selectedProduct.dimensions && (
-                  <Descriptions.Item label="Dimensions">
-                    {selectedProduct.dimensions.length}×{selectedProduct.dimensions.width}×{selectedProduct.dimensions.height} {selectedProduct.dimensions.unit}
-                  </Descriptions.Item>
-                )}
-                <Descriptions.Item label="Weight">
-                  {selectedProduct.weight} kg
-                </Descriptions.Item>
-              </Descriptions>
-            )}
           </div>
         )}
       </Modal>

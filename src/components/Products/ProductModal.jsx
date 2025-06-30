@@ -19,15 +19,18 @@ import {
   Switch,
   Tag,
   Alert,
-  Steps
+  Steps,
+  Tabs
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
+import { EnhancedStepper } from '../common/EnhancedStepper';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
+const { TabPane } = Tabs;
 
 export function ProductModal({ 
   open, 
@@ -40,14 +43,18 @@ export function ProductModal({
   const [productForm] = Form.useForm();
   const [materialsForm] = Form.useForm();
   const [sizesForm] = Form.useForm();
+  const [addonsForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [stepError, setStepError] = useState('');
   const [selectedMaterials, setSelectedMaterials] = useState([]);
+  const [selectedAddons, setSelectedAddons] = useState([]);
   const [sizes, setSizes] = useState([]);
   const [hasSizes, setHasSizes] = useState(false);
+  const [hasAddons, setHasAddons] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [productData, setProductData] = useState({});
+  const [materialSearchTerm, setMaterialSearchTerm] = useState('');
 
   // Initialize form data when editing
   useEffect(() => {
@@ -67,6 +74,7 @@ export function ProductModal({
       productForm.setFieldsValue(formData);
       setProductData(formData);
       setHasSizes(editingProduct.hasSizes || false);
+      setHasAddons(editingProduct.hasAddons || false);
       
       if (editingProduct.hasSizes && editingProduct.sizes) {
         setSizes(editingProduct.sizes);
@@ -97,6 +105,23 @@ export function ProductModal({
       });
       
       setSelectedMaterials(enrichedMaterials);
+      
+      // Set addons if any
+      if (editingProduct.addons) {
+        setSelectedAddons(editingProduct.addons.map(addon => {
+          const material = state.rawMaterials?.find(m => m.id === addon.id);
+          return {
+            id: addon.id,
+            name: material?.name || addon.name,
+            quantity: addon.quantity || 1,
+            price: addon.price || 0,
+            unit: material?.unit || 'unit'
+          };
+        }));
+      } else {
+        setSelectedAddons([]);
+      }
+      
       setImagePreview(editingProduct.image);
       setCurrentStep(0);
     } else if (open && !editingProduct) {
@@ -115,8 +140,10 @@ export function ProductModal({
       productForm.resetFields();
       setProductData(initialData);
       setSelectedMaterials([]);
+      setSelectedAddons([]);
       setSizes([]);
       setHasSizes(false);
+      setHasAddons(false);
       setImageFile(null);
       setImagePreview(null);
       setCurrentStep(0);
@@ -127,17 +154,32 @@ export function ProductModal({
     const baseSteps = [
       {
         title: 'Product Details',
+        description: 'Basic information',
+        icon: 'inventory_2',
         content: renderProductDetails
       },
       {
         title: 'Raw Materials',
+        description: 'Materials used',
+        icon: 'category',
         content: renderRawMaterials
       }
     ];
     
+    if (hasAddons) {
+      baseSteps.push({
+        title: 'Add-ons',
+        description: 'Optional extras',
+        icon: 'add_circle',
+        content: renderAddons
+      });
+    }
+    
     if (hasSizes) {
       baseSteps.push({
         title: 'Sizes',
+        description: 'Size variations',
+        icon: 'straighten',
         content: renderSizes
       });
     }
@@ -186,6 +228,37 @@ export function ProductModal({
   const handleRemoveMaterial = (materialId) => {
     setSelectedMaterials(selectedMaterials.filter(m => m.rawMaterialId !== materialId));
     message.success('Material removed');
+  };
+
+  const handleAddAddon = (values) => {
+    const material = state.rawMaterials.find(m => m.id === values.materialId);
+    if (!material) {
+      message.error('Material not found');
+      return;
+    }
+
+    const existingAddon = selectedAddons.find(a => a.id === values.materialId);
+    if (existingAddon) {
+      message.error('Add-on already added');
+      return;
+    }
+
+    const newAddon = {
+      id: values.materialId,
+      name: material.name,
+      quantity: values.quantity,
+      price: material.unitPrice * values.quantity,
+      unit: material.unit
+    };
+
+    setSelectedAddons([...selectedAddons, newAddon]);
+    addonsForm.resetFields();
+    message.success('Add-on added successfully');
+  };
+
+  const handleRemoveAddon = (addonId) => {
+    setSelectedAddons(selectedAddons.filter(a => a.id !== addonId));
+    message.success('Add-on removed');
   };
 
   const handleAddSize = (values) => {
@@ -296,7 +369,7 @@ export function ProductModal({
 
       if (hasSizes && sizes.length === 0) {
         setStepError('Please add at least one size for this product');
-        setCurrentStep(2);
+        setCurrentStep(steps.length - 1);
         return;
       }
 
@@ -307,6 +380,7 @@ export function ProductModal({
         description: finalProductData.description || '',
         image: imagePreview || finalProductData.image || '',
         hasSizes: hasSizes,
+        hasAddons: hasAddons,
         
         // For products with sizes, calculate total stock from all sizes
         price: !hasSizes ? (Number(finalProductData.price) || 0) : (sizes.length > 0 ? Math.min(...sizes.map(s => s.price)) : 0),
@@ -326,7 +400,9 @@ export function ProductModal({
           quantity: m.quantity
         })),
         
-        sizes: hasSizes ? sizes : []
+        sizes: hasSizes ? sizes : [],
+        
+        addons: hasAddons ? selectedAddons : []
       };
 
       await onSubmit(productSubmissionData);
@@ -345,9 +421,12 @@ export function ProductModal({
     productForm.resetFields();
     materialsForm.resetFields();
     sizesForm.resetFields();
+    addonsForm.resetFields();
     setSelectedMaterials([]);
+    setSelectedAddons([]);
     setSizes([]);
     setHasSizes(false);
+    setHasAddons(false);
     setImageFile(null);
     setImagePreview(null);
     setProductData({});
@@ -384,6 +463,37 @@ export function ProductModal({
         <Popconfirm
           title="Remove this material?"
           onConfirm={() => handleRemoveMaterial(record.rawMaterialId)}
+        >
+          <Button type="text" danger icon={<Icon name="delete" />} size="small" />
+        </Popconfirm>
+      ),
+    },
+  ];
+
+  const addonColumns = [
+    {
+      title: 'Add-on',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: 'Quantity',
+      key: 'quantity',
+      render: (record) => `${record.quantity || 0} ${record.unit || 'unit'}`,
+    },
+    {
+      title: 'Price',
+      dataIndex: 'price',
+      key: 'price',
+      render: (price) => `LKR ${(price || 0).toFixed(2)}`,
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (record) => (
+        <Popconfirm
+          title="Remove this add-on?"
+          onConfirm={() => handleRemoveAddon(record.id)}
         >
           <Button type="text" danger icon={<Icon name="delete" />} size="small" />
         </Popconfirm>
@@ -439,6 +549,12 @@ export function ProductModal({
     },
   ];
 
+  // Filter raw materials for addons
+  const filteredRawMaterials = state.rawMaterials.filter(material => 
+    material.name.toLowerCase().includes(materialSearchTerm.toLowerCase()) ||
+    material.category.toLowerCase().includes(materialSearchTerm.toLowerCase())
+  );
+
   const renderProductDetails = () => (
     <Form 
       form={productForm} 
@@ -448,7 +564,7 @@ export function ProductModal({
       preserve={false}
     >
       <Row gutter={16}>
-        <Col span={12}>
+        <Col span={16}>
           <Form.Item
             name="name"
             label="Product Name"
@@ -460,7 +576,7 @@ export function ProductModal({
             <Input placeholder="Enter product name" />
           </Form.Item>
         </Col>
-        <Col span={12}>
+        <Col span={8}>
           <Form.Item
             name="category"
             label="Category"
@@ -477,23 +593,46 @@ export function ProductModal({
         </Col>
       </Row>
 
-      <div className="bg-blue-50 p-4 rounded-lg">
-        <div className="flex items-center justify-between">
-          <div>
-            <Text strong>Product Sizes</Text>
-            <br />
-            <Text type="secondary" className="text-sm">
-              Enable if this product has multiple sizes with different prices
-            </Text>
+      <Row gutter={16}>
+        <Col span={12}>
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <Text strong>Product Sizes</Text>
+                <br />
+                <Text type="secondary" className="text-sm">
+                  Enable if this product has multiple sizes with different prices
+                </Text>
+              </div>
+              <Switch
+                checked={hasSizes}
+                onChange={setHasSizes}
+                checkedChildren="Yes"
+                unCheckedChildren="No"
+              />
+            </div>
           </div>
-          <Switch
-            checked={hasSizes}
-            onChange={setHasSizes}
-            checkedChildren="Yes"
-            unCheckedChildren="No"
-          />
-        </div>
-      </div>
+        </Col>
+        <Col span={12}>
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <Text strong>Product Add-ons</Text>
+                <br />
+                <Text type="secondary" className="text-sm">
+                  Enable if this product has optional add-ons
+                </Text>
+              </div>
+              <Switch
+                checked={hasAddons}
+                onChange={setHasAddons}
+                checkedChildren="Yes"
+                unCheckedChildren="No"
+              />
+            </div>
+          </div>
+        </Col>
+      </Row>
 
       {!hasSizes && (
         <>
@@ -738,6 +877,145 @@ export function ProductModal({
     </div>
   );
 
+  const renderAddons = () => (
+    <div className="space-y-6">
+      <div>
+        <Title level={5}>Product Add-ons</Title>
+        <Text type="secondary">
+          Define optional add-ons that customers can select when purchasing this product
+        </Text>
+      </div>
+
+      <Card size="small">
+        <Form form={addonsForm} onFinish={handleAddAddon} layout="vertical">
+          <Row gutter={16}>
+            <Col span={24} className="mb-4">
+              <Input.Search
+                placeholder="Search materials..."
+                onChange={(e) => setMaterialSearchTerm(e.target.value)}
+                className="w-full"
+              />
+            </Col>
+          </Row>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+            {filteredRawMaterials.map(material => (
+              <Card 
+                key={material.id} 
+                size="small" 
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => {
+                  addonsForm.setFieldsValue({
+                    materialId: material.id,
+                    quantity: 1
+                  });
+                }}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Icon name="category" className="text-blue-600" />
+                  </div>
+                  <div>
+                    <Text strong className="block">{material.name}</Text>
+                    <Text type="secondary" className="text-xs">
+                      LKR {material.unitPrice.toFixed(2)} per {material.unit}
+                    </Text>
+                    <br />
+                    <Text type="secondary" className="text-xs">
+                      Stock: {material.stockQuantity} {material.unit}
+                    </Text>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+          
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="materialId"
+                label="Selected Add-on"
+                rules={[{ required: true, message: 'Please select an add-on' }]}
+              >
+                <Select
+                  placeholder="Select add-on material"
+                  showSearch
+                  filterOption={(input, option) =>
+                    option.children.toLowerCase().includes(input.toLowerCase())
+                  }
+                >
+                  {state.rawMaterials?.map(material => (
+                    <Option key={material.id} value={material.id}>
+                      {material.name} (LKR {material.unitPrice.toFixed(2)}/{material.unit})
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                name="quantity"
+                label="Quantity"
+                rules={[{ required: true, message: 'Please enter quantity' }]}
+                initialValue={1}
+              >
+                <InputNumber
+                  min={1}
+                  step={1}
+                  placeholder="1"
+                  className="w-full"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={4}>
+              <Form.Item label=" ">
+                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
+                  Add
+                </Button>
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Card>
+
+      {selectedAddons.length > 0 ? (
+        <div>
+          <Title level={5}>Selected Add-ons</Title>
+          <Table
+            columns={addonColumns}
+            dataSource={selectedAddons}
+            rowKey="id"
+            pagination={false}
+            size="small"
+            summary={(pageData) => {
+              const totalPrice = pageData.reduce((sum, record) => sum + (record.price || 0), 0);
+              return (
+                <Table.Summary.Row>
+                  <Table.Summary.Cell colSpan={2}>
+                    <Text strong>Total Add-on Price</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell>
+                    <Text strong>LKR {totalPrice.toFixed(2)}</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell />
+                </Table.Summary.Row>
+              );
+            }}
+          />
+        </div>
+      ) : (
+        <div className="text-center py-8 bg-gray-50 rounded-lg">
+          <Icon name="add_circle" className="text-4xl text-gray-300 mb-2" />
+          <Text type="secondary">No add-ons added yet</Text>
+          <br />
+          <Text type="secondary" className="text-sm">
+            Add optional extras that customers can select when purchasing
+          </Text>
+        </div>
+      )}
+    </div>
+  );
+
   const renderSizes = () => (
     <div className="space-y-6">
       <div>
@@ -883,22 +1161,12 @@ export function ProductModal({
       destroyOnClose
     >
       <div className="space-y-6">
-        <Steps
+        <EnhancedStepper
           current={currentStep}
-          items={steps.map(step => ({ title: step.title }))}
+          steps={steps}
           status={stepError ? 'error' : 'process'}
+          errorMessage={stepError}
         />
-        
-        {stepError && (
-          <Alert
-            message="Error"
-            description={stepError}
-            type="error"
-            showIcon
-            closable
-            onClose={() => setStepError('')}
-          />
-        )}
         
         <div className="min-h-[500px]">
           {loading ? (

@@ -12,8 +12,9 @@ import {
   Dropdown,
   Tabs,
   Modal,
-  Collapse,
-  Table
+  Table,
+  Button,
+  Input
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { ActionButton } from '../common/ActionButton';
@@ -29,7 +30,7 @@ import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 
 const { Title, Text } = Typography;
-const { Panel } = Collapse;
+const { Search } = Input;
 
 export function ProductManagement() {
   const { state, dispatch } = usePOS();
@@ -40,6 +41,7 @@ export function ProductManagement() {
   const [showProductSheet, setShowProductSheet] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('products');
 
   const filteredProducts = state.products.filter(product =>
     (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -118,45 +120,6 @@ export function ProductManagement() {
     }
   ];
 
-  const sizeTableColumns = [
-    {
-      title: 'Size',
-      dataIndex: 'name',
-      key: 'name',
-      render: (name) => <Text strong>{name}</Text>
-    },
-    {
-      title: 'Price',
-      dataIndex: 'price',
-      key: 'price',
-      render: (price) => <Text strong>${price.toFixed(2)}</Text>
-    },
-    {
-      title: 'Stock',
-      dataIndex: 'stock',
-      key: 'stock',
-      render: (stock) => (
-        <Tag color={stock > 0 ? 'green' : 'red'}>
-          {stock} units
-        </Tag>
-      )
-    },
-    {
-      title: 'Dimensions',
-      key: 'dimensions',
-      render: (size) => {
-        if (size.dimensions && size.dimensions.length) {
-          return (
-            <Text className="text-xs">
-              {size.dimensions.length}×{size.dimensions.width}×{size.dimensions.height} {size.dimensions.unit}
-            </Text>
-          );
-        }
-        return <Text type="secondary">-</Text>;
-      }
-    }
-  ];
-
   const columns = [
     {
       title: 'Product',
@@ -194,6 +157,11 @@ export function ProductManagement() {
           {category}
         </Tag>
       ),
+      filters: [...new Set(state.products.map(p => p.category))].map(cat => ({
+        text: cat,
+        value: cat
+      })),
+      onFilter: (value, record) => record.category === value,
     },
     {
       title: 'Price',
@@ -209,8 +177,8 @@ export function ProductManagement() {
             <div>
               <Text strong>
                 {minPrice === maxPrice 
-                  ? `$${minPrice.toFixed(2)}`
-                  : `$${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}`
+                  ? `LKR ${minPrice.toFixed(2)}`
+                  : `LKR ${minPrice.toFixed(2)} - LKR ${maxPrice.toFixed(2)}`
                 }
               </Text>
               <br />
@@ -220,7 +188,7 @@ export function ProductManagement() {
             </div>
           );
         }
-        return <Text strong>${(price || 0).toFixed(2)}</Text>;
+        return <Text strong>LKR {(price || 0).toFixed(2)}</Text>;
       },
     },
     {
@@ -250,6 +218,21 @@ export function ProductManagement() {
           </Tag>
         );
       },
+      filters: [
+        { text: 'In Stock (>10)', value: 'in-stock' },
+        { text: 'Low Stock (1-10)', value: 'low-stock' },
+        { text: 'Out of Stock', value: 'out-of-stock' },
+      ],
+      onFilter: (value, record) => {
+        const stock = record.hasSizes 
+          ? record.sizes.reduce((sum, size) => sum + size.stock, 0)
+          : record.stock;
+          
+        if (value === 'in-stock') return stock > 10;
+        if (value === 'low-stock') return stock > 0 && stock <= 10;
+        if (value === 'out-of-stock') return stock === 0;
+        return true;
+      },
     },
     {
       title: 'Type',
@@ -262,6 +245,11 @@ export function ProductManagement() {
           <Tag color="default">Single Product</Tag>
         );
       },
+      filters: [
+        { text: 'Has Sizes', value: true },
+        { text: 'Single Product', value: false },
+      ],
+      onFilter: (value, record) => record.hasSizes === value,
     },
     {
       title: 'Materials',
@@ -353,80 +341,37 @@ export function ProductManagement() {
         </Space>
       </div>
 
-      {/* Products with Sizes Expandable View */}
-      <div className="space-y-4">
-        {loading ? (
-          <LoadingSkeleton type="list" rows={5} />
-        ) : filteredProducts.length === 0 ? (
-          <EmptyState
-            icon="inventory_2"
-            title="No Products Found"
-            description="No products match your search criteria"
-            actionText="Add Product"
-            onAction={() => setShowModal(true)}
-          />
-        ) : (
-          filteredProducts.map(product => (
-            <Card key={product.id} size="small" className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleRowClick(product)}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <Image
-                    src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=60'}
-                    alt={product.name}
-                    width={60}
-                    height={60}
-                    className="object-cover rounded"
-                    preview={false}
-                  />
-                  <div>
-                    <Text strong className="text-lg">{product.name}</Text>
-                    <br />
-                    <Tag color="blue">{product.category}</Tag>
-                    {product.hasSizes ? (
-                      <Tag color="purple">Has {product.sizes?.length || 0} Sizes</Tag>
-                    ) : (
-                      <Tag color="default">Single Product</Tag>
-                    )}
-                    <br />
-                    <Text type="secondary" className="text-sm">{product.description}</Text>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <Dropdown
-                    menu={{
-                      items: getActionMenuItems(product)
-                    }}
-                    trigger={['click']}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <ActionButton.Text
-                      icon="more_vert"
-                      className="text-blue-600 hover:text-blue-700"
-                    />
-                  </Dropdown>
-                </div>
-              </div>
-
-              {product.hasSizes && product.sizes && product.sizes.length > 0 && (
-                <Collapse className="mt-4" size="small">
-                  <Panel 
-                    header={`View ${product.sizes.length} Sizes`} 
-                    key="sizes"
-                  >
-                    <Table
-                      columns={sizeTableColumns}
-                      dataSource={product.sizes}
-                      rowKey="id"
-                      pagination={false}
-                      size="small"
-                    />
-                  </Panel>
-                </Collapse>
-              )}
-            </Card>
-          ))
-        )}
-      </div>
+      {loading ? (
+        <LoadingSkeleton type="table" />
+      ) : (
+        <Table
+          columns={columns}
+          dataSource={filteredProducts}
+          rowKey="id"
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+          }}
+          scroll={{ x: 1200 }}
+          onRow={(record) => ({
+            onClick: () => handleRowClick(record),
+            className: 'cursor-pointer hover:bg-blue-50'
+          })}
+          locale={{
+            emptyText: (
+              <EmptyState
+                icon="inventory_2"
+                title="No Products Found"
+                description="No products match your search criteria"
+                actionText="Add Product"
+                onAction={() => setShowModal(true)}
+              />
+            )
+          }}
+        />
+      )}
     </div>
   );
 
@@ -463,8 +408,9 @@ export function ProductManagement() {
         />
         
         <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
           items={tabItems}
-          defaultActiveKey="products"
           className="mt-4"
         />
       </Card>

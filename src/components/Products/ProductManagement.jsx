@@ -381,8 +381,7 @@ export function ProductManagement() {
     <>
       <Card>
         <PageHeader
-          title="Product Management"
-          icon="inventory_2"
+          
         />
         
         <Tabs

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Descriptions, Typography, Space, Tag, Image, Divider } from 'antd';
+import { Modal, Descriptions, Typography, Space, Image, Tag, Button } from 'antd';
 import { Icon } from './Icon';
 import { ActionButton } from './ActionButton';
 
@@ -147,8 +147,8 @@ export function DetailModal({
       </Descriptions>
 
       {/* Items List */}
-      <div>
-        <Title level={5} className="mb-3">Items Purchased</Title>
+      <div className="mb-6">
+        <Title level={5} className="mb-4">Items Purchased</Title>
         <div className="space-y-3">
           {data.items.map((item, index) => (
             <div key={index} className="border rounded-lg p-3">

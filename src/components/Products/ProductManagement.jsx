@@ -21,7 +21,6 @@ import {
 import { usePOS } from '../../contexts/POSContext';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
-import { PageHeader } from '../common/PageHeader';
 import { SearchInput } from '../common/SearchInput';
 import { ProductDetailsSheet } from '../Invoices/ProductDetailsSheet';
 import { CategoryManagement } from './CategoryManagement';
@@ -87,6 +86,7 @@ export function ProductManagement() {
       dispatch({ type: 'DELETE_PRODUCT', payload: id });
     });
     message.success(`${productIds.length} products deleted successfully`);
+    setSelectedRowKeys([]);
   };
 
   const handlePrintProductDetails = (product) => {
@@ -98,37 +98,6 @@ export function ProductManagement() {
     setSelectedProduct(product);
     setShowDetailModal(true);
   };
-
-  const getActionMenuItems = (record) => [
-    {
-      key: 'edit',
-      icon: <Icon name="edit" />,
-      label: 'Edit Product',
-      onClick: () => handleEdit(record)
-    },
-    {
-      key: 'print',
-      icon: <Icon name="print" />,
-      label: 'Product Details Sheet',
-      onClick: () => handlePrintProductDetails(record)
-    },
-    {
-      key: 'delete',
-      icon: <Icon name="delete" />,
-      label: 'Delete Product',
-      danger: true,
-      onClick: () => {
-        Modal.confirm({
-          title: 'Are you sure you want to delete this product?',
-          content: 'This action cannot be undone.',
-          onOk: () => handleDelete(record.id),
-          okText: 'Yes, Delete',
-          cancelText: 'Cancel',
-          okType: 'danger'
-        });
-      }
-    }
-  ];
 
   const columns = [
     {
@@ -377,18 +346,17 @@ export function ProductManagement() {
     }
   ];
 
+  if (loading) {
+    return <LoadingSkeleton type="table" />;
+  }
+
   return (
     <>
       <Card>
-        <PageHeader
-          
-        />
-        
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
           items={tabItems}
-          className="mt-4"
         />
       </Card>
 

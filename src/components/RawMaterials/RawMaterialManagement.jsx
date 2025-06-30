@@ -19,7 +19,6 @@ import {
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
-import { PageHeader } from '../common/PageHeader';
 import { SearchInput } from '../common/SearchInput';
 import { ActionButton } from '../common/ActionButton';
 import { EnhancedTable } from '../common/EnhancedTable';

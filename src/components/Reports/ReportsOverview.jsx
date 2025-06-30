@@ -16,13 +16,12 @@ import {
   Table,
   Button,
   Tooltip,
-  Checkbox
+  Image
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
-import { PageHeader } from '../common/PageHeader';
 import { StockAlert } from '../common/StockAlert';
 import { ExportModal } from '../common/ExportModal';
 import { EnhancedTable } from '../common/EnhancedTable';

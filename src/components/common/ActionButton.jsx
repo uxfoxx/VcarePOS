@@ -15,14 +15,8 @@ export function ActionButton({
       icon={iconPosition === 'left' ? iconElement : undefined}
       {...props}
     >
-      {iconPosition === 'left' && children}
-      {iconPosition === 'right' && (
-        <>
-          {children}
-          {iconElement}
-        </>
-      )}
-      {iconPosition === 'only' && !children && iconElement}
+      {children}
+      {iconPosition === 'right' && iconElement}
     </Button>
   );
 }

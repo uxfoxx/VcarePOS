@@ -1,26 +1,24 @@
 import React, { useState } from 'react';
 import { 
+  Card, 
   Space, 
   Typography, 
   Tag, 
   Statistic,
   Row,
   Col,
-  Card,
   Select,
   message,
   Dropdown,
   Modal,
   Tooltip,
-  Checkbox
+  Image
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { StatusTag } from '../common/StatusTag';
-import { PageHeader } from '../common/PageHeader';
-import { SearchInput } from '../common/SearchInput';
 import { InvoiceModal } from '../Invoices/InvoiceModal';
 import { InventoryLabelModal } from '../Invoices/InventoryLabelModal';
 import { DetailModal } from '../common/DetailModal';
@@ -194,42 +192,6 @@ export function TransactionHistory() {
     }
   };
 
-  const getActionMenuItems = (record) => {
-    const items = [
-      {
-        key: 'view',
-        icon: <Icon name="visibility" />,
-        label: 'View Details',
-        onClick: () => handleViewDetails(record)
-      },
-      {
-        key: 'invoice',
-        icon: <Icon name="receipt_long" />,
-        label: 'View Invoice',
-        onClick: () => handleShowInvoice(record, 'detailed')
-      },
-      {
-        key: 'inventory-labels',
-        icon: <Icon name="label" />,
-        label: 'Print Inventory Labels',
-        onClick: () => handleShowInventoryLabels(record)
-      }
-    ];
-
-    // Add refund option if transaction is not already fully refunded
-    if (record.status !== 'refunded') {
-      items.push({
-        key: 'refund',
-        icon: <Icon name="undo" />,
-        label: 'Process Refund',
-        onClick: () => handleShowRefund(record),
-        danger: true
-      });
-    }
-
-    return items;
-  };
-
   const getStatusColor = (status, refunds) => {
     if (refunds && refunds.length > 0) {
       const totalRefunded = refunds.reduce((sum, refund) => sum + refund.refundAmount, 0);
@@ -398,7 +360,7 @@ export function TransactionHistory() {
   return (
     <Space direction="vertical" size="large" className="w-full">
       {/* Statistics */}
-      <Row gutter={16} data-tour="stats-cards">
+      <Row gutter={16}>
         <Col span={8}>
           <Card>
             <Statistic
@@ -462,7 +424,6 @@ export function TransactionHistory() {
         }
         emptyDescription="No orders found"
         emptyImage={<Icon name="receipt_long" className="text-6xl text-gray-300" />}
-        data-tour="transaction-table"
       />
 
       {/* Transaction Detail Modal */}

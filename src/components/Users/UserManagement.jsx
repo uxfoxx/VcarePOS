@@ -10,12 +10,10 @@ import {
   Row,
   Col,
   Switch,
-  Tooltip,
-  Checkbox
+  Tooltip
 } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
-import { PageHeader } from '../common/PageHeader';
 import { SearchInput } from '../common/SearchInput';
 import { ActionButton } from '../common/ActionButton';
 import { UserModal } from './UserModal';
@@ -121,16 +119,6 @@ export function UserManagement() {
       case 'cashier': return 'green';
       default: return 'default';
     }
-  };
-
-  const getPermissionCount = (permissions) => {
-    let count = 0;
-    Object.values(permissions).forEach(modulePerms => {
-      if (modulePerms.view) count++;
-      if (modulePerms.edit) count++;
-      if (modulePerms.delete) count++;
-    });
-    return count;
   };
 
   const columns = [
@@ -294,11 +282,6 @@ export function UserManagement() {
   return (
     <>
       <Card>
-        <PageHeader
-          title="User Management"
-          icon="people"
-        />
-
         {/* User Statistics */}
         <Row gutter={16} className="mb-6">
           <Col span={6}>
@@ -336,6 +319,8 @@ export function UserManagement() {
         </Row>
         
         <EnhancedTable
+          title="User Management"
+          icon="people"
           columns={columns}
           dataSource={filteredUsers}
           rowKey="id"

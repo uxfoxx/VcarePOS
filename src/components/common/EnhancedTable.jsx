@@ -24,7 +24,6 @@ import {
 } from 'antd';
 import { Icon } from './Icon';
 import { ActionButton } from './ActionButton';
-import { PageHeader } from './PageHeader';
 
 const { Search } = Input;
 const { Option } = Select;
@@ -199,6 +198,26 @@ export function EnhancedTable({
     setSorter(sorter);
   };
 
+  const handleRowSelectionChange = (selectedKeys) => {
+    setSelectedRowKeys(selectedKeys);
+  };
+
+  const handleDeleteSelected = () => {
+    if (onDelete && selectedRowKeys.length > 0) {
+      Modal.confirm({
+        title: `Delete ${selectedRowKeys.length} selected item(s)?`,
+        content: 'This action cannot be undone.',
+        okText: 'Delete',
+        okType: 'danger',
+        cancelText: 'Cancel',
+        onOk: () => {
+          onDelete(selectedRowKeys);
+          setSelectedRowKeys([]);
+        }
+      });
+    }
+  };
+
   const handleColumnVisibilityChange = (columnKeys) => {
     setTempVisibleColumns(columnKeys);
     configForm.setFieldsValue({ visibleColumns: columnKeys });
@@ -269,26 +288,6 @@ export function EnhancedTable({
     setShowConfigModal(false);
   };
 
-  const handleRowSelectionChange = (selectedKeys) => {
-    setSelectedRowKeys(selectedKeys);
-  };
-
-  const handleDeleteSelected = () => {
-    if (onDelete && selectedRowKeys.length > 0) {
-      Modal.confirm({
-        title: `Delete ${selectedRowKeys.length} selected item(s)?`,
-        content: 'This action cannot be undone.',
-        okText: 'Delete',
-        okType: 'danger',
-        cancelText: 'Cancel',
-        onOk: () => {
-          onDelete(selectedRowKeys);
-          setSelectedRowKeys([]);
-        }
-      });
-    }
-  };
-
   const enhancedRowSelection = rowSelection ? {
     ...rowSelection,
     selectedRowKeys,
@@ -299,7 +298,10 @@ export function EnhancedTable({
     return (
       <Card>
         {(title || icon) && (
-          <PageHeader title={title} icon={icon} subtitle={subtitle} />
+          <div className="flex items-center mb-4">
+            {icon && <Icon name={icon} className="text-[#0E72BD] mr-2" size="text-xl" />}
+            <Text strong className="text-lg">{title}</Text>
+          </div>
         )}
         <Skeleton active paragraph={{ rows: 8 }} />
       </Card>
@@ -343,6 +345,7 @@ export function EnhancedTable({
                   onConfirm={handleDeleteSelected}
                   okText="Delete"
                   cancelText="Cancel"
+                  okButtonProps={{ danger: true }}
                 >
                   <ActionButton 
                     danger

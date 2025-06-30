@@ -18,7 +18,6 @@ import { usePOS } from '../../contexts/POSContext';
 import { SearchInput } from '../common/SearchInput';
 import { ProductCard } from '../common/ProductCard';
 import { PageHeader } from '../common/PageHeader';
-import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { EmptyState } from '../common/EmptyState';

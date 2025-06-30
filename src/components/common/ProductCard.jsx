@@ -145,11 +145,11 @@ export function ProductCard({
         <Button
           type="primary"
           icon={<Icon name="add_shopping_cart" />}
-          size="large"
+          size="middle"
           block
           onClick={handleAddToCart}
           disabled={product.stock === 0}
-          className="bg-[#0E72BD] hover:bg-blue-700 font-semibold"
+          className="bg-[#0E72BD] hover:bg-blue-700 font-medium"
         >
           {product.stock === 0 
             ? 'Out of Stock' 

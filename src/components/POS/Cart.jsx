@@ -298,6 +298,7 @@ export function Cart() {
                               onChange={(value) => handleQuantityChange(item.product.id, item.selectedSize, value || 1)}
                               size="small"
                               className="w-16"
+                              step={1}
                             />
                           </div>
                           <div className="text-right">
@@ -405,12 +406,15 @@ export function Cart() {
                         onChange={(e) => setCouponCode(e.target.value)}
                         size="middle"
                         onPressEnter={handleApplyCoupon}
+                        style={{ width: '70%' }}
                       />
                       <Button 
                         size="middle" 
                         type="primary"
                         onClick={handleApplyCoupon}
                         disabled={!couponCode.trim()}
+                        style={{ width: '30%' }}
+                        className="bg-blue-600"
                       >
                         Apply
                       </Button>

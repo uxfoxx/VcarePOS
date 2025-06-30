@@ -1,24 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Modal, 
   Form, 
   Input, 
-  Select, 
   InputNumber, 
-  Typography,
-  Row,
-  Col,
-  Card,
-  Space,
-  Table,
-  Popconfirm,
-  message,
-  Alert,
-  Divider
+  Select, 
+  Typography, 
+  Space, 
+  Divider, 
+  List, 
+  Tag,
+  Button,
+  message
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
-import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
+import { ActionButton } from '../common/ActionButton';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -27,8 +24,30 @@ const { TextArea } = Input;
 export function CustomProductModal({ open, onClose, onAddToCart }) {
   const { state } = usePOS();
   const [form] = Form.useForm();
-  const [selectedMaterials, setSelectedMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedMaterials, setSelectedMaterials] = useState([]);
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [customName, setCustomName] = useState('');
+  const [customDescription, setCustomDescription] = useState('');
+
+  // Reset form when modal opens
+  useEffect(() => {
+    if (open) {
+      form.resetFields();
+      setSelectedMaterials([]);
+      setTotalPrice(0);
+      setCustomName('');
+      setCustomDescription('');
+    }
+  }, [open, form]);
+
+  // Calculate total price whenever selected materials change
+  useEffect(() => {
+    const calculatedPrice = selectedMaterials.reduce((sum, material) => {
+      return sum + (material.quantity * material.unitPrice * 1.5); // 50% markup
+    }, 0);
+    setTotalPrice(calculatedPrice);
+  }, [selectedMaterials]);
 
   const handleAddMaterial = (values) => {
     const material = state.rawMaterials.find(m => m.id === values.materialId);
@@ -39,135 +58,72 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
 
     const existingMaterial = selectedMaterials.find(m => m.id === values.materialId);
     if (existingMaterial) {
-      message.error('Material already added');
-      return;
+      // Update quantity if material already exists
+      setSelectedMaterials(selectedMaterials.map(m => 
+        m.id === values.materialId 
+          ? { ...m, quantity: m.quantity + values.quantity } 
+          : m
+      ));
+    } else {
+      // Add new material
+      setSelectedMaterials([...selectedMaterials, {
+        id: material.id,
+        name: material.name,
+        unit: material.unit,
+        quantity: values.quantity,
+        unitPrice: material.unitPrice,
+        totalPrice: values.quantity * material.unitPrice
+      }]);
     }
-
-    if (values.quantity > material.stockQuantity) {
-      message.error(`Only ${material.stockQuantity} ${material.unit} available`);
-      return;
-    }
-
-    const newMaterial = {
-      id: material.id,
-      name: material.name,
-      unit: material.unit,
-      unitPrice: material.unitPrice,
-      quantity: values.quantity,
-      totalCost: material.unitPrice * values.quantity,
-      category: material.category
-    };
-
-    setSelectedMaterials([...selectedMaterials, newMaterial]);
-    form.setFieldsValue({ materialId: undefined, quantity: 1 });
-    message.success('Material added to custom product');
+    
+    form.resetFields(['materialId', 'quantity']);
   };
 
   const handleRemoveMaterial = (materialId) => {
     setSelectedMaterials(selectedMaterials.filter(m => m.id !== materialId));
-    message.success('Material removed');
   };
 
-  const handleCreateCustomProduct = async (values) => {
+  const handleSubmit = () => {
     if (selectedMaterials.length === 0) {
       message.error('Please add at least one material');
       return;
     }
 
-    setLoading(true);
-    try {
-      const totalCost = selectedMaterials.reduce((sum, m) => sum + m.totalCost, 0);
-      const markup = (values.markup || 50) / 100; // Default 50% markup
-      const finalPrice = totalCost * (1 + markup);
+    if (!customName.trim()) {
+      message.error('Please enter a name for the custom product');
+      return;
+    }
 
+    try {
+      setLoading(true);
+      
+      // Create custom product
       const customProduct = {
         id: `CUSTOM-${Date.now()}`,
-        name: values.name || 'Custom Product',
-        description: values.description || 'Custom made product',
-        price: finalPrice,
+        name: customName,
+        description: customDescription || 'Custom product',
+        price: totalPrice,
         category: 'Custom',
-        stock: 1, // Custom products are made to order
+        stock: 999, // Unlimited stock for custom products
         barcode: `CUSTOM-${Date.now()}`,
-        isCustom: true,
-        customMaterials: selectedMaterials,
-        materialCost: totalCost,
-        markup: values.markup || 50,
-        image: 'https://images.pexels.com/photos/416320/pexels-photo-416320.jpeg?auto=compress&cs=tinysrgb&w=300',
-        dimensions: values.dimensions || {},
-        weight: selectedMaterials.reduce((sum, m) => sum + (m.weight || 0) * m.quantity, 0),
-        color: values.color || 'Custom',
-        material: selectedMaterials.map(m => m.name).join(', '),
-        hasSizes: false,
-        sizes: [],
         rawMaterials: selectedMaterials.map(m => ({
           rawMaterialId: m.id,
           quantity: m.quantity
-        }))
+        })),
+        isCustom: true
       };
 
+      // Add to cart
       onAddToCart(customProduct);
-      handleClose();
+      
       message.success('Custom product added to cart');
+      onClose();
     } catch (error) {
       message.error('Failed to create custom product');
     } finally {
       setLoading(false);
     }
   };
-
-  const handleClose = () => {
-    form.resetFields();
-    setSelectedMaterials([]);
-    onClose();
-  };
-
-  const materialColumns = [
-    {
-      title: 'Material',
-      dataIndex: 'name',
-      key: 'name',
-      render: (text, record) => (
-        <div>
-          <Text strong>{text}</Text>
-          <br />
-          <Text type="secondary" className="text-xs">{record.category}</Text>
-        </div>
-      ),
-    },
-    {
-      title: 'Quantity',
-      key: 'quantity',
-      render: (record) => `${record.quantity} ${record.unit}`,
-    },
-    {
-      title: 'Unit Price',
-      dataIndex: 'unitPrice',
-      key: 'unitPrice',
-      render: (price) => `$${price.toFixed(2)}`,
-    },
-    {
-      title: 'Total Cost',
-      dataIndex: 'totalCost',
-      key: 'totalCost',
-      render: (cost) => `$${cost.toFixed(2)}`,
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (record) => (
-        <Popconfirm
-          title="Remove this material?"
-          onConfirm={() => handleRemoveMaterial(record.id)}
-        >
-          <ActionButton.Text icon="delete" danger size="small" />
-        </Popconfirm>
-      ),
-    },
-  ];
-
-  const totalMaterialCost = selectedMaterials.reduce((sum, m) => sum + m.totalCost, 0);
-  const markup = Form.useWatch('markup', form) || 50;
-  const finalPrice = totalMaterialCost * (1 + markup / 100);
 
   return (
     <Modal
@@ -178,209 +134,160 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
         </Space>
       }
       open={open}
-      onCancel={handleClose}
-      width={900}
+      onCancel={onClose}
+      width={800}
       footer={null}
       destroyOnClose
     >
       <div className="space-y-6">
-        <Alert
-          message="Custom Product Builder"
-          description="Create a custom product by combining raw materials. Set your markup percentage to determine the final selling price."
-          type="info"
-          showIcon
-        />
+        {/* Product Info */}
+        <div className="space-y-4">
+          <Title level={5}>Custom Product Information</Title>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Text strong>Name:</Text>
+              <Input 
+                placeholder="Enter custom product name" 
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Text strong>Price:</Text>
+              <InputNumber
+                className="w-full mt-1"
+                value={totalPrice}
+                formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={value => value.replace(/\$\s?|(,*)/g, '')}
+                disabled
+              />
+              <Text type="secondary" className="text-xs block mt-1">
+                Price is calculated based on materials (50% markup)
+              </Text>
+            </div>
+          </div>
+          <div>
+            <Text strong>Description:</Text>
+            <TextArea
+              placeholder="Enter description (optional)"
+              value={customDescription}
+              onChange={(e) => setCustomDescription(e.target.value)}
+              rows={2}
+              className="mt-1"
+            />
+          </div>
+        </div>
 
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleCreateCustomProduct}
-        >
-          {/* Product Details */}
-          <Card size="small" title="Product Details" className="mb-4">
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  name="name"
-                  label="Product Name"
-                  rules={[{ required: true, message: 'Please enter product name' }]}
-                >
-                  <Input placeholder="Enter custom product name" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  name="markup"
-                  label="Markup Percentage (%)"
-                  initialValue={50}
-                  rules={[{ required: true, message: 'Please enter markup percentage' }]}
-                >
-                  <InputNumber
-                    min={0}
-                    max={500}
-                    placeholder="50"
-                    className="w-full"
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
+        <Divider />
 
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item name="color" label="Color">
-                  <Input placeholder="Enter color" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item label="Dimensions">
-                  <Input.Group compact>
-                    <Form.Item name={['dimensions', 'length']} noStyle>
-                      <InputNumber placeholder="Length" className="w-1/3" min={0} />
-                    </Form.Item>
-                    <Form.Item name={['dimensions', 'width']} noStyle>
-                      <InputNumber placeholder="Width" className="w-1/3" min={0} />
-                    </Form.Item>
-                    <Form.Item name={['dimensions', 'height']} noStyle>
-                      <InputNumber placeholder="Height" className="w-1/3" min={0} />
-                    </Form.Item>
-                  </Input.Group>
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Form.Item name="description" label="Description">
-              <TextArea
-                rows={2}
-                placeholder="Enter product description"
+        {/* Material Selection */}
+        <div className="space-y-4">
+          <Title level={5}>Add Raw Materials</Title>
+          <Form
+            form={form}
+            layout="inline"
+            onFinish={handleAddMaterial}
+          >
+            <Form.Item
+              name="materialId"
+              rules={[{ required: true, message: 'Please select a material' }]}
+              className="w-1/2"
+            >
+              <Select 
+                placeholder="Select material"
+                showSearch
+                optionFilterProp="children"
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }
+              >
+                {state.rawMaterials.map(material => (
+                  <Option key={material.id} value={material.id}>
+                    {material.name} (${material.unitPrice}/{material.unit}) - Stock: {material.stockQuantity}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Form.Item
+              name="quantity"
+              rules={[{ required: true, message: 'Please enter quantity' }]}
+              className="w-1/4"
+            >
+              <InputNumber
+                min={0.1}
+                step={0.1}
+                placeholder="Qty"
+                className="w-full"
               />
             </Form.Item>
-          </Card>
+            <Form.Item className="w-1/4">
+              <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
+                Add
+              </Button>
+            </Form.Item>
+          </Form>
 
-          {/* Add Materials */}
-          <Card size="small" title="Add Raw Materials" className="mb-4">
-            <Row gutter={16} align="bottom">
-              <Col span={12}>
-                <Form.Item
-                  name="materialId"
-                  label="Raw Material"
-                  rules={[{ required: true, message: 'Please select a material' }]}
-                >
-                  <Select
-                    placeholder="Search and select material"
-                    showSearch
-                    filterOption={(input, option) =>
-                      option.children.toLowerCase().includes(input.toLowerCase())
-                    }
-                  >
-                    {state.rawMaterials?.map(material => (
-                      <Option key={material.id} value={material.id}>
-                        <div>
-                          <Text strong>{material.name}</Text>
-                          <br />
-                          <Text type="secondary" className="text-xs">
-                            {material.category} • ${material.unitPrice}/{material.unit} • Stock: {material.stockQuantity}
-                          </Text>
-                        </div>
-                      </Option>
-                    ))}
-                  </Select>
-                </Form.Item>
-              </Col>
-              <Col span={8}>
-                <Form.Item
-                  name="quantity"
-                  label="Quantity"
-                  rules={[{ required: true, message: 'Please enter quantity' }]}
-                  initialValue={1}
-                >
-                  <InputNumber
-                    min={0.01}
-                    step={0.01}
-                    placeholder="1.00"
-                    className="w-full"
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={4}>
-                <Form.Item>
-                  <ActionButton.Primary 
-                    onClick={() => {
-                      form.validateFields(['materialId', 'quantity'])
-                        .then(handleAddMaterial)
-                        .catch(() => {});
-                    }}
-                    icon="add" 
-                    block
-                  >
-                    Add
-                  </ActionButton.Primary>
-                </Form.Item>
-              </Col>
-            </Row>
-          </Card>
-
-          {/* Selected Materials */}
-          {selectedMaterials.length > 0 && (
-            <Card size="small" title="Selected Materials" className="mb-4">
-              <Table
-                columns={materialColumns}
+          {/* Selected Materials List */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex justify-between items-center mb-2">
+              <Text strong>Selected Materials</Text>
+              <Text strong>Total: ${totalPrice.toFixed(2)}</Text>
+            </div>
+            
+            {selectedMaterials.length === 0 ? (
+              <div className="text-center py-4">
+                <Icon name="category" className="text-gray-300 text-2xl mb-2" />
+                <Text type="secondary">No materials added yet</Text>
+              </div>
+            ) : (
+              <List
                 dataSource={selectedMaterials}
-                rowKey="id"
-                pagination={false}
-                size="small"
-                summary={() => (
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell colSpan={3}>
-                      <Text strong>Total Material Cost</Text>
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell>
-                      <Text strong>${totalMaterialCost.toFixed(2)}</Text>
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell />
-                  </Table.Summary.Row>
+                renderItem={item => (
+                  <List.Item
+                    key={item.id}
+                    className="flex justify-between items-center"
+                    actions={[
+                      <Button 
+                        type="text" 
+                        danger 
+                        icon={<Icon name="delete" />} 
+                        onClick={() => handleRemoveMaterial(item.id)}
+                      />
+                    ]}
+                  >
+                    <div>
+                      <Text>{item.name}</Text>
+                      <div>
+                        <Text type="secondary" className="text-sm">
+                          {item.quantity} {item.unit} × ${item.unitPrice.toFixed(2)}
+                        </Text>
+                      </div>
+                    </div>
+                    <Text strong>${(item.quantity * item.unitPrice).toFixed(2)}</Text>
+                  </List.Item>
                 )}
               />
-            </Card>
-          )}
-
-          {/* Pricing Summary */}
-          {selectedMaterials.length > 0 && (
-            <Card size="small" title="Pricing Summary" className="mb-4">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Text>Material Cost:</Text>
-                  <Text>${totalMaterialCost.toFixed(2)}</Text>
-                </div>
-                <div className="flex justify-between">
-                  <Text>Markup ({markup}%):</Text>
-                  <Text>${(totalMaterialCost * markup / 100).toFixed(2)}</Text>
-                </div>
-                <Divider className="my-2" />
-                <div className="flex justify-between">
-                  <Text strong className="text-lg">Final Price:</Text>
-                  <Text strong className="text-lg text-blue-600">
-                    ${finalPrice.toFixed(2)}
-                  </Text>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {/* Footer */}
-          <div className="flex justify-end space-x-2">
-            <ActionButton onClick={handleClose}>
-              Cancel
-            </ActionButton>
-            <ActionButton.Primary 
-              htmlType="submit" 
-              loading={loading}
-              icon="add_shopping_cart"
-              disabled={selectedMaterials.length === 0}
-            >
-              Add to Cart
-            </ActionButton.Primary>
+            )}
           </div>
-        </Form>
+        </div>
+
+        <Divider />
+
+        {/* Footer */}
+        <div className="flex justify-end space-x-2">
+          <ActionButton onClick={onClose}>
+            Cancel
+          </ActionButton>
+          <ActionButton.Primary 
+            onClick={handleSubmit}
+            loading={loading}
+            disabled={selectedMaterials.length === 0 || !customName.trim()}
+            icon="add_shopping_cart"
+          >
+            Add to Cart
+          </ActionButton.Primary>
+        </div>
       </div>
     </Modal>
   );

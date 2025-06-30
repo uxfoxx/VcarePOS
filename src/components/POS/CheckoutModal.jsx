@@ -13,7 +13,8 @@ import {
   message,
   Row,
   Col,
-  Alert
+  Alert,
+  Tag
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -53,7 +54,20 @@ export function CheckoutModal({
   const [showInvoice, setShowInvoice] = useState(false);
   const [showInventoryLabels, setShowInventoryLabels] = useState(false);
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+  const subtotal = cartItems.reduce((sum, item) => {
+    // Include base price
+    let itemTotal = item.product.price * item.quantity;
+    
+    // Add addon prices if any
+    if (item.product.addons) {
+      const addonTotal = item.product.addons.reduce((addonSum, addon) => 
+        addonSum + addon.price, 0) * item.quantity;
+      itemTotal += addonTotal;
+    }
+    
+    return sum + itemTotal;
+  }, 0);
+  
   const taxableAmount = subtotal + (categoryTaxTotal || 0) - (couponDiscount || 0);
   const total = taxableAmount + (fullBillTaxTotal || 0);
 
@@ -147,6 +161,19 @@ export function CheckoutModal({
             selectedSize: item.selectedSize
           }
         });
+        
+        // Update raw material stock for addons if any
+        if (item.product.addons) {
+          item.product.addons.forEach(addon => {
+            dispatch({
+              type: 'UPDATE_RAW_MATERIAL_STOCK',
+              payload: {
+                materialId: addon.id,
+                quantity: addon.quantity * item.quantity
+              }
+            });
+          });
+        }
       });
 
       // Update coupon usage if applied
@@ -244,6 +271,13 @@ export function CheckoutModal({
             const itemCategoryTaxes = (itemTaxes || []).filter(tax => tax.productId === item.product.id);
             const itemTaxAmount = itemCategoryTaxes.reduce((sum, tax) => sum + tax.amount, 0);
             
+            // Calculate addon price if any
+            const addonPrice = item.product.addons ? 
+              item.product.addons.reduce((sum, addon) => sum + addon.price, 0) : 0;
+            
+            // Calculate total price including addons
+            const itemTotalPrice = (item.product.price + addonPrice) * item.quantity;
+            
             return (
               <List.Item className="px-0 py-2">
                 <div className="w-full">
@@ -258,18 +292,35 @@ export function CheckoutModal({
                           </Text>
                         </>
                       )}
+                      {item.product.isCustom && (
+                        <Tag color="purple" className="ml-1">Custom</Tag>
+                      )}
                     </div>
                     <Text strong className="text-blue-600">
-                      ${(item.product.price * item.quantity + itemTaxAmount).toFixed(2)}
+                      ${itemTotalPrice.toFixed(2)}
                     </Text>
                   </div>
                   <div className="flex items-center justify-between text-sm text-gray-500">
                     <Text type="secondary">
                       ${item.product.price.toFixed(2)} × {item.quantity}
+                      {addonPrice > 0 && ` + $${addonPrice.toFixed(2)} addons`}
                       {itemTaxAmount > 0 && ` + $${itemTaxAmount.toFixed(2)} tax`}
                     </Text>
                     <Text type="secondary">SKU: {item.product.barcode}</Text>
                   </div>
+                  
+                  {/* Show addons if any */}
+                  {item.product.addons && item.product.addons.length > 0 && (
+                    <div className="mt-1 pl-4 border-l-2 border-blue-200">
+                      {item.product.addons.map((addon, idx) => (
+                        <Text key={idx} type="secondary" className="text-xs block">
+                          {addon.name} × {addon.quantity}: +${addon.price.toFixed(2)}
+                        </Text>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Show category taxes for this item */}
                   {itemCategoryTaxes.length > 0 && (
                     <div className="mt-1">
                       {itemCategoryTaxes.map(tax => (

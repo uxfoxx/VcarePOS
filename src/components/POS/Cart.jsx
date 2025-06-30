@@ -12,7 +12,6 @@ import {
   Input,
   Button,
   Alert,
-  Collapse,
   Tag
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
@@ -22,7 +21,6 @@ import { Icon } from '../common/Icon';
 import { CheckoutModal } from './CheckoutModal';
 
 const { Title, Text } = Typography;
-const { Panel } = Collapse;
 
 export function Cart() {
   const { state, dispatch } = usePOS();
@@ -76,7 +74,20 @@ export function Cart() {
 
   const { itemTaxes, fullBillTaxes } = calculateTaxes();
   
-  const subtotal = state.cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+  const subtotal = state.cart.reduce((sum, item) => {
+    // Include base price
+    let itemTotal = item.product.price * item.quantity;
+    
+    // Add addon prices if any
+    if (item.product.addons) {
+      const addonTotal = item.product.addons.reduce((addonSum, addon) => 
+        addonSum + addon.price, 0);
+      itemTotal += addonTotal;
+    }
+    
+    return sum + itemTotal;
+  }, 0);
+  
   const categoryTaxTotal = itemTaxes.reduce((sum, tax) => sum + tax.amount, 0);
   const couponDiscount = appliedCoupon ? (subtotal * appliedCoupon.discountPercent) / 100 : 0;
   const taxableAmount = subtotal + categoryTaxTotal - couponDiscount;
@@ -149,157 +160,6 @@ export function Cart() {
     }
     
     setShowCheckoutModal(true);
-  };
-
-  const renderCartItem = (item, index) => {
-    // Get category taxes for this item
-    const itemCategoryTaxes = itemTaxes.filter(tax => tax.productId === item.product.id);
-    const itemTaxAmount = itemCategoryTaxes.reduce((sum, tax) => sum + tax.amount, 0);
-    
-    return (
-      <List.Item className="px-0 py-3 border-b border-gray-100">
-        <div className="w-full">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center space-x-2">
-              <Badge count={index + 1} size="small" color="#0E72BD" />
-              <div>
-                <Text strong className="text-sm">{item.product.name}</Text>
-                {item.selectedSize && (
-                  <>
-                    <br />
-                    <Text type="secondary" className="text-xs">
-                      Size: {item.selectedSize}
-                    </Text>
-                  </>
-                )}
-                {item.product.isCustom && (
-                  <>
-                    <br />
-                    <Tag color="gold" size="small">Custom Product</Tag>
-                  </>
-                )}
-                {item.product.hasAddons && item.product.addons && (
-                  <>
-                    <br />
-                    <Tag color="orange" size="small">
-                      {item.product.addons.length} Add-on(s)
-                    </Tag>
-                  </>
-                )}
-              </div>
-            </div>
-            <Popconfirm
-              title="Remove item?"
-              onConfirm={() => dispatch({ 
-                type: 'REMOVE_FROM_CART', 
-                payload: { 
-                  productId: item.product.id, 
-                  selectedSize: item.selectedSize 
-                } 
-              })}
-            >
-              <ActionButton.Text 
-                icon="close"
-                size="small"
-                className="text-gray-400 hover:text-red-500"
-              />
-            </Popconfirm>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Text className="text-sm">${item.product.price.toFixed(2)}</Text>
-              <InputNumber
-                min={1}
-                max={100}
-                value={item.quantity}
-                onChange={(value) => handleQuantityChange(item.product.id, item.selectedSize, value || 1)}
-                size="small"
-                className="w-16"
-              />
-            </div>
-            <div className="text-right">
-              <Text strong className="text-blue-600">
-                ${(item.product.price * item.quantity).toFixed(2)}
-              </Text>
-              {itemTaxAmount > 0 && (
-                <>
-                  <br />
-                  <Text type="secondary" className="text-xs">
-                    +${itemTaxAmount.toFixed(2)} tax
-                  </Text>
-                </>
-              )}
-            </div>
-          </div>
-          
-          {/* Show category taxes for this item */}
-          {itemCategoryTaxes.length > 0 && (
-            <div className="mt-1">
-              {itemCategoryTaxes.map(tax => (
-                <Text key={tax.taxId} type="secondary" className="text-xs block">
-                  {tax.taxName} ({tax.rate}%): +${tax.amount.toFixed(2)}
-                </Text>
-              ))}
-            </div>
-          )}
-
-          {/* Show addons if present */}
-          {item.product.hasAddons && item.product.addons && item.product.addons.length > 0 && (
-            <Collapse size="small" className="mt-2">
-              <Panel 
-                header={`View Add-ons (${item.product.addons.length})`} 
-                key="addons"
-                className="text-xs"
-              >
-                <div className="space-y-1">
-                  {item.product.addons.map((addon, addonIndex) => (
-                    <div key={addonIndex} className="flex justify-between text-xs">
-                      <Text type="secondary">
-                        {addon.name} ({addon.quantity} {addon.unit})
-                      </Text>
-                      <Text type="secondary">
-                        +${addon.totalCost.toFixed(2)}
-                      </Text>
-                    </div>
-                  ))}
-                </div>
-              </Panel>
-            </Collapse>
-          )}
-
-          {/* Show custom materials if present */}
-          {item.product.isCustom && item.product.customMaterials && (
-            <Collapse size="small" className="mt-2">
-              <Panel 
-                header={`Custom Materials (${item.product.customMaterials.length})`} 
-                key="materials"
-                className="text-xs"
-              >
-                <div className="space-y-1">
-                  {item.product.customMaterials.map((material, materialIndex) => (
-                    <div key={materialIndex} className="flex justify-between text-xs">
-                      <Text type="secondary">
-                        {material.name} ({material.quantity} {material.unit})
-                      </Text>
-                      <Text type="secondary">
-                        ${material.totalCost.toFixed(2)}
-                      </Text>
-                    </div>
-                  ))}
-                </div>
-              </Panel>
-            </Collapse>
-          )}
-          
-          <div className="mt-1">
-            <Text type="secondary" className="text-xs">
-              SKU: {item.product.barcode}
-            </Text>
-          </div>
-        </div>
-      </List.Item>
-    );
   };
 
   return (
@@ -376,7 +236,121 @@ export function Cart() {
             ) : (
               <List
                 dataSource={state.cart}
-                renderItem={renderCartItem}
+                renderItem={(item, index) => {
+                  // Get category taxes for this item
+                  const itemCategoryTaxes = itemTaxes.filter(tax => tax.productId === item.product.id);
+                  const itemTaxAmount = itemCategoryTaxes.reduce((sum, tax) => sum + tax.amount, 0);
+                  
+                  // Calculate addon price if any
+                  const addonPrice = item.product.addons ? 
+                    item.product.addons.reduce((sum, addon) => sum + addon.price, 0) : 0;
+                  
+                  // Calculate total price including addons
+                  const itemTotalPrice = (item.product.price + addonPrice) * item.quantity;
+                  
+                  return (
+                    <List.Item className="px-0 py-3 border-b border-gray-100">
+                      <div className="w-full">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            <Badge count={index + 1} size="small" color="#0E72BD" />
+                            <div>
+                              <Text strong className="text-sm">{item.product.name}</Text>
+                              {item.selectedSize && (
+                                <>
+                                  <br />
+                                  <Text type="secondary" className="text-xs">
+                                    Size: {item.selectedSize}
+                                  </Text>
+                                </>
+                              )}
+                              {item.product.isCustom && (
+                                <Tag color="purple" className="ml-1">Custom</Tag>
+                              )}
+                            </div>
+                          </div>
+                          <Popconfirm
+                            title="Remove item?"
+                            onConfirm={() => dispatch({ 
+                              type: 'REMOVE_FROM_CART', 
+                              payload: { 
+                                productId: item.product.id, 
+                                selectedSize: item.selectedSize 
+                              } 
+                            })}
+                          >
+                            <ActionButton.Text 
+                              icon="close"
+                              size="small"
+                              className="text-gray-400 hover:text-red-500"
+                            />
+                          </Popconfirm>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Text className="text-sm">${item.product.price.toFixed(2)}</Text>
+                            <InputNumber
+                              min={1}
+                              max={100}
+                              value={item.quantity}
+                              onChange={(value) => handleQuantityChange(item.product.id, item.selectedSize, value || 1)}
+                              size="small"
+                              className="w-16"
+                            />
+                          </div>
+                          <div className="text-right">
+                            <Text strong className="text-blue-600">
+                              ${itemTotalPrice.toFixed(2)}
+                            </Text>
+                            {itemTaxAmount > 0 && (
+                              <>
+                                <br />
+                                <Text type="secondary" className="text-xs">
+                                  +${itemTaxAmount.toFixed(2)} tax
+                                </Text>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Show addons if any */}
+                        {item.product.addons && item.product.addons.length > 0 && (
+                          <div className="mt-2 pl-4 border-l-2 border-blue-200">
+                            <Text type="secondary" className="text-xs">Addons:</Text>
+                            {item.product.addons.map((addon, idx) => (
+                              <div key={idx} className="flex justify-between text-xs">
+                                <Text type="secondary">
+                                  {addon.name} × {addon.quantity}
+                                </Text>
+                                <Text type="secondary">
+                                  +${addon.price.toFixed(2)}
+                                </Text>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Show category taxes for this item */}
+                        {itemCategoryTaxes.length > 0 && (
+                          <div className="mt-1">
+                            {itemCategoryTaxes.map(tax => (
+                              <Text key={tax.taxId} type="secondary" className="text-xs block">
+                                {tax.taxName} ({tax.rate}%): +${tax.amount.toFixed(2)}
+                              </Text>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <div className="mt-1">
+                          <Text type="secondary" className="text-xs">
+                            SKU: {item.product.barcode}
+                          </Text>
+                        </div>
+                      </div>
+                    </List.Item>
+                  );
+                }}
               />
             )}
           </div>

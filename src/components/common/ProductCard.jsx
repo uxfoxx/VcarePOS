@@ -12,7 +12,6 @@ export function ProductCard({
   onClick,
   showDetails = true,
   showPriceRange = false,
-  showAddonsIndicator = false,
   className = '',
   ...props
 }) {
@@ -40,13 +39,6 @@ export function ProductCard({
     }
     
     return `$${(product.price || 0).toFixed(2)}`;
-  };
-
-  const getButtonText = () => {
-    if (product.stock === 0) return 'Out of Stock';
-    if (product.hasSizes) return 'Select Options';
-    if (showAddonsIndicator) return 'Add Options';
-    return 'Add to Cart';
   };
 
   return (
@@ -79,18 +71,9 @@ export function ProductCard({
               </Tag>
             </div>
           )}
-          {showAddonsIndicator && (
-            <div className="absolute bottom-2 left-2">
-              <Tag color="orange" size="small">
-                <Icon name="add_circle" size="text-xs" className="mr-1" />
-                Add-ons
-              </Tag>
-            </div>
-          )}
           {product.isCustom && (
-            <div className="absolute top-2 left-2">
-              <Tag color="gold" size="small">
-                <Icon name="build" size="text-xs" className="mr-1" />
+            <div className="absolute bottom-2 right-2">
+              <Tag color="purple" size="small">
                 Custom
               </Tag>
             </div>
@@ -128,11 +111,6 @@ export function ProductCard({
               Multiple sizes available
             </Text>
           )}
-          {product.isCustom && (
-            <Text type="secondary" className="text-xs block mb-1">
-              Custom made product
-            </Text>
-          )}
           <div className="flex items-center justify-between">
             <Text strong className="text-lg text-[#0E72BD]">
               {renderPrice()}
@@ -143,7 +121,7 @@ export function ProductCard({
           </div>
         </div>
 
-        {showDetails && (
+        {showDetails && !product.isCustom && (
           <div className="space-y-1">
             {product.dimensions && (
               <Text type="secondary" className="text-xs block">
@@ -163,24 +141,25 @@ export function ProductCard({
                 {product.color}
               </Text>
             )}
-            {product.isCustom && product.customMaterials && (
-              <Text type="secondary" className="text-xs block">
-                <Icon name="build" size="text-xs" className="mr-1" />
-                {product.customMaterials.length} materials
-              </Text>
-            )}
           </div>
         )}
         
         <ActionButton.Primary
-          icon={product.hasSizes || showAddonsIndicator ? "tune" : "add_shopping_cart"}
+          icon="add_shopping_cart"
           size="large"
           block
           onClick={handleAddToCart}
           disabled={product.stock === 0}
           className="bg-[#0E72BD] hover:bg-blue-700 font-semibold"
         >
-          {getButtonText()}
+          {product.stock === 0 
+            ? 'Out of Stock' 
+            : product.hasSizes 
+              ? 'Select Size' 
+              : product.isCustom
+                ? 'Add to Cart'
+                : 'Add with Addons'
+          }
         </ActionButton.Primary>
       </div>
     </Card>

@@ -26,6 +26,8 @@ $spacing-xxl: 48px;
 .vcare-layout {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  display: flex;
+  flex-direction: column;
 
   &__header {
     background: rgba(255, 255, 255, 0.95);
@@ -90,6 +92,14 @@ $spacing-xxl: 48px;
     background: transparent;
     padding: $spacing-lg;
     overflow-x: hidden;
+    flex: 1 0 auto;
+  }
+  
+  &__footer {
+    background: #ffffff;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    padding: $spacing-md;
+    margin-top: auto;
   }
 }
 
@@ -368,6 +378,14 @@ $spacing-xxl: 48px;
   .ant-modal-body {
     padding: 0;
   }
+}
+
+// Layout Footer
+.ant-layout-footer {
+  padding: 16px 24px;
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  margin-top: auto;
 }
 
 // Print Styles

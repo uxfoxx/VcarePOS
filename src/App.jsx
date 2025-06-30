@@ -112,6 +112,8 @@ function AppContent() {
   const layoutStyle = {
     minHeight: '100vh',
     background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+    display: 'flex',
+    flexDirection: 'column'
   };
 
   const siderStyle = {
@@ -143,23 +145,19 @@ function AppContent() {
   const contentStyle = {
     padding: '24px',
     marginTop: '64px',
-    marginBottom: '64px',
     marginLeft: `${siderWidth}px`,
     minHeight: 'calc(100vh - 128px)',
     overflow: 'auto',
     transition: 'all 0.2s',
+    flex: '1 0 auto'
   };
 
-  const footerStyle = {
-    background: '#ffffff',
-    borderTop: '1px solid #e5e7eb',
-    textAlign: 'center',
-    position: 'fixed',
-    width: contentWidth,
-    right: 0,
-    bottom: 0,
-    zIndex: 50,
+  const mainLayoutStyle = {
+    marginLeft: siderWidth,
     transition: 'all 0.2s',
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: '100vh'
   };
 
   return (
@@ -179,7 +177,7 @@ function AppContent() {
           onCollapse={setCollapsed}
         />
       </Sider>
-      <Layout>
+      <Layout style={mainLayoutStyle}>
         <Header 
           style={headerStyle}
           collapsed={collapsed} 
@@ -190,7 +188,7 @@ function AppContent() {
         <Content style={contentStyle}>
           {renderContent()}
         </Content>
-        <Footer style={footerStyle} />
+        <Footer />
       </Layout>
     </Layout>
   );

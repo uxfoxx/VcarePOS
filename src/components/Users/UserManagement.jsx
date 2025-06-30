@@ -10,7 +10,8 @@ import {
   Row,
   Col,
   Switch,
-  Tooltip
+  Tooltip,
+  Checkbox
 } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
@@ -33,6 +34,7 @@ export function UserManagement() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   const filteredUsers = users.filter(user =>
     user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -64,6 +66,31 @@ export function UserManagement() {
     
     deleteUser(userId);
     message.success('User deleted successfully');
+  };
+
+  const handleBulkDelete = (userIds) => {
+    if (!hasPermission('user-management', 'delete')) {
+      message.error('You do not have permission to delete users');
+      return;
+    }
+    
+    // Filter out current user from deletion
+    const validUserIds = userIds.filter(id => id !== currentUser?.id);
+    
+    if (validUserIds.length !== userIds.length) {
+      message.warning('Your own account was excluded from deletion');
+    }
+    
+    if (validUserIds.length === 0) {
+      return;
+    }
+    
+    validUserIds.forEach(id => {
+      deleteUser(id);
+    });
+    
+    message.success(`${validUserIds.length} users deleted successfully`);
+    setSelectedRowKeys([]);
   };
 
   const handleToggleStatus = (user) => {
@@ -131,11 +158,15 @@ export function UserManagement() {
               )}
             </div>
             <Text type="secondary" className="text-sm">@{record.username}</Text>
-            <br />
-            <Text type="secondary" className="text-xs">{record.email}</Text>
           </div>
         </div>
       ),
+    },
+    {
+      title: 'Email',
+      dataIndex: 'email',
+      key: 'email',
+      width: 200,
     },
     {
       title: 'Role',
@@ -147,52 +178,12 @@ export function UserManagement() {
           {role}
         </Tag>
       ),
-    },
-    {
-      title: 'Permissions',
-      key: 'permissions',
-      width: 150,
-      render: (record) => {
-        const permCount = getPermissionCount(record.permissions);
-        const totalModules = Object.keys(record.permissions).length;
-        const activeModules = Object.values(record.permissions).filter(p => p.view).length;
-        
-        return (
-          <div>
-            <Text strong>{activeModules}/{totalModules}</Text>
-            <Text type="secondary" className="text-sm block">
-              modules access
-            </Text>
-            <Text type="secondary" className="text-xs">
-              {permCount} total permissions
-            </Text>
-          </div>
-        );
-      },
-    },
-    {
-      title: 'Last Login',
-      dataIndex: 'lastLogin',
-      key: 'lastLogin',
-      width: 150,
-      sorter: (a, b) => new Date(a.lastLogin || 0) - new Date(b.lastLogin || 0),
-      render: (lastLogin) => (
-        <div>
-          {lastLogin ? (
-            <>
-              <Text className="text-sm">
-                {new Date(lastLogin).toLocaleDateString()}
-              </Text>
-              <br />
-              <Text type="secondary" className="text-xs">
-                {new Date(lastLogin).toLocaleTimeString()}
-              </Text>
-            </>
-          ) : (
-            <Text type="secondary" className="text-sm">Never</Text>
-          )}
-        </div>
-      ),
+      filters: [
+        { text: 'Admin', value: 'admin' },
+        { text: 'Manager', value: 'manager' },
+        { text: 'Cashier', value: 'cashier' },
+      ],
+      onFilter: (value, record) => record.role === value,
     },
     {
       title: 'Status',
@@ -212,17 +203,28 @@ export function UserManagement() {
           </Text>
         </div>
       ),
+      filters: [
+        { text: 'Active', value: true },
+        { text: 'Inactive', value: false },
+      ],
+      onFilter: (value, record) => record.isActive === value,
     },
     {
-      title: 'Created',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      width: 120,
-      sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
-      render: (date) => (
-        <Text className="text-sm">
-          {new Date(date).toLocaleDateString()}
-        </Text>
+      title: 'Last Login',
+      dataIndex: 'lastLogin',
+      key: 'lastLogin',
+      width: 150,
+      sorter: (a, b) => new Date(a.lastLogin || 0) - new Date(b.lastLogin || 0),
+      render: (lastLogin) => (
+        <div>
+          {lastLogin ? (
+            <Text className="text-sm">
+              {new Date(lastLogin).toLocaleDateString()}
+            </Text>
+          ) : (
+            <Text type="secondary" className="text-sm">Never</Text>
+          )}
+        </div>
       ),
     },
     {
@@ -249,15 +251,15 @@ export function UserManagement() {
             record.id === currentUser?.id ? 'Cannot delete own account' : 'Delete User'
           }>
             <Popconfirm
-              title="Are you sure you want to delete this user?"
+              title="Delete this user?"
               description="This action cannot be undone."
               onConfirm={(e) => {
                 e?.stopPropagation();
                 handleDelete(record.id);
               }}
-              okText="Yes, Delete"
+              okText="Delete"
               cancelText="Cancel"
-              okType="danger"
+              okButtonProps={{ danger: true }}
               disabled={record.id === currentUser?.id || !hasPermission('user-management', 'delete')}
             >
               <ActionButton.Text 
@@ -295,25 +297,6 @@ export function UserManagement() {
         <PageHeader
           title="User Management"
           icon="people"
-          subtitle="Manage user accounts and permissions"
-          extra={
-            <Space>
-              <SearchInput
-                placeholder="Search users..."
-                value={searchTerm}
-                onSearch={setSearchTerm}
-                className="w-64"
-              />
-              {hasPermission('user-management', 'edit') && (
-                <ActionButton.Primary 
-                  icon="person_add"
-                  onClick={() => setShowModal(true)}
-                >
-                  Add User
-                </ActionButton.Primary>
-              )}
-            </Space>
-          }
         />
 
         {/* User Statistics */}
@@ -356,12 +339,31 @@ export function UserManagement() {
           columns={columns}
           dataSource={filteredUsers}
           rowKey="id"
+          rowSelection={hasPermission('user-management', 'delete') ? {
+            type: 'checkbox',
+            onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys),
+            getCheckboxProps: (record) => ({
+              disabled: record.id === currentUser?.id
+            })
+          } : null}
+          onDelete={handleBulkDelete}
           onRow={(record) => ({
             onClick: () => handleRowClick(record),
             className: 'cursor-pointer hover:bg-blue-50'
           })}
           searchFields={['firstName', 'lastName', 'username', 'email', 'role']}
-          showSearch={false}
+          searchPlaceholder="Search users..."
+          showSearch={true}
+          extra={
+            hasPermission('user-management', 'edit') && (
+              <ActionButton.Primary 
+                icon="person_add"
+                onClick={() => setShowModal(true)}
+              >
+                Add User
+              </ActionButton.Primary>
+            )
+          }
           emptyDescription="No users found"
           emptyImage={<Icon name="people" className="text-6xl text-gray-300" />}
         />

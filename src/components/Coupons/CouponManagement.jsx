@@ -15,7 +15,9 @@ import {
   Popconfirm,
   message,
   Row,
-  Col
+  Col,
+  Tooltip,
+  Checkbox
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
@@ -26,7 +28,6 @@ import { EnhancedTable } from '../common/EnhancedTable';
 import { DetailModal } from '../common/DetailModal';
 import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
-import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -42,6 +43,7 @@ export function CouponManagement() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   const coupons = state.coupons || [];
 
@@ -106,6 +108,14 @@ export function CouponManagement() {
     message.success('Coupon deleted successfully');
   };
 
+  const handleBulkDelete = (couponIds) => {
+    couponIds.forEach(id => {
+      dispatch({ type: 'DELETE_COUPON', payload: id });
+    });
+    message.success(`${couponIds.length} coupons deleted successfully`);
+    setSelectedRowKeys([]);
+  };
+
   const handleToggleStatus = (coupon) => {
     const updatedCoupon = { ...coupon, isActive: !coupon.isActive };
     dispatch({ type: 'UPDATE_COUPON', payload: updatedCoupon });
@@ -132,93 +142,71 @@ export function CouponManagement() {
       dataIndex: 'code',
       key: 'code',
       fixed: 'left',
-      width: 200,
-      render: (code, record) => (
-        <div>
-          <Text strong className="font-mono">{code}</Text>
-          <br />
-          <Text type="secondary" className="text-xs">{record.description}</Text>
-        </div>
+      width: 150,
+      render: (code) => (
+        <Text strong className="font-mono">{code}</Text>
       ),
       sorter: (a, b) => a.code.localeCompare(b.code),
     },
     {
-      title: 'Discount',
-      key: 'discount',
-      width: 150,
-      render: (record) => (
-        <div>
-          <Text strong>
-            {record.discountType === 'percentage' 
-              ? `${record.discountPercent}%` 
-              : `$${record.discountAmount}`
-            }
-          </Text>
-          {record.maxDiscount && (
-            <>
-              <br />
-              <Text type="secondary" className="text-xs">
-                Max: ${record.maxDiscount}
-              </Text>
-            </>
-          )}
-        </div>
-      ),
-      sorter: (a, b) => {
-        const aValue = a.discountType === 'percentage' ? a.discountPercent : a.discountAmount;
-        const bValue = b.discountType === 'percentage' ? b.discountPercent : b.discountAmount;
-        return aValue - bValue;
-      },
+      title: 'Description',
+      dataIndex: 'description',
+      key: 'description',
+      width: 200,
     },
     {
-      title: 'Minimum Amount',
+      title: 'Discount',
+      key: 'discount',
+      width: 120,
+      render: (record) => (
+        <Text strong>
+          {record.discountType === 'percentage' 
+            ? `${record.discountPercent}%` 
+            : `LKR ${record.discountAmount}`
+          }
+        </Text>
+      ),
+    },
+    {
+      title: 'Min. Amount',
       dataIndex: 'minimumAmount',
       key: 'minimumAmount',
-      width: 150,
-      render: (amount) => amount > 0 ? `$${amount.toFixed(2)}` : 'No minimum',
-      sorter: (a, b) => a.minimumAmount - b.minimumAmount,
+      width: 120,
+      render: (amount) => amount > 0 ? `LKR ${amount.toFixed(2)}` : 'No minimum',
     },
     {
       title: 'Usage',
       key: 'usage',
-      width: 120,
+      width: 100,
       render: (record) => (
         <div>
           <Text>{record.usedCount || 0}</Text>
           {record.usageLimit && (
-            <>
-              <Text type="secondary"> / {record.usageLimit}</Text>
-              <br />
-              <Text type="secondary" className="text-xs">
-                {record.usageLimit - (record.usedCount || 0)} remaining
-              </Text>
-            </>
+            <Text type="secondary"> / {record.usageLimit}</Text>
           )}
         </div>
       ),
-      sorter: (a, b) => (a.usedCount || 0) - (b.usedCount || 0),
     },
     {
-      title: 'Valid Period',
-      key: 'validity',
-      width: 180,
+      title: 'Valid Until',
+      key: 'validTo',
+      width: 120,
       render: (record) => (
-        <div>
-          <Text className="text-xs">
-            From: {new Date(record.validFrom).toLocaleDateString()}
-          </Text>
-          <br />
-          <Text className="text-xs">
-            To: {record.validTo ? new Date(record.validTo).toLocaleDateString() : 'No expiry'}
-          </Text>
-        </div>
+        <Text>
+          {record.validTo ? new Date(record.validTo).toLocaleDateString() : 'No expiry'}
+        </Text>
       ),
-      sorter: (a, b) => new Date(a.validFrom) - new Date(b.validFrom),
+      sorter: (a, b) => {
+        if (!a.validTo && !b.validTo) return 0;
+        if (!a.validTo) return 1;
+        if (!b.validTo) return -1;
+        return new Date(a.validTo) - new Date(b.validTo);
+      },
     },
     {
       title: 'Status',
       key: 'status',
-      width: 120,
+      width: 100,
       render: (record) => {
         const isExpired = record.validTo && new Date(record.validTo) < new Date();
         const isUsedUp = record.usageLimit && record.usedCount >= record.usageLimit;
@@ -263,38 +251,45 @@ export function CouponManagement() {
       width: 120,
       render: (record) => (
         <Space>
-          <ActionButton.Text 
-            icon="edit"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEdit(record);
-            }}
-            className="text-blue-600"
-          />
-          <Switch
-            size="small"
-            checked={record.isActive}
-            onChange={(checked, e) => {
-              e?.stopPropagation();
-              handleToggleStatus(record);
-            }}
-            onClick={(checked, e) => e.stopPropagation()}
-          />
-          <Popconfirm
-            title="Are you sure you want to delete this coupon?"
-            onConfirm={(e) => {
-              e?.stopPropagation();
-              handleDelete(record.id);
-            }}
-            okText="Yes"
-            cancelText="No"
-          >
+          <Tooltip title="Edit">
             <ActionButton.Text 
-              icon="delete"
-              danger
-              onClick={(e) => e.stopPropagation()}
+              icon="edit"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(record);
+              }}
+              className="text-blue-600"
             />
-          </Popconfirm>
+          </Tooltip>
+          <Tooltip title={record.isActive ? 'Deactivate' : 'Activate'}>
+            <Switch
+              size="small"
+              checked={record.isActive}
+              onChange={(checked, e) => {
+                e?.stopPropagation();
+                handleToggleStatus(record);
+              }}
+              onClick={(checked, e) => e.stopPropagation()}
+            />
+          </Tooltip>
+          <Tooltip title="Delete">
+            <Popconfirm
+              title="Delete this coupon?"
+              onConfirm={(e) => {
+                e?.stopPropagation();
+                handleDelete(record.id);
+              }}
+              okText="Delete"
+              cancelText="Cancel"
+              okButtonProps={{ danger: true }}
+            >
+              <ActionButton.Text 
+                icon="delete"
+                danger
+                onClick={(e) => e.stopPropagation()}
+              />
+            </Popconfirm>
+          </Tooltip>
         </Space>
       ),
     },
@@ -309,10 +304,14 @@ export function CouponManagement() {
       <EnhancedTable
         title="Coupon Management"
         icon="local_offer"
-        subtitle="Create and manage discount coupons"
         columns={columns}
         dataSource={filteredCoupons}
         rowKey="id"
+        rowSelection={{
+          type: 'checkbox',
+          onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys)
+        }}
+        onDelete={handleBulkDelete}
         onRow={(record) => ({
           onClick: () => handleRowClick(record),
           className: 'cursor-pointer hover:bg-blue-50'
@@ -402,22 +401,26 @@ export function CouponManagement() {
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="maxDiscount" label="Maximum Discount ($)">
+              <Form.Item name="maxDiscount" label="Maximum Discount (LKR)">
                 <InputNumber
                   min={0}
-                  step={0.01}
+                  step={100}
                   placeholder="0.00"
                   className="w-full"
+                  formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  parser={value => value.replace(/LKR\s?|(,*)/g, '')}
                 />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="minimumAmount" label="Minimum Order Amount ($)">
+              <Form.Item name="minimumAmount" label="Minimum Order Amount (LKR)">
                 <InputNumber
                   min={0}
-                  step={0.01}
+                  step={100}
                   placeholder="0.00"
                   className="w-full"
+                  formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  parser={value => value.replace(/LKR\s?|(,*)/g, '')}
                 />
               </Form.Item>
             </Col>
@@ -446,8 +449,9 @@ export function CouponManagement() {
 
           <Form.Item name="applicableCategories" label="Applicable Categories">
             <Select mode="multiple" placeholder="Select categories (leave empty for all)">
-              <Option value="Tables">Tables</Option>
-              <Option value="Chairs">Chairs</Option>
+              {state.categories?.filter(cat => cat.isActive).map(cat => (
+                <Option key={cat.id} value={cat.name}>{cat.name}</Option>
+              ))}
             </Select>
           </Form.Item>
 

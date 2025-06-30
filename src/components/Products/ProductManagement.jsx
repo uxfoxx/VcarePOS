@@ -14,7 +14,9 @@ import {
   Modal,
   Table,
   Button,
-  Input
+  Input,
+  Tooltip,
+  Checkbox
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { ActionButton } from '../common/ActionButton';
@@ -42,6 +44,7 @@ export function ProductManagement() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('products');
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   const filteredProducts = state.products.filter(product =>
     (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -77,6 +80,13 @@ export function ProductManagement() {
   const handleDelete = (productId) => {
     dispatch({ type: 'DELETE_PRODUCT', payload: productId });
     message.success('Product deleted successfully');
+  };
+
+  const handleBulkDelete = (productIds) => {
+    productIds.forEach(id => {
+      dispatch({ type: 'DELETE_PRODUCT', payload: id });
+    });
+    message.success(`${productIds.length} products deleted successfully`);
   };
 
   const handlePrintProductDetails = (product) => {
@@ -141,8 +151,6 @@ export function ProductManagement() {
           <div>
             <Text strong>{record.name}</Text>
             <br />
-            <Text type="secondary" className="text-xs">{record.description}</Text>
-            <br />
             <Text type="secondary" className="text-xs">SKU: {record.barcode}</Text>
           </div>
         </div>
@@ -175,18 +183,12 @@ export function ProductManagement() {
           const minPrice = Math.min(...record.sizes.map(s => s.price));
           const maxPrice = Math.max(...record.sizes.map(s => s.price));
           return (
-            <div>
-              <Text strong>
-                {minPrice === maxPrice 
-                  ? `LKR ${minPrice.toFixed(2)}`
-                  : `LKR ${minPrice.toFixed(2)} - LKR ${maxPrice.toFixed(2)}`
-                }
-              </Text>
-              <br />
-              <Text type="secondary" className="text-xs">
-                {record.sizes.length} sizes
-              </Text>
-            </div>
+            <Text strong>
+              {minPrice === maxPrice 
+                ? `LKR ${minPrice.toFixed(2)}`
+                : `LKR ${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}`
+              }
+            </Text>
           );
         }
         return <Text strong>LKR {(price || 0).toFixed(2)}</Text>;
@@ -202,15 +204,9 @@ export function ProductManagement() {
         if (record.hasSizes && record.sizes?.length > 0) {
           const totalStock = record.sizes.reduce((sum, size) => sum + size.stock, 0);
           return (
-            <div>
-              <Tag color={totalStock > 10 ? 'green' : totalStock > 0 ? 'orange' : 'red'}>
-                {totalStock} total
-              </Tag>
-              <br />
-              <Text type="secondary" className="text-xs">
-                Across {record.sizes.length} sizes
-              </Text>
-            </div>
+            <Tag color={totalStock > 10 ? 'green' : totalStock > 0 ? 'orange' : 'red'}>
+              {totalStock} units
+            </Tag>
           );
         }
         return (
@@ -240,139 +236,121 @@ export function ProductManagement() {
       key: 'type',
       width: 120,
       render: (record) => {
+        if (record.isCustom) {
+          return <Tag color="gold">Custom</Tag>;
+        }
         return record.hasSizes ? (
           <Tag color="purple">Has Sizes</Tag>
         ) : (
-          <Tag color="default">Single Product</Tag>
+          <Tag color="default">Single</Tag>
         );
       },
       filters: [
-        { text: 'Has Sizes', value: true },
-        { text: 'Single Product', value: false },
+        { text: 'Has Sizes', value: 'sizes' },
+        { text: 'Single Product', value: 'single' },
+        { text: 'Custom Product', value: 'custom' },
       ],
-      onFilter: (value, record) => record.hasSizes === value,
+      onFilter: (value, record) => {
+        if (value === 'sizes') return record.hasSizes;
+        if (value === 'single') return !record.hasSizes && !record.isCustom;
+        if (value === 'custom') return record.isCustom;
+        return true;
+      },
     },
     {
-      title: 'Materials',
-      key: 'materials',
-      width: 120,
-      render: (record) => (
-        <div>
-          {record.rawMaterials && record.rawMaterials.length > 0 ? (
-            <Tag color="green">
-              {record.rawMaterials.length} material{record.rawMaterials.length !== 1 ? 's' : ''}
-            </Tag>
-          ) : (
-            <Text type="secondary" className="text-xs">No materials</Text>
-          )}
-        </div>
-      ),
-    },
-    {
-      title: 'Specifications',
-      key: 'specs',
-      width: 200,
-      render: (record) => (
-        <Space direction="vertical" size="small">
-          {record.dimensions && (
-            <div className="flex items-center space-x-1">
-              <Icon name="straighten" className="text-gray-400" size="text-sm" />
-              <Text className="text-xs">
-                {record.dimensions.length}×{record.dimensions.width}×{record.dimensions.height} {record.dimensions.unit}
-              </Text>
-            </div>
-          )}
-          {record.color && (
-            <div className="flex items-center space-x-1">
-              <Icon name="palette" className="text-gray-400" size="text-sm" />
-              <Text className="text-xs">{record.color}</Text>
-            </div>
-          )}
-          {record.weight && (
-            <Text className="text-xs">
-              <Icon name="scale" size="text-xs" className="mr-1" />
-              {record.weight} kg
+      title: 'Dimensions',
+      key: 'dimensions',
+      width: 150,
+      render: (record) => {
+        if (record.dimensions && record.dimensions.length) {
+          return (
+            <Text className="text-sm">
+              {record.dimensions.length}×{record.dimensions.width}×{record.dimensions.height} {record.dimensions.unit}
             </Text>
-          )}
-        </Space>
-      ),
+          );
+        }
+        return <Text type="secondary">-</Text>;
+      },
     },
     {
       title: 'Actions',
       key: 'actions',
       fixed: 'right',
-      width: 80,
+      width: 100,
       render: (record) => (
-        <Dropdown
-          menu={{
-            items: getActionMenuItems(record)
-          }}
-          trigger={['click']}
-        >
-          <ActionButton.Text
-            icon="more_vert"
-            className="text-blue-600 hover:text-blue-700"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </Dropdown>
+        <Space>
+          <Tooltip title="Edit">
+            <ActionButton.Text
+              icon="edit"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(record);
+              }}
+              className="text-blue-600"
+            />
+          </Tooltip>
+          <Tooltip title="Print Details">
+            <ActionButton.Text
+              icon="print"
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePrintProductDetails(record);
+              }}
+              className="text-gray-600"
+            />
+          </Tooltip>
+          <Tooltip title="Delete">
+            <Popconfirm
+              title="Delete this product?"
+              onConfirm={(e) => {
+                e?.stopPropagation();
+                handleDelete(record.id);
+              }}
+              okText="Delete"
+              cancelText="Cancel"
+              okButtonProps={{ danger: true }}
+            >
+              <ActionButton.Text
+                icon="delete"
+                danger
+                onClick={(e) => e.stopPropagation()}
+              />
+            </Popconfirm>
+          </Tooltip>
+        </Space>
       ),
     },
   ];
 
   const renderProductsTab = () => (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <Title level={5} className="m-0">Product Inventory</Title>
-          <Text type="secondary">Manage your furniture products and sizes</Text>
-        </div>
-        <Space>
-          <SearchInput
-            placeholder="Search products..."
-            value={searchTerm}
-            onSearch={setSearchTerm}
-            className="w-64"
-          />
+      <EnhancedTable
+        columns={columns}
+        dataSource={filteredProducts}
+        rowKey="id"
+        onRow={(record) => ({
+          onClick: () => handleRowClick(record),
+          className: 'cursor-pointer hover:bg-blue-50'
+        })}
+        searchFields={['name', 'category', 'barcode']}
+        searchPlaceholder="Search products..."
+        showSearch={true}
+        rowSelection={{
+          type: 'checkbox',
+          onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys)
+        }}
+        onDelete={handleBulkDelete}
+        extra={
           <ActionButton.Primary 
             icon="add"
             onClick={() => setShowModal(true)}
           >
             Add Product
           </ActionButton.Primary>
-        </Space>
-      </div>
-
-      {loading ? (
-        <LoadingSkeleton type="table" />
-      ) : (
-        <Table
-          columns={columns}
-          dataSource={filteredProducts}
-          rowKey="id"
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-          }}
-          scroll={{ x: 1200 }}
-          onRow={(record) => ({
-            onClick: () => handleRowClick(record),
-            className: 'cursor-pointer hover:bg-blue-50'
-          })}
-          locale={{
-            emptyText: (
-              <EmptyState
-                icon="inventory_2"
-                title="No Products Found"
-                description="No products match your search criteria"
-                actionText="Add Product"
-                onAction={() => setShowModal(true)}
-              />
-            )
-          }}
-        />
-      )}
+        }
+        emptyDescription="No products found"
+        emptyImage={<Icon name="inventory_2" className="text-6xl text-gray-300" />}
+      />
     </div>
   );
 
@@ -405,7 +383,6 @@ export function ProductManagement() {
         <PageHeader
           title="Product Management"
           icon="inventory_2"
-          subtitle="Manage products, sizes, and categories"
         />
         
         <Tabs

@@ -14,7 +14,9 @@ import {
   Select,
   Tabs,
   Table,
-  Button
+  Button,
+  Tooltip,
+  Checkbox
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { useNotifications } from '../../contexts/NotificationContext';
@@ -40,6 +42,7 @@ export function ReportsOverview() {
   const [dateRange, setDateRange] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   // Filter transactions based on date
   const getFilteredTransactions = () => {
@@ -119,7 +122,7 @@ export function ReportsOverview() {
       title: 'Total Revenue',
       value: totalRevenue,
       precision: 2,
-      prefix: '$',
+      prefix: 'LKR ',
       icon: 'attach_money',
       color: '#52c41a',
       change: '+12.5%'
@@ -149,7 +152,7 @@ export function ReportsOverview() {
       title: 'Average Order',
       value: averageOrderValue,
       precision: 2,
-      prefix: '$',
+      prefix: 'LKR ',
       icon: 'trending_up',
       color: '#13c2c2',
       change: '+15.3%'
@@ -158,7 +161,7 @@ export function ReportsOverview() {
       title: 'Material Inventory',
       value: rawMaterialValue,
       precision: 2,
-      prefix: '$',
+      prefix: 'LKR ',
       icon: 'warehouse',
       color: '#eb2f96',
       change: '+2.8%'
@@ -229,10 +232,21 @@ export function ReportsOverview() {
       dataIndex: 'name',
       key: 'name',
       render: (text, record) => (
-        <div>
-          <Text strong>{text}</Text>
-          <br />
-          <Text type="secondary" className="text-xs">SKU: {record.barcode}</Text>
+        <div className="flex items-center space-x-3">
+          <Image
+            src={record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=100'}
+            alt={record.name}
+            width={40}
+            height={40}
+            className="object-cover rounded"
+            preview={false}
+            style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+          />
+          <div>
+            <Text strong>{text}</Text>
+            <br />
+            <Text type="secondary" className="text-xs">SKU: {record.barcode}</Text>
+          </div>
         </div>
       ),
       sorter: (a, b) => a.name.localeCompare(b.name),
@@ -252,7 +266,7 @@ export function ReportsOverview() {
       title: 'Price',
       dataIndex: 'price',
       key: 'price',
-      render: (price) => <Text strong>${price.toFixed(2)}</Text>,
+      render: (price) => <Text strong>LKR {price.toFixed(2)}</Text>,
       sorter: (a, b) => a.price - b.price,
     },
     {
@@ -278,22 +292,9 @@ export function ReportsOverview() {
       },
     },
     {
-      title: 'Has Sizes',
-      dataIndex: 'hasSizes',
-      key: 'hasSizes',
-      render: (hasSizes) => (
-        hasSizes ? <Tag color="purple">Yes</Tag> : <Tag color="default">No</Tag>
-      ),
-      filters: [
-        { text: 'Has Sizes', value: true },
-        { text: 'No Sizes', value: false },
-      ],
-      onFilter: (value, record) => record.hasSizes === value,
-    },
-    {
       title: 'Total Value',
       key: 'value',
-      render: (record) => <Text>${(record.price * record.stock).toFixed(2)}</Text>,
+      render: (record) => <Text>LKR {(record.price * record.stock).toFixed(2)}</Text>,
       sorter: (a, b) => (a.price * a.stock) - (b.price * b.stock),
     }
   ];
@@ -312,13 +313,7 @@ export function ReportsOverview() {
       dataIndex: 'timestamp',
       key: 'timestamp',
       render: (timestamp) => (
-        <div>
-          <Text>{new Date(timestamp).toLocaleDateString()}</Text>
-          <br />
-          <Text type="secondary" className="text-xs">
-            {new Date(timestamp).toLocaleTimeString()}
-          </Text>
-        </div>
+        <Text>{new Date(timestamp).toLocaleDateString()}</Text>
       ),
       sorter: (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
       defaultSortOrder: 'descend',
@@ -338,22 +333,10 @@ export function ReportsOverview() {
       sorter: (a, b) => a.items.length - b.items.length,
     },
     {
-      title: 'Payment',
-      dataIndex: 'paymentMethod',
-      key: 'paymentMethod',
-      render: (method) => <Tag color="green">{method.toUpperCase()}</Tag>,
-      filters: [
-        { text: 'Card', value: 'card' },
-        { text: 'Cash', value: 'cash' },
-        { text: 'Digital', value: 'digital' },
-      ],
-      onFilter: (value, record) => record.paymentMethod === value,
-    },
-    {
       title: 'Total',
       dataIndex: 'total',
       key: 'total',
-      render: (total) => <Text strong className="text-blue-600">${total.toFixed(2)}</Text>,
+      render: (total) => <Text strong className="text-blue-600">LKR {total.toFixed(2)}</Text>,
       sorter: (a, b) => a.total - b.total,
     },
     {
@@ -380,13 +363,7 @@ export function ReportsOverview() {
       title: 'Material',
       dataIndex: 'name',
       key: 'name',
-      render: (text, record) => (
-        <div>
-          <Text strong>{text}</Text>
-          <br />
-          <Text type="secondary" className="text-xs">{record.description}</Text>
-        </div>
-      ),
+      render: (text) => <Text strong>{text}</Text>,
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
@@ -446,19 +423,14 @@ export function ReportsOverview() {
       title: 'Unit Price',
       dataIndex: 'unitPrice',
       key: 'unitPrice',
-      render: (price) => <Text>${price.toFixed(2)}</Text>,
+      render: (price) => <Text>LKR {price.toFixed(2)}</Text>,
       sorter: (a, b) => a.unitPrice - b.unitPrice,
     },
     {
       title: 'Total Value',
       key: 'value',
-      render: (record) => <Text>${(record.stockQuantity * record.unitPrice).toFixed(2)}</Text>,
+      render: (record) => <Text>LKR {(record.stockQuantity * record.unitPrice).toFixed(2)}</Text>,
       sorter: (a, b) => (a.stockQuantity * a.unitPrice) - (b.stockQuantity * b.unitPrice),
-    },
-    {
-      title: 'Supplier',
-      dataIndex: 'supplier',
-      key: 'supplier',
     }
   ];
 
@@ -485,43 +457,48 @@ export function ReportsOverview() {
       )}
 
       <Card>
-        <PageHeader
-          title="Furniture Store Analytics"
-          icon="analytics"
-          subtitle="Comprehensive business insights and reports"
-          extra={
-            <Space>
-              <Select
-                value={dateFilter}
-                onChange={setDateFilter}
-                className="w-32"
-              >
-                <Option value="all">All Time</Option>
-                <Option value="today">Today</Option>
-                <Option value="week">This Week</Option>
-                <Option value="month">This Month</Option>
-                <Option value="custom">Custom Range</Option>
-              </Select>
-              
-              {dateFilter === 'custom' && (
-                <RangePicker
-                  value={dateRange}
-                  onChange={setDateRange}
-                  placeholder={['Start Date', 'End Date']}
-                />
-              )}
-              
-              <Dropdown
-                menu={{ items: exportMenuItems }}
-                trigger={['click']}
-              >
-                <ActionButton.Primary icon="download">
-                  Export Reports
-                </ActionButton.Primary>
-              </Dropdown>
-            </Space>
-          }
-        />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <Icon name="analytics" className="text-[#0E72BD] mr-2" size="text-xl" />
+            <div>
+              <Text strong className="text-lg">Furniture Store Analytics</Text>
+              <Text type="secondary" className="text-sm block">
+                Comprehensive business insights and reports
+              </Text>
+            </div>
+          </div>
+          
+          <Space>
+            <Select
+              value={dateFilter}
+              onChange={setDateFilter}
+              className="w-32"
+            >
+              <Option value="all">All Time</Option>
+              <Option value="today">Today</Option>
+              <Option value="week">This Week</Option>
+              <Option value="month">This Month</Option>
+              <Option value="custom">Custom Range</Option>
+            </Select>
+            
+            {dateFilter === 'custom' && (
+              <RangePicker
+                value={dateRange}
+                onChange={setDateRange}
+                placeholder={['Start Date', 'End Date']}
+              />
+            )}
+            
+            <Dropdown
+              menu={{ items: exportMenuItems }}
+              trigger={['click']}
+            >
+              <ActionButton.Primary icon="download">
+                Export Reports
+              </ActionButton.Primary>
+            </Dropdown>
+          </Space>
+        </div>
 
         <Row gutter={[16, 16]} data-tour="stats-cards">
           {stats.map((stat, index) => (
@@ -541,7 +518,7 @@ export function ReportsOverview() {
                   value={stat.value}
                   precision={stat.precision}
                   prefix={stat.prefix}
-                  valueStyle={{ color: stat.color, fontSize: '20px' }}
+                  valueStyle={{ color: stat.color, fontSize: '20px', fontWeight: 'bold' }}
                 />
               </Card>
             </Col>
@@ -578,15 +555,26 @@ export function ReportsOverview() {
                   <List.Item>
                     <List.Item.Meta
                       avatar={
-                        <div className="flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full text-sm font-bold">
-                          {index + 1}
+                        <div className="flex items-center space-x-3">
+                          <div className="flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full text-sm font-bold">
+                            {index + 1}
+                          </div>
+                          <Image
+                            src={item.product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=100'}
+                            alt={item.product.name}
+                            width={40}
+                            height={40}
+                            className="object-cover rounded"
+                            preview={false}
+                            style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                          />
                         </div>
                       }
                       title={
                         <div className="flex items-center justify-between">
                           <Text strong>{item.product.name}</Text>
                           <Text strong className="text-blue-600">
-                            ${item.revenue.toFixed(2)}
+                            LKR {item.revenue.toFixed(2)}
                           </Text>
                         </div>
                       }
@@ -694,33 +682,9 @@ export function ReportsOverview() {
   // Product Reports Tab
   const renderProductReportsTab = () => (
     <Card>
-      <PageHeader
+      <EnhancedTable
         title="Product Reports"
         icon="inventory_2"
-        subtitle="Detailed product inventory and sales analysis"
-        extra={
-          <Space>
-            <SearchInput
-              placeholder="Search products..."
-              value={searchTerm}
-              onSearch={setSearchTerm}
-              className="w-64"
-            />
-            <Button 
-              type="primary" 
-              icon={<Icon name="download" />}
-              onClick={() => {
-                setExportDataType('products');
-                setShowExportModal(true);
-              }}
-            >
-              Export
-            </Button>
-          </Space>
-        }
-      />
-      
-      <EnhancedTable
         columns={productColumns}
         dataSource={state.products.filter(p => 
           p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -728,8 +692,25 @@ export function ReportsOverview() {
           p.barcode?.toLowerCase().includes(searchTerm.toLowerCase())
         )}
         rowKey="id"
+        rowSelection={{
+          type: 'checkbox',
+          onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys)
+        }}
         searchFields={['name', 'category', 'barcode']}
-        showSearch={false}
+        searchPlaceholder="Search products..."
+        showSearch={true}
+        extra={
+          <Button 
+            type="primary" 
+            icon={<Icon name="download" />}
+            onClick={() => {
+              setExportDataType('products');
+              setShowExportModal(true);
+            }}
+          >
+            Export
+          </Button>
+        }
         emptyDescription="No products found"
         emptyImage={<Icon name="inventory_2" className="text-6xl text-gray-300" />}
       />
@@ -739,10 +720,19 @@ export function ReportsOverview() {
   // Order Reports Tab
   const renderOrderReportsTab = () => (
     <Card>
-      <PageHeader
+      <EnhancedTable
         title="Order Reports"
         icon="receipt_long"
-        subtitle="Detailed transaction history and sales analysis"
+        columns={orderColumns}
+        dataSource={filteredTransactions}
+        rowKey="id"
+        rowSelection={{
+          type: 'checkbox',
+          onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys)
+        }}
+        searchFields={['id', 'customerName', 'cashier', 'salesperson']}
+        searchPlaceholder="Search orders..."
+        showSearch={true}
         extra={
           <Space>
             <Select
@@ -765,13 +755,6 @@ export function ReportsOverview() {
               />
             )}
             
-            <SearchInput
-              placeholder="Search orders..."
-              value={searchTerm}
-              onSearch={setSearchTerm}
-              className="w-64"
-            />
-            
             <Button 
               type="primary" 
               icon={<Icon name="download" />}
@@ -784,47 +767,6 @@ export function ReportsOverview() {
             </Button>
           </Space>
         }
-      />
-      
-      <Row gutter={16} className="mb-4">
-        <Col span={6}>
-          <Card size="small" className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{filteredTransactions.length}</div>
-            <div className="text-sm text-gray-500">Total Orders</div>
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card size="small" className="text-center">
-            <div className="text-2xl font-bold text-green-600">
-              ${totalRevenue.toFixed(2)}
-            </div>
-            <div className="text-sm text-gray-500">Total Revenue</div>
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card size="small" className="text-center">
-            <div className="text-2xl font-bold text-orange-600">
-              ${averageOrderValue.toFixed(2)}
-            </div>
-            <div className="text-sm text-gray-500">Average Order</div>
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card size="small" className="text-center">
-            <div className="text-2xl font-bold text-purple-600">
-              {filteredTransactions.reduce((sum, t) => sum + t.items.reduce((s, i) => s + i.quantity, 0), 0)}
-            </div>
-            <div className="text-sm text-gray-500">Items Sold</div>
-          </Card>
-        </Col>
-      </Row>
-      
-      <EnhancedTable
-        columns={orderColumns}
-        dataSource={filteredTransactions}
-        rowKey="id"
-        searchFields={['id', 'customerName', 'cashier', 'salesperson']}
-        showSearch={false}
         emptyDescription="No orders found"
         emptyImage={<Icon name="receipt_long" className="text-6xl text-gray-300" />}
       />
@@ -834,66 +776,9 @@ export function ReportsOverview() {
   // Raw Material Reports Tab
   const renderMaterialReportsTab = () => (
     <Card>
-      <PageHeader
+      <EnhancedTable
         title="Raw Material Reports"
         icon="category"
-        subtitle="Detailed raw material inventory and usage analysis"
-        extra={
-          <Space>
-            <SearchInput
-              placeholder="Search materials..."
-              value={searchTerm}
-              onSearch={setSearchTerm}
-              className="w-64"
-            />
-            <Button 
-              type="primary" 
-              icon={<Icon name="download" />}
-              onClick={() => {
-                setExportDataType('raw-materials');
-                setShowExportModal(true);
-              }}
-            >
-              Export
-            </Button>
-          </Space>
-        }
-      />
-      
-      <Row gutter={16} className="mb-4">
-        <Col span={6}>
-          <Card size="small" className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{state.rawMaterials.length}</div>
-            <div className="text-sm text-gray-500">Total Materials</div>
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card size="small" className="text-center">
-            <div className="text-2xl font-bold text-green-600">
-              ${rawMaterialValue.toFixed(2)}
-            </div>
-            <div className="text-sm text-gray-500">Inventory Value</div>
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card size="small" className="text-center">
-            <div className="text-2xl font-bold text-red-600">
-              {outOfStockMaterials.length}
-            </div>
-            <div className="text-sm text-gray-500">Out of Stock</div>
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card size="small" className="text-center">
-            <div className="text-2xl font-bold text-orange-600">
-              {lowStockMaterials.length}
-            </div>
-            <div className="text-sm text-gray-500">Low Stock</div>
-          </Card>
-        </Col>
-      </Row>
-      
-      <EnhancedTable
         columns={materialColumns}
         dataSource={state.rawMaterials.filter(m => 
           m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -901,8 +786,25 @@ export function ReportsOverview() {
           m.supplier?.toLowerCase().includes(searchTerm.toLowerCase())
         )}
         rowKey="id"
+        rowSelection={{
+          type: 'checkbox',
+          onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys)
+        }}
         searchFields={['name', 'category', 'supplier']}
-        showSearch={false}
+        searchPlaceholder="Search materials..."
+        showSearch={true}
+        extra={
+          <Button 
+            type="primary" 
+            icon={<Icon name="download" />}
+            onClick={() => {
+              setExportDataType('raw-materials');
+              setShowExportModal(true);
+            }}
+          >
+            Export
+          </Button>
+        }
         emptyDescription="No materials found"
         emptyImage={<Icon name="category" className="text-6xl text-gray-300" />}
       />

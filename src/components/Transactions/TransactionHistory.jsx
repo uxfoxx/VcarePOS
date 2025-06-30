@@ -10,7 +10,9 @@ import {
   Select,
   message,
   Dropdown,
-  Modal
+  Modal,
+  Tooltip,
+  Checkbox
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -42,6 +44,7 @@ export function TransactionHistory() {
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [invoiceType, setInvoiceType] = useState('detailed');
   const [loading, setLoading] = useState(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   // Sort transactions by timestamp (latest first) by default
   const sortedTransactions = [...state.transactions].sort((a, b) => 
@@ -273,62 +276,31 @@ export function TransactionHistory() {
       sorter: (a, b) => a.id.localeCompare(b.id),
     },
     {
-      title: 'Date & Time',
+      title: 'Date',
       dataIndex: 'timestamp',
       key: 'timestamp',
-      width: 150,
+      width: 120,
       sorter: (a, b) => new Date(b.timestamp) - new Date(a.timestamp), // Latest first by default
       defaultSortOrder: 'ascend',
       render: (timestamp) => (
-        <div>
-          <Text>{new Date(timestamp).toLocaleDateString()}</Text>
-          <br />
-          <Text type="secondary" className="text-xs">
-            {new Date(timestamp).toLocaleTimeString()}
-          </Text>
-        </div>
+        <Text>{new Date(timestamp).toLocaleDateString()}</Text>
       ),
     },
     {
       title: 'Customer',
       key: 'customer',
-      width: 200,
-      render: (record) => (
-        <div>
-          <Text>{record.customerName || 'Walk-in Customer'}</Text>
-          {record.customerPhone && (
-            <>
-              <br />
-              <Text type="secondary" className="text-xs">{record.customerPhone}</Text>
-            </>
-          )}
-        </div>
-      ),
-    },
-    {
-      title: 'Sales Person',
-      dataIndex: 'salesperson',
-      key: 'salesperson',
       width: 150,
-      render: (salesperson, record) => (
-        <div>
-          <Text>{salesperson || record.cashier}</Text>
-          <br />
-          <Text type="secondary" className="text-xs">
-            {salesperson ? 'Sales' : 'Cashier'}
-          </Text>
-        </div>
+      render: (record) => (
+        <Text>{record.customerName || 'Walk-in Customer'}</Text>
       ),
     },
     {
       title: 'Items',
       dataIndex: 'items',
       key: 'items',
-      width: 100,
+      width: 80,
+      render: (items) => <Tag color="blue">{items.length}</Tag>,
       sorter: (a, b) => a.items.length - b.items.length,
-      render: (items) => (
-        <Tag color="blue">{items.length} item(s)</Tag>
-      ),
     },
     {
       title: 'Total',
@@ -336,32 +308,28 @@ export function TransactionHistory() {
       key: 'total',
       width: 120,
       sorter: (a, b) => a.total - b.total,
-      render: (total, record) => (
-        <div>
-          <Text strong className="text-blue-600 text-lg">
-            ${total.toFixed(2)}
-          </Text>
-          {record.refunds && record.refunds.length > 0 && (
-            <>
-              <br />
-              <Text type="secondary" className="text-xs text-red-500">
-                Refunded: ${record.refunds.reduce((sum, refund) => sum + refund.refundAmount, 0).toFixed(2)}
-              </Text>
-            </>
-          )}
-        </div>
+      render: (total) => (
+        <Text strong className="text-blue-600">
+          LKR {total.toFixed(2)}
+        </Text>
       ),
     },
     {
       title: 'Payment',
       dataIndex: 'paymentMethod',
       key: 'paymentMethod',
-      width: 120,
+      width: 100,
       render: (method) => (
         <Tag icon={<Icon name={getPaymentMethodIcon(method)} />} color="green">
           {method.toUpperCase()}
         </Tag>
       ),
+      filters: [
+        { text: 'Card', value: 'card' },
+        { text: 'Cash', value: 'cash' },
+        { text: 'Digital', value: 'digital' },
+      ],
+      onFilter: (value, record) => record.paymentMethod === value,
     },
     {
       title: 'Status',
@@ -372,25 +340,53 @@ export function TransactionHistory() {
           {getStatusText(record.status, record.refunds)}
         </Tag>
       ),
+      filters: [
+        { text: 'Completed', value: 'completed' },
+        { text: 'Refunded', value: 'refunded' },
+        { text: 'Partially Refunded', value: 'partially-refunded' },
+      ],
+      onFilter: (value, record) => record.status === value,
     },
     {
       title: 'Actions',
       key: 'actions',
       fixed: 'right',
-      width: 80,
+      width: 100,
       render: (record) => (
-        <Dropdown
-          menu={{
-            items: getActionMenuItems(record)
-          }}
-          trigger={['click']}
-        >
-          <ActionButton.Text
-            icon="more_vert"
-            className="text-blue-600 hover:text-blue-700"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </Dropdown>
+        <Space>
+          <Tooltip title="View Details">
+            <ActionButton.Text
+              icon="visibility"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewDetails(record);
+              }}
+              className="text-blue-600"
+            />
+          </Tooltip>
+          <Tooltip title="Print Invoice">
+            <ActionButton.Text
+              icon="receipt_long"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShowInvoice(record, 'detailed');
+              }}
+              className="text-gray-600"
+            />
+          </Tooltip>
+          {record.status !== 'refunded' && (
+            <Tooltip title="Process Refund">
+              <ActionButton.Text
+                icon="undo"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleShowRefund(record);
+                }}
+                className="text-red-600"
+              />
+            </Tooltip>
+          )}
+        </Space>
       ),
     },
   ];
@@ -409,7 +405,7 @@ export function TransactionHistory() {
               title="Total Revenue"
               value={totalRevenue}
               precision={2}
-              prefix="$"
+              prefix="LKR "
               valueStyle={{ color: '#0E72BD' }}
             />
           </Card>
@@ -429,7 +425,7 @@ export function TransactionHistory() {
               title="Average Order Value"
               value={averageOrderValue}
               precision={2}
-              prefix="$"
+              prefix="LKR "
               valueStyle={{ color: '#fa8c16' }}
             />
           </Card>
@@ -442,6 +438,10 @@ export function TransactionHistory() {
         columns={columns}
         dataSource={filteredTransactions}
         rowKey="id"
+        rowSelection={{
+          type: 'checkbox',
+          onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys)
+        }}
         onRow={(record) => ({
           onClick: () => handleRowClick(record),
           className: 'cursor-pointer hover:bg-blue-50'

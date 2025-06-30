@@ -16,7 +16,9 @@ import {
   Select,
   Radio,
   Tag,
-  Alert
+  Alert,
+  Tooltip,
+  Checkbox
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
@@ -45,6 +47,7 @@ export function TaxManagement() {
   const [taxType, setTaxType] = useState('full_bill');
   const [showGlobalTaxSettings, setShowGlobalTaxSettings] = useState(false);
   const [globalTaxEnabled, setGlobalTaxEnabled] = useState(true);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   const taxes = state.taxes || [];
   const categories = state.categories?.filter(cat => cat.isActive) || [];
@@ -100,6 +103,14 @@ export function TaxManagement() {
   const handleDelete = (taxId) => {
     dispatch({ type: 'DELETE_TAX', payload: taxId });
     message.success('Tax deleted successfully');
+  };
+
+  const handleBulkDelete = (taxIds) => {
+    taxIds.forEach(id => {
+      dispatch({ type: 'DELETE_TAX', payload: id });
+    });
+    message.success(`${taxIds.length} taxes deleted successfully`);
+    setSelectedRowKeys([]);
   };
 
   const handleToggleStatus = (tax) => {
@@ -161,14 +172,8 @@ export function TaxManagement() {
       dataIndex: 'name',
       key: 'name',
       fixed: 'left',
-      width: 250,
-      render: (text, record) => (
-        <div>
-          <Text strong>{record.name}</Text>
-          <br />
-          <Text type="secondary" className="text-xs">{record.description}</Text>
-        </div>
-      ),
+      width: 200,
+      render: (text) => <Text strong>{text}</Text>,
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
@@ -204,15 +209,18 @@ export function TaxManagement() {
           {record.taxType === 'full_bill' ? (
             <Tag color="green">All Products</Tag>
           ) : (
-            <div>
+            <div className="flex flex-wrap gap-1">
               {record.applicableCategories && record.applicableCategories.length > 0 ? (
-                record.applicableCategories.map(category => (
-                  <Tag key={category} color="blue" className="mb-1">
+                record.applicableCategories.slice(0, 2).map(category => (
+                  <Tag key={category} color="blue">
                     {category}
                   </Tag>
                 ))
               ) : (
-                <Text type="secondary" className="text-xs">No categories selected</Text>
+                <Text type="secondary" className="text-xs">No categories</Text>
+              )}
+              {record.applicableCategories && record.applicableCategories.length > 2 && (
+                <Tag>+{record.applicableCategories.length - 2} more</Tag>
               )}
             </div>
           )}
@@ -222,7 +230,7 @@ export function TaxManagement() {
     {
       title: 'Status',
       key: 'status',
-      width: 120,
+      width: 100,
       render: (record) => (
         <Switch
           checked={record.isActive}
@@ -244,32 +252,37 @@ export function TaxManagement() {
       title: 'Actions',
       key: 'actions',
       fixed: 'right',
-      width: 150,
+      width: 120,
       render: (record) => (
         <Space>
-          <ActionButton.Text 
-            icon="edit"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEdit(record);
-            }}
-            className="text-blue-600"
-          />
-          <Popconfirm
-            title="Are you sure you want to delete this tax?"
-            onConfirm={(e) => {
-              e?.stopPropagation();
-              handleDelete(record.id);
-            }}
-            okText="Yes"
-            cancelText="No"
-          >
+          <Tooltip title="Edit">
             <ActionButton.Text 
-              icon="delete"
-              danger
-              onClick={(e) => e.stopPropagation()}
+              icon="edit"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(record);
+              }}
+              className="text-blue-600"
             />
-          </Popconfirm>
+          </Tooltip>
+          <Tooltip title="Delete">
+            <Popconfirm
+              title="Delete this tax?"
+              onConfirm={(e) => {
+                e?.stopPropagation();
+                handleDelete(record.id);
+              }}
+              okText="Delete"
+              cancelText="Cancel"
+              okButtonProps={{ danger: true }}
+            >
+              <ActionButton.Text 
+                icon="delete"
+                danger
+                onClick={(e) => e.stopPropagation()}
+              />
+            </Popconfirm>
+          </Tooltip>
         </Space>
       ),
     },
@@ -291,6 +304,11 @@ export function TaxManagement() {
         columns={columns}
         dataSource={filteredTaxes}
         rowKey="id"
+        rowSelection={{
+          type: 'checkbox',
+          onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys)
+        }}
+        onDelete={handleBulkDelete}
         onRow={(record) => ({
           onClick: () => handleRowClick(record),
           className: 'cursor-pointer hover:bg-blue-50'
@@ -469,16 +487,15 @@ export function TaxManagement() {
         open={showGlobalTaxSettings}
         onCancel={() => setShowGlobalTaxSettings(false)}
         footer={[
-          <Button key="cancel" onClick={() => setShowGlobalTaxSettings(false)}>
+          <ActionButton key="cancel" onClick={() => setShowGlobalTaxSettings(false)}>
             Cancel
-          </Button>,
-          <Button 
+          </ActionButton>,
+          <ActionButton.Primary 
             key="save" 
-            type="primary" 
             onClick={handleSaveGlobalTaxSettings}
           >
             {globalTaxEnabled ? "Enable Taxes" : "Disable All Taxes"}
-          </Button>
+          </ActionButton.Primary>
         ]}
         width={500}
       >

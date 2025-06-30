@@ -14,7 +14,8 @@ import {
   Popconfirm,
   message,
   Row,
-  Col
+  Col,
+  Tooltip
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
@@ -40,6 +41,7 @@ export function RawMaterialManagement() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   const categories = ['All', ...new Set(state.rawMaterials.map(m => m.category))];
   
@@ -97,6 +99,14 @@ export function RawMaterialManagement() {
     message.success('Raw material deleted successfully');
   };
 
+  const handleBulkDelete = (materialIds) => {
+    materialIds.forEach(id => {
+      dispatch({ type: 'DELETE_RAW_MATERIAL', payload: id });
+    });
+    message.success(`${materialIds.length} materials deleted successfully`);
+    setSelectedRowKeys([]);
+  };
+
   const handleRowClick = (material) => {
     setSelectedMaterial(material);
     setShowDetailModal(true);
@@ -108,14 +118,8 @@ export function RawMaterialManagement() {
       dataIndex: 'name',
       key: 'name',
       fixed: 'left',
-      width: 250,
-      render: (text, record) => (
-        <div>
-          <Text strong>{record.name}</Text>
-          <br />
-          <Text type="secondary" className="text-xs">{record.description}</Text>
-        </div>
-      ),
+      width: 200,
+      render: (text) => <Text strong>{text}</Text>,
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
@@ -130,24 +134,32 @@ export function RawMaterialManagement() {
     {
       title: 'Stock',
       key: 'stock',
-      width: 150,
+      width: 120,
       render: (record) => (
         <div>
           <Text strong>{record.stockQuantity} {record.unit}</Text>
-          <br />
-          <Text type="secondary" className="text-xs">
-            Min: {record.minimumStock} {record.unit}
-          </Text>
+          {record.stockQuantity <= record.minimumStock && (
+            <Tag color={record.stockQuantity === 0 ? 'red' : 'orange'} className="ml-2">
+              {record.stockQuantity === 0 ? 'Out of Stock' : 'Low Stock'}
+            </Tag>
+          )}
         </div>
       ),
       sorter: (a, b) => a.stockQuantity - b.stockQuantity,
+    },
+    {
+      title: 'Min. Stock',
+      dataIndex: 'minimumStock',
+      key: 'minimumStock',
+      width: 120,
+      render: (min, record) => <Text>{min} {record.unit}</Text>,
     },
     {
       title: 'Unit Price',
       dataIndex: 'unitPrice',
       key: 'unitPrice',
       width: 120,
-      render: (price) => <Text strong>${price.toFixed(2)}</Text>,
+      render: (price) => <Text strong>LKR {price.toFixed(2)}</Text>,
       sorter: (a, b) => a.unitPrice - b.unitPrice,
     },
     {
@@ -158,64 +170,40 @@ export function RawMaterialManagement() {
       sorter: (a, b) => (a.supplier || '').localeCompare(b.supplier || ''),
     },
     {
-      title: 'Status',
-      key: 'status',
-      width: 120,
-      render: (record) => {
-        const isLowStock = record.stockQuantity <= record.minimumStock;
-        const isMediumStock = record.stockQuantity <= record.minimumStock * 2;
-        
-        return (
-          <Tag color={isLowStock ? 'red' : isMediumStock ? 'orange' : 'green'}>
-            {isLowStock ? 'Low Stock' : isMediumStock ? 'Medium Stock' : 'In Stock'}
-          </Tag>
-        );
-      },
-      filters: [
-        { text: 'In Stock', value: 'in-stock' },
-        { text: 'Medium Stock', value: 'medium-stock' },
-        { text: 'Low Stock', value: 'low-stock' },
-      ],
-      onFilter: (value, record) => {
-        const isLowStock = record.stockQuantity <= record.minimumStock;
-        const isMediumStock = record.stockQuantity <= record.minimumStock * 2;
-        
-        if (value === 'low-stock') return isLowStock;
-        if (value === 'medium-stock') return isMediumStock && !isLowStock;
-        if (value === 'in-stock') return !isMediumStock;
-        return true;
-      },
-    },
-    {
       title: 'Actions',
       key: 'actions',
       fixed: 'right',
       width: 120,
       render: (record) => (
         <Space>
-          <ActionButton.Text 
-            icon="edit"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEdit(record);
-            }}
-            className="text-blue-600"
-          />
-          <Popconfirm
-            title="Are you sure you want to delete this raw material?"
-            onConfirm={(e) => {
-              e?.stopPropagation();
-              handleDelete(record.id);
-            }}
-            okText="Yes"
-            cancelText="No"
-          >
+          <Tooltip title="Edit">
             <ActionButton.Text 
-              icon="delete"
-              danger
-              onClick={(e) => e.stopPropagation()}
+              icon="edit"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(record);
+              }}
+              className="text-blue-600"
             />
-          </Popconfirm>
+          </Tooltip>
+          <Tooltip title="Delete">
+            <Popconfirm
+              title="Delete this material?"
+              onConfirm={(e) => {
+                e?.stopPropagation();
+                handleDelete(record.id);
+              }}
+              okText="Delete"
+              cancelText="Cancel"
+              okButtonProps={{ danger: true }}
+            >
+              <ActionButton.Text 
+                icon="delete"
+                danger
+                onClick={(e) => e.stopPropagation()}
+              />
+            </Popconfirm>
+          </Tooltip>
         </Space>
       ),
     },
@@ -250,9 +238,8 @@ export function RawMaterialManagement() {
       )}
 
       <EnhancedTable
-        title="Raw Materials Management"
+        title="Raw Materials"
         icon="category"
-        subtitle="Manage raw materials inventory and suppliers"
         columns={columns}
         dataSource={filteredMaterials}
         rowKey="id"
@@ -260,6 +247,11 @@ export function RawMaterialManagement() {
           onClick: () => handleRowClick(record),
           className: 'cursor-pointer hover:bg-blue-50'
         })}
+        rowSelection={{
+          type: 'checkbox',
+          onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys)
+        }}
+        onDelete={handleBulkDelete}
         searchFields={['name', 'category', 'supplier']}
         searchPlaceholder="Search raw materials..."
         extra={
@@ -277,7 +269,7 @@ export function RawMaterialManagement() {
               icon="add"
               onClick={() => setShowModal(true)}
             >
-              Add Raw Material
+              Add Material
             </ActionButton.Primary>
           </Space>
         }
@@ -294,7 +286,7 @@ export function RawMaterialManagement() {
           form.resetFields();
         }}
         footer={null}
-        width={600}
+        width={700}
         destroyOnClose
       >
         <Form
@@ -332,7 +324,7 @@ export function RawMaterialManagement() {
           </Row>
 
           <Row gutter={16}>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
                 name="unit"
                 label="Unit"
@@ -347,18 +339,25 @@ export function RawMaterialManagement() {
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
                 name="unitPrice"
-                label="Unit Price ($)"
+                label="Unit Price (LKR)"
                 rules={[{ required: true, message: 'Please enter unit price' }]}
               >
                 <InputNumber
                   min={0}
-                  step={0.01}
+                  step={100}
                   placeholder="0.00"
                   className="w-full"
+                  formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  parser={value => value.replace(/LKR\s?|(,*)/g, '')}
                 />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="supplier" label="Supplier">
+                <Input placeholder="Enter supplier name" />
               </Form.Item>
             </Col>
           </Row>
@@ -367,7 +366,7 @@ export function RawMaterialManagement() {
             <Col span={12}>
               <Form.Item
                 name="stockQuantity"
-                label="Stock Quantity"
+                label="Current Stock"
                 rules={[{ required: true, message: 'Please enter stock quantity' }]}
               >
                 <InputNumber
@@ -380,7 +379,7 @@ export function RawMaterialManagement() {
             <Col span={12}>
               <Form.Item
                 name="minimumStock"
-                label="Minimum Stock"
+                label="Minimum Stock Level"
                 rules={[{ required: true, message: 'Please enter minimum stock' }]}
               >
                 <InputNumber
@@ -391,10 +390,6 @@ export function RawMaterialManagement() {
               </Form.Item>
             </Col>
           </Row>
-
-          <Form.Item name="supplier" label="Supplier">
-            <Input placeholder="Enter supplier name" />
-          </Form.Item>
 
           <Form.Item name="description" label="Description">
             <TextArea

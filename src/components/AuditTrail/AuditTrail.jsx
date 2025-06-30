@@ -10,9 +10,8 @@ import {
   Row,
   Col,
   DatePicker,
-  Descriptions,
-  Modal,
-  Timeline
+  Tooltip,
+  Checkbox
 } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
@@ -38,6 +37,7 @@ export function AuditTrail() {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   const filteredAuditTrail = auditTrail.filter(entry => {
     const matchesSearch = entry.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -108,35 +108,27 @@ export function AuditTrail() {
       title: 'Time',
       dataIndex: 'timestamp',
       key: 'timestamp',
-      width: 150,
+      width: 120,
       fixed: 'left',
       render: (timestamp) => (
-        <div>
-          <Text className="text-sm">
-            {new Date(timestamp).toLocaleDateString()}
-          </Text>
+        <Text className="text-sm">
+          {new Date(timestamp).toLocaleDateString()}
           <br />
-          <Text type="secondary" className="text-xs">
-            {new Date(timestamp).toLocaleTimeString()}
-          </Text>
-        </div>
+          {new Date(timestamp).toLocaleTimeString()}
+        </Text>
       ),
       sorter: (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
     },
     {
       title: 'User',
       key: 'user',
-      width: 200,
+      width: 150,
       render: (record) => (
         <div className="flex items-center space-x-2">
           <Avatar size={32} style={{ backgroundColor: '#0E72BD' }}>
             {record.userName.split(' ').map(n => n[0]).join('')}
           </Avatar>
-          <div>
-            <Text strong className="text-sm">{record.userName}</Text>
-            <br />
-            <Text type="secondary" className="text-xs">ID: {record.userId}</Text>
-          </div>
+          <Text strong className="text-sm">{record.userName}</Text>
         </div>
       ),
       sorter: (a, b) => a.userName.localeCompare(b.userName),
@@ -201,16 +193,18 @@ export function AuditTrail() {
       title: 'Actions',
       key: 'actions',
       fixed: 'right',
-      width: 100,
+      width: 80,
       render: (record) => (
-        <ActionButton.Text
-          icon="visibility"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleViewDetails(record);
-          }}
-          className="text-blue-600"
-        />
+        <Tooltip title="View Details">
+          <ActionButton.Text
+            icon="visibility"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewDetails(record);
+            }}
+            className="text-blue-600"
+          />
+        </Tooltip>
       ),
     },
   ];
@@ -239,7 +233,6 @@ export function AuditTrail() {
       <EnhancedTable
         title="Audit Trail"
         icon="history"
-        subtitle="Track all system changes and user activities"
         columns={columns}
         dataSource={filteredAuditTrail}
         rowKey="id"
@@ -287,7 +280,7 @@ export function AuditTrail() {
       />
 
       {/* Activity Statistics */}
-      <Row gutter={16} className="mb-6">
+      <Row gutter={16} className="mb-6 mt-4">
         <Col span={6}>
           <Card size="small" className="text-center">
             <div className="text-2xl font-bold text-blue-600">{auditTrail.length}</div>

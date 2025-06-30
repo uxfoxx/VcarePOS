@@ -17,7 +17,10 @@ import {
   Switch,
   Divider,
   Typography,
-  message
+  message,
+  Row,
+  Col,
+  Popconfirm
 } from 'antd';
 import { Icon } from './Icon';
 import { ActionButton } from './ActionButton';
@@ -50,6 +53,8 @@ export function EnhancedTable({
   emptyImage,
   defaultSortField = null,
   defaultSortOrder = 'descend', // Latest first by default
+  rowSelection = null,
+  onDelete = null,
   ...tableProps
 }) {
   // Filter out invalid column objects to prevent errors
@@ -92,6 +97,7 @@ export function EnhancedTable({
   const [configForm] = Form.useForm();
   const [tempVisibleColumns, setTempVisibleColumns] = useState([]);
   const [tempFixedColumns, setTempFixedColumns] = useState({});
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   // Enhanced columns with visibility, fixed settings, and working filters/sorters
   const columns = useMemo(() => {
@@ -263,6 +269,32 @@ export function EnhancedTable({
     setShowConfigModal(false);
   };
 
+  const handleRowSelectionChange = (selectedKeys) => {
+    setSelectedRowKeys(selectedKeys);
+  };
+
+  const handleDeleteSelected = () => {
+    if (onDelete && selectedRowKeys.length > 0) {
+      Modal.confirm({
+        title: `Delete ${selectedRowKeys.length} selected item(s)?`,
+        content: 'This action cannot be undone.',
+        okText: 'Delete',
+        okType: 'danger',
+        cancelText: 'Cancel',
+        onOk: () => {
+          onDelete(selectedRowKeys);
+          setSelectedRowKeys([]);
+        }
+      });
+    }
+  };
+
+  const enhancedRowSelection = rowSelection ? {
+    ...rowSelection,
+    selectedRowKeys,
+    onChange: handleRowSelectionChange,
+  } : null;
+
   if (loading) {
     return (
       <Card>
@@ -278,34 +310,61 @@ export function EnhancedTable({
     <>
       <Card>
         {(title || icon || extra || showSearch || showColumnConfig) && (
-          <PageHeader 
-            title={title}
-            icon={icon}
-            subtitle={subtitle}
-            extra={
-              <Space>
-                {showSearch && (
-                  <Search
-                    placeholder={searchPlaceholder}
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    onSearch={setSearchTerm}
-                    className="w-64"
-                    allowClear
+          <div className="flex items-center justify-between mb-4">
+            {(title || icon) && (
+              <div className="flex items-center">
+                {icon && <Icon name={icon} className="text-[#0E72BD] mr-2" size="text-xl" />}
+                <div>
+                  {title && <Text strong className="text-lg">{title}</Text>}
+                  {subtitle && (
+                    <Text type="secondary" className="text-sm block">
+                      {subtitle}
+                    </Text>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            <Space>
+              {showSearch && (
+                <Search
+                  placeholder={searchPlaceholder}
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  onSearch={setSearchTerm}
+                  className="w-64"
+                  allowClear
+                />
+              )}
+              
+              {selectedRowKeys.length > 0 && onDelete && (
+                <Popconfirm
+                  title={`Delete ${selectedRowKeys.length} selected item(s)?`}
+                  onConfirm={handleDeleteSelected}
+                  okText="Delete"
+                  cancelText="Cancel"
+                >
+                  <ActionButton 
+                    danger
+                    icon="delete"
+                  >
+                    Delete Selected ({selectedRowKeys.length})
+                  </ActionButton>
+                </Popconfirm>
+              )}
+              
+              {showColumnConfig && (
+                <Tooltip title="Configure Columns">
+                  <ActionButton 
+                    icon="settings" 
+                    onClick={openConfigModal}
                   />
-                )}
-                {showColumnConfig && (
-                  <Tooltip title="Configure Columns">
-                    <ActionButton 
-                      icon="settings" 
-                      onClick={openConfigModal}
-                    />
-                  </Tooltip>
-                )}
-                {extra}
-              </Space>
-            }
-          />
+                </Tooltip>
+              )}
+              
+              {extra}
+            </Space>
+          </div>
         )}
         
         <Table
@@ -315,6 +374,7 @@ export function EnhancedTable({
           onRow={onRow}
           onChange={handleTableChange}
           scroll={scroll}
+          rowSelection={enhancedRowSelection}
           pagination={{
             pageSize: defaultPageSize,
             showSizeChanger: true,

@@ -14,7 +14,8 @@ import {
   Card,
   Row,
   Col,
-  Input
+  Input,
+  Image
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';

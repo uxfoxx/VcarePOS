@@ -19,13 +19,10 @@ import {
   Switch,
   Tag,
   Alert,
-  Tooltip
+  Steps
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
-import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
-import { EnhancedStepper } from '../common/EnhancedStepper';
-import { LoadingSkeleton } from '../common/LoadingSkeleton';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -125,23 +122,27 @@ export function ProductModal({
     }
   }, [editingProduct, open, productForm, state.rawMaterials]);
 
-  const steps = [
-    {
-      title: 'Product Details',
-      description: 'Basic product information',
-      icon: 'inventory_2'
-    },
-    {
-      title: 'Raw Materials',
-      description: 'Materials used in production',
-      icon: 'category'
-    },
-    {
-      title: 'Sizes',
-      description: 'Product size variations',
-      icon: 'straighten'
+  const getSteps = () => {
+    const baseSteps = [
+      {
+        title: 'Product Details',
+        content: renderProductDetails
+      },
+      {
+        title: 'Raw Materials',
+        content: renderRawMaterials
+      }
+    ];
+    
+    if (hasSizes) {
+      baseSteps.push({
+        title: 'Sizes',
+        content: renderSizes
+      });
     }
-  ];
+    
+    return baseSteps;
+  };
 
   const handleImageUpload = (file) => {
     const reader = new FileReader();
@@ -383,7 +384,7 @@ export function ProductModal({
           title="Remove this material?"
           onConfirm={() => handleRemoveMaterial(record.rawMaterialId)}
         >
-          <ActionButton.Text icon="delete" danger size="small" />
+          <Button type="text" danger icon={<Icon name="delete" />} size="small" />
         </Popconfirm>
       ),
     },
@@ -431,7 +432,7 @@ export function ProductModal({
           title="Remove this size?"
           onConfirm={() => handleRemoveSize(record.id)}
         >
-          <ActionButton.Text icon="delete" danger size="small" />
+          <Button type="text" danger icon={<Icon name="delete" />} size="small" />
         </Popconfirm>
       ),
     },
@@ -608,9 +609,9 @@ export function ProductModal({
                   className="w-32 h-32 object-cover mx-auto rounded"
                 />
                 <div>
-                  <ActionButton icon="upload" size="small">
+                  <Button icon={<Icon name="upload" />} size="small">
                     Change Image
-                  </ActionButton>
+                  </Button>
                 </div>
               </div>
             ) : (
@@ -686,9 +687,9 @@ export function ProductModal({
             </Col>
             <Col span={4}>
               <Form.Item label=" ">
-                <ActionButton.Primary htmlType="submit" icon="add" block>
+                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
                   Add
-                </ActionButton.Primary>
+                </Button>
               </Form.Item>
             </Col>
           </Row>
@@ -820,9 +821,9 @@ export function ProductModal({
               </Row>
 
               <Form.Item>
-                <ActionButton.Primary htmlType="submit" icon="add" block>
+                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
                   Add Size
-                </ActionButton.Primary>
+                </Button>
               </Form.Item>
             </Form>
           </Card>
@@ -863,18 +864,7 @@ export function ProductModal({
     </div>
   );
 
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 0:
-        return renderProductDetails();
-      case 1:
-        return renderRawMaterials();
-      case 2:
-        return renderSizes();
-      default:
-        return null;
-    }
-  };
+  const steps = getSteps();
 
   return (
     <Modal
@@ -886,18 +876,33 @@ export function ProductModal({
       destroyOnClose
     >
       <div className="space-y-6">
-        <EnhancedStepper
+        <Steps
           current={currentStep}
-          steps={steps}
+          items={steps.map(step => ({ title: step.title }))}
           status={stepError ? 'error' : 'process'}
-          errorMessage={stepError}
         />
+        
+        {stepError && (
+          <Alert
+            message="Error"
+            description={stepError}
+            type="error"
+            showIcon
+            closable
+            onClose={() => setStepError('')}
+          />
+        )}
         
         <div className="min-h-[500px]">
           {loading ? (
-            <LoadingSkeleton type="form" />
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <Text>Loading...</Text>
+              </div>
+            </div>
           ) : (
-            renderStepContent()
+            steps[currentStep].content()
           )}
         </div>
 
@@ -906,31 +911,33 @@ export function ProductModal({
         <div className="flex justify-between">
           <div>
             {currentStep > 0 && (
-              <ActionButton onClick={handlePrev}>
+              <Button onClick={handlePrev}>
                 <Icon name="arrow_back" className="mr-2" />
                 Previous
-              </ActionButton>
+              </Button>
             )}
           </div>
           
           <div className="space-x-2">
-            <ActionButton onClick={handleClose}>
+            <Button onClick={handleClose}>
               Cancel
-            </ActionButton>
+            </Button>
             
             {currentStep < steps.length - 1 ? (
-              <ActionButton.Primary onClick={handleNext}>
+              <Button type="primary" onClick={handleNext} className="bg-blue-600">
                 Next
                 <Icon name="arrow_forward" className="ml-2" />
-              </ActionButton.Primary>
+              </Button>
             ) : (
-              <ActionButton.Primary 
+              <Button 
+                type="primary" 
                 onClick={handleSubmit}
                 loading={loading}
-                icon="check"
+                icon={<Icon name="check" />}
+                className="bg-blue-600"
               >
                 {editingProduct ? 'Update Product' : 'Create Product'}
-              </ActionButton.Primary>
+              </Button>
             )}
           </div>
         </div>

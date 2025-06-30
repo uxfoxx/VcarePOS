@@ -237,7 +237,7 @@ export function ProductGrid({ collapsed }) {
         }}
         width={700}
         footer={[
-          <ActionButton 
+          <Button 
             key="close" 
             onClick={() => {
               setShowDetailModal(false);
@@ -246,11 +246,12 @@ export function ProductGrid({ collapsed }) {
             }}
           >
             Close
-          </ActionButton>,
+          </Button>,
           selectedProduct?.hasSizes ? (
-            <ActionButton.Primary
+            <Button
               key="add-to-cart"
-              icon="add_shopping_cart"
+              type="primary"
+              icon={<Icon name="add_shopping_cart" />}
               onClick={handleAddSelectedSizeToCart}
               disabled={!selectedSizeData || selectedSizeData.stock === 0}
               className="bg-blue-600 hover:bg-blue-700"
@@ -261,11 +262,12 @@ export function ProductGrid({ collapsed }) {
                   ? 'Out of Stock' 
                   : `Add to Cart - $${selectedSizeData.price.toFixed(2)}`
               }
-            </ActionButton.Primary>
+            </Button>
           ) : (
-            <ActionButton.Primary
+            <Button
               key="add-to-cart"
-              icon="add_shopping_cart"
+              type="primary"
+              icon={<Icon name="add_shopping_cart" />}
               onClick={() => {
                 handleAddToCart(selectedProduct);
                 setShowDetailModal(false);
@@ -274,7 +276,7 @@ export function ProductGrid({ collapsed }) {
               className="bg-blue-600 hover:bg-blue-700"
             >
               Add to Cart
-            </ActionButton.Primary>
+            </Button>
           )
         ]}
       >

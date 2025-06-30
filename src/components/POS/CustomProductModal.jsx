@@ -11,11 +11,11 @@ import {
   List, 
   Tag,
   Button,
-  message
+  message,
+  Steps
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
-import { ActionButton } from '../common/ActionButton';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -24,11 +24,14 @@ const { TextArea } = Input;
 export function CustomProductModal({ open, onClose, onAddToCart }) {
   const { state } = usePOS();
   const [form] = Form.useForm();
+  const [materialsForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [selectedMaterials, setSelectedMaterials] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
   const [customName, setCustomName] = useState('');
   const [customDescription, setCustomDescription] = useState('');
+  const [currentStep, setCurrentStep] = useState(0);
+  const [editablePrice, setEditablePrice] = useState(0);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -36,8 +39,10 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
       form.resetFields();
       setSelectedMaterials([]);
       setTotalPrice(0);
+      setEditablePrice(0);
       setCustomName('');
       setCustomDescription('');
+      setCurrentStep(0);
     }
   }, [open, form]);
 
@@ -47,6 +52,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
       return sum + (material.quantity * material.unitPrice * 1.5); // 50% markup
     }, 0);
     setTotalPrice(calculatedPrice);
+    setEditablePrice(calculatedPrice);
   }, [selectedMaterials]);
 
   const handleAddMaterial = (values) => {
@@ -76,11 +82,26 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
       }]);
     }
     
-    form.resetFields(['materialId', 'quantity']);
+    materialsForm.resetFields(['materialId', 'quantity']);
   };
 
   const handleRemoveMaterial = (materialId) => {
     setSelectedMaterials(selectedMaterials.filter(m => m.id !== materialId));
+  };
+
+  const handleNext = () => {
+    if (currentStep === 0) {
+      // Validate product info
+      if (!customName.trim()) {
+        message.error('Please enter a name for the custom product');
+        return;
+      }
+    }
+    setCurrentStep(currentStep + 1);
+  };
+
+  const handlePrev = () => {
+    setCurrentStep(currentStep - 1);
   };
 
   const handleSubmit = () => {
@@ -102,7 +123,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
         id: `CUSTOM-${Date.now()}`,
         name: customName,
         description: customDescription || 'Custom product',
-        price: totalPrice,
+        price: editablePrice,
         category: 'Custom',
         stock: 999, // Unlimited stock for custom products
         barcode: `CUSTOM-${Date.now()}`,
@@ -125,22 +146,10 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
     }
   };
 
-  return (
-    <Modal
-      title={
-        <Space>
-          <Icon name="build" className="text-blue-600" />
-          <span>Create Custom Product</span>
-        </Space>
-      }
-      open={open}
-      onCancel={onClose}
-      width={800}
-      footer={null}
-      destroyOnClose
-    >
-      <div className="space-y-6">
-        {/* Product Info */}
+  const steps = [
+    {
+      title: 'Product Info',
+      content: (
         <div className="space-y-4">
           <Title level={5}>Custom Product Information</Title>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -157,13 +166,13 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
               <Text strong>Price:</Text>
               <InputNumber
                 className="w-full mt-1"
-                value={totalPrice}
+                value={editablePrice}
+                onChange={(value) => setEditablePrice(value)}
                 formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                 parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                disabled
               />
               <Text type="secondary" className="text-xs block mt-1">
-                Price is calculated based on materials (50% markup)
+                Price is calculated based on materials (50% markup) but can be adjusted
               </Text>
             </div>
           </div>
@@ -178,14 +187,15 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
             />
           </div>
         </div>
-
-        <Divider />
-
-        {/* Material Selection */}
+      )
+    },
+    {
+      title: 'Add Materials',
+      content: (
         <div className="space-y-4">
           <Title level={5}>Add Raw Materials</Title>
           <Form
-            form={form}
+            form={materialsForm}
             layout="inline"
             onFinish={handleAddMaterial}
           >
@@ -271,22 +281,69 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
             )}
           </div>
         </div>
+      )
+    }
+  ];
+
+  return (
+    <Modal
+      title={
+        <Space>
+          <Icon name="build" className="text-blue-600" />
+          <span>Create Custom Product</span>
+        </Space>
+      }
+      open={open}
+      onCancel={onClose}
+      width={800}
+      footer={null}
+      destroyOnClose
+    >
+      <div className="space-y-6">
+        <Steps current={currentStep} items={steps} />
+        
+        <div className="min-h-[300px] mt-6">
+          {steps[currentStep].content}
+        </div>
 
         <Divider />
 
         {/* Footer */}
-        <div className="flex justify-end space-x-2">
-          <ActionButton onClick={onClose}>
-            Cancel
-          </ActionButton>
-          <ActionButton.Primary 
-            onClick={handleSubmit}
-            loading={loading}
-            disabled={selectedMaterials.length === 0 || !customName.trim()}
-            icon="add_shopping_cart"
-          >
-            Add to Cart
-          </ActionButton.Primary>
+        <div className="flex justify-between">
+          <div>
+            {currentStep > 0 && (
+              <Button onClick={handlePrev}>
+                <Icon name="arrow_back" className="mr-2" />
+                Previous
+              </Button>
+            )}
+          </div>
+          <div className="space-x-2">
+            <Button onClick={onClose}>
+              Cancel
+            </Button>
+            {currentStep < steps.length - 1 ? (
+              <Button 
+                type="primary"
+                onClick={handleNext}
+                className="bg-blue-600"
+              >
+                Next
+                <Icon name="arrow_forward" className="ml-2" />
+              </Button>
+            ) : (
+              <Button 
+                type="primary"
+                onClick={handleSubmit}
+                loading={loading}
+                disabled={selectedMaterials.length === 0 || !customName.trim()}
+                icon={<Icon name="add_shopping_cart" />}
+                className="bg-blue-600"
+              >
+                Add to Cart
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </Modal>

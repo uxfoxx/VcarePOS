@@ -14,7 +14,6 @@ import {
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
-import { ActionButton } from '../common/ActionButton';
 
 const { Title, Text } = Typography;
 const { Group: CheckboxGroup } = Checkbox;

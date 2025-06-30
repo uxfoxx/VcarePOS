@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Modal, Typography, Divider, Row, Col, Space, Image } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
@@ -9,15 +9,18 @@ const { Title, Text } = Typography;
 
 export function ProductDetailsSheet({ open, onClose, product }) {
   if (!product) return null;
+  const [loading, setLoading] = useState(false);
 
   const handlePrint = () => {
     window.print();
   };
 
   const handleView = async () => {
+    setLoading(true);
     const element = document.getElementById('product-sheet-content');
     if (!element) {
       console.error('Product sheet content element not found');
+      setLoading(false);
       return;
     }
 
@@ -62,13 +65,17 @@ export function ProductDetailsSheet({ open, onClose, product }) {
       console.error('Error generating PDF:', error);
       // Fallback to print
       handlePrint();
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDownload = async () => {
+    setLoading(true);
     const element = document.getElementById('product-sheet-content');
     if (!element) {
       console.error('Product sheet content element not found');
+      setLoading(false);
       return;
     }
 
@@ -112,6 +119,8 @@ export function ProductDetailsSheet({ open, onClose, product }) {
       console.error('Error generating PDF:', error);
       // Fallback to print
       handlePrint();
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -130,10 +139,10 @@ export function ProductDetailsSheet({ open, onClose, product }) {
         <ActionButton key="close" onClick={onClose}>
           Close
         </ActionButton>,
-        <ActionButton key="view" icon="visibility" onClick={handleView}>
+        <ActionButton key="view" icon="visibility" onClick={handleView} loading={loading}>
           View PDF
         </ActionButton>,
-        <ActionButton key="download" icon="download" onClick={handleDownload}>
+        <ActionButton key="download" icon="download" onClick={handleDownload} loading={loading}>
           Download PDF
         </ActionButton>,
         <ActionButton.Primary key="print" icon="print" onClick={handlePrint}>
@@ -141,6 +150,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
         </ActionButton.Primary>
       ]}
       className="invoice-modal"
+      destroyOnClose
     >
       <div className="max-h-[70vh] overflow-y-auto">
         <div id="product-sheet-content" className="p-8 bg-white" style={{ fontFamily: 'Arial, sans-serif' }}>

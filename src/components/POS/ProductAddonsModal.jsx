@@ -9,7 +9,8 @@ import {
   List, 
   Tag,
   InputNumber,
-  message
+  message,
+  Button
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
@@ -246,16 +247,18 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
 
         {/* Footer */}
         <div className="flex justify-end space-x-2">
-          <ActionButton onClick={onClose}>
+          <Button onClick={onClose}>
             Cancel
-          </ActionButton>
-          <ActionButton.Primary 
+          </Button>
+          <Button 
+            type="primary"
             onClick={handleSubmit}
             loading={loading}
-            icon="add_shopping_cart"
+            icon={<Icon name="add_shopping_cart" />}
+            className="bg-blue-600"
           >
             Add to Cart
-          </ActionButton.Primary>
+          </Button>
         </div>
       </div>
     </Modal>

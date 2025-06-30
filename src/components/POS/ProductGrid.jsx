@@ -10,7 +10,9 @@ import {
   Tag,
   Select,
   Space,
-  Typography
+  Typography,
+  Input,
+  Button
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { SearchInput } from '../common/SearchInput';
@@ -119,8 +121,8 @@ export function ProductGrid({ collapsed }) {
       // When collapsed, show 4 products per row
       return { xs: 24, sm: 12, md: 8, lg: 6, xl: 6 };
     } else {
-      // When expanded, show 2 products per row
-      return { xs: 24, sm: 12, md: 12, lg: 12, xl: 12 };
+      // When expanded, show 3 products per row
+      return { xs: 24, sm: 12, md: 8, lg: 8, xl: 8 };
     }
   };
 
@@ -152,26 +154,30 @@ export function ProductGrid({ collapsed }) {
         bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
       >
         <div className="p-4 border-b border-gray-200">
-          <PageHeader
-            title="Products"
-            icon="inventory_2"
-            extra={
-              <Space>
-                <SearchInput
-                  placeholder="Search by product name or SKU..."
-                  value={searchTerm}
-                  onSearch={setSearchTerm}
-                  className="w-80"
-                />
-                <ActionButton.Primary
-                  icon="build"
-                  onClick={() => setShowCustomProductModal(true)}
-                >
-                  Custom Product
-                </ActionButton.Primary>
-              </Space>
-            }
-          />
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold m-0">Products</h2>
+            </div>
+            <Space>
+              <Input.Search
+                placeholder="Search by product name or SKU..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onSearch={setSearchTerm}
+                className="w-80"
+                size="large"
+              />
+              <Button 
+                type="primary" 
+                size="large"
+                icon={<Icon name="add" />}
+                onClick={() => setShowCustomProductModal(true)}
+                className="bg-blue-600"
+              >
+                Custom Product
+              </Button>
+            </Space>
+          </div>
         </div>
 
         {/* Category Filter */}

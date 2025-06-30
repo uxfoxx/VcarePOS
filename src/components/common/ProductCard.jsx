@@ -1,7 +1,5 @@
 import React from 'react';
-import { Card, Typography, Image, Badge, Tag } from 'antd';
-import { ActionButton } from './ActionButton';
-import { StatusTag } from './StatusTag';
+import { Card, Typography, Image, Badge, Tag, Button } from 'antd';
 import { Icon } from './Icon';
 
 const { Text } = Typography;
@@ -60,9 +58,9 @@ export function ProductCard({
             />
           </div>
           <div className="absolute top-2 left-2">
-            <StatusTag status="info">
+            <Tag color="blue">
               {product.category}
-            </StatusTag>
+            </Tag>
           </div>
           {product.hasSizes && (
             <div className="absolute bottom-2 right-2">
@@ -80,16 +78,16 @@ export function ProductCard({
           )}
           {product.stock <= 5 && product.stock > 0 && (
             <div className="absolute bottom-2 left-2">
-              <StatusTag status="low-stock">
+              <Tag color="orange">
                 Low Stock
-              </StatusTag>
+              </Tag>
             </div>
           )}
           {product.stock === 0 && (
             <div className="absolute bottom-2 left-2">
-              <StatusTag status="out-of-stock">
+              <Tag color="red">
                 Out of Stock
-              </StatusTag>
+              </Tag>
             </div>
           )}
         </div>
@@ -144,8 +142,9 @@ export function ProductCard({
           </div>
         )}
         
-        <ActionButton.Primary
-          icon="add_shopping_cart"
+        <Button
+          type="primary"
+          icon={<Icon name="add_shopping_cart" />}
           size="large"
           block
           onClick={handleAddToCart}
@@ -160,7 +159,7 @@ export function ProductCard({
                 ? 'Add to Cart'
                 : 'Add with Addons'
           }
-        </ActionButton.Primary>
+        </Button>
       </div>
     </Card>
   );

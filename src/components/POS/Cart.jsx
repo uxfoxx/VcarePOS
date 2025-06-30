@@ -12,7 +12,8 @@ import {
   Input,
   Button,
   Alert,
-  Tag
+  Tag,
+  Empty
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { useNotifications } from '../../contexts/NotificationContext';
@@ -170,8 +171,7 @@ export function Cart() {
         title={
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Icon name="shopping_cart" className="text-blue-600" />
-              <Title level={5} className="m-0">Current Order</Title>
+              <h2 className="text-xl font-bold m-0">Current Order</h2>
               <Badge count={state.cart.length} size="small" />
             </div>
           </div>
@@ -229,10 +229,11 @@ export function Cart() {
           {/* Cart Items */}
           <div className="flex-1 overflow-y-auto p-4">
             {state.cart.length === 0 ? (
-              <div className="text-center py-8">
-                <Icon name="shopping_cart" className="text-4xl text-gray-300 mb-2" />
-                <Text type="secondary">No items in cart</Text>
-              </div>
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="Your cart is empty"
+                className="flex flex-col items-center justify-center h-full"
+              />
             ) : (
               <List
                 dataSource={state.cart}
@@ -356,104 +357,102 @@ export function Cart() {
           </div>
 
           {/* Order Summary */}
-          {state.cart.length > 0 && (
-            <div className="border-t border-gray-200 p-4 space-y-3">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Text>Subtotal</Text>
-                  <Text>${subtotal.toFixed(2)}</Text>
-                </div>
+          <div className="border-t border-gray-200 p-4 space-y-3">
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Text>Subtotal</Text>
+                <Text>${subtotal.toFixed(2)}</Text>
+              </div>
 
-                {/* Category Taxes */}
-                {categoryTaxTotal > 0 && (
-                  <div className="flex justify-between">
-                    <Text>Category Taxes</Text>
-                    <Text>${categoryTaxTotal.toFixed(2)}</Text>
+              {/* Category Taxes */}
+              {categoryTaxTotal > 0 && (
+                <div className="flex justify-between">
+                  <Text>Category Taxes</Text>
+                  <Text>${categoryTaxTotal.toFixed(2)}</Text>
+                </div>
+              )}
+
+              {/* Coupon Section */}
+              <div className="space-y-2">
+                {appliedCoupon ? (
+                  <div className="p-2 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Text strong className="text-green-800 text-sm">{appliedCoupon.code}</Text>
+                        <br />
+                        <Text className="text-green-600 text-xs">
+                          {appliedCoupon.discountPercent}% discount
+                        </Text>
+                      </div>
+                      <ActionButton.Text 
+                        icon="close"
+                        danger 
+                        size="small"
+                        onClick={handleRemoveCoupon}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <Text className="text-green-600 text-sm">Discount</Text>
+                      <Text className="text-green-600 text-sm">-${couponDiscount.toFixed(2)}</Text>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex space-x-1">
+                      <Input 
+                        placeholder="Coupon code"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        size="middle"
+                        onPressEnter={handleApplyCoupon}
+                      />
+                      <Button 
+                        size="middle" 
+                        type="primary"
+                        onClick={handleApplyCoupon}
+                        disabled={!couponCode.trim()}
+                      >
+                        Apply
+                      </Button>
+                    </div>
                   </div>
                 )}
+              </div>
 
-                {/* Coupon Section */}
-                <div className="space-y-2">
-                  {appliedCoupon ? (
-                    <div className="p-2 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Text strong className="text-green-800 text-sm">{appliedCoupon.code}</Text>
-                          <br />
-                          <Text className="text-green-600 text-xs">
-                            {appliedCoupon.discountPercent}% discount
-                          </Text>
-                        </div>
-                        <ActionButton.Text 
-                          icon="close"
-                          danger 
-                          size="small"
-                          onClick={handleRemoveCoupon}
-                        />
-                      </div>
-                      <div className="flex justify-between mt-1">
-                        <Text className="text-green-600 text-sm">Discount</Text>
-                        <Text className="text-green-600 text-sm">-${couponDiscount.toFixed(2)}</Text>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Text className="text-sm font-medium">Apply Coupon</Text>
-                      <div className="flex space-x-1">
-                        <Input 
-                          placeholder="Coupon code"
-                          value={couponCode}
-                          onChange={(e) => setCouponCode(e.target.value)}
-                          size="small"
-                          onPressEnter={handleApplyCoupon}
-                        />
-                        <Button 
-                          size="small" 
-                          type="primary"
-                          onClick={handleApplyCoupon}
-                          disabled={!couponCode.trim()}
-                        >
-                          Apply
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+              {/* Full Bill Taxes */}
+              {fullBillTaxes.map(tax => (
+                <div key={tax.id} className="flex justify-between">
+                  <Text>{tax.name} ({tax.rate}%)</Text>
+                  <Text>${((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
                 </div>
+              ))}
 
-                {/* Full Bill Taxes */}
-                {fullBillTaxes.map(tax => (
-                  <div key={tax.id} className="flex justify-between">
-                    <Text>{tax.name} ({tax.rate}%)</Text>
-                    <Text>${((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
-                  </div>
-                ))}
-
-                <Divider className="my-2" />
-                <div className="flex justify-between">
-                  <Title level={5} className="m-0">Total</Title>
-                  <Title level={4} className="m-0 text-blue-600">
-                    ${total.toFixed(2)}
-                  </Title>
-                </div>
+              <Divider className="my-2" />
+              <div className="flex justify-between">
+                <Title level={5} className="m-0">Total</Title>
+                <Title level={4} className="m-0 text-blue-600">
+                  ${total.toFixed(2)}
+                </Title>
               </div>
             </div>
-          )}
+          </div>
 
           {/* Action Button */}
           <div className="border-t border-gray-200 p-4">
-            <ActionButton.Primary
-              icon="arrow_forward"
+            <Button
+              type="primary"
+              icon={<Icon name="arrow_forward" />}
               size="large"
               block
               onClick={handleProceedToCheckout}
               disabled={state.cart.length === 0}
-              className="bg-blue-600 hover:bg-blue-700 font-semibold"
+              className="bg-blue-600 hover:bg-blue-700 h-12 text-lg font-semibold"
             >
               Proceed to Checkout
               {(materialWarnings.unavailableMaterials.length > 0 || materialWarnings.lowMaterials.length > 0) && (
                 <Icon name="warning" className="ml-2 text-yellow-300" />
               )}
-            </ActionButton.Primary>
+            </Button>
           </div>
         </div>
       </Card>

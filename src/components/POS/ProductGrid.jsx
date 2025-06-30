@@ -15,7 +15,9 @@ import {
   Button
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
+import { SearchInput } from '../common/SearchInput';
 import { ProductCard } from '../common/ProductCard';
+import { PageHeader } from '../common/PageHeader';
 import { Icon } from '../common/Icon';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { EmptyState } from '../common/EmptyState';
@@ -24,7 +26,6 @@ import { ProductAddonsModal } from './ProductAddonsModal';
 
 const { Option } = Select;
 const { Text } = Typography;
-const { Search } = Input;
 
 export function ProductGrid({ collapsed }) {
   const { state, dispatch } = usePOS();
@@ -124,6 +125,12 @@ export function ProductGrid({ collapsed }) {
     }
   };
 
+  const tabItems = categoryNames.map(category => ({
+    key: category,
+    label: category,
+    children: null
+  }));
+
   if (loading) {
     return (
       <Card 
@@ -151,7 +158,7 @@ export function ProductGrid({ collapsed }) {
               <h2 className="text-2xl font-bold m-0">Products</h2>
             </div>
             <Space>
-              <Search
+              <Input.Search
                 placeholder="Search by product name or SKU..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -205,7 +212,10 @@ export function ProductGrid({ collapsed }) {
               {filteredProducts.map((product) => (
                 <Col key={product.id} {...getColSpan()}>
                   <ProductCard
-                    product={product}
+                    product={{
+                      ...product,
+                      price: product.price // Price is already in LKR
+                    }}
                     onAddToCart={handleAddToCart}
                     onClick={handleProductClick}
                     showDetails={true}
@@ -285,8 +295,11 @@ export function ProductGrid({ collapsed }) {
                 preview={false}
               />
               <div className="flex-1">
-                <h4 className="text-xl font-bold mb-1">{selectedProduct.name}</h4>
-                <p className="text-gray-500 mb-4">{selectedProduct.description}</p>
+                <PageHeader
+                  title={selectedProduct.name}
+                  subtitle={selectedProduct.description}
+                  level={4}
+                />
                 <div className="mt-2 space-y-2">
                   {selectedSizeData ? (
                     <>

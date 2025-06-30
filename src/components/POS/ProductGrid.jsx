@@ -167,15 +167,13 @@ export function ProductGrid({ collapsed }) {
                 className="w-80"
                 size="large"
               />
-              <Button 
-                type="primary" 
+              <ActionButton.Primary 
                 size="large"
-                icon={<Icon name="add" />}
+                icon="add"
                 onClick={() => setShowCustomProductModal(true)}
-                className="bg-blue-600"
               >
                 Custom Product
-              </Button>
+              </ActionButton.Primary>
             </Space>
           </div>
         </div>
@@ -257,7 +255,6 @@ export function ProductGrid({ collapsed }) {
               icon={<Icon name="add_shopping_cart" />}
               onClick={handleAddSelectedSizeToCart}
               disabled={!selectedSizeData || selectedSizeData.stock === 0}
-              className="bg-blue-600"
             >
               {!selectedSizeData 
                 ? 'Select Size' 
@@ -276,7 +273,6 @@ export function ProductGrid({ collapsed }) {
                 setShowDetailModal(false);
               }}
               disabled={selectedProduct?.stock === 0}
-              className="bg-blue-600"
             >
               Add to Cart
             </Button>

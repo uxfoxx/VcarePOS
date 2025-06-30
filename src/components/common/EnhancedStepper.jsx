@@ -19,21 +19,9 @@ export function EnhancedStepper({
     return 'wait';
   };
 
-  const getStepTitle = (step, stepIndex) => {
-    // Change the title based on the current step
-    if (stepIndex < current) {
-      return 'Finished';
-    } else if (stepIndex === current) {
-      return 'In Progress';
-    } else {
-      return 'Waiting';
-    }
-  };
-
   const enhancedSteps = steps.map((step, index) => ({
-    ...step,
-    title: getStepTitle(step, index),
-    description: step.description, // Keep original description
+    title: step.title,
+    description: step.description,
     status: getStepStatus(index),
     icon: step.icon ? <Icon name={step.icon} /> : undefined
   }));

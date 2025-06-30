@@ -405,6 +405,7 @@ export function Cart() {
                         onChange={(e) => setCouponCode(e.target.value)}
                         size="middle"
                         onPressEnter={handleApplyCoupon}
+                        className="flex-1"
                       />
                       <Button 
                         size="middle" 

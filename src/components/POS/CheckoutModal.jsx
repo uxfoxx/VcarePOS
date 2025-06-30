@@ -25,8 +25,8 @@ import { InvoiceModal } from '../Invoices/InvoiceModal';
 import { InventoryLabelModal } from '../Invoices/InventoryLabelModal';
 
 const { Title, Text } = Typography;
-const { TextArea } = Input;
 const { Option } = Select;
+const { TextArea } = Input;
 
 export function CheckoutModal({ 
   open, 
@@ -297,14 +297,14 @@ export function CheckoutModal({
                       )}
                     </div>
                     <Text strong className="text-blue-600">
-                      ${itemTotalPrice.toFixed(2)}
+                      LKR {itemTotalPrice.toFixed(2)}
                     </Text>
                   </div>
                   <div className="flex items-center justify-between text-sm text-gray-500">
                     <Text type="secondary">
-                      ${item.product.price.toFixed(2)} × {item.quantity}
-                      {addonPrice > 0 && ` + $${addonPrice.toFixed(2)} addons`}
-                      {itemTaxAmount > 0 && ` + $${itemTaxAmount.toFixed(2)} tax`}
+                      LKR {item.product.price.toFixed(2)} × {item.quantity}
+                      {addonPrice > 0 && ` + LKR ${addonPrice.toFixed(2)} addons`}
+                      {itemTaxAmount > 0 && ` + LKR ${itemTaxAmount.toFixed(2)} tax`}
                     </Text>
                     <Text type="secondary">SKU: {item.product.barcode}</Text>
                   </div>
@@ -314,7 +314,7 @@ export function CheckoutModal({
                     <div className="mt-1 pl-4 border-l-2 border-blue-200">
                       {item.product.addons.map((addon, idx) => (
                         <Text key={idx} type="secondary" className="text-xs block">
-                          {addon.name} × {addon.quantity}: +${addon.price.toFixed(2)}
+                          {addon.name} × {addon.quantity}: +LKR {addon.price.toFixed(2)}
                         </Text>
                       ))}
                     </div>
@@ -325,7 +325,7 @@ export function CheckoutModal({
                     <div className="mt-1">
                       {itemCategoryTaxes.map(tax => (
                         <Text key={tax.taxId} type="secondary" className="text-xs block">
-                          {tax.taxName} ({tax.rate}%): +${tax.amount.toFixed(2)}
+                          {tax.taxName} ({tax.rate}%): +LKR {tax.amount.toFixed(2)}
                         </Text>
                       ))}
                     </div>
@@ -340,27 +340,27 @@ export function CheckoutModal({
       <div className="border-t pt-4 space-y-2">
         <div className="flex justify-between">
           <Text>Subtotal</Text>
-          <Text>${subtotal.toFixed(2)}</Text>
+          <Text>LKR {subtotal.toFixed(2)}</Text>
         </div>
         
         {categoryTaxTotal > 0 && (
           <div className="flex justify-between">
             <Text>Category Taxes</Text>
-            <Text>${categoryTaxTotal.toFixed(2)}</Text>
+            <Text>LKR {categoryTaxTotal.toFixed(2)}</Text>
           </div>
         )}
         
         {appliedCoupon && (
           <div className="flex justify-between">
             <Text className="text-green-600">Coupon ({appliedCoupon.code})</Text>
-            <Text className="text-green-600">-${couponDiscount.toFixed(2)}</Text>
+            <Text className="text-green-600">-LKR {couponDiscount.toFixed(2)}</Text>
           </div>
         )}
         
         {fullBillTaxes && fullBillTaxes.map(tax => (
           <div key={tax.id} className="flex justify-between">
             <Text>{tax.name} ({tax.rate}%)</Text>
-            <Text>${((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
+            <Text>LKR {((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
           </div>
         ))}
         
@@ -368,7 +368,7 @@ export function CheckoutModal({
         <div className="flex justify-between">
           <Title level={5} className="m-0">Total</Title>
           <Title level={4} className="m-0 text-blue-600">
-            ${total.toFixed(2)}
+            LKR {total.toFixed(2)}
           </Title>
         </div>
       </div>
@@ -485,27 +485,27 @@ export function CheckoutModal({
           </div>
           <div className="flex justify-between">
             <Text>Items ({cartItems.length})</Text>
-            <Text>${subtotal.toFixed(2)}</Text>
+            <Text>LKR {subtotal.toFixed(2)}</Text>
           </div>
           
           {categoryTaxTotal > 0 && (
             <div className="flex justify-between">
               <Text>Category Taxes</Text>
-              <Text>${categoryTaxTotal.toFixed(2)}</Text>
+              <Text>LKR {categoryTaxTotal.toFixed(2)}</Text>
             </div>
           )}
           
           {appliedCoupon && (
             <div className="flex justify-between">
               <Text className="text-green-600">Discount</Text>
-              <Text className="text-green-600">-${couponDiscount.toFixed(2)}</Text>
+              <Text className="text-green-600">-LKR {couponDiscount.toFixed(2)}</Text>
             </div>
           )}
           
           {fullBillTaxes && fullBillTaxes.map(tax => (
             <div key={tax.id} className="flex justify-between">
               <Text>{tax.name}</Text>
-              <Text>${((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
+              <Text>LKR {((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
             </div>
           ))}
           
@@ -513,7 +513,7 @@ export function CheckoutModal({
           <div className="flex justify-between">
             <Title level={4} className="m-0">Total</Title>
             <Title level={4} className="m-0 text-blue-600">
-              ${total.toFixed(2)}
+              LKR {total.toFixed(2)}
             </Title>
           </div>
         </div>
@@ -654,7 +654,7 @@ export function CheckoutModal({
                 <Col span={6}>
                   <div className="text-center">
                     <Text strong className="text-lg block text-blue-600">
-                      ${completedTransaction.total.toFixed(2)}
+                      LKR {completedTransaction.total.toFixed(2)}
                     </Text>
                     <Text type="secondary" className="text-sm">Total Amount</Text>
                   </div>

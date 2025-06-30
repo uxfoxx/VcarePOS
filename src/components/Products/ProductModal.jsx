@@ -23,6 +23,7 @@ import {
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
+import { ActionButton } from '../common/ActionButton';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -690,7 +691,7 @@ export function ProductModal({
             </Col>
             <Col span={4}>
               <Form.Item label=" ">
-                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block className="bg-blue-600">
+                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
                   Add
                 </Button>
               </Form.Item>
@@ -827,7 +828,7 @@ export function ProductModal({
               </Row>
 
               <Form.Item>
-                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block className="bg-blue-600">
+                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
                   Add Size
                 </Button>
               </Form.Item>
@@ -877,7 +878,7 @@ export function ProductModal({
       title={editingProduct ? 'Edit Product' : 'Add New Product'}
       open={open}
       onCancel={handleClose}
-      width={1000}
+      width={900}
       footer={null}
       destroyOnClose
     >
@@ -917,33 +918,31 @@ export function ProductModal({
         <div className="flex justify-between">
           <div>
             {currentStep > 0 && (
-              <Button onClick={handlePrev}>
+              <ActionButton onClick={handlePrev}>
                 <Icon name="arrow_back" className="mr-2" />
                 Previous
-              </Button>
+              </ActionButton>
             )}
           </div>
           
           <div className="space-x-2">
-            <Button onClick={handleClose}>
+            <ActionButton onClick={handleClose}>
               Cancel
-            </Button>
+            </ActionButton>
             
             {currentStep < steps.length - 1 ? (
-              <Button type="primary" onClick={handleNext} className="bg-blue-600">
+              <ActionButton.Primary onClick={handleNext}>
                 Next
                 <Icon name="arrow_forward" className="ml-2" />
-              </Button>
+              </ActionButton.Primary>
             ) : (
-              <Button 
-                type="primary" 
+              <ActionButton.Primary 
                 onClick={handleSubmit}
                 loading={loading}
-                icon={<Icon name="check" />}
-                className="bg-blue-600"
+                icon="check"
               >
                 {editingProduct ? 'Update Product' : 'Create Product'}
-              </Button>
+              </ActionButton.Primary>
             )}
           </div>
         </div>

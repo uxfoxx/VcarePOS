@@ -15,6 +15,8 @@ import {
   Divider,
   message
 } from 'antd';
+import { Icon } from '../common/Icon';
+import { ActionButton } from '../common/ActionButton';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -25,13 +27,13 @@ export function SettingsPanel() {
   const [form] = Form.useForm();
 
   const sections = [
-    { key: 'general', label: 'General', icon: <span className="material-icons">settings</span> },
-    { key: 'store', label: 'Store Info', icon: <span className="material-icons">store</span> },
-    { key: 'users', label: 'User Management', icon: <span className="material-icons">people</span> },
-    { key: 'payment', label: 'Payment Methods', icon: <span className="material-icons">payment</span> },
-    { key: 'notifications', label: 'Notifications', icon: <span className="material-icons">notifications</span> },
-    { key: 'security', label: 'Security', icon: <span className="material-icons">security</span> },
-    { key: 'hardware', label: 'Hardware', icon: <span className="material-icons">print</span> }
+    { key: 'general', label: 'General', icon: <Icon name="settings" /> },
+    { key: 'store', label: 'Store Info', icon: <Icon name="store" /> },
+    { key: 'users', label: 'User Management', icon: <Icon name="people" /> },
+    { key: 'payment', label: 'Payment Methods', icon: <Icon name="payment" /> },
+    { key: 'notifications', label: 'Notifications', icon: <Icon name="notifications" /> },
+    { key: 'security', label: 'Security', icon: <Icon name="security" /> },
+    { key: 'hardware', label: 'Hardware', icon: <Icon name="print" /> }
   ];
 
   const handleSave = () => {
@@ -48,8 +50,9 @@ export function SettingsPanel() {
           </Form.Item>
         </Col>
         <Col span={12}>
-          <Form.Item name="currency" label="Currency" initialValue="USD">
+          <Form.Item name="currency" label="Currency" initialValue="LKR">
             <Select>
+              <Option value="LKR">LKR (Rs)</Option>
               <Option value="USD">USD ($)</Option>
               <Option value="EUR">EUR (€)</Option>
               <Option value="GBP">GBP (£)</Option>
@@ -62,8 +65,9 @@ export function SettingsPanel() {
           </Form.Item>
         </Col>
         <Col span={12}>
-          <Form.Item name="timezone" label="Time Zone" initialValue="UTC-5">
+          <Form.Item name="timezone" label="Time Zone" initialValue="UTC+5:30">
             <Select>
+              <Option value="UTC+5:30">UTC+5:30 (Sri Lanka)</Option>
               <Option value="UTC-5">UTC-5 (Eastern)</Option>
               <Option value="UTC-6">UTC-6 (Central)</Option>
               <Option value="UTC-7">UTC-7 (Mountain)</Option>
@@ -72,7 +76,7 @@ export function SettingsPanel() {
           </Form.Item>
         </Col>
       </Row>
-      <Button type="primary" htmlType="submit">Save Changes</Button>
+      <ActionButton.Primary htmlType="submit">Save Changes</ActionButton.Primary>
     </Form>
   );
 
@@ -83,7 +87,7 @@ export function SettingsPanel() {
       default:
         return (
           <div className="text-center py-12">
-            <span className="material-icons text-6xl text-gray-300 mb-4">settings</span>
+            <Icon name="settings" className="text-6xl text-gray-300 mb-4" />
             <Title level={4} type="secondary">
               {sections.find(s => s.key === activeSection)?.label} settings coming soon
             </Title>
@@ -97,7 +101,7 @@ export function SettingsPanel() {
     <Card 
       title={
         <Space>
-          <span className="material-icons text-[#0E72BD]">settings</span>
+          <Icon name="settings" className="text-[#0E72BD]" />
           <Title level={4} className="m-0">Settings</Title>
         </Space>
       }

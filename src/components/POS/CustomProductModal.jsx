@@ -16,6 +16,7 @@ import {
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
+import { ActionButton } from '../common/ActionButton';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -168,8 +169,9 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
                 className="w-full mt-1"
                 value={editablePrice}
                 onChange={(value) => setEditablePrice(value)}
-                formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={value => value.replace(/\$\s?|(,*)/g, '')}
+                formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+                step={100}
               />
               <Text type="secondary" className="text-xs block mt-1">
                 Price is calculated based on materials (50% markup) but can be adjusted
@@ -196,53 +198,55 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
           <Title level={5}>Add Raw Materials</Title>
           <Form
             form={materialsForm}
-            layout="inline"
+            layout="horizontal"
             onFinish={handleAddMaterial}
           >
-            <Form.Item
-              name="materialId"
-              rules={[{ required: true, message: 'Please select a material' }]}
-              className="w-1/2"
-            >
-              <Select 
-                placeholder="Select material"
-                showSearch
-                optionFilterProp="children"
-                filterOption={(input, option) =>
-                  option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                }
+            <div className="flex gap-2">
+              <Form.Item
+                name="materialId"
+                rules={[{ required: true, message: 'Please select a material' }]}
+                className="flex-1"
               >
-                {state.rawMaterials.map(material => (
-                  <Option key={material.id} value={material.id}>
-                    {material.name} (${material.unitPrice}/{material.unit}) - Stock: {material.stockQuantity}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-            <Form.Item
-              name="quantity"
-              rules={[{ required: true, message: 'Please enter quantity' }]}
-              className="w-1/4"
-            >
-              <InputNumber
-                min={0.1}
-                step={0.1}
-                placeholder="Qty"
-                className="w-full"
-              />
-            </Form.Item>
-            <Form.Item className="w-1/4">
-              <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
-                Add
-              </Button>
-            </Form.Item>
+                <Select 
+                  placeholder="Select material"
+                  showSearch
+                  optionFilterProp="children"
+                  filterOption={(input, option) =>
+                    option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }
+                >
+                  {state.rawMaterials.map(material => (
+                    <Option key={material.id} value={material.id}>
+                      {material.name} (LKR {material.unitPrice}/{material.unit}) - Stock: {material.stockQuantity}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+              <Form.Item
+                name="quantity"
+                rules={[{ required: true, message: 'Please enter quantity' }]}
+                className="w-24"
+              >
+                <InputNumber
+                  min={0.1}
+                  step={0.1}
+                  placeholder="Qty"
+                  className="w-full"
+                />
+              </Form.Item>
+              <Form.Item className="w-20">
+                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
+                  Add
+                </Button>
+              </Form.Item>
+            </div>
           </Form>
 
           {/* Selected Materials List */}
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="flex justify-between items-center mb-2">
               <Text strong>Selected Materials</Text>
-              <Text strong>Total: ${totalPrice.toFixed(2)}</Text>
+              <Text strong>Total: LKR {totalPrice.toFixed(2)}</Text>
             </div>
             
             {selectedMaterials.length === 0 ? (
@@ -270,11 +274,11 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
                       <Text>{item.name}</Text>
                       <div>
                         <Text type="secondary" className="text-sm">
-                          {item.quantity} {item.unit} × ${item.unitPrice.toFixed(2)}
+                          {item.quantity} {item.unit} × LKR {item.unitPrice.toFixed(2)}
                         </Text>
                       </div>
                     </div>
-                    <Text strong>${(item.quantity * item.unitPrice).toFixed(2)}</Text>
+                    <Text strong>LKR {(item.quantity * item.unitPrice).toFixed(2)}</Text>
                   </List.Item>
                 )}
               />
@@ -295,12 +299,18 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
       }
       open={open}
       onCancel={onClose}
-      width={800}
+      width={700}
       footer={null}
       destroyOnClose
     >
       <div className="space-y-6">
-        <Steps current={currentStep} items={steps} />
+        <Steps 
+          current={currentStep} 
+          items={[
+            { title: 'Product Info' },
+            { title: 'Add Materials' }
+          ]}
+        />
         
         <div className="min-h-[300px] mt-6">
           {steps[currentStep].content}
@@ -312,36 +322,32 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
         <div className="flex justify-between">
           <div>
             {currentStep > 0 && (
-              <Button onClick={handlePrev}>
+              <ActionButton onClick={handlePrev}>
                 <Icon name="arrow_back" className="mr-2" />
                 Previous
-              </Button>
+              </ActionButton>
             )}
           </div>
           <div className="space-x-2">
-            <Button onClick={onClose}>
+            <ActionButton onClick={onClose}>
               Cancel
-            </Button>
+            </ActionButton>
             {currentStep < steps.length - 1 ? (
-              <Button 
-                type="primary"
+              <ActionButton.Primary 
                 onClick={handleNext}
-                className="bg-blue-600"
               >
                 Next
                 <Icon name="arrow_forward" className="ml-2" />
-              </Button>
+              </ActionButton.Primary>
             ) : (
-              <Button 
-                type="primary"
+              <ActionButton.Primary 
                 onClick={handleSubmit}
                 loading={loading}
                 disabled={selectedMaterials.length === 0 || !customName.trim()}
-                icon={<Icon name="add_shopping_cart" />}
-                className="bg-blue-600"
+                icon="add_shopping_cart"
               >
                 Add to Cart
-              </Button>
+              </ActionButton.Primary>
             )}
           </div>
         </div>

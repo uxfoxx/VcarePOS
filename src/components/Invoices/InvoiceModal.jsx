@@ -401,34 +401,32 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
       onCancel={onClose}
       width={type === 'detailed' ? 900 : 600}
       footer={[
-        <Button key="close" onClick={onClose}>
+        <ActionButton key="close" onClick={onClose}>
           Close
-        </Button>,
-        <Button 
+        </ActionButton>,
+        <ActionButton 
           key="view" 
-          icon={<Icon name="visibility" />} 
+          icon="visibility" 
           onClick={handleView}
           loading={loading}
         >
           View PDF
-        </Button>,
-        <Button 
+        </ActionButton>,
+        <ActionButton 
           key="download" 
-          icon={<Icon name="download" />} 
+          icon="download" 
           onClick={handleDownload}
           loading={loading}
         >
           Download PDF
-        </Button>,
-        <Button 
-          type="primary" 
+        </ActionButton>,
+        <ActionButton.Primary 
           key="print" 
-          icon={<Icon name="print" />} 
+          icon="print" 
           onClick={handlePrint}
-          className="bg-blue-600"
         >
           Print
-        </Button>
+        </ActionButton.Primary>
       ]}
       className="invoice-modal"
     >

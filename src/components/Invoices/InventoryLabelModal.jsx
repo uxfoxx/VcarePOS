@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Typography, Space, Button } from 'antd';
 import { Icon } from '../common/Icon';
+import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -268,34 +269,32 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
       onCancel={onClose}
       width={1000}
       footer={[
-        <Button key="close" onClick={onClose}>
+        <ActionButton key="close" onClick={onClose}>
           Close
-        </Button>,
-        <Button 
+        </ActionButton>,
+        <ActionButton 
           key="view" 
-          icon={<Icon name="visibility" />} 
+          icon="visibility" 
           onClick={handleView}
           loading={loading}
         >
           View PDF
-        </Button>,
-        <Button 
+        </ActionButton>,
+        <ActionButton 
           key="download" 
-          icon={<Icon name="download" />} 
+          icon="download" 
           onClick={handleDownload}
           loading={loading}
         >
           Download PDF
-        </Button>,
-        <Button 
-          type="primary" 
+        </ActionButton>,
+        <ActionButton.Primary 
           key="print" 
-          icon={<Icon name="print" />} 
+          icon="print" 
           onClick={handlePrint}
-          className="bg-blue-600"
         >
           Print Labels
-        </Button>
+        </ActionButton.Primary>
       ]}
       className="inventory-labels-modal"
       destroyOnClose

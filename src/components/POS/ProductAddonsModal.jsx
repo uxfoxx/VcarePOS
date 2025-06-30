@@ -14,6 +14,7 @@ import {
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
+import { ActionButton } from '../common/ActionButton';
 
 const { Title, Text } = Typography;
 const { Group: CheckboxGroup } = Checkbox;
@@ -248,18 +249,16 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
 
         {/* Footer */}
         <div className="flex justify-end space-x-2">
-          <Button onClick={onClose}>
+          <ActionButton onClick={onClose}>
             Cancel
-          </Button>
-          <Button 
-            type="primary"
+          </ActionButton>
+          <ActionButton.Primary 
             onClick={handleSubmit}
             loading={loading}
-            icon={<Icon name="add_shopping_cart" />}
-            className="bg-blue-600"
+            icon="add_shopping_cart"
           >
             Add to Cart
-          </Button>
+          </ActionButton.Primary>
         </div>
       </div>
     </Modal>

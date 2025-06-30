@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   Row, 
@@ -26,6 +26,7 @@ import { StockAlert } from '../common/StockAlert';
 import { ExportModal } from '../common/ExportModal';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { SearchInput } from '../common/SearchInput';
+import { getOrFetch } from '../../utils/cache';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -33,7 +34,7 @@ const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 export function ReportsOverview() {
-  const { state } = usePOS();
+  const { state, getProducts, getRawMaterials, getTransactions, getCoupons, getCategories } = usePOS();
   const { stockAlerts } = useNotifications();
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportDataType, setExportDataType] = useState('comprehensive');
@@ -42,10 +43,61 @@ export function ReportsOverview() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState([]);
+  const [rawMaterials, setRawMaterials] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [coupons, setCoupons] = useState([]);
+  const [categories, setCategories] = useState([]);
+
+  // Load cached data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [productsData, rawMaterialsData, transactionsData, couponsData, categoriesData] = await Promise.all([
+          getProducts ? getProducts() : state.products,
+          getRawMaterials ? getRawMaterials() : state.rawMaterials,
+          getTransactions ? getTransactions() : state.transactions,
+          getCoupons ? getCoupons() : state.coupons,
+          getCategories ? getCategories() : state.categories
+        ]);
+        
+        setProducts(productsData);
+        setRawMaterials(rawMaterialsData);
+        setTransactions(transactionsData);
+        setCoupons(couponsData);
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Error loading cached data:', error);
+        // Fallback to state data
+        setProducts(state.products);
+        setRawMaterials(state.rawMaterials);
+        setTransactions(state.transactions);
+        setCoupons(state.coupons);
+        setCategories(state.categories);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [
+    state.products, 
+    state.rawMaterials, 
+    state.transactions, 
+    state.coupons, 
+    state.categories,
+    getProducts,
+    getRawMaterials,
+    getTransactions,
+    getCoupons,
+    getCategories
+  ]);
 
   // Filter transactions based on date
   const getFilteredTransactions = () => {
-    let filtered = [...state.transactions];
+    let filtered = [...transactions];
     
     if (dateFilter === 'today') {
       const today = dayjs().startOf('day');
@@ -80,20 +132,20 @@ export function ReportsOverview() {
   const filteredTransactions = getFilteredTransactions();
   const totalRevenue = filteredTransactions.reduce((sum, transaction) => sum + transaction.total, 0);
   const totalTransactions = filteredTransactions.length;
-  const totalProducts = state.products.length;
-  const totalRawMaterials = state.rawMaterials.length;
+  const totalProducts = products.length;
+  const totalRawMaterials = rawMaterials.length;
   const averageOrderValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
 
   // Calculate raw material value
-  const rawMaterialValue = state.rawMaterials.reduce((sum, material) => 
+  const rawMaterialValue = rawMaterials.reduce((sum, material) => 
     sum + (material.stockQuantity * material.unitPrice), 0
   );
 
   // Get stock alerts
-  const lowStockMaterials = state.rawMaterials.filter(m => m.stockQuantity <= m.minimumStock);
-  const outOfStockMaterials = state.rawMaterials.filter(m => m.stockQuantity === 0);
-  const lowStockProducts = state.products.filter(p => p.stock <= 10 && p.stock > 0);
-  const outOfStockProducts = state.products.filter(p => p.stock === 0);
+  const lowStockMaterials = rawMaterials.filter(m => m.stockQuantity <= m.minimumStock);
+  const outOfStockMaterials = rawMaterials.filter(m => m.stockQuantity === 0);
+  const lowStockProducts = products.filter(p => p.stock <= 10 && p.stock > 0);
+  const outOfStockProducts = products.filter(p => p.stock === 0);
 
   // Calculate top selling products
   const productSales = {};
@@ -255,7 +307,7 @@ export function ReportsOverview() {
       dataIndex: 'category',
       key: 'category',
       render: (category) => <Tag color="blue">{category}</Tag>,
-      filters: [...new Set(state.products.map(p => p.category))].map(cat => ({
+      filters: [...new Set(products.map(p => p.category))].map(cat => ({
         text: cat,
         value: cat
       })),
@@ -370,7 +422,7 @@ export function ReportsOverview() {
       dataIndex: 'category',
       key: 'category',
       render: (category) => <Tag color="blue">{category}</Tag>,
-      filters: [...new Set(state.rawMaterials.map(m => m.category))].map(cat => ({
+      filters: [...new Set(rawMaterials.map(m => m.category))].map(cat => ({
         text: cat,
         value: cat
       })),
@@ -627,7 +679,7 @@ export function ReportsOverview() {
             }
           >
             <List
-              dataSource={state.rawMaterials.slice(0, 5)}
+              dataSource={rawMaterials.slice(0, 5)}
               renderItem={(material) => {
                 const stockPercentage = Math.min((material.stockQuantity / (material.minimumStock * 3)) * 100, 100);
                 const isLowStock = material.stockQuantity <= material.minimumStock;
@@ -685,7 +737,7 @@ export function ReportsOverview() {
         title="Product Reports"
         icon="inventory_2"
         columns={productColumns}
-        dataSource={state.products.filter(p => 
+        dataSource={products.filter(p => 
           p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
           p.barcode?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -779,7 +831,7 @@ export function ReportsOverview() {
         title="Raw Material Reports"
         icon="category"
         columns={materialColumns}
-        dataSource={state.rawMaterials.filter(m => 
+        dataSource={rawMaterials.filter(m => 
           m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           m.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
           m.supplier?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -853,6 +905,10 @@ export function ReportsOverview() {
     }
   ];
 
+  if (loading) {
+    return <LoadingSkeleton type="table" />;
+  }
+
   return (
     <>
       <Tabs
@@ -869,13 +925,13 @@ export function ReportsOverview() {
         onClose={() => setShowExportModal(false)}
         dataType={exportDataType}
         data={{
-          products: state.products,
-          rawMaterials: state.rawMaterials,
+          products,
+          rawMaterials,
           transactions: filteredTransactions,
-          coupons: state.coupons,
+          coupons,
           users: [], // Would come from auth context
           auditTrail: [], // Would come from auth context
-          categories: state.categories
+          categories
         }}
       />
     </>

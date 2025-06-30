@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { message } from 'antd';
+import { getOrFetch, invalidateCache, invalidateCacheByPrefix } from '../utils/cache';
 
 const initialState = {
   isAuthenticated: false,
@@ -151,29 +152,43 @@ function authReducer(state, action) {
         isAuthenticated: false,
         currentUser: null
       };
-    case 'ADD_USER':
+    case 'ADD_USER': {
+      // Invalidate users cache
+      invalidateCacheByPrefix('users');
       return {
         ...state,
         users: [...state.users, action.payload]
       };
-    case 'UPDATE_USER':
+    }
+    case 'UPDATE_USER': {
+      // Invalidate users cache
+      invalidateCacheByPrefix('users');
       return {
         ...state,
         users: state.users.map(user =>
           user.id === action.payload.id ? action.payload : user
         )
       };
-    case 'DELETE_USER':
+    }
+    case 'DELETE_USER': {
+      // Invalidate users cache
+      invalidateCacheByPrefix('users');
       return {
         ...state,
         users: state.users.filter(user => user.id !== action.payload)
       };
-    case 'ADD_AUDIT_LOG':
+    }
+    case 'ADD_AUDIT_LOG': {
+      // Invalidate audit trail cache
+      invalidateCacheByPrefix('audit');
       return {
         ...state,
         auditTrail: [action.payload, ...state.auditTrail]
       };
-    case 'UPDATE_LAST_LOGIN':
+    }
+    case 'UPDATE_LAST_LOGIN': {
+      // Invalidate users cache
+      invalidateCacheByPrefix('users');
       return {
         ...state,
         users: state.users.map(user =>
@@ -185,6 +200,7 @@ function authReducer(state, action) {
           ? { ...state.currentUser, lastLogin: action.payload.timestamp }
           : state.currentUser
       };
+    }
     default:
       return state;
   }
@@ -298,6 +314,15 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Cached data access methods
+  const getUsers = async () => {
+    return await getOrFetch('users', () => state.users, 300); // 5 minutes TTL
+  };
+
+  const getAuditTrail = async () => {
+    return await getOrFetch('audit-trail', () => state.auditTrail, 300); // 5 minutes TTL
+  };
+
   return (
     <AuthContext.Provider value={{
       ...state,
@@ -307,7 +332,9 @@ export function AuthProvider({ children }) {
       hasPermission,
       addUser,
       updateUser,
-      deleteUser
+      deleteUser,
+      getUsers,
+      getAuditTrail
     }}>
       {children}
     </AuthContext.Provider>

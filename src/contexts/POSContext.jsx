@@ -9,6 +9,7 @@ import {
   mockTaxes, 
   mockCategories
 } from '../data/mockData';
+import { getOrFetch, invalidateCache, invalidateCacheByPrefix } from '../utils/cache';
 
 const initialState = {
   cart: [],
@@ -75,19 +76,27 @@ function posReducer(state, action) {
         ...state,
         cart: []
       };
-    case 'ADD_TRANSACTION':
+    case 'ADD_TRANSACTION': {
+      // Invalidate transactions cache
+      invalidateCacheByPrefix('transactions');
       return {
         ...state,
         transactions: [action.payload, ...state.transactions]
       };
-    case 'UPDATE_TRANSACTION':
+    }
+    case 'UPDATE_TRANSACTION': {
+      // Invalidate transactions cache
+      invalidateCacheByPrefix('transactions');
       return {
         ...state,
         transactions: state.transactions.map(transaction =>
           transaction.id === action.payload.id ? action.payload : transaction
         )
       };
-    case 'UPDATE_TRANSACTION_STATUS':
+    }
+    case 'UPDATE_TRANSACTION_STATUS': {
+      // Invalidate transactions cache
+      invalidateCacheByPrefix('transactions');
       return {
         ...state,
         transactions: state.transactions.map(transaction =>
@@ -96,7 +105,11 @@ function posReducer(state, action) {
             : transaction
         )
       };
+    }
     case 'UPDATE_PRODUCT_STOCK': {
+      // Invalidate product cache
+      invalidateCacheByPrefix('products');
+      
       const updatedProducts = state.products.map(product => {
         if (product.id === action.payload.productId) {
           if (product.hasSizes && action.payload.selectedSize) {
@@ -167,6 +180,9 @@ function posReducer(state, action) {
         }
       }
 
+      // Invalidate raw materials cache
+      invalidateCacheByPrefix('raw-materials');
+
       return {
         ...state,
         products: updatedProducts,
@@ -174,6 +190,9 @@ function posReducer(state, action) {
       };
     }
     case 'RESTORE_PRODUCT_STOCK': {
+      // Invalidate product cache
+      invalidateCacheByPrefix('products');
+      
       const updatedProducts = state.products.map(product => {
         if (product.id === action.payload.productId) {
           if (product.hasSizes && action.payload.selectedSize) {
@@ -244,47 +263,70 @@ function posReducer(state, action) {
         }
       }
 
+      // Invalidate raw materials cache
+      invalidateCacheByPrefix('raw-materials');
+
       return {
         ...state,
         products: updatedProducts,
         rawMaterials: updatedRawMaterials
       };
     }
-    case 'ADD_PRODUCT':
+    case 'ADD_PRODUCT': {
+      // Invalidate product cache
+      invalidateCacheByPrefix('products');
       return {
         ...state,
         products: [...state.products, action.payload]
       };
-    case 'UPDATE_PRODUCT':
+    }
+    case 'UPDATE_PRODUCT': {
+      // Invalidate product cache
+      invalidateCacheByPrefix('products');
       return {
         ...state,
         products: state.products.map(product =>
           product.id === action.payload.id ? action.payload : product
         )
       };
-    case 'DELETE_PRODUCT':
+    }
+    case 'DELETE_PRODUCT': {
+      // Invalidate product cache
+      invalidateCacheByPrefix('products');
       return {
         ...state,
         products: state.products.filter(product => product.id !== action.payload)
       };
-    case 'ADD_RAW_MATERIAL':
+    }
+    case 'ADD_RAW_MATERIAL': {
+      // Invalidate raw materials cache
+      invalidateCacheByPrefix('raw-materials');
       return {
         ...state,
         rawMaterials: [...state.rawMaterials, action.payload]
       };
-    case 'UPDATE_RAW_MATERIAL':
+    }
+    case 'UPDATE_RAW_MATERIAL': {
+      // Invalidate raw materials cache
+      invalidateCacheByPrefix('raw-materials');
       return {
         ...state,
         rawMaterials: state.rawMaterials.map(material =>
           material.id === action.payload.id ? action.payload : material
         )
       };
-    case 'DELETE_RAW_MATERIAL':
+    }
+    case 'DELETE_RAW_MATERIAL': {
+      // Invalidate raw materials cache
+      invalidateCacheByPrefix('raw-materials');
       return {
         ...state,
         rawMaterials: state.rawMaterials.filter(material => material.id !== action.payload)
       };
-    case 'UPDATE_RAW_MATERIAL_STOCK':
+    }
+    case 'UPDATE_RAW_MATERIAL_STOCK': {
+      // Invalidate raw materials cache
+      invalidateCacheByPrefix('raw-materials');
       return {
         ...state,
         rawMaterials: state.rawMaterials.map(material =>
@@ -293,57 +335,85 @@ function posReducer(state, action) {
             : material
         )
       };
-    case 'ADD_COUPON':
+    }
+    case 'ADD_COUPON': {
+      // Invalidate coupons cache
+      invalidateCacheByPrefix('coupons');
       return {
         ...state,
         coupons: [...(state.coupons || []), action.payload]
       };
-    case 'UPDATE_COUPON':
+    }
+    case 'UPDATE_COUPON': {
+      // Invalidate coupons cache
+      invalidateCacheByPrefix('coupons');
       return {
         ...state,
         coupons: (state.coupons || []).map(coupon =>
           coupon.id === action.payload.id ? action.payload : coupon
         )
       };
-    case 'DELETE_COUPON':
+    }
+    case 'DELETE_COUPON': {
+      // Invalidate coupons cache
+      invalidateCacheByPrefix('coupons');
       return {
         ...state,
         coupons: (state.coupons || []).filter(coupon => coupon.id !== action.payload)
       };
-    case 'ADD_TAX':
+    }
+    case 'ADD_TAX': {
+      // Invalidate taxes cache
+      invalidateCacheByPrefix('taxes');
       return {
         ...state,
         taxes: [...(state.taxes || []), action.payload]
       };
-    case 'UPDATE_TAX':
+    }
+    case 'UPDATE_TAX': {
+      // Invalidate taxes cache
+      invalidateCacheByPrefix('taxes');
       return {
         ...state,
         taxes: (state.taxes || []).map(tax =>
           tax.id === action.payload.id ? action.payload : tax
         )
       };
-    case 'DELETE_TAX':
+    }
+    case 'DELETE_TAX': {
+      // Invalidate taxes cache
+      invalidateCacheByPrefix('taxes');
       return {
         ...state,
         taxes: (state.taxes || []).filter(tax => tax.id !== action.payload)
       };
-    case 'ADD_CATEGORY':
+    }
+    case 'ADD_CATEGORY': {
+      // Invalidate categories cache
+      invalidateCacheByPrefix('categories');
       return {
         ...state,
         categories: [...(state.categories || []), action.payload]
       };
-    case 'UPDATE_CATEGORY':
+    }
+    case 'UPDATE_CATEGORY': {
+      // Invalidate categories cache
+      invalidateCacheByPrefix('categories');
       return {
         ...state,
         categories: (state.categories || []).map(category =>
           category.id === action.payload.id ? action.payload : category
         )
       };
-    case 'DELETE_CATEGORY':
+    }
+    case 'DELETE_CATEGORY': {
+      // Invalidate categories cache
+      invalidateCacheByPrefix('categories');
       return {
         ...state,
         categories: (state.categories || []).filter(category => category.id !== action.payload)
       };
+    }
     default:
       return state;
   }
@@ -409,7 +479,7 @@ export function POSProvider({ children }) {
       addNotification({
         type: 'success',
         title: 'Sale Completed',
-        message: `Transaction ${action.payload.id} completed for $${action.payload.total.toFixed(2)}`,
+        message: `Transaction ${action.payload.id} completed for LKR ${action.payload.total.toFixed(2)}`,
         icon: 'receipt_long',
         category: 'transaction',
         navigateTo: 'transactions'
@@ -432,7 +502,7 @@ export function POSProvider({ children }) {
       case 'DELETE_RAW_MATERIAL':
         return `Deleted raw material with ID: ${action.payload}`;
       case 'ADD_TRANSACTION':
-        return `Completed transaction: ${action.payload.id} ($${action.payload.total.toFixed(2)})`;
+        return `Completed transaction: ${action.payload.id} (LKR ${action.payload.total.toFixed(2)})`;
       case 'UPDATE_TRANSACTION':
         return `Updated transaction: ${action.payload.id}`;
       case 'ADD_COUPON':
@@ -458,8 +528,42 @@ export function POSProvider({ children }) {
     }
   };
 
+  // Cached data access methods
+  const getProducts = async () => {
+    return await getOrFetch('products', () => state.products, 300); // 5 minutes TTL
+  };
+
+  const getRawMaterials = async () => {
+    return await getOrFetch('raw-materials', () => state.rawMaterials, 300); // 5 minutes TTL
+  };
+
+  const getTransactions = async () => {
+    return await getOrFetch('transactions', () => state.transactions, 300); // 5 minutes TTL
+  };
+
+  const getCoupons = async () => {
+    return await getOrFetch('coupons', () => state.coupons, 600); // 10 minutes TTL
+  };
+
+  const getTaxes = async () => {
+    return await getOrFetch('taxes', () => state.taxes, 600); // 10 minutes TTL
+  };
+
+  const getCategories = async () => {
+    return await getOrFetch('categories', () => state.categories, 600); // 10 minutes TTL
+  };
+
   return (
-    <POSContext.Provider value={{ state, dispatch: enhancedDispatch }}>
+    <POSContext.Provider value={{ 
+      state, 
+      dispatch: enhancedDispatch,
+      getProducts,
+      getRawMaterials,
+      getTransactions,
+      getCoupons,
+      getTaxes,
+      getCategories
+    }}>
       {children}
     </POSContext.Provider>
   );

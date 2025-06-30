@@ -13,10 +13,14 @@ import {
   Typography, 
   Space,
   Divider,
-  message
+  message,
+  Slider
 } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
+import { CacheStats } from '../common/CacheStats';
+import { flushCache } from '../../utils/cache';
+import { clearCache } from '../../utils/httpCache';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -25,6 +29,7 @@ const { Option } = Select;
 export function SettingsPanel() {
   const [activeSection, setActiveSection] = useState('general');
   const [form] = Form.useForm();
+  const [cacheForm] = Form.useForm();
 
   const sections = [
     { key: 'general', label: 'General', icon: <Icon name="settings" /> },
@@ -32,12 +37,24 @@ export function SettingsPanel() {
     { key: 'users', label: 'User Management', icon: <Icon name="people" /> },
     { key: 'payment', label: 'Payment Methods', icon: <Icon name="payment" /> },
     { key: 'notifications', label: 'Notifications', icon: <Icon name="notifications" /> },
+    { key: 'cache', label: 'Cache Settings', icon: <Icon name="memory" /> },
     { key: 'security', label: 'Security', icon: <Icon name="security" /> },
     { key: 'hardware', label: 'Hardware', icon: <Icon name="print" /> }
   ];
 
   const handleSave = () => {
     message.success('Settings saved successfully!');
+  };
+
+  const handleSaveCacheSettings = (values) => {
+    message.success('Cache settings saved successfully!');
+    
+    // Apply cache settings
+    if (values.clearAllCaches) {
+      flushCache();
+      clearCache();
+      message.info('All caches have been cleared');
+    }
   };
 
   const renderGeneralSettings = () => (
@@ -80,10 +97,108 @@ export function SettingsPanel() {
     </Form>
   );
 
+  const renderCacheSettings = () => (
+    <div className="space-y-6">
+      <Title level={4}>Cache Settings</Title>
+      
+      <CacheStats />
+      
+      <Divider />
+      
+      <Form 
+        form={cacheForm} 
+        layout="vertical" 
+        onFinish={handleSaveCacheSettings}
+        initialValues={{
+          memoryTTL: 300,
+          httpMaxAge: 300,
+          enableCache: true,
+          clearAllCaches: false
+        }}
+      >
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item 
+              name="memoryTTL" 
+              label="Memory Cache TTL (seconds)"
+              tooltip="Time to live for in-memory cached items"
+            >
+              <Slider
+                min={60}
+                max={3600}
+                step={60}
+                marks={{
+                  60: '1m',
+                  300: '5m',
+                  900: '15m',
+                  1800: '30m',
+                  3600: '1h'
+                }}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item 
+              name="httpMaxAge" 
+              label="HTTP Cache Max Age (seconds)"
+              tooltip="Max age for HTTP cache-control headers"
+            >
+              <Slider
+                min={60}
+                max={3600}
+                step={60}
+                marks={{
+                  60: '1m',
+                  300: '5m',
+                  900: '15m',
+                  1800: '30m',
+                  3600: '1h'
+                }}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+        
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item 
+              name="enableCache" 
+              valuePropName="checked"
+              label="Enable Caching"
+            >
+              <Switch />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item 
+              name="clearAllCaches" 
+              valuePropName="checked"
+              label="Clear All Caches on Save"
+            >
+              <Switch />
+            </Form.Item>
+          </Col>
+        </Row>
+        
+        <div className="bg-blue-50 p-4 rounded-lg mb-4">
+          <Text className="text-sm">
+            <Icon name="info" className="mr-2 text-blue-600" />
+            <strong>Cache Settings:</strong> Optimizing cache settings can significantly improve application performance.
+            Memory cache stores data in RAM for quick access, while HTTP cache uses browser storage for static assets.
+          </Text>
+        </div>
+        
+        <ActionButton.Primary htmlType="submit">Save Cache Settings</ActionButton.Primary>
+      </Form>
+    </div>
+  );
+
   const renderContent = () => {
     switch (activeSection) {
       case 'general':
         return renderGeneralSettings();
+      case 'cache':
+        return renderCacheSettings();
       default:
         return (
           <div className="text-center py-12">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   Input, 
@@ -20,6 +20,7 @@ import { EnhancedTable } from '../common/EnhancedTable';
 import { DetailModal } from '../common/DetailModal';
 import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
+import { getOrFetch } from '../../utils/cache';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -27,17 +28,40 @@ const { Option } = Select;
 const { RangePicker } = DatePicker;
 
 export function AuditTrail() {
-  const { auditTrail, hasPermission } = useAuth();
+  const { auditTrail, hasPermission, getAuditTrail } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAction, setFilterAction] = useState('all');
   const [filterModule, setFilterModule] = useState('all');
   const [dateRange, setDateRange] = useState(null);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [auditData, setAuditData] = useState([]);
 
-  const filteredAuditTrail = auditTrail.filter(entry => {
+  // Load cached audit trail data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const data = await getOrFetch('audit-trail', 
+          async () => getAuditTrail ? await getAuditTrail() : auditTrail, 
+          300 // 5 minutes TTL
+        );
+        setAuditData(data);
+      } catch (error) {
+        console.error('Error loading audit trail data:', error);
+        // Fallback to context data
+        setAuditData(auditTrail);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [auditTrail, getAuditTrail]);
+
+  const filteredAuditTrail = auditData.filter(entry => {
     const matchesSearch = entry.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          entry.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          entry.module.toLowerCase().includes(searchTerm.toLowerCase());
@@ -164,7 +188,7 @@ export function AuditTrail() {
           <Text className="capitalize">{module.replace('-', ' ')}</Text>
         </div>
       ),
-      filters: [...new Set(auditTrail.map(entry => entry.module))].map(module => ({
+      filters: [...new Set(auditData.map(entry => entry.module))].map(module => ({
         text: module.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
         value: module
       })),
@@ -207,8 +231,8 @@ export function AuditTrail() {
     },
   ];
 
-  const uniqueModules = [...new Set(auditTrail.map(entry => entry.module))];
-  const uniqueActions = [...new Set(auditTrail.map(entry => entry.action))];
+  const uniqueModules = [...new Set(auditData.map(entry => entry.module))];
+  const uniqueActions = [...new Set(auditData.map(entry => entry.action))];
 
   if (!hasPermission('audit-trail', 'view')) {
     return (
@@ -281,14 +305,14 @@ export function AuditTrail() {
       <Row gutter={16} className="mb-6 mt-4">
         <Col span={6}>
           <Card size="small" className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{auditTrail.length}</div>
+            <div className="text-2xl font-bold text-blue-600">{auditData.length}</div>
             <div className="text-sm text-gray-500">Total Activities</div>
           </Card>
         </Col>
         <Col span={6}>
           <Card size="small" className="text-center">
             <div className="text-2xl font-bold text-green-600">
-              {auditTrail.filter(e => e.action === 'CREATE').length}
+              {auditData.filter(e => e.action === 'CREATE').length}
             </div>
             <div className="text-sm text-gray-500">Created</div>
           </Card>
@@ -296,7 +320,7 @@ export function AuditTrail() {
         <Col span={6}>
           <Card size="small" className="text-center">
             <div className="text-2xl font-bold text-blue-600">
-              {auditTrail.filter(e => e.action === 'UPDATE').length}
+              {auditData.filter(e => e.action === 'UPDATE').length}
             </div>
             <div className="text-sm text-gray-500">Updated</div>
           </Card>
@@ -304,7 +328,7 @@ export function AuditTrail() {
         <Col span={6}>
           <Card size="small" className="text-center">
             <div className="text-2xl font-bold text-red-600">
-              {auditTrail.filter(e => e.action === 'DELETE').length}
+              {auditData.filter(e => e.action === 'DELETE').length}
             </div>
             <div className="text-sm text-gray-500">Deleted</div>
           </Card>

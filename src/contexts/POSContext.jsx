@@ -18,11 +18,6 @@ const initialState = {
   coupons: mockCoupons,
   taxes: mockTaxes,
   categories: mockCategories,
-  taxSettings: {
-    rate: 8,
-    name: 'Sales Tax',
-    defaultTaxId: 'TAX-001'
-  },
   customers: []
 };
 
@@ -31,14 +26,17 @@ function posReducer(state, action) {
     case 'ADD_TO_CART': {
       const existingItem = state.cart.find(item => 
         item.product.id === action.payload.id && 
-        item.selectedSize === action.payload.selectedSize
+        item.selectedSize === action.payload.selectedSize &&
+        JSON.stringify(item.product.addons || []) === JSON.stringify(action.payload.addons || [])
       );
       
       if (existingItem) {
         return {
           ...state,
           cart: state.cart.map(item =>
-            item.product.id === action.payload.id && item.selectedSize === action.payload.selectedSize
+            item.product.id === action.payload.id && 
+            item.selectedSize === action.payload.selectedSize &&
+            JSON.stringify(item.product.addons || []) === JSON.stringify(action.payload.addons || [])
               ? { ...item, quantity: item.quantity + 1 }
               : item
           )
@@ -118,21 +116,56 @@ function posReducer(state, action) {
         return product;
       });
 
-      // Update raw materials stock
+      // Update raw materials stock (including custom products and addons)
       const productToUpdate = state.products.find(p => p.id === action.payload.productId);
-      const updatedRawMaterials = state.rawMaterials.map(rawMaterial => {
-        if (productToUpdate && productToUpdate.rawMaterials) {
-          const materialUsage = productToUpdate.rawMaterials.find(m => m.rawMaterialId === rawMaterial.id);
-          if (materialUsage) {
-            const totalUsed = materialUsage.quantity * action.payload.quantity;
-            return {
-              ...rawMaterial,
-              stockQuantity: Math.max(0, rawMaterial.stockQuantity - totalUsed)
-            };
-          }
+      let updatedRawMaterials = [...state.rawMaterials];
+
+      if (productToUpdate) {
+        // Update stock for regular product materials
+        if (productToUpdate.rawMaterials) {
+          updatedRawMaterials = updatedRawMaterials.map(rawMaterial => {
+            const materialUsage = productToUpdate.rawMaterials.find(m => m.rawMaterialId === rawMaterial.id);
+            if (materialUsage) {
+              const totalUsed = materialUsage.quantity * action.payload.quantity;
+              return {
+                ...rawMaterial,
+                stockQuantity: Math.max(0, rawMaterial.stockQuantity - totalUsed)
+              };
+            }
+            return rawMaterial;
+          });
         }
-        return rawMaterial;
-      });
+
+        // Update stock for custom product materials
+        if (productToUpdate.isCustom && productToUpdate.customMaterials) {
+          updatedRawMaterials = updatedRawMaterials.map(rawMaterial => {
+            const materialUsage = productToUpdate.customMaterials.find(m => m.id === rawMaterial.id);
+            if (materialUsage) {
+              const totalUsed = materialUsage.quantity * action.payload.quantity;
+              return {
+                ...rawMaterial,
+                stockQuantity: Math.max(0, rawMaterial.stockQuantity - totalUsed)
+              };
+            }
+            return rawMaterial;
+          });
+        }
+
+        // Update stock for addon materials
+        if (productToUpdate.hasAddons && productToUpdate.addons) {
+          updatedRawMaterials = updatedRawMaterials.map(rawMaterial => {
+            const addonUsage = productToUpdate.addons.find(a => a.id === rawMaterial.id);
+            if (addonUsage) {
+              const totalUsed = addonUsage.quantity * action.payload.quantity;
+              return {
+                ...rawMaterial,
+                stockQuantity: Math.max(0, rawMaterial.stockQuantity - totalUsed)
+              };
+            }
+            return rawMaterial;
+          });
+        }
+      }
 
       return {
         ...state,
@@ -162,19 +195,54 @@ function posReducer(state, action) {
 
       // Restore raw materials stock
       const productToRestore = state.products.find(p => p.id === action.payload.productId);
-      const updatedRawMaterials = state.rawMaterials.map(rawMaterial => {
-        if (productToRestore && productToRestore.rawMaterials) {
-          const materialUsage = productToRestore.rawMaterials.find(m => m.rawMaterialId === rawMaterial.id);
-          if (materialUsage) {
-            const totalRestored = materialUsage.quantity * action.payload.quantity;
-            return {
-              ...rawMaterial,
-              stockQuantity: rawMaterial.stockQuantity + totalRestored
-            };
-          }
+      let updatedRawMaterials = [...state.rawMaterials];
+
+      if (productToRestore) {
+        // Restore stock for regular product materials
+        if (productToRestore.rawMaterials) {
+          updatedRawMaterials = updatedRawMaterials.map(rawMaterial => {
+            const materialUsage = productToRestore.rawMaterials.find(m => m.rawMaterialId === rawMaterial.id);
+            if (materialUsage) {
+              const totalRestored = materialUsage.quantity * action.payload.quantity;
+              return {
+                ...rawMaterial,
+                stockQuantity: rawMaterial.stockQuantity + totalRestored
+              };
+            }
+            return rawMaterial;
+          });
         }
-        return rawMaterial;
-      });
+
+        // Restore stock for custom product materials
+        if (productToRestore.isCustom && productToRestore.customMaterials) {
+          updatedRawMaterials = updatedRawMaterials.map(rawMaterial => {
+            const materialUsage = productToRestore.customMaterials.find(m => m.id === rawMaterial.id);
+            if (materialUsage) {
+              const totalRestored = materialUsage.quantity * action.payload.quantity;
+              return {
+                ...rawMaterial,
+                stockQuantity: rawMaterial.stockQuantity + totalRestored
+              };
+            }
+            return rawMaterial;
+          });
+        }
+
+        // Restore stock for addon materials
+        if (productToRestore.hasAddons && productToRestore.addons) {
+          updatedRawMaterials = updatedRawMaterials.map(rawMaterial => {
+            const addonUsage = productToRestore.addons.find(a => a.id === rawMaterial.id);
+            if (addonUsage) {
+              const totalRestored = addonUsage.quantity * action.payload.quantity;
+              return {
+                ...rawMaterial,
+                stockQuantity: rawMaterial.stockQuantity + totalRestored
+              };
+            }
+            return rawMaterial;
+          });
+        }
+      }
 
       return {
         ...state,
@@ -258,16 +326,6 @@ function posReducer(state, action) {
       return {
         ...state,
         taxes: (state.taxes || []).filter(tax => tax.id !== action.payload)
-      };
-    case 'CLEAR_DEFAULT_TAX':
-      return {
-        ...state,
-        taxes: (state.taxes || []).map(tax => ({ ...tax, isDefault: false }))
-      };
-    case 'UPDATE_TAX_SETTINGS':
-      return {
-        ...state,
-        taxSettings: { ...state.taxSettings, ...action.payload }
       };
     case 'ADD_CATEGORY':
       return {

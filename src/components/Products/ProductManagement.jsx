@@ -13,23 +13,25 @@ import {
   Tabs,
   Modal,
   Collapse,
-  Table
+  Table,
+  Button,
+  Input,
+  Menu,
+  Segmented
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
-import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
-import { PageHeader } from '../common/PageHeader';
 import { SearchInput } from '../common/SearchInput';
 import { ProductDetailsSheet } from '../Invoices/ProductDetailsSheet';
 import { CategoryManagement } from './CategoryManagement';
 import { ProductModal } from './ProductModal';
 import { DetailModal } from '../common/DetailModal';
-import { EnhancedTable } from '../common/EnhancedTable';
 import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
+const { Search } = Input;
 
 export function ProductManagement() {
   const { state, dispatch } = usePOS();
@@ -40,6 +42,7 @@ export function ProductManagement() {
   const [showProductSheet, setShowProductSheet] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('products');
 
   const filteredProducts = state.products.filter(product =>
     (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -129,7 +132,7 @@ export function ProductManagement() {
       title: 'Price',
       dataIndex: 'price',
       key: 'price',
-      render: (price) => <Text strong>${price.toFixed(2)}</Text>
+      render: (price) => <Text strong>LKR {price.toFixed(2)}</Text>
     },
     {
       title: 'Stock',
@@ -157,316 +160,181 @@ export function ProductManagement() {
     }
   ];
 
-  const columns = [
-    {
-      title: 'Product',
-      dataIndex: 'name',
-      key: 'name',
-      fixed: 'left',
-      width: 300,
-      render: (text, record) => (
-        <div className="flex items-center space-x-3">
-          <Image
-            src={record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=100'}
-            alt={record.name}
-            width={50}
-            height={50}
-            className="object-cover rounded"
-            preview={false}
-          />
-          <div>
-            <Text strong>{record.name}</Text>
-            <br />
-            <Text type="secondary" className="text-xs">{record.description}</Text>
-            <br />
-            <Text type="secondary" className="text-xs">SKU: {record.barcode}</Text>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: 'Category',
-      dataIndex: 'category',
-      key: 'category',
-      width: 120,
-      render: (category) => (
-        <Tag color="blue">
-          {category}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Price',
-      dataIndex: 'price',
-      key: 'price',
-      width: 120,
-      sorter: (a, b) => (a.price || 0) - (b.price || 0),
-      render: (price, record) => {
-        if (record.hasSizes && record.sizes?.length > 0) {
-          const minPrice = Math.min(...record.sizes.map(s => s.price));
-          const maxPrice = Math.max(...record.sizes.map(s => s.price));
-          return (
-            <div>
-              <Text strong>
-                {minPrice === maxPrice 
-                  ? `$${minPrice.toFixed(2)}`
-                  : `$${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}`
-                }
-              </Text>
-              <br />
-              <Text type="secondary" className="text-xs">
-                {record.sizes.length} sizes
-              </Text>
-            </div>
-          );
-        }
-        return <Text strong>${(price || 0).toFixed(2)}</Text>;
-      },
-    },
-    {
-      title: 'Stock',
-      dataIndex: 'stock',
-      key: 'stock',
-      width: 120,
-      sorter: (a, b) => (a.stock || 0) - (b.stock || 0),
-      render: (stock, record) => {
-        if (record.hasSizes && record.sizes?.length > 0) {
-          const totalStock = record.sizes.reduce((sum, size) => sum + size.stock, 0);
-          return (
-            <div>
-              <Tag color={totalStock > 10 ? 'green' : totalStock > 0 ? 'orange' : 'red'}>
-                {totalStock} total
-              </Tag>
-              <br />
-              <Text type="secondary" className="text-xs">
-                Across {record.sizes.length} sizes
-              </Text>
-            </div>
-          );
-        }
-        return (
-          <Tag color={stock > 10 ? 'green' : stock > 0 ? 'orange' : 'red'}>
-            {stock} units
-          </Tag>
-        );
-      },
-    },
-    {
-      title: 'Type',
-      key: 'type',
-      width: 120,
-      render: (record) => {
-        return record.hasSizes ? (
-          <Tag color="purple">Has Sizes</Tag>
-        ) : (
-          <Tag color="default">Single Product</Tag>
-        );
-      },
-    },
-    {
-      title: 'Materials',
-      key: 'materials',
-      width: 120,
-      render: (record) => (
-        <div>
-          {record.rawMaterials && record.rawMaterials.length > 0 ? (
-            <Tag color="green">
-              {record.rawMaterials.length} material{record.rawMaterials.length !== 1 ? 's' : ''}
-            </Tag>
-          ) : (
-            <Text type="secondary" className="text-xs">No materials</Text>
-          )}
-        </div>
-      ),
-    },
-    {
-      title: 'Specifications',
-      key: 'specs',
-      width: 200,
-      render: (record) => (
-        <Space direction="vertical" size="small">
-          {record.dimensions && (
-            <div className="flex items-center space-x-1">
-              <Icon name="straighten" className="text-gray-400" size="text-sm" />
-              <Text className="text-xs">
-                {record.dimensions.length}×{record.dimensions.width}×{record.dimensions.height} {record.dimensions.unit}
-              </Text>
-            </div>
-          )}
-          {record.color && (
-            <div className="flex items-center space-x-1">
-              <Icon name="palette" className="text-gray-400" size="text-sm" />
-              <Text className="text-xs">{record.color}</Text>
-            </div>
-          )}
-          {record.weight && (
-            <Text className="text-xs">
-              <Icon name="scale" size="text-xs" className="mr-1" />
-              {record.weight} kg
-            </Text>
-          )}
-        </Space>
-      ),
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      fixed: 'right',
-      width: 80,
-      render: (record) => (
-        <Dropdown
-          menu={{
-            items: getActionMenuItems(record)
-          }}
-          trigger={['click']}
-        >
-          <ActionButton.Text
-            icon="more_vert"
-            className="text-blue-600 hover:text-blue-700"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </Dropdown>
-      ),
-    },
-  ];
-
-  const renderProductsTab = () => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <Title level={5} className="m-0">Product Inventory</Title>
-          <Text type="secondary">Manage your furniture products and sizes</Text>
-        </div>
-        <Space>
-          <SearchInput
-            placeholder="Search products..."
-            value={searchTerm}
-            onSearch={setSearchTerm}
-            className="w-64"
-          />
-          <ActionButton.Primary 
-            icon="add"
-            onClick={() => setShowModal(true)}
-          >
-            Add Product
-          </ActionButton.Primary>
-        </Space>
-      </div>
-
-      {/* Products with Sizes Expandable View */}
-      <div className="space-y-4">
-        {loading ? (
-          <LoadingSkeleton type="list" rows={5} />
-        ) : filteredProducts.length === 0 ? (
-          <EmptyState
-            icon="inventory_2"
-            title="No Products Found"
-            description="No products match your search criteria"
-            actionText="Add Product"
-            onAction={() => setShowModal(true)}
-          />
-        ) : (
-          filteredProducts.map(product => (
-            <Card key={product.id} size="small" className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleRowClick(product)}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <Image
-                    src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=60'}
-                    alt={product.name}
-                    width={60}
-                    height={60}
-                    className="object-cover rounded"
-                    preview={false}
-                  />
-                  <div>
-                    <Text strong className="text-lg">{product.name}</Text>
-                    <br />
-                    <Tag color="blue">{product.category}</Tag>
-                    {product.hasSizes ? (
-                      <Tag color="purple">Has {product.sizes?.length || 0} Sizes</Tag>
-                    ) : (
-                      <Tag color="default">Single Product</Tag>
-                    )}
-                    <br />
-                    <Text type="secondary" className="text-sm">{product.description}</Text>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <Dropdown
-                    menu={{
-                      items: getActionMenuItems(product)
-                    }}
-                    trigger={['click']}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <ActionButton.Text
-                      icon="more_vert"
-                      className="text-blue-600 hover:text-blue-700"
-                    />
-                  </Dropdown>
-                </div>
-              </div>
-
-              {product.hasSizes && product.sizes && product.sizes.length > 0 && (
-                <Collapse className="mt-4" size="small">
-                  <Panel 
-                    header={`View ${product.sizes.length} Sizes`} 
-                    key="sizes"
-                  >
-                    <Table
-                      columns={sizeTableColumns}
-                      dataSource={product.sizes}
-                      rowKey="id"
-                      pagination={false}
-                      size="small"
-                    />
-                  </Panel>
-                </Collapse>
-              )}
-            </Card>
-          ))
-        )}
-      </div>
-    </div>
-  );
-
-  const tabItems = [
-    {
-      key: 'products',
-      label: (
-        <span className="flex items-center space-x-2">
-          <Icon name="inventory_2" />
-          <span>Products</span>
-        </span>
-      ),
-      children: renderProductsTab()
-    },
-    {
-      key: 'categories',
-      label: (
-        <span className="flex items-center space-x-2">
-          <Icon name="category" />
-          <span>Categories</span>
-        </span>
-      ),
-      children: <CategoryManagement />
+  const renderProductCard = (product) => {
+    const isOutOfStock = product.stock === 0;
+    const isLowStock = product.stock <= 5 && product.stock > 0;
+    
+    // Calculate price display
+    let priceDisplay = '';
+    if (product.hasSizes && product.sizes?.length > 0) {
+      const minPrice = Math.min(...product.sizes.map(s => s.price));
+      const maxPrice = Math.max(...product.sizes.map(s => s.price));
+      priceDisplay = minPrice === maxPrice 
+        ? `LKR ${minPrice.toFixed(2)}`
+        : `LKR ${minPrice.toFixed(2)} - LKR ${maxPrice.toFixed(2)}`;
+    } else {
+      priceDisplay = `LKR ${product.price.toFixed(2)}`;
     }
-  ];
+    
+    // Calculate stock display
+    let stockDisplay = '';
+    let stockColor = '';
+    if (product.hasSizes && product.sizes?.length > 0) {
+      const totalStock = product.sizes.reduce((sum, size) => sum + size.stock, 0);
+      stockDisplay = `${totalStock} units`;
+      stockColor = totalStock > 10 ? 'green' : totalStock > 0 ? 'orange' : 'red';
+    } else {
+      stockDisplay = `${product.stock} units`;
+      stockColor = product.stock > 10 ? 'green' : product.stock > 0 ? 'orange' : 'red';
+    }
+    
+    return (
+      <Card 
+        hoverable 
+        className="h-full"
+        cover={
+          <div className="relative h-48">
+            <Image
+              src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
+              alt={product.name}
+              className="w-full h-full object-cover"
+              preview={false}
+            />
+            <div className="absolute top-2 left-2">
+              <Tag color="blue">{product.category}</Tag>
+            </div>
+            {isOutOfStock && (
+              <div className="absolute top-2 right-2">
+                <Tag color="red">SALE</Tag>
+              </div>
+            )}
+          </div>
+        }
+        actions={[
+          <Button type="text" icon={<Icon name="visibility" />} onClick={() => handleRowClick(product)} />,
+          <Button type="text" icon={<Icon name="edit" />} onClick={() => handleEdit(product)} />,
+          <Dropdown
+            menu={{ items: getActionMenuItems(product) }}
+            trigger={['click']}
+            placement="bottomRight"
+          >
+            <Button type="text" icon={<Icon name="more_vert" />} onClick={(e) => e.stopPropagation()} />
+          </Dropdown>
+        ]}
+        onClick={() => handleRowClick(product)}
+      >
+        <div className="space-y-2">
+          <Text strong className="text-base line-clamp-2 leading-tight block">
+            {product.name}
+          </Text>
+          <Text type="secondary" className="text-xs block">
+            SKU: {product.barcode || 'N/A'}
+          </Text>
+          <div className="flex justify-between items-center">
+            <Text strong className="text-lg text-blue-600">
+              {priceDisplay}
+            </Text>
+            <Tag color={stockColor}>
+              {stockDisplay}
+            </Tag>
+          </div>
+          {product.hasSizes && (
+            <Tag color="purple" className="mt-1">
+              {product.sizes?.length || 0} Sizes
+            </Tag>
+          )}
+        </div>
+      </Card>
+    );
+  };
+
+  if (loading) {
+    return <LoadingSkeleton type="product-grid" />;
+  }
 
   return (
     <>
       <Card>
-        <PageHeader
-          title="Product Management"
-          icon="inventory_2"
-          subtitle="Manage products, sizes, and categories"
-        />
+        <div className="mb-6">
+          <Title level={3} className="m-0">Product Management</Title>
+          <Text type="secondary">Manage products, sizes, and categories.</Text>
+        </div>
         
-        <Tabs
-          items={tabItems}
-          defaultActiveKey="products"
-          className="mt-4"
-        />
+        <div className="mb-4">
+          <Segmented
+            options={[
+              {
+                label: (
+                  <div className="px-4 py-1">
+                    <Icon name="inventory_2" className="mr-2" />
+                    <span>Products</span>
+                  </div>
+                ),
+                value: 'products'
+              },
+              {
+                label: (
+                  <div className="px-4 py-1">
+                    <Icon name="category" className="mr-2" />
+                    <span>Categories</span>
+                  </div>
+                ),
+                value: 'categories'
+              }
+            ]}
+            value={activeTab}
+            onChange={setActiveTab}
+            block
+            size="large"
+          />
+        </div>
+
+        {activeTab === 'products' ? (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <Title level={4} className="m-0">Product Inventory</Title>
+              <Space>
+                <Search
+                  placeholder="Search by product name or SKU..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onSearch={setSearchTerm}
+                  style={{ width: 300 }}
+                  size="large"
+                />
+                <Button 
+                  type="primary" 
+                  icon={<Icon name="add" />} 
+                  size="large"
+                  onClick={() => setShowModal(true)}
+                  className="bg-blue-600"
+                >
+                  Add Product
+                </Button>
+              </Space>
+            </div>
+
+            {filteredProducts.length === 0 ? (
+              <EmptyState
+                icon="inventory_2"
+                title="No Products Found"
+                description="No products match your search criteria"
+                actionText="Add Product"
+                onAction={() => setShowModal(true)}
+              />
+            ) : (
+              <Row gutter={[16, 16]}>
+                {filteredProducts.map(product => (
+                  <Col key={product.id} xs={24} sm={12} md={8} lg={6} xl={6}>
+                    {renderProductCard(product)}
+                  </Col>
+                ))}
+              </Row>
+            )}
+          </div>
+        ) : (
+          <CategoryManagement />
+        )}
       </Card>
 
       <ProductModal
@@ -501,26 +369,26 @@ export function ProductManagement() {
         data={selectedProduct}
         type="product"
         actions={[
-          <ActionButton 
+          <Button 
             key="edit" 
-            icon="edit"
+            icon={<Icon name="edit" />}
             onClick={() => {
               setShowDetailModal(false);
               handleEdit(selectedProduct);
             }}
           >
             Edit Product
-          </ActionButton>,
-          <ActionButton 
+          </Button>,
+          <Button 
             key="print" 
-            icon="print"
+            icon={<Icon name="print" />}
             onClick={() => {
               setShowDetailModal(false);
               handlePrintProductDetails(selectedProduct);
             }}
           >
             Print Details
-          </ActionButton>
+          </Button>
         ]}
       />
     </>

@@ -168,9 +168,8 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
                 className="w-full mt-1"
                 value={editablePrice}
                 onChange={(value) => setEditablePrice(value)}
-                formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={value => value.replace(/LKR\s?|(,*)/g, '')}
-                step={100}
+                formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={value => value.replace(/\$\s?|(,*)/g, '')}
               />
               <Text type="secondary" className="text-xs block mt-1">
                 Price is calculated based on materials (50% markup) but can be adjusted
@@ -215,7 +214,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
               >
                 {state.rawMaterials.map(material => (
                   <Option key={material.id} value={material.id}>
-                    {material.name} (LKR {material.unitPrice}/{material.unit}) - Stock: {material.stockQuantity}
+                    {material.name} (${material.unitPrice}/{material.unit}) - Stock: {material.stockQuantity}
                   </Option>
                 ))}
               </Select>
@@ -233,7 +232,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
               />
             </Form.Item>
             <Form.Item className="w-1/4">
-              <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block className="bg-blue-600">
+              <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
                 Add
               </Button>
             </Form.Item>
@@ -243,7 +242,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="flex justify-between items-center mb-2">
               <Text strong>Selected Materials</Text>
-              <Text strong>Total: LKR {totalPrice.toFixed(2)}</Text>
+              <Text strong>Total: ${totalPrice.toFixed(2)}</Text>
             </div>
             
             {selectedMaterials.length === 0 ? (
@@ -271,11 +270,11 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
                       <Text>{item.name}</Text>
                       <div>
                         <Text type="secondary" className="text-sm">
-                          {item.quantity} {item.unit} × LKR {item.unitPrice.toFixed(2)}
+                          {item.quantity} {item.unit} × ${item.unitPrice.toFixed(2)}
                         </Text>
                       </div>
                     </div>
-                    <Text strong>LKR {(item.quantity * item.unitPrice).toFixed(2)}</Text>
+                    <Text strong>${(item.quantity * item.unitPrice).toFixed(2)}</Text>
                   </List.Item>
                 )}
               />
@@ -296,12 +295,12 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
       }
       open={open}
       onCancel={onClose}
-      width={700}
+      width={800}
       footer={null}
       destroyOnClose
     >
       <div className="space-y-6">
-        <Steps current={currentStep} items={steps.map(item => ({ title: item.title }))} />
+        <Steps current={currentStep} items={steps} />
         
         <div className="min-h-[300px] mt-6">
           {steps[currentStep].content}

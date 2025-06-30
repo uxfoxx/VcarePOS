@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Typography, Divider, Row, Col, Space, Image, Button } from 'antd';
 import { Icon } from '../common/Icon';
+import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -398,7 +399,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
       }
       open={open}
       onCancel={onClose}
-      width={type === 'detailed' ? 800 : 500}
+      width={type === 'detailed' ? 900 : 600}
       footer={[
         <Button key="close" onClick={onClose}>
           Close
@@ -430,7 +431,6 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
         </Button>
       ]}
       className="invoice-modal"
-      destroyOnClose
     >
       <div className="max-h-[70vh] overflow-y-auto">
         {type === 'detailed' ? renderDetailedInvoice() : renderItemLabel()}

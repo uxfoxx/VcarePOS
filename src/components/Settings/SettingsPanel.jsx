@@ -48,9 +48,8 @@ export function SettingsPanel() {
           </Form.Item>
         </Col>
         <Col span={12}>
-          <Form.Item name="currency" label="Currency" initialValue="LKR">
+          <Form.Item name="currency" label="Currency" initialValue="USD">
             <Select>
-              <Option value="LKR">LKR (Rs)</Option>
               <Option value="USD">USD ($)</Option>
               <Option value="EUR">EUR (€)</Option>
               <Option value="GBP">GBP (£)</Option>
@@ -63,9 +62,8 @@ export function SettingsPanel() {
           </Form.Item>
         </Col>
         <Col span={12}>
-          <Form.Item name="timezone" label="Time Zone" initialValue="UTC+5:30">
+          <Form.Item name="timezone" label="Time Zone" initialValue="UTC-5">
             <Select>
-              <Option value="UTC+5:30">UTC+5:30 (Sri Lanka)</Option>
               <Option value="UTC-5">UTC-5 (Eastern)</Option>
               <Option value="UTC-6">UTC-6 (Central)</Option>
               <Option value="UTC-7">UTC-7 (Mountain)</Option>
@@ -74,7 +72,7 @@ export function SettingsPanel() {
           </Form.Item>
         </Col>
       </Row>
-      <Button type="primary" htmlType="submit" className="bg-blue-600">Save Changes</Button>
+      <Button type="primary" htmlType="submit">Save Changes</Button>
     </Form>
   );
 

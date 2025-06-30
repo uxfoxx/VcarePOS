@@ -266,7 +266,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
       }
       open={open}
       onCancel={onClose}
-      width={700}
+      width={1000}
       footer={[
         <Button key="close" onClick={onClose}>
           Close

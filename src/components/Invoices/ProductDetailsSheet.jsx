@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Typography, Divider, Row, Col, Space, Image, Button } from 'antd';
 import { Icon } from '../common/Icon';
+import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -134,7 +135,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
       }
       open={open}
       onCancel={onClose}
-      width={700}
+      width={800}
       footer={[
         <Button key="close" onClick={onClose}>
           Close
@@ -186,7 +187,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
           </div>
 
           {/* Product Image and Basic Info */}
-          <Row gutter={24} className="mb-8">
+          <Row gutter={32} className="mb-8">
             <Col span={10}>
               <div className="text-center">
                 <Image

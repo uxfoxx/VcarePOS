@@ -14,12 +14,13 @@ import {
   Row,
   Col,
   Alert,
-  Tag,
-  Steps
+  Tag
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
+import { ActionButton } from '../common/ActionButton';
+import { EnhancedStepper } from '../common/EnhancedStepper';
 import { InvoiceModal } from '../Invoices/InvoiceModal';
 import { InventoryLabelModal } from '../Invoices/InventoryLabelModal';
 
@@ -296,14 +297,14 @@ export function CheckoutModal({
                       )}
                     </div>
                     <Text strong className="text-blue-600">
-                      LKR {itemTotalPrice.toFixed(2)}
+                      ${itemTotalPrice.toFixed(2)}
                     </Text>
                   </div>
                   <div className="flex items-center justify-between text-sm text-gray-500">
                     <Text type="secondary">
-                      LKR {item.product.price.toFixed(2)} × {item.quantity}
-                      {addonPrice > 0 && ` + LKR ${addonPrice.toFixed(2)} addons`}
-                      {itemTaxAmount > 0 && ` + LKR ${itemTaxAmount.toFixed(2)} tax`}
+                      ${item.product.price.toFixed(2)} × {item.quantity}
+                      {addonPrice > 0 && ` + $${addonPrice.toFixed(2)} addons`}
+                      {itemTaxAmount > 0 && ` + $${itemTaxAmount.toFixed(2)} tax`}
                     </Text>
                     <Text type="secondary">SKU: {item.product.barcode}</Text>
                   </div>
@@ -313,7 +314,7 @@ export function CheckoutModal({
                     <div className="mt-1 pl-4 border-l-2 border-blue-200">
                       {item.product.addons.map((addon, idx) => (
                         <Text key={idx} type="secondary" className="text-xs block">
-                          {addon.name} × {addon.quantity}: +LKR {addon.price.toFixed(2)}
+                          {addon.name} × {addon.quantity}: +${addon.price.toFixed(2)}
                         </Text>
                       ))}
                     </div>
@@ -324,7 +325,7 @@ export function CheckoutModal({
                     <div className="mt-1">
                       {itemCategoryTaxes.map(tax => (
                         <Text key={tax.taxId} type="secondary" className="text-xs block">
-                          {tax.taxName} ({tax.rate}%): +LKR {tax.amount.toFixed(2)}
+                          {tax.taxName} ({tax.rate}%): +${tax.amount.toFixed(2)}
                         </Text>
                       ))}
                     </div>
@@ -339,27 +340,27 @@ export function CheckoutModal({
       <div className="border-t pt-4 space-y-2">
         <div className="flex justify-between">
           <Text>Subtotal</Text>
-          <Text>LKR {subtotal.toFixed(2)}</Text>
+          <Text>${subtotal.toFixed(2)}</Text>
         </div>
         
         {categoryTaxTotal > 0 && (
           <div className="flex justify-between">
             <Text>Category Taxes</Text>
-            <Text>LKR {categoryTaxTotal.toFixed(2)}</Text>
+            <Text>${categoryTaxTotal.toFixed(2)}</Text>
           </div>
         )}
         
         {appliedCoupon && (
           <div className="flex justify-between">
             <Text className="text-green-600">Coupon ({appliedCoupon.code})</Text>
-            <Text className="text-green-600">-LKR {couponDiscount.toFixed(2)}</Text>
+            <Text className="text-green-600">-${couponDiscount.toFixed(2)}</Text>
           </div>
         )}
         
         {fullBillTaxes && fullBillTaxes.map(tax => (
           <div key={tax.id} className="flex justify-between">
             <Text>{tax.name} ({tax.rate}%)</Text>
-            <Text>LKR {((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
+            <Text>${((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
           </div>
         ))}
         
@@ -367,7 +368,7 @@ export function CheckoutModal({
         <div className="flex justify-between">
           <Title level={5} className="m-0">Total</Title>
           <Title level={4} className="m-0 text-blue-600">
-            LKR {total.toFixed(2)}
+            ${total.toFixed(2)}
           </Title>
         </div>
       </div>
@@ -484,27 +485,27 @@ export function CheckoutModal({
           </div>
           <div className="flex justify-between">
             <Text>Items ({cartItems.length})</Text>
-            <Text>LKR {subtotal.toFixed(2)}</Text>
+            <Text>${subtotal.toFixed(2)}</Text>
           </div>
           
           {categoryTaxTotal > 0 && (
             <div className="flex justify-between">
               <Text>Category Taxes</Text>
-              <Text>LKR {categoryTaxTotal.toFixed(2)}</Text>
+              <Text>${categoryTaxTotal.toFixed(2)}</Text>
             </div>
           )}
           
           {appliedCoupon && (
             <div className="flex justify-between">
               <Text className="text-green-600">Discount</Text>
-              <Text className="text-green-600">-LKR {couponDiscount.toFixed(2)}</Text>
+              <Text className="text-green-600">-${couponDiscount.toFixed(2)}</Text>
             </div>
           )}
           
           {fullBillTaxes && fullBillTaxes.map(tax => (
             <div key={tax.id} className="flex justify-between">
               <Text>{tax.name}</Text>
-              <Text>LKR {((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
+              <Text>${((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
             </div>
           ))}
           
@@ -512,7 +513,7 @@ export function CheckoutModal({
           <div className="flex justify-between">
             <Title level={4} className="m-0">Total</Title>
             <Title level={4} className="m-0 text-blue-600">
-              LKR {total.toFixed(2)}
+              ${total.toFixed(2)}
             </Title>
           </div>
         </div>
@@ -539,30 +540,17 @@ export function CheckoutModal({
         title="Complete Order"
         open={open}
         onCancel={onClose}
-        width={700}
+        width={800}
         footer={null}
         destroyOnClose
       >
         <div className="space-y-6">
-          <Steps
+          <EnhancedStepper
             current={currentStep}
-            items={steps.map(item => ({ 
-              title: item.title,
-              description: item.description,
-              icon: <Icon name={item.icon} />
-            }))}
+            steps={steps}
             status={stepError ? 'error' : 'process'}
+            errorMessage={stepError}
           />
-          
-          {stepError && (
-            <Alert
-              message="Error"
-              description={stepError}
-              type="error"
-              showIcon
-              closable
-            />
-          )}
           
           <div className="min-h-[400px]">
             {renderStepContent()}
@@ -571,33 +559,31 @@ export function CheckoutModal({
           <div className="flex justify-between pt-4 border-t">
             <div>
               {currentStep > 0 && (
-                <Button onClick={handlePrev}>
+                <ActionButton onClick={handlePrev}>
                   <Icon name="arrow_back" className="mr-2" />
                   Previous
-                </Button>
+                </ActionButton>
               )}
             </div>
             
             <div className="space-x-2">
-              <Button onClick={onClose}>
+              <ActionButton onClick={onClose}>
                 Cancel
-              </Button>
+              </ActionButton>
               
               {currentStep < steps.length - 1 ? (
-                <Button type="primary" onClick={handleNext} className="bg-blue-600">
+                <ActionButton.Primary onClick={handleNext}>
                   Next
                   <Icon name="arrow_forward" className="ml-2" />
-                </Button>
+                </ActionButton.Primary>
               ) : (
-                <Button 
-                  type="primary" 
+                <ActionButton.Primary 
                   onClick={handleCompleteOrder}
                   loading={loading}
-                  icon={<Icon name="check" />}
-                  className="bg-blue-600"
+                  icon="check"
                 >
                   Complete Order
-                </Button>
+                </ActionButton.Primary>
               )}
             </div>
           </div>
@@ -610,31 +596,29 @@ export function CheckoutModal({
           title="Order Completed Successfully!"
           open={!!completedTransaction && !showInvoice && !showInventoryLabels}
           onCancel={handleCloseOrderComplete}
-          width={500}
+          width={600}
           footer={[
-            <Button key="close" onClick={handleCloseOrderComplete}>
+            <ActionButton key="close" onClick={handleCloseOrderComplete}>
               Close
-            </Button>,
-            <Button 
+            </ActionButton>,
+            <ActionButton 
               key="inventory-labels" 
-              icon={<Icon name="label" />}
+              icon="label"
               onClick={handleShowInventoryLabels}
             >
-              Print Labels
-            </Button>,
-            <Button 
-              type="primary"
+              Print Inventory Labels
+            </ActionButton>,
+            <ActionButton.Primary 
               key="invoice" 
-              icon={<Icon name="receipt_long" />}
+              icon="receipt_long"
               onClick={handleShowInvoice}
-              className="bg-blue-600"
             >
               View Invoice
-            </Button>
+            </ActionButton.Primary>
           ]}
           destroyOnClose
         >
-          <div className="text-center py-6">
+          <div className="text-center py-8">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Icon name="check" className="text-green-600 text-2xl" />
             </div>
@@ -656,7 +640,7 @@ export function CheckoutModal({
                     <Text strong className="text-lg block">
                       {completedTransaction.items.reduce((sum, item) => sum + item.quantity, 0)}
                     </Text>
-                    <Text type="secondary" className="text-sm">Quantity</Text>
+                    <Text type="secondary" className="text-sm">Total Quantity</Text>
                   </div>
                 </Col>
                 <Col span={6}>
@@ -670,9 +654,9 @@ export function CheckoutModal({
                 <Col span={6}>
                   <div className="text-center">
                     <Text strong className="text-lg block text-blue-600">
-                      LKR {completedTransaction.total.toFixed(2)}
+                      ${completedTransaction.total.toFixed(2)}
                     </Text>
-                    <Text type="secondary" className="text-sm">Total</Text>
+                    <Text type="secondary" className="text-sm">Total Amount</Text>
                   </div>
                 </Col>
               </Row>

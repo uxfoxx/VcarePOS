@@ -572,16 +572,16 @@ export function ProductModal({
       <Form.Item label="Dimensions">
         <Input.Group compact>
           <Form.Item name={['dimensions', 'length']} noStyle>
-            <InputNumber placeholder="Length" style={{ width: '25%' }} min={0} />
+            <InputNumber placeholder="Length" className="w-1/4" min={0} />
           </Form.Item>
           <Form.Item name={['dimensions', 'width']} noStyle>
-            <InputNumber placeholder="Width" style={{ width: '25%' }} min={0} />
+            <InputNumber placeholder="Width" className="w-1/4" min={0} />
           </Form.Item>
           <Form.Item name={['dimensions', 'height']} noStyle>
-            <InputNumber placeholder="Height" style={{ width: '25%' }} min={0} />
+            <InputNumber placeholder="Height" className="w-1/4" min={0} />
           </Form.Item>
           <Form.Item name={['dimensions', 'unit']} noStyle>
-            <Select placeholder="Unit" style={{ width: '25%' }}>
+            <Select placeholder="Unit" className="w-1/4">
               <Option value="cm">cm</Option>
               <Option value="inch">inch</Option>
             </Select>
@@ -645,8 +645,8 @@ export function ProductModal({
       </div>
 
       <Card size="small">
-        <Form form={materialsForm} onFinish={handleAddMaterial} layout="horizontal">
-          <Row gutter={16} align="middle">
+        <Form form={materialsForm} onFinish={handleAddMaterial} layout="vertical">
+          <Row gutter={16}>
             <Col span={12}>
               <Form.Item
                 name="materialId"
@@ -659,7 +659,6 @@ export function ProductModal({
                   filterOption={(input, option) =>
                     option.children.toLowerCase().includes(input.toLowerCase())
                   }
-                  style={{ width: '100%' }}
                 >
                   {state.rawMaterials?.map(material => (
                     <Option key={material.id} value={material.id}>
@@ -675,7 +674,7 @@ export function ProductModal({
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={6}>
+            <Col span={8}>
               <Form.Item
                 name="quantity"
                 label="Quantity Required"
@@ -685,13 +684,13 @@ export function ProductModal({
                   min={0.01}
                   step={0.01}
                   placeholder="0.00"
-                  style={{ width: '100%' }}
+                  className="w-full"
                 />
               </Form.Item>
             </Col>
-            <Col span={6}>
-              <Form.Item label=" " colon={false}>
-                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} className="bg-blue-600">
+            <Col span={4}>
+              <Form.Item label=" ">
+                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block className="bg-blue-600">
                   Add
                 </Button>
               </Form.Item>
@@ -808,16 +807,16 @@ export function ProductModal({
                   <Form.Item label="Dimensions">
                     <Input.Group compact>
                       <Form.Item name={['dimensions', 'length']} noStyle>
-                        <InputNumber placeholder="L" style={{ width: '25%' }} min={0} />
+                        <InputNumber placeholder="L" className="w-1/4" min={0} />
                       </Form.Item>
                       <Form.Item name={['dimensions', 'width']} noStyle>
-                        <InputNumber placeholder="W" style={{ width: '25%' }} min={0} />
+                        <InputNumber placeholder="W" className="w-1/4" min={0} />
                       </Form.Item>
                       <Form.Item name={['dimensions', 'height']} noStyle>
-                        <InputNumber placeholder="H" style={{ width: '25%' }} min={0} />
+                        <InputNumber placeholder="H" className="w-1/4" min={0} />
                       </Form.Item>
                       <Form.Item name={['dimensions', 'unit']} noStyle initialValue="cm">
-                        <Select style={{ width: '25%' }}>
+                        <Select className="w-1/4">
                           <Option value="cm">cm</Option>
                           <Option value="inch">inch</Option>
                         </Select>
@@ -828,7 +827,7 @@ export function ProductModal({
               </Row>
 
               <Form.Item>
-                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} className="bg-blue-600">
+                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block className="bg-blue-600">
                   Add Size
                 </Button>
               </Form.Item>
@@ -878,7 +877,7 @@ export function ProductModal({
       title={editingProduct ? 'Edit Product' : 'Add New Product'}
       open={open}
       onCancel={handleClose}
-      width={800}
+      width={1000}
       footer={null}
       destroyOnClose
     >
@@ -900,7 +899,7 @@ export function ProductModal({
           />
         )}
         
-        <div className="min-h-[450px]">
+        <div className="min-h-[500px]">
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">

@@ -1,7 +1,114 @@
-import NodeCache from 'node-cache';
+// Browser-compatible in-memory cache implementation
+class BrowserCache {
+  constructor(options = {}) {
+    this.stdTTL = options.stdTTL || 600; // Default TTL in seconds
+    this.checkperiod = options.checkperiod || 60; // Check period in seconds
+    this.cache = new Map();
+    this.stats = {
+      hits: 0,
+      misses: 0,
+      keys: 0,
+      sets: 0,
+      dels: 0
+    };
+    
+    // Start cleanup interval
+    this.cleanupInterval = setInterval(() => {
+      this.cleanup();
+    }, this.checkperiod * 1000);
+  }
+
+  get(key) {
+    const item = this.cache.get(key);
+    
+    if (!item) {
+      this.stats.misses++;
+      return undefined;
+    }
+    
+    // Check if item has expired
+    if (item.expires && Date.now() > item.expires) {
+      this.cache.delete(key);
+      this.stats.misses++;
+      return undefined;
+    }
+    
+    this.stats.hits++;
+    return item.value;
+  }
+
+  set(key, value, ttl) {
+    const timeToLive = ttl || this.stdTTL;
+    const expires = timeToLive > 0 ? Date.now() + (timeToLive * 1000) : null;
+    
+    this.cache.set(key, {
+      value,
+      expires,
+      created: Date.now()
+    });
+    
+    this.stats.sets++;
+    this.stats.keys = this.cache.size;
+    return true;
+  }
+
+  del(key) {
+    const deleted = this.cache.delete(key);
+    if (deleted) {
+      this.stats.dels++;
+      this.stats.keys = this.cache.size;
+    }
+    return deleted;
+  }
+
+  keys() {
+    return Array.from(this.cache.keys());
+  }
+
+  flushAll() {
+    this.cache.clear();
+    this.stats.keys = 0;
+    return true;
+  }
+
+  getStats() {
+    return {
+      ...this.stats,
+      ksize: this.cache.size,
+      vsize: this.calculateValueSize()
+    };
+  }
+
+  cleanup() {
+    const now = Date.now();
+    for (const [key, item] of this.cache.entries()) {
+      if (item.expires && now > item.expires) {
+        this.cache.delete(key);
+      }
+    }
+    this.stats.keys = this.cache.size;
+  }
+
+  calculateValueSize() {
+    let size = 0;
+    for (const [key, item] of this.cache.entries()) {
+      // Rough estimation of memory usage
+      size += JSON.stringify(key).length;
+      size += JSON.stringify(item.value).length;
+    }
+    return size;
+  }
+
+  destroy() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+    }
+    this.cache.clear();
+  }
+}
 
 // Create a cache instance with default TTL of 10 minutes and check period of 60 seconds
-const cache = new NodeCache({ stdTTL: 600, checkperiod: 60 });
+const cache = new BrowserCache({ stdTTL: 600, checkperiod: 60 });
 
 /**
  * Get data from cache or fetch it using the provided function

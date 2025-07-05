@@ -6,14 +6,9 @@
  * Clear the service worker cache
  * @returns {Promise<void>}
  */
-export const clearCache = async () => {
-  if ('serviceWorker' in navigator) {
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    for (const registration of registrations) {
-      registration.active.postMessage({ type: 'CLEAR_CACHE' });
-    }
-    console.log('Cache clear request sent to service worker');
-  }
+export const clearCache = () => {
+  // No-op since caching is disabled
+  return Promise.resolve();
 };
 
 /**
@@ -23,14 +18,8 @@ export const clearCache = async () => {
  * @returns {Response} - Modified response with cache headers
  */
 export const setCacheHeaders = (response, maxAge = 300) => {
-  const headers = new Headers(response.headers);
-  headers.set('Cache-Control', `public, max-age=${maxAge}`);
-  
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers
-  });
+  // Return original response since caching is disabled
+  return response;
 };
 
 /**
@@ -41,13 +30,8 @@ export const setCacheHeaders = (response, maxAge = 300) => {
  * @returns {Promise<Response>} - Response with cache headers
  */
 export const fetchWithCache = async (url, options = {}, maxAge = 300) => {
-  options.headers = {
-    ...options.headers,
-    'Cache-Control': `public, max-age=${maxAge}`
-  };
-  
-  const response = await fetch(url, options);
-  return setCacheHeaders(response, maxAge);
+  // Fetch without cache headers
+  return fetch(url, options);
 };
 
 /**
@@ -56,13 +40,6 @@ export const fetchWithCache = async (url, options = {}, maxAge = 300) => {
  * @returns {boolean} - Whether the response is cacheable
  */
 export const isCacheable = (response) => {
-  // Only cache successful responses
-  if (!response.ok) return false;
-  
-  // Check cache control headers
-  const cacheControl = response.headers.get('Cache-Control');
-  if (cacheControl && cacheControl.includes('no-store')) return false;
-  if (cacheControl && cacheControl.includes('private')) return false;
-  
-  return true;
+  // Always return false since caching is disabled
+  return false;
 };

@@ -267,6 +267,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
           <div className="flex items-center space-x-4">
             <Title level={4} className="m-0 text-gray-900">
               {getPageTitle()}
+              {activeTab === 'settings' && <span className="text-sm text-gray-500 ml-2">v1.0.0</span>}
             </Title>
           </div>
         </div>
@@ -275,7 +276,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
           <Tooltip title="WiFi Connected">
             <Icon name="wifi" className="text-green-500" />
           </Tooltip>
-
+          
           {/* Help Tour Button */}
           <Tooltip title="Take a Tour">
             <ActionButton.Text 

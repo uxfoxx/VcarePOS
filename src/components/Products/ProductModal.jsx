@@ -730,29 +730,6 @@ export function ProductModal({
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <Text strong>Product Sizes</Text>
-                <br />
-                <Text type="secondary" className="text-sm">
-                  Enable if this product has multiple sizes with different prices
-                </Text>
-              </div>
-              <Switch
-                checked={hasSizes}
-                onChange={setHasSizes}
-                checkedChildren="Yes"
-                unCheckedChildren="No"
-              />
-            </div>
-          </div>
-        </Col>
-      </Row>
-      
-      <Row gutter={16} className="mt-4">
-        <Col span={12}>
-        <Col span={12}>
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
                 <Text strong>Product Add-ons</Text>
                 <br />
                 <Text type="secondary" className="text-sm">

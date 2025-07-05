@@ -293,8 +293,6 @@ export function CheckoutModal({
                         <Text type="secondary" className="text-xs block">
                           Variant: {item.selectedVariant}
                         </Text>
-                          Variant: {item.selectedVariant}
-                        </Text>
                       )}
                       {item.product.isCustom && (
                         <Tag color="purple" className="ml-1">Custom</Tag>

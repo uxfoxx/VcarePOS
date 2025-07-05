@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
 import './styles/main.scss';
-import './styles/branding.css';
+import './styles/branding.css'; 
 
 // Set HTTP cache headers for static assets
 if ('serviceWorker' in navigator) {
@@ -47,10 +47,10 @@ const applyInitialBranding = () => {
     // Update CSS variables
     styleEl.innerHTML = `
       :root {
-        --primary-color: ${parsedBranding.primaryColor || '#0E72BD'};
-        --secondary-color: ${parsedBranding.secondaryColor || '#52c41a'};
-        --accent-color: ${parsedBranding.accentColor || '#fa8c16'};
-        --font-family: ${parsedBranding.fontFamily || 'Inter'}, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --primary-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+        --secondary-color: ${parsedBranding.secondaryColor || '#52c41a'} !important;
+        --accent-color: ${parsedBranding.accentColor || '#fa8c16'} !important;
+        --font-family: ${parsedBranding.fontFamily || 'Inter'}, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
       }
       
       .ant-btn-primary {
@@ -68,6 +68,71 @@ const applyInitialBranding = () => {
       
       .border-blue-600, .border-\[#0E72BD\] {
         border-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-switch-checked {
+        background-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-checkbox-checked .ant-checkbox-inner {
+        background-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+        border-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-radio-checked .ant-radio-inner {
+        border-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-radio-inner::after {
+        background-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-tabs-ink-bar {
+        background-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+        background-color: ${parsedBranding.primaryColor}20 !important;
+      }
+
+      .ant-select-focused .ant-select-selector {
+        border-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+        box-shadow: 0 0 0 2px ${parsedBranding.primaryColor}33 !important;
+      }
+
+      .ant-input:focus, 
+      .ant-input-focused {
+        border-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+        box-shadow: 0 0 0 2px ${parsedBranding.primaryColor}33 !important;
+      }
+
+      .ant-input-affix-wrapper:focus,
+      .ant-input-affix-wrapper-focused {
+        border-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+        box-shadow: 0 0 0 2px ${parsedBranding.primaryColor}33 !important;
+      }
+
+      .ant-picker-focused {
+        border-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+        box-shadow: 0 0 0 2px ${parsedBranding.primaryColor}33 !important;
+      }
+
+      .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner {
+        background-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-tag-blue {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+        background: ${parsedBranding.primaryColor}10 !important;
+        border-color: ${parsedBranding.primaryColor}30 !important;
+      }
+
+      .ant-progress-bg {
+        background-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
       }
       
       body {

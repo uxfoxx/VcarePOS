@@ -16,11 +16,25 @@ export function PurchaseOrderPDF({ order, id }) {
       <div className="text-center mb-8">
         <div className="flex items-center justify-center space-x-4 mb-4">
           <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center">
-            <span className="text-white font-bold text-xl">VC</span>
+            <img 
+              src={localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
+                ? JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
+                : "/VCARELogo 1.png"} 
+              alt="VCare Logo" 
+              className="w-10 h-10 object-contain"
+            />
           </div>
           <div>
-            <Title level={2} className="m-0 text-blue-600">VCare Furniture Store</Title>
-            <Text type="secondary">Premium Furniture Solutions</Text>
+            <Title level={2} className="m-0 text-blue-600">
+              {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
+                ? JSON.parse(localStorage.getItem('vcare_branding')).businessName 
+                : "VCare Furniture Store"}
+            </Title>
+            <Text type="secondary">
+              {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).tagline 
+                ? JSON.parse(localStorage.getItem('vcare_branding')).tagline 
+                : "Premium Furniture Solutions"}
+            </Text>
           </div>
         </div>
         <Divider />
@@ -162,9 +176,26 @@ export function PurchaseOrderPDF({ order, id }) {
 
       {/* Footer */}
       <div className="mt-12 pt-4 border-t text-center text-xs text-gray-500">
-        <Text>VCare Furniture Store | 123 Main Street, City, State 12345 | (555) 123-4567</Text>
+        <Text>
+          {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
+            ? JSON.parse(localStorage.getItem('vcare_branding')).businessName 
+            : "VCare Furniture Store"} | 
+          {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).address 
+            ? JSON.parse(localStorage.getItem('vcare_branding')).address 
+            : "123 Main Street, City, State 12345"} | 
+          {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).phoneNumber 
+            ? JSON.parse(localStorage.getItem('vcare_branding')).phoneNumber 
+            : "(555) 123-4567"}
+        </Text>
         <br />
-        <Text>Email: orders@vcarefurniture.com | Website: www.vcarefurniture.com</Text>
+        <Text>
+          Email: {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).emailAddress 
+            ? JSON.parse(localStorage.getItem('vcare_branding')).emailAddress 
+            : "orders@vcarefurniture.com"} | 
+          Website: {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).website 
+            ? JSON.parse(localStorage.getItem('vcare_branding')).website 
+            : "www.vcarefurniture.com"}
+        </Text>
       </div>
     </div>
   );

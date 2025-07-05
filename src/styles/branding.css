@@ -1,9 +1,9 @@
 /* Branding CSS Variables */
 :root {
-  --primary-color: #0E72BD;
-  --secondary-color: #52c41a;
-  --accent-color: #fa8c16;
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --primary-color: #0E72BD !important;
+  --secondary-color: #52c41a !important;
+  --accent-color: #fa8c16 !important;
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 /* Override Ant Design theme with CSS variables */
@@ -13,8 +13,9 @@
 }
 
 .ant-btn-primary:hover {
-  background-color: color-mix(in srgb, var(--primary-color) 80%, white) !important;
-  border-color: color-mix(in srgb, var(--primary-color) 80%, white) !important;
+  background-color: var(--primary-color) !important;
+  opacity: 0.85;
+  border-color: var(--primary-color) !important;
 }
 
 .ant-switch-checked {
@@ -43,29 +44,29 @@
 }
 
 .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
-  background-color: color-mix(in srgb, var(--primary-color) 10%, white) !important;
+  background-color: rgba(var(--primary-color), 0.1) !important;
 }
 
 .ant-select-focused .ant-select-selector {
   border-color: var(--primary-color) !important;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 20%, transparent) !important;
+  box-shadow: 0 0 0 2px rgba(var(--primary-color), 0.2) !important;
 }
 
 .ant-input:focus, 
 .ant-input-focused {
   border-color: var(--primary-color) !important;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 20%, transparent) !important;
+  box-shadow: 0 0 0 2px rgba(var(--primary-color), 0.2) !important;
 }
 
 .ant-input-affix-wrapper:focus,
 .ant-input-affix-wrapper-focused {
   border-color: var(--primary-color) !important;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 20%, transparent) !important;
+  box-shadow: 0 0 0 2px rgba(var(--primary-color), 0.2) !important;
 }
 
 .ant-picker-focused {
   border-color: var(--primary-color) !important;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 20%, transparent) !important;
+  box-shadow: 0 0 0 2px rgba(var(--primary-color), 0.2) !important;
 }
 
 .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner {
@@ -74,8 +75,8 @@
 
 .ant-tag-blue {
   color: var(--primary-color) !important;
-  background: color-mix(in srgb, var(--primary-color) 10%, white) !important;
-  border-color: color-mix(in srgb, var(--primary-color) 30%, white) !important;
+  background: rgba(var(--primary-color), 0.1) !important;
+  border-color: rgba(var(--primary-color), 0.3) !important;
 }
 
 .ant-progress-bg {
@@ -114,4 +115,45 @@ body {
 
 .bg-accent {
   background-color: var(--accent-color) !important;
+}
+
+/* Additional overrides for Ant Design components */
+.ant-menu-item-selected {
+  background-color: var(--primary-color) !important;
+}
+
+.ant-menu-item:hover {
+  color: var(--primary-color) !important;
+}
+
+.ant-menu-item-selected .ant-menu-title-content {
+  color: white !important;
+}
+
+.ant-steps-item-process .ant-steps-item-icon {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.ant-steps-item-finish .ant-steps-item-icon {
+  border-color: var(--primary-color) !important;
+}
+
+.ant-steps-item-finish .ant-steps-icon {
+  color: var(--primary-color) !important;
+}
+
+.ant-steps-item-finish .ant-steps-item-container .ant-steps-item-tail::after {
+  background-color: var(--primary-color) !important;
+}
+
+/* Fix for color-mix fallback */
+.ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  background-color: rgba(14, 114, 189, 0.1) !important;
+}
+
+.ant-tag-blue {
+  color: var(--primary-color) !important;
+  background: rgba(14, 114, 189, 0.1) !important;
+  border-color: rgba(14, 114, 189, 0.3) !important;
 }

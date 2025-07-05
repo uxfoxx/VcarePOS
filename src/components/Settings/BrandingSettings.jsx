@@ -91,17 +91,29 @@ export function BrandingSettings() {
   const handleSave = (values) => {
     setLoading(true);
     
+    // Prepare branding data
+    const brandingData = {
+      ...values,
+      primaryColor,
+      secondaryColor,
+      accentColor,
+      fontFamily,
+      logoPreview
+    };
+    
     // Apply branding changes
-    applyBrandingChanges(values);
+    applyBrandingChanges(brandingData);
     
     // Save to localStorage for persistence
-    localStorage.setItem('vcare_branding', JSON.stringify({
-      ...values,
-      logoPreview
-    }));
+    localStorage.setItem('vcare_branding', JSON.stringify(brandingData));
     
     message.success('Branding settings saved and applied successfully');
     setLoading(false);
+    
+    // Force reload to apply all changes
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
   };
   
   const handleLogoUpload = (file) => {
@@ -199,13 +211,33 @@ export function BrandingSettings() {
   // Load saved branding on component mount
   React.useEffect(() => {
     const savedBranding = localStorage.getItem('vcare_branding');
+    
     if (savedBranding) {
       const parsedBranding = JSON.parse(savedBranding);
       form.setFieldsValue(parsedBranding);
-      if (parsedBranding.logoPreview) setLogoPreview(parsedBranding.logoPreview);
-      applyBrandingChanges(parsedBranding);
+      
+      // Set state values
+      if (parsedBranding.logoPreview) {
+        setLogoPreview(parsedBranding.logoPreview);
+      }
+      
+      if (parsedBranding.primaryColor) {
+        setPrimaryColor(parsedBranding.primaryColor);
+      }
+      
+      if (parsedBranding.secondaryColor) {
+        setSecondaryColor(parsedBranding.secondaryColor);
+      }
+      
+      if (parsedBranding.accentColor) {
+        setAccentColor(parsedBranding.accentColor);
+      }
+      
+      if (parsedBranding.fontFamily) {
+        setFontFamily(parsedBranding.fontFamily);
+      }
     }
-  }, []);
+  }, [form]);
   
   const tabItems = [
     {
@@ -329,7 +361,6 @@ export function BrandingSettings() {
               <Form.Item
                 label="Primary Color"
                 name="primaryColor"
-                initialValue={primaryColor}
               >
                 <div className="space-y-2">
                   <ColorPicker
@@ -350,7 +381,6 @@ export function BrandingSettings() {
               <Form.Item
                 label="Secondary Color"
                 name="secondaryColor"
-                initialValue={secondaryColor}
               >
                 <div className="space-y-2">
                   <ColorPicker
@@ -371,7 +401,6 @@ export function BrandingSettings() {
               <Form.Item
                 label="Accent Color"
                 name="accentColor"
-                initialValue={accentColor}
               >
                 <div className="space-y-2">
                   <ColorPicker
@@ -394,7 +423,6 @@ export function BrandingSettings() {
               <Form.Item
                 label="Font Family"
                 name="fontFamily"
-                initialValue={fontFamily}
               >
                 <Select onChange={(value) => setFontFamily(value)}>
                   <Option value="Inter">Inter (Default)</Option>

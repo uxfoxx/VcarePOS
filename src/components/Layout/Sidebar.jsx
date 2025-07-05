@@ -116,7 +116,9 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
         <div className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'}`}>
           <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
             <img 
-              src="/VCARELogo 1.png" 
+              src={localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
+                ? JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
+                : "/VCARELogo 1.png"} 
               alt="VCare Logo" 
               className="w-8 h-8 object-contain"
             />

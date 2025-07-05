@@ -131,7 +131,7 @@ export function VariantSelectionModal({
                           />
                           <div className="absolute top-2 right-2">
                             <Tag color="blue">
-                              LKR {variant.price?.toFixed(2) || '0.00'}
+                              LKR {(variant.price || 0).toFixed(2)}
                             </Tag>
                           </div>
                           {variant.hasSizes && (
@@ -230,7 +230,7 @@ export function VariantSelectionModal({
                           </div>
                           <div className="text-right">
                             <Tag color="blue" className="text-lg px-2 py-1">
-                              LKR {size.price?.toFixed(2) || '0.00'}
+                              LKR {(size.price || 0).toFixed(2)}
                             </Tag>
                             <div className="mt-2">
                               <Tag color={size.stock > 10 ? 'green' : size.stock > 0 ? 'orange' : 'red'}>

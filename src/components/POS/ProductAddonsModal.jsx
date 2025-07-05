@@ -170,10 +170,10 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
             <div className="text-right">
               <Text strong className="text-xl text-blue-600">LKR {product.price.toFixed(2)}</Text>
               <div className="mt-2">
-                <Text strong>Quantity:</Text>
+                <Text strong>Quantity: </Text>
                 <InputNumber
                   min={1}
-                  max={product.stock}
+                  max={product.stock || 1}
                   value={quantity}
                   onChange={setQuantity}
                   className="ml-2"
@@ -293,7 +293,7 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
           <div className="space-y-2">
             <div className="flex justify-between">
               <Text>Base Price:</Text>
-              <Text>LKR {product.price.toFixed(2)} × {quantity}</Text>
+              <Text>LKR {(product.price || 0).toFixed(2)} × {quantity}</Text>
             </div>
             
             {selectedAddons.length > 0 && (

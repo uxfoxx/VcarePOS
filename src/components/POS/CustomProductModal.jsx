@@ -186,7 +186,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
               <Text strong>Price:</Text>
               <InputNumber
                 className="w-full mt-1"
-                min={0}
+                min={0.01}
                 value={editablePrice}
                 onChange={(value) => setEditablePrice(value)}
                 formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
@@ -194,9 +194,11 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
                 step={100}
                 size="large"
               />
-              <Text type="secondary" className="text-xs block mt-1">
-                Suggested price: LKR {totalPrice.toFixed(2)} (based on materials with 50% markup)
-              </Text>
+              {totalPrice > 0 && (
+                <Text type="secondary" className="text-xs block mt-1">
+                  Suggested price: LKR {totalPrice.toFixed(2)} (based on materials with 50% markup)
+                </Text>
+              )}
             </div>
           </div>
           <div>

@@ -292,7 +292,7 @@ export function ProductGrid({ collapsed }) {
                     {selectedSizeData 
                       ? `LKR ${(selectedSizeData.price || 0).toFixed(2)}`
                       : selectedProduct.hasSizes
-                        ? `From LKR ${Math.min(...selectedProduct.sizes.map(s => s.price || 0)).toFixed(2)}`
+                        ? `From LKR ${Math.min(...(selectedProduct.sizes || []).map(s => s.price || 0) || [0]).toFixed(2)}`
                         : `LKR ${(selectedProduct.price || 0).toFixed(2)}`
                     }
                   </Title>

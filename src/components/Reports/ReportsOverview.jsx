@@ -54,47 +54,18 @@ export function ReportsOverview() {
   // Load cached data
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [productsData, rawMaterialsData, transactionsData, couponsData, categoriesData] = await Promise.all([
-          getProducts ? getProducts() : state.products,
-          getRawMaterials ? getRawMaterials() : state.rawMaterials,
-          getTransactions ? getTransactions() : state.transactions,
-          getCoupons ? getCoupons() : state.coupons,
-          getCategories ? getCategories() : state.categories
-        ]);
-        
-        setProducts(productsData);
-        setRawMaterials(rawMaterialsData);
-        setTransactions(transactionsData);
-        setCoupons(couponsData);
-        setCategories(categoriesData);
-      } catch (error) {
-        console.error('Error loading cached data:', error);
-        // Fallback to state data
-        setProducts(state.products);
-        setRawMaterials(state.rawMaterials);
-        setTransactions(state.transactions);
-        setCoupons(state.coupons);
-        setCategories(state.categories);
-      } finally {
-        setLoading(false);
-      }
+      setLoading(true);
+      // Use state data directly
+      setProducts(state.products);
+      setRawMaterials(state.rawMaterials);
+      setTransactions(state.transactions);
+      setCoupons(state.coupons);
+      setCategories(state.categories);
+      setLoading(false);
     };
     
     fetchData();
-  }, [
-    state.products, 
-    state.rawMaterials, 
-    state.transactions, 
-    state.coupons, 
-    state.categories,
-    getProducts,
-    getRawMaterials,
-    getTransactions,
-    getCoupons,
-    getCategories
-  ]);
+  }, [state]);
 
   // Filter transactions based on date
   const getFilteredTransactions = () => {

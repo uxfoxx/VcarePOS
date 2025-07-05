@@ -43,7 +43,7 @@ export function ProductGrid({ collapsed }) {
   const [showAddonsModal, setShowAddonsModal] = useState(false);
 
   // Get categories from state, including only active ones
-  const activeCategories = state.categories?.filter(cat => cat.isActive) || [];
+  const activeCategories = state.categories?.filter(cat => cat?.isActive) || [];
   const categoryNames = ['All', ...activeCategories.map(cat => cat.name)];
   
   // Filter products
@@ -320,12 +320,12 @@ export function ProductGrid({ collapsed }) {
                         <Button
                           key={size.id}
                           type={selectedSize === size.name ? 'primary' : 'default'}
-                          onClick={() => handleSizeChange(size.name)}
-                          disabled={size.stock === 0}
+                          onClick={() => handleSizeChange(size?.name)}
+                          disabled={size?.stock === 0}
                           className={selectedSize === size.name ? 'bg-blue-600' : ''}
                           size="large"
                         >
-                          {size.name}
+                          {size?.name || 'Size'}
                         </Button>
                       ))}
                     </div>

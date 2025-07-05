@@ -42,20 +42,10 @@ export function AuditTrail() {
   // Load cached audit trail data
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        setLoading(true);
-        const data = await getOrFetch('audit-trail', 
-          async () => getAuditTrail ? await getAuditTrail() : auditTrail, 
-          300 // 5 minutes TTL
-        );
-        setAuditData(data);
-      } catch (error) {
-        console.error('Error loading audit trail data:', error);
-        // Fallback to context data
-        setAuditData(auditTrail);
-      } finally {
-        setLoading(false);
-      }
+      setLoading(true);
+      // Use context data directly
+      setAuditData(auditTrail);
+      setLoading(false);
     };
     
     fetchData();

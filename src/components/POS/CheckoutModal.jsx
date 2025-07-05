@@ -342,27 +342,27 @@ export function CheckoutModal({
       <div className="border-t pt-4 space-y-2">
         <div className="flex justify-between">
           <Text>Subtotal</Text>
-          <Text>LKR {subtotal.toFixed(2)}</Text>
+          <Text>LKR {(subtotal || 0).toFixed(2)}</Text>
         </div>
         
         {categoryTaxTotal > 0 && (
           <div className="flex justify-between">
             <Text>Category Taxes</Text>
-            <Text>LKR {categoryTaxTotal.toFixed(2)}</Text>
+            <Text>LKR {(categoryTaxTotal || 0).toFixed(2)}</Text>
           </div>
         )}
         
         {appliedCoupon && (
           <div className="flex justify-between">
             <Text className="text-green-600">Coupon ({appliedCoupon.code})</Text>
-            <Text className="text-green-600">-LKR {couponDiscount.toFixed(2)}</Text>
+            <Text className="text-green-600">-LKR {(couponDiscount || 0).toFixed(2)}</Text>
           </div>
         )}
         
         {fullBillTaxes && fullBillTaxes.map(tax => (
           <div key={tax.id} className="flex justify-between">
             <Text>{tax.name} ({tax.rate}%)</Text>
-            <Text>LKR {((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
+            <Text>LKR {((taxableAmount * (tax.rate || 0)) / 100).toFixed(2)}</Text>
           </div>
         ))}
         
@@ -370,7 +370,7 @@ export function CheckoutModal({
         <div className="flex justify-between">
           <Title level={5} className="m-0">Total</Title>
           <Title level={4} className="m-0 text-blue-600">
-            LKR {total.toFixed(2)}
+            LKR {(total || 0).toFixed(2)}
           </Title>
         </div>
       </div>

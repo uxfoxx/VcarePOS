@@ -636,27 +636,27 @@ export function POSProvider({ children }) {
 
   // Cached data access methods
   const getProducts = async () => {
-    return await getOrFetch('products', () => state.products, 300); // 5 minutes TTL
+    return state.products;
   };
 
   const getRawMaterials = async () => {
-    return await getOrFetch('raw-materials', () => state.rawMaterials, 300); // 5 minutes TTL
+    return state.rawMaterials;
   };
 
   const getTransactions = async () => {
-    return await getOrFetch('transactions', () => state.transactions, 300); // 5 minutes TTL
+    return state.transactions;
   };
 
   const getCoupons = async () => {
-    return await getOrFetch('coupons', () => state.coupons, 600); // 10 minutes TTL
+    return state.coupons;
   };
 
   const getTaxes = async () => {
-    return await getOrFetch('taxes', () => state.taxes, 600); // 10 minutes TTL
+    return state.taxes;
   };
 
   const getCategories = async () => {
-    return await getOrFetch('categories', () => state.categories, 600); // 10 minutes TTL
+    return state.categories;
   };
 
   return (

@@ -318,12 +318,12 @@ export function ProductGrid({ collapsed }) {
                         <Button
                           key={size.id}
                           type={selectedSize === size.name ? 'primary' : 'default'}
-                          onClick={() => handleSizeChange(size.name)}
-                          disabled={size.stock === 0}
+                          onClick={() => handleSizeChange(size?.name)}
+                          disabled={size?.stock === 0}
                           className={selectedSize === size.name ? 'bg-blue-600' : ''}
                           size="large"
                         >
-                          {size.name}
+                          {size?.name || 'Size'}
                         </Button>
                       ))}
                     </div>

@@ -145,22 +145,30 @@ export function VariantSelectionModal({
                       }
                     >
                       <Card.Meta
-                        title={variant.name}
+                        title={
+                          <div className="flex items-center space-x-2">
+                            <Text strong>{variant?.name || 'Variant'}</Text>
+                            {variant.hasSizes && (
+                              <Tag color="purple">
+                                {variant?.sizes?.length || 0} Sizes
+                              </Tag>
+                            )}
+                          </div>
+                        }
                         description={
                           <div>
-                            <Text type="secondary" className="block mb-1">
-                              {variant.description || 'No description'}
-                            </Text>
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {variant.color && (
-                                <Tag>{variant.color}</Tag>
-                              )}
-                              {variant.material && (
-                                <Tag>{variant.material}</Tag>
-                              )}
-                              <Tag color={variant.stock > 10 ? 'green' : variant.stock > 0 ? 'orange' : 'red'}>
-                                Stock: {variant.stock || 0}
+                            <Text type="secondary">{variant?.description || 'No description available'}</Text>
+                            <div className="mt-1">
+                              <Tag color="blue">LKR {(variant?.price || 0).toFixed(2)}</Tag>
+                              <Tag color={variant?.stock > 10 ? 'green' : variant?.stock > 0 ? 'orange' : 'red'}>
+                                Stock: {variant?.stock || 0}
                               </Tag>
+                              {variant?.color && (
+                                <Tag color="default">{variant?.color}</Tag>
+                              )}
+                              {variant?.material && (
+                                <Tag color="default">{variant?.material}</Tag>
+                              )}
                             </div>
                           </div>
                         }

@@ -319,11 +319,11 @@ export function AuthProvider({ children }) {
 
   // Cached data access methods
   const getUsers = async () => {
-    return await getOrFetch('users', () => state.users, 300); // 5 minutes TTL
+    return state.users;
   };
 
   const getAuditTrail = async () => {
-    return await getOrFetch('audit-trail', () => state.auditTrail, 300); // 5 minutes TTL
+    return state.auditTrail;
   };
 
   return (

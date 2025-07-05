@@ -54,10 +54,13 @@ export function BrandingSettings() {
     // Update CSS variables
     styleEl.innerHTML = `
       :root {
-        --primary-color: ${values.primaryColor || primaryColor};
-        --secondary-color: ${values.secondaryColor || secondaryColor};
-        --accent-color: ${values.accentColor || accentColor};
-        --font-family: ${values.fontFamily || fontFamily}, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --primary-color: ${values.primaryColor || primaryColor} !important;
+        --secondary-color: ${values.secondaryColor || secondaryColor} !important;
+        --accent-color: ${values.accentColor || accentColor} !important;
+        --primary-color-rgb: ${values.primaryColor ? 
+          `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
+          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`} !important;
+        --font-family: ${values.fontFamily || fontFamily}, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
       }
       
       .ant-btn-primary {
@@ -76,9 +79,129 @@ export function BrandingSettings() {
       .border-blue-600, .border-\[#0E72BD\] {
         border-color: ${values.primaryColor || primaryColor} !important;
       }
+
+      .ant-switch-checked {
+        background-color: ${values.primaryColor || primaryColor} !important;
+      }
+
+      .ant-checkbox-checked .ant-checkbox-inner {
+        background-color: ${values.primaryColor || primaryColor} !important;
+        border-color: ${values.primaryColor || primaryColor} !important;
+      }
+
+      .ant-pagination-item-active {
+        border-color: ${values.primaryColor || primaryColor} !important;
+      }
+
+      .ant-pagination-item-active a {
+        color: ${values.primaryColor || primaryColor} !important;
+      }
+
+      .ant-slider-track {
+        background-color: ${values.primaryColor || primaryColor} !important;
+      }
+
+      .ant-slider-handle::after {
+        box-shadow: 0 0 0 2px ${values.primaryColor || primaryColor} !important;
+      }
+
+      .ant-btn-link {
+        color: ${values.primaryColor || primaryColor} !important;
+      }
+
+      .ant-menu-light .ant-menu-submenu-selected >.ant-menu-submenu-title {
+        color: ${values.primaryColor || primaryColor} !important;
+      }
+
+      .ant-radio-checked .ant-radio-inner {
+        border-color: ${values.primaryColor || primaryColor} !important;
+      }
+
+      .ant-radio-inner::after {
+        background-color: ${values.primaryColor || primaryColor} !important;
+      }
+
+      .ant-tabs-ink-bar {
+        background-color: ${values.primaryColor || primaryColor} !important;
+      }
+
+      .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+        color: ${values.primaryColor || primaryColor} !important;
+      }
+
+      .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+        background-color: rgba(${values.primaryColor ? 
+          `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
+          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.1) !important;
+      }
+
+      .ant-select-focused .ant-select-selector {
+        border-color: ${values.primaryColor || primaryColor} !important;
+        box-shadow: 0 0 0 2px rgba(${values.primaryColor ? 
+          `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
+          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.2) !important;
+      }
+
+      .ant-input:focus, 
+      .ant-input-focused {
+        border-color: ${values.primaryColor || primaryColor} !important;
+        box-shadow: 0 0 0 2px rgba(${values.primaryColor ? 
+          `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
+          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.2) !important;
+      }
+
+      .ant-input-affix-wrapper:focus,
+      .ant-input-affix-wrapper-focused {
+        border-color: ${values.primaryColor || primaryColor} !important;
+        box-shadow: 0 0 0 2px rgba(${values.primaryColor ? 
+          `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
+          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.2) !important;
+      }
+
+      .ant-picker-focused {
+        border-color: ${values.primaryColor || primaryColor} !important;
+        box-shadow: 0 0 0 2px rgba(${values.primaryColor ? 
+          `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
+          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.2) !important;
+      }
+
+      .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner {
+        background-color: ${values.primaryColor || primaryColor} !important;
+      }
+
+      .ant-tag-blue {
+        color: ${values.primaryColor || primaryColor} !important;
+        background: rgba(${values.primaryColor ? 
+          `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
+          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.1) !important;
+        border-color: rgba(${values.primaryColor ? 
+          `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
+          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.3) !important;
+      }
+
+      .ant-progress-bg {
+        background-color: ${values.primaryColor || primaryColor} !important;
+      }
+
+      /* Button hover states */
+      .ant-btn:hover {
+        border-color: ${values.primaryColor || primaryColor} !important;
+        color: ${values.primaryColor || primaryColor} !important;
+      }
+
+      .ant-btn-default:hover {
+        border-color: ${values.primaryColor || primaryColor} !important;
+        color: ${values.primaryColor || primaryColor} !important;
+      }
+
+      /* Button focus states */
+      .ant-btn:focus {
+        border-color: ${values.primaryColor || primaryColor} !important;
+        color: ${values.primaryColor || primaryColor} !important;
+      }
       
       body {
-        font-family: ${values.fontFamily || fontFamily}, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family: ${values.fontFamily || fontFamily}, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
       }
     `;
     
@@ -213,9 +336,9 @@ export function BrandingSettings() {
   const handleResetToDefaultTheme = () => {
     // Default black/gray/white theme values
     const defaultTheme = {
-      primaryColor: '#333333',
-      secondaryColor: '#666666',
-      accentColor: '#999999',
+      primaryColor: '#333333', // Dark gray
+      secondaryColor: '#666666', // Medium gray
+      accentColor: '#999999', // Light gray
       fontFamily: 'Inter',
       businessName: 'VCare Furniture Store',
       tagline: 'Premium Furniture Solutions',
@@ -240,6 +363,7 @@ export function BrandingSettings() {
     
     // Apply changes
     applyBrandingChanges(defaultTheme);
+    document.documentElement.style.setProperty('--primary-color-rgb', '51, 51, 51');
     
     // Save to localStorage
     localStorage.setItem('vcare_branding', JSON.stringify(defaultTheme));
@@ -251,7 +375,7 @@ export function BrandingSettings() {
     
     // Force reload to apply all changes
     setTimeout(() => {
-      window.location.reload();
+      window.location.reload(); 
     }, 1000);
   };
 
@@ -271,6 +395,9 @@ export function BrandingSettings() {
       if (parsedBranding.primaryColor) {
         setPrimaryColor(parsedBranding.primaryColor);
       }
+
+      // Set RGB values for the primary color
+      document.documentElement.style.setProperty('--primary-color-rgb', `${parseInt(parsedBranding.primaryColor?.slice(1, 3) || '0E', 16)}, ${parseInt(parsedBranding.primaryColor?.slice(3, 5) || '72', 16)}, ${parseInt(parsedBranding.primaryColor?.slice(5, 7) || 'BD', 16)}`);
       
       if (parsedBranding.secondaryColor) {
         setSecondaryColor(parsedBranding.secondaryColor);
@@ -284,6 +411,8 @@ export function BrandingSettings() {
         setFontFamily(parsedBranding.fontFamily);
       }
     }
+    // Set default RGB values if no saved branding
+    else document.documentElement.style.setProperty('--primary-color-rgb', '14, 114, 189');
   }, [form]);
   
   const tabItems = [
@@ -412,7 +541,7 @@ export function BrandingSettings() {
                 <div className="space-y-2">
                   <ColorPicker
                     value={primaryColor}
-                    onChange={(color) => setPrimaryColor(color.toHexString())}
+                    onChange={(color) => {setPrimaryColor(color.toHexString()); document.documentElement.style.setProperty('--primary-color-rgb', `${parseInt(color.toHexString().slice(1, 3), 16)}, ${parseInt(color.toHexString().slice(3, 5), 16)}, ${parseInt(color.toHexString().slice(5, 7), 16)}`)}}
                     showText
                   />
                   <div>
@@ -432,7 +561,7 @@ export function BrandingSettings() {
                 <div className="space-y-2">
                   <ColorPicker
                     value={secondaryColor}
-                    onChange={(color) => setSecondaryColor(color.toHexString())}
+                    onChange={(color) => {setSecondaryColor(color.toHexString())}}
                     showText
                   />
                   <div>
@@ -452,7 +581,7 @@ export function BrandingSettings() {
                 <div className="space-y-2">
                   <ColorPicker
                     value={accentColor}
-                    onChange={(color) => setAccentColor(color.toHexString())}
+                    onChange={(color) => {setAccentColor(color.toHexString())}}
                     showText
                   />
                   <div>
@@ -522,13 +651,14 @@ export function BrandingSettings() {
                 <Button 
                   type="primary" 
                   style={{ backgroundColor: primaryColor, borderColor: primaryColor }}
+                  className="hover:opacity-90"
                 >
                   Primary Button
                 </Button>
-                <Button style={{ borderColor: secondaryColor, color: secondaryColor }}>
+                <Button style={{ borderColor: secondaryColor, color: secondaryColor }} className="hover:border-primary hover:text-primary">
                   Secondary Button
                 </Button>
-                <Button type="text" style={{ color: accentColor }}>
+                <Button type="text" style={{ color: accentColor }} className="hover:text-primary">
                   Text Button
                 </Button>
               </div>
@@ -650,13 +780,15 @@ export function BrandingSettings() {
           <Button onClick={() => setShowResetConfirm(true)}>
             Reset to Defaults
           </Button>
-          <ActionButton.Primary 
+          <Button 
+            type="primary"
             htmlType="submit" 
             loading={loading}
-            icon="save"
+            icon={<Icon name="save" />}
+            className="bg-primary"
           >
             Save Branding Settings
-          </ActionButton.Primary>
+          </Button>
         </div>
       </Form>
       
@@ -727,7 +859,7 @@ export function BrandingSettings() {
             <div className="border rounded-lg p-4 cursor-pointer hover:border-blue-500" onClick={handleResetDefaults}>
               <div className="flex items-center space-x-2 mb-2">
                 <div className="w-6 h-6 rounded-full bg-[#0E72BD]"></div>
-                <Text strong>Original Blue Theme</Text>
+                <Text strong>Original Blue Theme (Default)</Text>
               </div>
               <div className="space-y-1">
                 <div className="h-2 w-full rounded-full bg-[#0E72BD]"></div>
@@ -739,7 +871,7 @@ export function BrandingSettings() {
             <div className="border rounded-lg p-4 cursor-pointer hover:border-gray-500" onClick={handleResetToDefaultTheme}>
               <div className="flex items-center space-x-2 mb-2">
                 <div className="w-6 h-6 rounded-full bg-[#333333]"></div>
-                <Text strong>Black/Gray Theme</Text>
+                <Text strong>Black/Gray/White Theme</Text>
               </div>
               <div className="space-y-1">
                 <div className="h-2 w-full rounded-full bg-[#333333]"></div>

@@ -9,13 +9,30 @@
 /* Override Ant Design theme with CSS variables */
 .ant-btn-primary {
   background-color: var(--primary-color) !important;
-  border-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important; 
 }
 
 .ant-btn-primary:hover {
   background-color: var(--primary-color) !important;
   opacity: 0.85;
-  border-color: var(--primary-color) !important; 
+  border-color: var(--primary-color) !important;
+}
+
+/* Button hover states */
+.ant-btn:hover {
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+}
+
+.ant-btn-default:hover {
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+}
+
+/* Button focus states */
+.ant-btn:focus {
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
 }
 
 .ant-switch-checked {
@@ -198,4 +215,175 @@ body {
 
 .ant-dropdown-menu-item:hover {
   background-color: color-mix(in srgb, var(--primary-color) 5%, transparent) !important;
+}
+
+/* Additional component overrides */
+.ant-table-column-sorter-up.active, 
+.ant-table-column-sorter-down.active {
+  color: var(--primary-color) !important;
+}
+
+.ant-select-selector:hover {
+  border-color: var(--primary-color) !important;
+}
+
+.ant-input:hover {
+  border-color: var(--primary-color) !important;
+}
+
+.ant-input-affix-wrapper:hover {
+  border-color: var(--primary-color) !important;
+}
+
+.ant-picker:hover {
+  border-color: var(--primary-color) !important;
+}
+
+.ant-btn-text:hover {
+  color: var(--primary-color) !important;
+  background-color: rgba(var(--primary-color-rgb, 14, 114, 189), 0.1) !important;
+}
+
+.ant-btn-text:active {
+  color: var(--primary-color) !important;
+  background-color: rgba(var(--primary-color-rgb, 14, 114, 189), 0.2) !important;
+}
+
+.ant-menu-item:hover {
+  color: var(--primary-color) !important;
+}
+
+.ant-menu-item-selected {
+  color: var(--primary-color) !important;
+}
+
+.ant-menu-submenu-title:hover {
+  color: var(--primary-color) !important;
+}
+
+.ant-menu-submenu-selected > .ant-menu-submenu-title {
+  color: var(--primary-color) !important;
+}
+
+.ant-menu-light .ant-menu-item:hover {
+  color: var(--primary-color) !important;
+}
+
+.ant-menu-light .ant-menu-item-active {
+  color: var(--primary-color) !important;
+}
+
+.ant-menu-light .ant-menu-submenu-active > .ant-menu-submenu-title {
+  color: var(--primary-color) !important;
+}
+
+.ant-menu-light .ant-menu-item-selected {
+  color: var(--primary-color) !important;
+}
+
+.ant-menu-light .ant-menu-submenu-selected > .ant-menu-submenu-title {
+  color: var(--primary-color) !important;
+}
+
+.ant-menu-light .ant-menu-item-selected {
+  background-color: rgba(var(--primary-color-rgb, 14, 114, 189), 0.1) !important;
+}
+
+.ant-menu-horizontal > .ant-menu-item-selected::after,
+.ant-menu-horizontal > .ant-menu-submenu-selected::after {
+  border-bottom-color: var(--primary-color) !important;
+}
+
+.ant-menu-horizontal > .ant-menu-item:hover::after,
+.ant-menu-horizontal > .ant-menu-submenu:hover::after {
+  border-bottom-color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-item-active {
+  background-color: rgba(var(--primary-color-rgb, 14, 114, 189), 0.1) !important;
+}
+
+.ant-dropdown-menu-item-active:hover {
+  background-color: rgba(var(--primary-color-rgb, 14, 114, 189), 0.2) !important;
+}
+
+.ant-dropdown-menu-submenu-title:hover {
+  background-color: rgba(var(--primary-color-rgb, 14, 114, 189), 0.1) !important;
+}
+
+.ant-dropdown-menu-submenu-active > .ant-dropdown-menu-submenu-title {
+  color: var(--primary-color) !important;
+  background-color: rgba(var(--primary-color-rgb, 14, 114, 189), 0.1) !important;
+}
+
+.ant-dropdown-menu-submenu-selected > .ant-dropdown-menu-submenu-title {
+  color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-submenu-title:hover {
+  color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-title-content:hover {
+  color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-item:hover {
+  color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-item-selected {
+  color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-item-selected:hover {
+  color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-item-active {
+  color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-item-active:hover {
+  color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-submenu-title:hover {
+  color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-submenu-active > .ant-dropdown-menu-submenu-title {
+  color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-submenu-selected > .ant-dropdown-menu-submenu-title {
+  color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-submenu-title:hover {
+  color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-title-content:hover {
+  color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-item:hover {
+  color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-item-selected {
+  color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-item-selected:hover {
+  color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-item-active {
+  color: var(--primary-color) !important;
+}
+
+.ant-dropdown-menu-item-active:hover {
+  color: var(--primary-color) !important;
 }

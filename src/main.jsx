@@ -59,6 +59,30 @@ const applyInitialBranding = () => {
       .ant-btn-primary {
         background-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
         border-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+        color: white !important;
+      }
+      
+      .ant-btn-primary:hover {
+        background-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+        opacity: 0.85 !important;
+        border-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+      
+      /* Button hover states */
+      .ant-btn:hover {
+        border-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+      
+      .ant-btn-default:hover {
+        border-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+      
+      /* Button focus states */
+      .ant-btn:focus {
+        border-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
       }
       
       .text-blue-600, .text-\[#0E72BD\] {
@@ -125,7 +149,7 @@ const applyInitialBranding = () => {
       .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
         background-color: rgba(${parsedBranding.primaryColor ? 
           `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
-          '14, 114, 189'}, 0.1) !important;
+          '14, 114, 189'}, 0.1) !important; 
       }
 
       .ant-select-focused .ant-select-selector {
@@ -174,6 +198,109 @@ const applyInitialBranding = () => {
 
       .ant-progress-bg {
         background-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      /* Table sorting */
+      .ant-table-column-sorter-up.active, 
+      .ant-table-column-sorter-down.active {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      /* Menu items */
+      .ant-menu-item:hover {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-menu-item-selected {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-menu-submenu-title:hover {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-menu-submenu-selected > .ant-menu-submenu-title {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-menu-light .ant-menu-item:hover {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-menu-light .ant-menu-item-active {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-menu-light .ant-menu-submenu-active > .ant-menu-submenu-title {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-menu-light .ant-menu-item-selected {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-menu-light .ant-menu-item-selected {
+        background-color: rgba(${parsedBranding.primaryColor ? 
+          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
+          '14, 114, 189'}, 0.1) !important;
+      }
+
+      /* Dropdown items */
+      .ant-dropdown-menu-item-active {
+        background-color: rgba(${parsedBranding.primaryColor ? 
+          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
+          '14, 114, 189'}, 0.1) !important;
+      }
+
+      .ant-dropdown-menu-item-active:hover {
+        background-color: rgba(${parsedBranding.primaryColor ? 
+          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
+          '14, 114, 189'}, 0.2) !important;
+      }
+
+      .ant-dropdown-menu-submenu-title:hover {
+        background-color: rgba(${parsedBranding.primaryColor ? 
+          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
+          '14, 114, 189'}, 0.1) !important;
+      }
+
+      .ant-dropdown-menu-submenu-active > .ant-dropdown-menu-submenu-title {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+        background-color: rgba(${parsedBranding.primaryColor ? 
+          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
+          '14, 114, 189'}, 0.1) !important;
+      }
+
+      .ant-dropdown-menu-submenu-selected > .ant-dropdown-menu-submenu-title {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-dropdown-menu-submenu-title:hover {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-dropdown-menu-title-content:hover {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-dropdown-menu-item:hover {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-dropdown-menu-item-selected {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-dropdown-menu-item-selected:hover {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-dropdown-menu-item-active {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
+      }
+
+      .ant-dropdown-menu-item-active:hover {
+        color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
       }
       
       body {

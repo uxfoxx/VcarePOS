@@ -20,6 +20,7 @@ import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { CacheStats } from '../common/CacheStats';
 import { flushCache } from '../../utils/cache';
+import { BrandingSettings } from './BrandingSettings';
 import { clearCache } from '../../utils/httpCache';
 
 const { Title, Text } = Typography;
@@ -33,6 +34,7 @@ export function SettingsPanel() {
 
   const sections = [
     { key: 'general', label: 'General', icon: <Icon name="settings" /> },
+    { key: 'branding', label: 'Branding', icon: <Icon name="branding_watermark" /> },
     { key: 'store', label: 'Store Info', icon: <Icon name="store" /> },
     { key: 'users', label: 'User Management', icon: <Icon name="people" /> },
     { key: 'payment', label: 'Payment Methods', icon: <Icon name="payment" /> },
@@ -95,6 +97,10 @@ export function SettingsPanel() {
       </Row>
       <ActionButton.Primary htmlType="submit">Save Changes</ActionButton.Primary>
     </Form>
+  );
+
+  const renderBrandingSettings = () => (
+    <BrandingSettings />
   );
 
   const renderCacheSettings = () => (
@@ -197,6 +203,8 @@ export function SettingsPanel() {
     switch (activeSection) {
       case 'general':
         return renderGeneralSettings();
+      case 'branding':
+        return renderBrandingSettings();
       case 'cache':
         return renderCacheSettings();
       default:

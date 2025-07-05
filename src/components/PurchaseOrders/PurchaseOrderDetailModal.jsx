@@ -34,6 +34,7 @@ export function PurchaseOrderDetailModal({
   const [loading, setLoading] = useState(false);
   const [showPdf, setShowPdf] = useState(false);
   const [showGRN, setShowGRN] = useState(false);
+  const [lastGRNData, setLastGRNData] = useState(null);
 
   if (!order) return null;
 
@@ -114,6 +115,9 @@ export function PurchaseOrderDetailModal({
     // Update order status based on whether all items were received
     const newStatus = allItemsReceived ? 'completed' : 'received';
     onStatusChange(orderId, newStatus);
+
+    // Save GRN data for later download
+    setLastGRNData(grnData);
     
     setShowGRN(false);
     
@@ -121,9 +125,93 @@ export function PurchaseOrderDetailModal({
     message.success(`Goods received successfully. Order status updated to ${newStatus}.`);
   };
 
+  const handleDownloadGRN = async () => {
+    if (!lastGRNData) {
+      message.error('No GRN data available. Please complete the order first.');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      // Create a temporary div for the GRN PDF
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.id = 'temp-grn-pdf';
+      document.body.appendChild(tempDiv);
+      
+      // Render the GRN PDF in the temporary div
+      const ReactDOM = await import('react-dom/client');
+      const root = ReactDOM.createRoot(tempDiv);
+      root.render(
+        <GoodsReceiveNotePDF 
+          order={order} 
+          grnData={lastGRNData}
+          id="temp-grn-pdf-content" 
+        />
+      );
+      
+      // Wait for rendering
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Get the rendered element
+      const element = document.getElementById('temp-grn-pdf-content');
+      if (!element) {
+        throw new Error('GRN PDF element not found');
+      }
+      
+      // Create PDF using html2canvas and jsPDF
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: element.scrollWidth,
+        height: element.scrollHeight
+      });
+      
+      // Calculate PDF dimensions
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 295; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      
+      // Create PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      let position = 0;
+      
+      // Add first page
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      
+      // Add additional pages if needed
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      // Download the PDF
+      const filename = `goods-receive-note-${lastGRNData.id}.pdf`;
+      pdf.save(filename);
+      message.success('Goods Receive Note PDF downloaded successfully');
+      
+      // Clean up
+      document.body.removeChild(tempDiv);
+    } catch (error) {
+      console.error('Error generating GRN PDF:', error);
+      message.error('Failed to generate GRN PDF');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusStep = (status) => {
     const statusMap = {
       'pending': 0,
+      'received': 1,
       'completed': 1
     };
     return statusMap[status] || 0;
@@ -222,6 +310,16 @@ export function PurchaseOrderDetailModal({
           <Button key="close" onClick={onClose}>
             Close
           </Button>,
+          (order.status === 'completed' || order.status === 'received') && (
+            <Button 
+              key="download-grn" 
+              onClick={handleDownloadGRN}
+              icon={<Icon name="download" />}
+              loading={loading && !showPdf}
+            >
+              Download GRN
+            </Button>
+          ),
           (order.status === 'pending' || order.status === 'received') && (
             <Button 
               key="receive" 

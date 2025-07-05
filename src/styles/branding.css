@@ -2,7 +2,10 @@
 :root {
   --primary-color: #0E72BD;
   --secondary-color: #52c41a;
+  --primary-text-color: #ffffff;
+  --secondary-text-color: #ffffff;
   --accent-color: #fa8c16;
+  --accent-text-color: #ffffff;
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
@@ -10,6 +13,7 @@
 .ant-btn-primary {
   background-color: var(--primary-color) !important;
   border-color: var(--primary-color) !important; 
+  color: var(--primary-text-color) !important;
 }
 
 .ant-btn-primary:hover {
@@ -37,6 +41,7 @@
 
 .ant-switch-checked {
   background-color: var(--primary-color) !important;
+  color: var(--primary-text-color) !important;
 }
 
 .ant-checkbox-checked .ant-checkbox-inner {
@@ -88,6 +93,7 @@
 
 .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner {
   background-color: var(--primary-color) !important;
+  color: var(--primary-text-color) !important;
 }
 
 .ant-tag-blue {
@@ -98,6 +104,7 @@
 
 .ant-progress-bg {
   background-color: var(--primary-color) !important;
+  color: var(--primary-text-color) !important;
 }
 
 /* Apply font family */
@@ -137,6 +144,7 @@ body {
 /* Additional overrides for Ant Design components */
 .ant-menu-item-selected {
   background-color: var(--primary-color) !important;
+  color: var(--primary-text-color) !important;
 }
 
 .ant-menu-item:hover {
@@ -144,12 +152,13 @@ body {
 }
 
 .ant-menu-item-selected .ant-menu-title-content {
-  color: white !important;
+  color: var(--primary-text-color) !important;
 }
 
 .ant-steps-item-process .ant-steps-item-icon {
   background-color: var(--primary-color) !important;
   border-color: var(--primary-color) !important;
+  color: var(--primary-text-color) !important;
 }
 
 .ant-steps-item-finish .ant-steps-item-icon {
@@ -202,6 +211,7 @@ body {
 
 .ant-btn-link:hover {
   color: color-mix(in srgb, var(--primary-color) 80%, white) !important;
+  opacity: 0.85;
 }
 
 .ant-menu-light .ant-menu-submenu-selected >.ant-menu-submenu-title {
@@ -386,4 +396,43 @@ body {
 
 .ant-dropdown-menu-item-active:hover {
   color: var(--primary-color) !important;
+}
+
+/* Success button styling */
+.ant-btn-success {
+  background-color: var(--secondary-color) !important;
+  border-color: var(--secondary-color) !important;
+  color: var(--secondary-text-color) !important;
+}
+
+.ant-btn-success:hover {
+  background-color: var(--secondary-color) !important;
+  opacity: 0.85;
+  border-color: var(--secondary-color) !important;
+}
+
+/* Warning button styling */
+.ant-btn-warning {
+  background-color: var(--accent-color) !important;
+  border-color: var(--accent-color) !important;
+  color: var(--accent-text-color) !important;
+}
+
+.ant-btn-warning:hover {
+  background-color: var(--accent-color) !important;
+  opacity: 0.85;
+  border-color: var(--accent-color) !important;
+}
+
+/* Fix for tag colors */
+.ant-tag-green {
+  color: var(--secondary-color) !important;
+  background: color-mix(in srgb, var(--secondary-color) 10%, transparent) !important;
+  border-color: color-mix(in srgb, var(--secondary-color) 30%, transparent) !important;
+}
+
+.ant-tag-orange {
+  color: var(--accent-color) !important;
+  background: color-mix(in srgb, var(--accent-color) 10%, transparent) !important;
+  border-color: color-mix(in srgb, var(--accent-color) 30%, transparent) !important;
 }

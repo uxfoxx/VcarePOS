@@ -33,7 +33,10 @@ export function BrandingSettings() {
   const [logoPreview, setLogoPreview] = useState('/VCARELogo 1.png');
   const [primaryColor, setPrimaryColor] = useState('#0E72BD');
   const [secondaryColor, setSecondaryColor] = useState('#52c41a');
+  const [primaryTextColor, setPrimaryTextColor] = useState('#ffffff');
+  const [secondaryTextColor, setSecondaryTextColor] = useState('#ffffff');
   const [accentColor, setAccentColor] = useState('#fa8c16');
+  const [accentTextColor, setAccentTextColor] = useState('#ffffff');
   const [fontFamily, setFontFamily] = useState('Inter');
   const [showCropModal, setShowCropModal] = useState(false);
   const [cropSrc, setCropSrc] = useState(null);
@@ -57,7 +60,10 @@ export function BrandingSettings() {
       :root {
         --primary-color: ${values.primaryColor || primaryColor};
         --secondary-color: ${values.secondaryColor || secondaryColor};
+        --primary-text-color: ${values.primaryTextColor || primaryTextColor};
+        --secondary-text-color: ${values.secondaryTextColor || secondaryTextColor};
         --accent-color: ${values.accentColor || accentColor};
+        --accent-text-color: ${values.accentTextColor || accentTextColor};
         --primary-color-rgb: ${values.primaryColor ? 
           `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
           `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`};
@@ -68,6 +74,7 @@ export function BrandingSettings() {
       .ant-btn-primary {
         background-color: ${values.primaryColor || primaryColor} !important;
         border-color: ${values.primaryColor || primaryColor} !important;
+        color: ${values.primaryTextColor || primaryTextColor} !important;
       }
       
       .text-blue-600, .text-\[#0E72BD\] {
@@ -220,18 +227,24 @@ export function BrandingSettings() {
     // Update state values
     setPrimaryColor(values.primaryColor || primaryColor);
     setSecondaryColor(values.secondaryColor || secondaryColor);
+    setPrimaryTextColor(values.primaryTextColor || primaryTextColor);
+    setPrimaryTextColor(values.secondaryTextColor || secondaryTextColor);
     setAccentColor(values.accentColor || accentColor);
+    setAccentTextColor(values.accentTextColor || accentTextColor);
     setFontFamily(values.fontFamily || fontFamily);
     setDarkModeSupport(values.darkModeSupport || false);
     
     // Prepare branding data
     const brandingData = {
       ...values,
-      primaryColor,
-      secondaryColor,
-      accentColor,
-      fontFamily,
-      darkModeSupport,
+      primaryColor: values.primaryColor || primaryColor,
+      secondaryColor: values.secondaryColor || secondaryColor,
+      primaryTextColor: values.primaryTextColor || primaryTextColor,
+      secondaryTextColor: values.secondaryTextColor || secondaryTextColor,
+      accentColor: values.accentColor || accentColor,
+      accentTextColor: values.accentTextColor || accentTextColor,
+      fontFamily: values.fontFamily || fontFamily,
+      darkModeSupport: values.darkModeSupport || darkModeSupport,
       logoPreview
     };
     
@@ -349,8 +362,11 @@ export function BrandingSettings() {
     // Default black/gray/white theme values
     const defaultTheme = {
       primaryColor: '#333333', // Dark gray
+      primaryTextColor: '#ffffff', // White text
       secondaryColor: '#666666', // Medium gray 
+      secondaryTextColor: '#ffffff', // White text
       accentColor: '#999999', // Light gray
+      accentTextColor: '#ffffff', // White text
       darkModeSupport: false,
       fontFamily: 'Inter',
       businessName: 'VCare Furniture Store',
@@ -367,7 +383,10 @@ export function BrandingSettings() {
     // Update state
     setPrimaryColor(defaultTheme.primaryColor);
     setSecondaryColor(defaultTheme.secondaryColor);
+    setPrimaryTextColor(defaultTheme.primaryTextColor);
+    setSecondaryTextColor(defaultTheme.secondaryTextColor);
     setAccentColor(defaultTheme.accentColor);
+    setAccentTextColor(defaultTheme.accentTextColor);
     setDarkModeSupport(defaultTheme.darkModeSupport);
     setFontFamily(defaultTheme.fontFamily);
     setLogoPreview(defaultTheme.logoPreview);
@@ -409,6 +428,10 @@ export function BrandingSettings() {
       if (parsedBranding.primaryColor) {
         setPrimaryColor(parsedBranding.primaryColor);
       }
+      
+      if (parsedBranding.primaryTextColor) {
+        setPrimaryTextColor(parsedBranding.primaryTextColor);
+      }
 
       // Set RGB values for the primary color
       document.documentElement.style.setProperty('--primary-color-rgb', `${parseInt(parsedBranding.primaryColor?.slice(1, 3) || '0E', 16)}, ${parseInt(parsedBranding.primaryColor?.slice(3, 5) || '72', 16)}, ${parseInt(parsedBranding.primaryColor?.slice(5, 7) || 'BD', 16)}`);
@@ -416,9 +439,17 @@ export function BrandingSettings() {
       if (parsedBranding.secondaryColor) {
         setSecondaryColor(parsedBranding.secondaryColor);
       }
+
+      if (parsedBranding.secondaryTextColor) {
+        setSecondaryTextColor(parsedBranding.secondaryTextColor);
+      }
       
       if (parsedBranding.accentColor) {
         setAccentColor(parsedBranding.accentColor);
+      }
+
+      if (parsedBranding.accentTextColor) {
+        setAccentTextColor(parsedBranding.accentTextColor);
       }
       
       if (parsedBranding.fontFamily) {
@@ -557,11 +588,23 @@ export function BrandingSettings() {
                 name="primaryColor"
               >
                 <div className="space-y-2">
-                  <ColorPicker
-                    value={primaryColor}
-                    onChange={(color) => {setPrimaryColor(color.toHexString()); document.documentElement.style.setProperty('--primary-color-rgb', `${parseInt(color.toHexString().slice(1, 3), 16)}, ${parseInt(color.toHexString().slice(3, 5), 16)}, ${parseInt(color.toHexString().slice(5, 7), 16)}`)}}
-                    showText
-                  />
+                  <div className="flex space-x-2">
+                    <ColorPicker
+                      value={primaryColor}
+                      onChange={(color) => {setPrimaryColor(color.toHexString()); document.documentElement.style.setProperty('--primary-color-rgb', `${parseInt(color.toHexString().slice(1, 3), 16)}, ${parseInt(color.toHexString().slice(3, 5), 16)}, ${parseInt(color.toHexString().slice(5, 7), 16)}`)}}
+                      showText
+                    />
+                    <div>
+                      <Text type="secondary" className="text-xs block mb-1">
+                        Text Color
+                      </Text>
+                      <ColorPicker
+                        value={primaryTextColor}
+                        onChange={(color) => setPrimaryTextColor(color.toHexString())}
+                        showText={false}
+                      />
+                    </div>
+                  </div>
                   <div>
                     <Text type="secondary" className="text-xs block">
                       Used for primary buttons, links, and accents
@@ -577,11 +620,23 @@ export function BrandingSettings() {
                 name="secondaryColor"
               >
                 <div className="space-y-2">
-                  <ColorPicker
-                    value={secondaryColor}
-                    onChange={(color) => {setSecondaryColor(color.toHexString())}}
-                    showText
-                  />
+                  <div className="flex space-x-2">
+                    <ColorPicker
+                      value={secondaryColor}
+                      onChange={(color) => {setSecondaryColor(color.toHexString())}}
+                      showText
+                    />
+                    <div>
+                      <Text type="secondary" className="text-xs block mb-1">
+                        Text Color
+                      </Text>
+                      <ColorPicker
+                        value={secondaryTextColor}
+                        onChange={(color) => setSecondaryTextColor(color.toHexString())}
+                        showText={false}
+                      />
+                    </div>
+                  </div>
                   <div>
                     <Text type="secondary" className="text-xs block">
                       Used for success states and secondary elements
@@ -597,11 +652,23 @@ export function BrandingSettings() {
                 name="accentColor"
               >
                 <div className="space-y-2">
-                  <ColorPicker
-                    value={accentColor}
-                    onChange={(color) => {setAccentColor(color.toHexString())}}
-                    showText
-                  />
+                  <div className="flex space-x-2">
+                    <ColorPicker
+                      value={accentColor}
+                      onChange={(color) => {setAccentColor(color.toHexString())}}
+                      showText
+                    />
+                    <div>
+                      <Text type="secondary" className="text-xs block mb-1">
+                        Text Color
+                      </Text>
+                      <ColorPicker
+                        value={accentTextColor}
+                        onChange={(color) => setAccentTextColor(color.toHexString())}
+                        showText={false}
+                      />
+                    </div>
+                  </div>
                   <div>
                     <Text type="secondary" className="text-xs block">
                       Used for highlights and tertiary elements
@@ -672,21 +739,28 @@ export function BrandingSettings() {
               <div className="flex space-x-2">
                 <Button 
                   type="primary" 
-                  style={{ backgroundColor: primaryColor, borderColor: primaryColor }}
-                  className={`hover:opacity-90 ${darkModeSupport ? "text-white" : ""}`}
+                  className="hover:opacity-90"
+                  style={{ 
+                    backgroundColor: primaryColor, 
+                    borderColor: primaryColor, 
+                    color: primaryTextColor 
+                  }}
                 >
                   Primary Button
                 </Button>
                 <Button 
-                  style={{ borderColor: secondaryColor, color: secondaryColor }} 
-                  className={`hover:border-primary hover:text-primary ${darkModeSupport ? "border-gray-600 text-gray-300" : ""}`}
+                  style={{ 
+                    borderColor: primaryColor, 
+                    color: primaryColor 
+                  }} 
+                  className="hover:opacity-90"
                 >
                   Secondary Button
                 </Button>
                 <Button 
                   type="text" 
-                  style={{ color: accentColor }} 
-                  className={`hover:text-primary ${darkModeSupport ? "text-gray-400" : ""}`}
+                  style={{ color: accentColor }}
+                  className="hover:opacity-90"
                 >
                   Text Button
                 </Button>
@@ -791,7 +865,10 @@ export function BrandingSettings() {
           tagline: 'Premium Furniture Solutions',
           primaryColor: '#0E72BD',
           secondaryColor: '#52c41a',
+          primaryTextColor: '#ffffff',
+          secondaryTextColor: '#ffffff',
           accentColor: '#fa8c16',
+          accentTextColor: '#ffffff',
           fontFamily: 'Inter',
           emailAddress: 'info@vcarefurniture.com',
           phoneNumber: '(555) 123-4567',
@@ -809,7 +886,18 @@ export function BrandingSettings() {
           <Button onClick={() => setShowResetConfirm(true)}>
             Reset to Defaults
           </Button>
-          <Button onClick={() => window.location.reload()}>
+          <Button onClick={() => {
+            // Apply current form values without saving
+            const currentValues = form.getFieldsValue();
+            applyBrandingChanges(currentValues);
+            message.success('Applied current settings without saving');
+          }}>
+            Apply Without Saving
+          </Button>
+          <Button onClick={() => {
+            window.location.reload();
+            message.info('Page refreshed to apply all changes');
+          }}>
             Refresh Page
           </Button>
           <Button 

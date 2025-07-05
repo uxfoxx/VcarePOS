@@ -233,6 +233,9 @@ function App() {
           colorPrimary: localStorage.getItem('vcare_branding') ? 
             JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
             '#0E72BD',
+          colorPrimaryText: localStorage.getItem('vcare_branding') ? 
+            JSON.parse(localStorage.getItem('vcare_branding')).primaryTextColor || '#ffffff' : 
+            '#ffffff',
           borderRadius: 8,
           colorBgContainer: localStorage.getItem('vcare_branding') && 
             JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
@@ -260,9 +263,15 @@ function App() {
           colorSuccess: localStorage.getItem('vcare_branding') ? 
             JSON.parse(localStorage.getItem('vcare_branding')).secondaryColor || '#52c41a' : 
             '#52c41a',
+          colorSuccessText: localStorage.getItem('vcare_branding') ? 
+            JSON.parse(localStorage.getItem('vcare_branding')).secondaryTextColor || '#ffffff' : 
+            '#ffffff',
           colorWarning: localStorage.getItem('vcare_branding') ? 
             JSON.parse(localStorage.getItem('vcare_branding')).accentColor || '#fa8c16' : 
             '#fa8c16',
+          colorWarningText: localStorage.getItem('vcare_branding') ? 
+            JSON.parse(localStorage.getItem('vcare_branding')).accentTextColor || '#ffffff' : 
+            '#ffffff',
         },
         components: {
           Layout: {
@@ -296,9 +305,20 @@ function App() {
              colorPrimary: localStorage.getItem('vcare_branding') ? 
                JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
                '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
+             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
+               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
+               '#0E72BDE6',
+             colorPrimaryActive: localStorage.getItem('vcare_branding') && 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
+               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}CC` : 
+               '#0E72BDCC',
+             colorPrimaryTextHover: localStorage.getItem('vcare_branding') ? 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryTextColor || '#ffffff' : 
+               '#ffffff',
+             colorPrimaryTextActive: localStorage.getItem('vcare_branding') ? 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryTextColor || '#ffffff' : 
+               '#ffffff',
           },
           Input: {
             borderRadius: 8,
@@ -306,9 +326,10 @@ function App() {
              colorPrimary: localStorage.getItem('vcare_branding') ? 
                JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
                '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
+             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
+               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
+               '#0E72BDE6',
           },
           Select: {
             borderRadius: 8,
@@ -316,6 +337,10 @@ function App() {
              colorPrimary: localStorage.getItem('vcare_branding') ? 
                JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
                '#0E72BD',
+             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
+               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
+               '#0E72BDE6',
           },
           Table: {
             borderRadiusLG: 12,
@@ -335,6 +360,10 @@ function App() {
              colorPrimary: localStorage.getItem('vcare_branding') ? 
                JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
                '#0E72BD',
+             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
+               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
+               '#0E72BDE6',
              colorItemBgSelected: localStorage.getItem('vcare_branding') ? 
                `rgba(${parseInt(JSON.parse(localStorage.getItem('vcare_branding')).primaryColor?.slice(1, 3) || '0E', 16)}, 
                ${parseInt(JSON.parse(localStorage.getItem('vcare_branding')).primaryColor?.slice(3, 5) || '72', 16)}, 
@@ -345,19 +374,33 @@ function App() {
              colorPrimary: localStorage.getItem('vcare_branding') ? 
                JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
                '#0E72BD',
+             colorPrimaryBorder: localStorage.getItem('vcare_branding') ? 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
+               '#0E72BD',
            },
            Radio: {
              colorPrimary: localStorage.getItem('vcare_branding') ? 
                JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
                '#0E72BD',
+             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
+               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
+               '#0E72BDE6',
            },
            Switch: {
              colorPrimary: localStorage.getItem('vcare_branding') ? 
                JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
                '#0E72BD',
+             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
+               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
+               '#0E72BDE6',
            },
            Slider: {
              colorPrimary: localStorage.getItem('vcare_branding') ? 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
+               '#0E72BD',
+             colorPrimaryBorder: localStorage.getItem('vcare_branding') ? 
                JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
                '#0E72BD',
            },
@@ -365,9 +408,20 @@ function App() {
              colorPrimary: localStorage.getItem('vcare_branding') ? 
                JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
                '#0E72BD',
+             colorPrimaryActive: localStorage.getItem('vcare_branding') && 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
+               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}CC` : 
+               '#0E72BDCC',
            },
            Tag: {
              colorPrimary: localStorage.getItem('vcare_branding') ? 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
+               '#0E72BD',
+             colorPrimaryBg: localStorage.getItem('vcare_branding') && 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
+               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}19` : 
+               '#0E72BD19',
+             colorPrimaryBorderHover: localStorage.getItem('vcare_branding') ? 
                JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
                '#0E72BD',
            },
@@ -375,9 +429,20 @@ function App() {
              colorPrimary: localStorage.getItem('vcare_branding') ? 
                JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
                '#0E72BD',
+             colorPrimaryBg: localStorage.getItem('vcare_branding') && 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
+               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}19` : 
+               '#0E72BD19',
            },
            Pagination: {
              colorPrimary: localStorage.getItem('vcare_branding') ? 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
+               '#0E72BD',
+             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
+               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
+               '#0E72BDE6',
+             colorPrimaryBorder: localStorage.getItem('vcare_branding') ? 
                JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
                '#0E72BD',
            },
@@ -385,12 +450,54 @@ function App() {
              colorPrimary: localStorage.getItem('vcare_branding') ? 
                JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
                '#0E72BD',
+             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
+               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
+               '#0E72BDE6',
+             colorPrimaryBorder: localStorage.getItem('vcare_branding') ? 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
+               '#0E72BD',
            },
            TimePicker: {
              colorPrimary: localStorage.getItem('vcare_branding') ? 
                JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
                '#0E72BD',
+             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
+               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
+               '#0E72BDE6',
+             colorPrimaryBorder: localStorage.getItem('vcare_branding') ? 
+               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
+               '#0E72BD',
            },
+          Tooltip: {
+            colorBgDefault: localStorage.getItem('vcare_branding') ? 
+              JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
+              '#0E72BD',
+            colorTextLightSolid: '#ffffff',
+          },
+          Notification: {
+            colorBgSuccess: localStorage.getItem('vcare_branding') ? 
+              JSON.parse(localStorage.getItem('vcare_branding')).secondaryColor || '#52c41a' : 
+              '#52c41a',
+            colorBgInfo: localStorage.getItem('vcare_branding') ? 
+              JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
+              '#0E72BD',
+            colorBgWarning: localStorage.getItem('vcare_branding') ? 
+              JSON.parse(localStorage.getItem('vcare_branding')).accentColor || '#fa8c16' : 
+              '#fa8c16',
+          },
+          Message: {
+            colorBgSuccess: localStorage.getItem('vcare_branding') ? 
+              JSON.parse(localStorage.getItem('vcare_branding')).secondaryColor || '#52c41a' : 
+              '#52c41a',
+            colorBgInfo: localStorage.getItem('vcare_branding') ? 
+              JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
+              '#0E72BD',
+            colorBgWarning: localStorage.getItem('vcare_branding') ? 
+              JSON.parse(localStorage.getItem('vcare_branding')).accentColor || '#fa8c16' : 
+              '#fa8c16',
+          },
         },
       }}
     >

@@ -9,7 +9,6 @@ export function ProductCard({
   onAddToCart,
   onClick,
   hasVariants = false,
-  hasVariants = false,
   showDetails = true,
   showPriceRange = false,
   className = '',
@@ -79,13 +78,6 @@ export function ProductCard({
               </Tag>
             </div>
           )}
-          {hasVariants && (
-            <div className="absolute bottom-2 right-2">
-              <Tag color="blue" size="small">
-                Multiple Variants
-              </Tag>
-            </div>
-          )}
           {product.isCustom && (
             <div className="absolute bottom-2 right-2">
               <Tag color="purple" size="small">
@@ -121,11 +113,6 @@ export function ProductCard({
           <Text type="secondary" className="text-sm block mb-1">
             SKU: {product.barcode || 'N/A'}
           </Text>
-          {hasVariants && (
-            <Text type="secondary" className="text-xs block mb-1">
-              Multiple variants available
-            </Text>
-          )}
           {hasVariants && (
             <Text type="secondary" className="text-xs block mb-1">
               Multiple variants available

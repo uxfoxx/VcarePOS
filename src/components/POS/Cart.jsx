@@ -304,11 +304,11 @@ export function Cart() {
                           </div>
                           <div className="text-right">
                             <Text strong className="text-blue-600">
-                              LKR {itemTotalPrice.toFixed(2)}
+                              LKR {(itemTotalPrice || 0).toFixed(2)}
                             </Text>
                             {itemTaxAmount > 0 && (
                               <Text type="secondary" className="text-xs block">
-                                +LKR {itemTaxAmount.toFixed(2)} tax
+                                +LKR {(itemTaxAmount || 0).toFixed(2)} tax
                               </Text>
                             )}
                           </div>
@@ -321,10 +321,10 @@ export function Cart() {
                             {item.product.addons.map((addonItem, idx) => (
                               <div key={idx} className="flex justify-between text-xs">
                                 <Text type="secondary">
-                                  {addonItem.name} × {addonItem.quantity}
+                                  {addonItem.name || 'Addon'} × {addonItem.quantity || 1}
                                 </Text>
                                 <Text type="secondary">
-                                  +LKR {addonItem.price.toFixed(2)}
+                                  +LKR {(addonItem.price || 0).toFixed(2)}
                                 </Text>
                               </div>
                             ))}
@@ -336,7 +336,7 @@ export function Cart() {
                           <div className="mt-1">
                             {itemCategoryTaxes.map(tax => (
                               <Text key={tax.taxId} type="secondary" className="text-xs block">
-                                {tax.taxName} ({tax.rate}%): +LKR {tax.amount.toFixed(2)}
+                                {tax.taxName || 'Tax'} ({tax.rate || 0}%): +LKR {(tax.amount || 0).toFixed(2)}
                               </Text>
                             ))}
                           </div>
@@ -360,14 +360,14 @@ export function Cart() {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <Text>Subtotal</Text>
-                <Text>LKR {subtotal.toFixed(2)}</Text>
+                <Text>LKR {(subtotal || 0).toFixed(2)}</Text>
               </div>
 
               {/* Category Taxes */}
               {categoryTaxTotal > 0 && (
                 <div className="flex justify-between">
                   <Text>Category Taxes</Text>
-                  <Text>LKR {categoryTaxTotal.toFixed(2)}</Text>
+                  <Text>LKR {(categoryTaxTotal || 0).toFixed(2)}</Text>
                 </div>
               )}
 
@@ -392,7 +392,7 @@ export function Cart() {
                     </div>
                     <div className="flex justify-between mt-1">
                       <Text className="text-green-600 text-sm">Discount</Text>
-                      <Text className="text-green-600 text-sm">-LKR {couponDiscount.toFixed(2)}</Text>
+                      <Text className="text-green-600 text-sm">-LKR {(couponDiscount || 0).toFixed(2)}</Text>
                     </div>
                   </div>
                 ) : (
@@ -423,7 +423,7 @@ export function Cart() {
               {fullBillTaxes.map(tax => (
                 <div key={tax.id} className="flex justify-between">
                   <Text>{tax.name} ({tax.rate}%)</Text>
-                  <Text>LKR {((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
+                  <Text>LKR {((taxableAmount * (tax.rate || 0)) / 100).toFixed(2)}</Text>
                 </div>
               ))}
 
@@ -431,7 +431,7 @@ export function Cart() {
               <div className="flex justify-between">
                 <Title level={5} className="m-0">Total</Title>
                 <Title level={4} className="m-0 text-blue-600">
-                  LKR {total.toFixed(2)}
+                  LKR {(total || 0).toFixed(2)}
                 </Title>
               </div>
             </div>

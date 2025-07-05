@@ -272,65 +272,10 @@ export function ProductGrid({ collapsed }) {
                 {selectedProduct.description}
               </Text>
             </div>
-          <div className="space-y-6">
-            {/* Product Header */}
-            <div>
-              <Title level={3}>{selectedProduct.name}</Title>
-              <Text type="secondary" className="text-base">
-                {selectedProduct.description}
-              </Text>
-            </div>
             
             {/* Product Image and Basic Info */}
             <div className="flex gap-6">
               <div className="w-1/3">
-                <Image
-                  src={selectedProduct.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
-                  alt={selectedProduct.name}
-                  className="w-full h-auto object-cover rounded-lg"
-                  preview={false}
-                  style={{ aspectRatio: '4/3', objectFit: 'cover' }}
-                />
-              </div>
-              
-              <div className="w-2/3">
-                {/* Price and Stock */}
-                <div className="mb-6">
-                  <Title level={2} className="text-green-600 mb-2">
-                    {selectedSizeData 
-                      ? `LKR ${selectedSizeData.price.toFixed(2)}`
-                      : selectedProduct.hasSizes
-                        ? `From LKR ${Math.min(...selectedProduct.sizes.map(s => s.price)).toFixed(2)}`
-                        : `LKR ${selectedProduct.price.toFixed(2)}`
-                    }
-                  </Title>
-                  
-                  <Tag color={
-                    selectedSizeData
-                      ? selectedSizeData.stock > 0 ? 'green' : 'red'
-                      : selectedProduct.stock > 0 ? 'green' : 'red'
-                  } className="text-base px-3 py-1">
-                    {selectedSizeData
-                      ? `${selectedSizeData.stock} in stock`
-                      : `${selectedProduct.stock} in stock`
-                    }
-                  </Tag>
-                  
-                  {selectedProduct.hasVariants && (
-                    <div className="mt-2">
-                      <Button 
-                        type="primary" 
-                        onClick={() => {
-                          setShowDetailModal(false);
-                          setShowVariantModal(true);
-                        }}
-                        icon={<Icon name="style" />}
-                      >
-                        View Variants
-                      </Button>
-                    </div>
-                  )}
-                </div>
                 <Image
                   src={selectedProduct.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
                   alt={selectedProduct.name}
@@ -367,23 +312,6 @@ export function ProductGrid({ collapsed }) {
                 {/* Size Selection */}
                 {selectedProduct.hasSizes && (
                   <div className="mb-6">
-                    <Title level={5}>Select Size:</Title>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {selectedProduct.sizes?.map(size => (
-                        <Button
-                          key={size.id}
-                          type={selectedSize === size.name ? 'primary' : 'default'}
-                          onClick={() => handleSizeChange(size.name)}
-                          disabled={size.stock === 0}
-                          className={selectedSize === size.name ? 'bg-blue-600' : ''}
-                          size="large"
-                        >
-                          {size.name}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                )}
                     <Title level={5}>Select Size:</Title>
                     <div className="flex flex-wrap gap-2 mt-2">
                       {selectedProduct.sizes?.map(size => (
@@ -483,43 +411,6 @@ export function ProductGrid({ collapsed }) {
                     </Row>
                   </div>
                 )}
-                    <Title level={5} className="mb-3">Product Details:</Title>
-                    <Row gutter={16}>
-                      <Col span={12}>
-                        <div className="mb-2">
-                          <Text type="secondary">SKU:</Text>
-                          <br />
-                          <Text strong>{selectedProduct.barcode || 'N/A'}</Text>
-                        </div>
-                      </Col>
-                      <Col span={12}>
-                        <div className="mb-2">
-                          <Text type="secondary">Category:</Text>
-                          <br />
-                          <Text strong>{selectedProduct.category}</Text>
-                        </div>
-                      </Col>
-                      {selectedProduct.dimensions && (
-                        <Col span={12}>
-                          <div className="mb-2">
-                            <Text type="secondary">Dimensions:</Text>
-                            <br />
-                            <Text strong>
-                              {selectedProduct.dimensions.length}×{selectedProduct.dimensions.width}×{selectedProduct.dimensions.height} {selectedProduct.dimensions.unit}
-                            </Text>
-                          </div>
-                        </Col>
-                      )}
-                      <Col span={12}>
-                        <div className="mb-2">
-                          <Text type="secondary">Weight:</Text>
-                          <br />
-                          <Text strong>{selectedProduct.weight} kg</Text>
-                        </div>
-                      </Col>
-                    </Row>
-                  </div>
-                )}
                 
                 {/* Action Buttons */}
                 <div className="flex justify-end space-x-3 mt-6">
@@ -547,51 +438,6 @@ export function ProductGrid({ collapsed }) {
                       Select Variant
                     </Button>
                   ) : selectedProduct.hasSizes ? (
-                    <Button
-                      type="primary"
-                      size="large"
-                      icon={<Icon name="add_shopping_cart" />}
-                      onClick={handleAddSelectedSizeToCart}
-                      disabled={!selectedSizeData || selectedSizeData.stock === 0}
-                    >
-                      {!selectedSizeData 
-                        ? 'Select Size' 
-                        : selectedSizeData.stock === 0 
-                          ? 'Out of Stock' 
-                          : `Add to Cart - LKR ${selectedSizeData.price.toFixed(2)}`
-                      }
-                    </Button>
-                  ) : (
-                    <Button
-                      type="primary"
-                      size="large"
-                      icon={<Icon name="add_shopping_cart" />}
-                      onClick={() => {
-                        handleAddToCart(selectedProduct);
-                        setShowDetailModal(false);
-                      }}
-                      disabled={selectedProduct?.stock === 0}
-                    >
-                      Add to Cart
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
-                    size="large"
-                    onClick={() => {
-                      setShowDetailModal(false);
-                      setSelectedProduct(null);
-                      setSelectedSize(null);
-                    }}
-                  >
-                    Close
-                  </Button>
-                  
-                  {selectedProduct.hasSizes ? (
                     <Button
                       type="primary"
                       size="large"

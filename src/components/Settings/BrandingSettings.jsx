@@ -38,6 +38,7 @@ export function BrandingSettings() {
   const [showCropModal, setShowCropModal] = useState(false);
   const [cropSrc, setCropSrc] = useState(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [darkModeSupport, setDarkModeSupport] = useState(false);
   const [crop, setCrop] = useState();
   const [imgRef, setImgRef] = useState(null);
   
@@ -54,13 +55,14 @@ export function BrandingSettings() {
     // Update CSS variables
     styleEl.innerHTML = `
       :root {
-        --primary-color: ${values.primaryColor || primaryColor} !important;
-        --secondary-color: ${values.secondaryColor || secondaryColor} !important;
-        --accent-color: ${values.accentColor || accentColor} !important;
+        --primary-color: ${values.primaryColor || primaryColor};
+        --secondary-color: ${values.secondaryColor || secondaryColor};
+        --accent-color: ${values.accentColor || accentColor};
         --primary-color-rgb: ${values.primaryColor ? 
           `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
-          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`} !important;
-        --font-family: ${values.fontFamily || fontFamily}, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`};
+        --font-family: ${values.fontFamily || fontFamily}, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --dark-mode: ${values.darkModeSupport ? 'true' : 'false'};
       }
       
       .ant-btn-primary {
@@ -215,6 +217,13 @@ export function BrandingSettings() {
   const handleSave = (values) => {
     setLoading(true);
     
+    // Update state values
+    setPrimaryColor(values.primaryColor || primaryColor);
+    setSecondaryColor(values.secondaryColor || secondaryColor);
+    setAccentColor(values.accentColor || accentColor);
+    setFontFamily(values.fontFamily || fontFamily);
+    setDarkModeSupport(values.darkModeSupport || false);
+    
     // Prepare branding data
     const brandingData = {
       ...values,
@@ -222,6 +231,7 @@ export function BrandingSettings() {
       secondaryColor,
       accentColor,
       fontFamily,
+      darkModeSupport,
       logoPreview
     };
     
@@ -311,6 +321,7 @@ export function BrandingSettings() {
     setPrimaryColor('#0E72BD');
     setSecondaryColor('#52c41a');
     setAccentColor('#fa8c16');
+    setDarkModeSupport(false);
     setFontFamily('Inter');
     setLogoPreview('/VCARELogo 1.png');
     
@@ -320,6 +331,7 @@ export function BrandingSettings() {
       primaryColor: '#0E72BD',
       secondaryColor: '#52c41a',
       accentColor: '#fa8c16',
+      darkModeSupport: false,
       fontFamily: 'Inter',
       emailAddress: 'info@vcarefurniture.com',
       phoneNumber: '(555) 123-4567',
@@ -337,8 +349,9 @@ export function BrandingSettings() {
     // Default black/gray/white theme values
     const defaultTheme = {
       primaryColor: '#333333', // Dark gray
-      secondaryColor: '#666666', // Medium gray
+      secondaryColor: '#666666', // Medium gray 
       accentColor: '#999999', // Light gray
+      darkModeSupport: false,
       fontFamily: 'Inter',
       businessName: 'VCare Furniture Store',
       tagline: 'Premium Furniture Solutions',
@@ -355,6 +368,7 @@ export function BrandingSettings() {
     setPrimaryColor(defaultTheme.primaryColor);
     setSecondaryColor(defaultTheme.secondaryColor);
     setAccentColor(defaultTheme.accentColor);
+    setDarkModeSupport(defaultTheme.darkModeSupport);
     setFontFamily(defaultTheme.fontFamily);
     setLogoPreview(defaultTheme.logoPreview);
     
@@ -409,6 +423,10 @@ export function BrandingSettings() {
       
       if (parsedBranding.fontFamily) {
         setFontFamily(parsedBranding.fontFamily);
+      }
+      
+      if (parsedBranding.darkModeSupport !== undefined) {
+        setDarkModeSupport(parsedBranding.darkModeSupport);
       }
     }
     // Set default RGB values if no saved branding
@@ -613,12 +631,15 @@ export function BrandingSettings() {
             <Col span={12}>
               <Form.Item
                 label="Dark Mode Support"
-                name="darkModeSupport"
+                name="darkModeSupport" 
                 valuePropName="checked"
                 initialValue={false}
               >
-                <Switch />
+                <Switch onChange={(checked) => setDarkModeSupport(checked)} />
               </Form.Item>
+              <Text type="secondary" className="text-xs block">
+                Enabling dark mode will require a page reload to take full effect
+              </Text>
             </Col>
           </Row>
           
@@ -631,6 +652,7 @@ export function BrandingSettings() {
                 <div 
                   className="w-12 h-12 rounded-lg flex items-center justify-center text-white"
                   style={{ backgroundColor: primaryColor }}
+                  className={darkModeSupport ? "bg-gray-800" : ""}
                 >
                   <Icon name="store" />
                 </div>
@@ -651,14 +673,21 @@ export function BrandingSettings() {
                 <Button 
                   type="primary" 
                   style={{ backgroundColor: primaryColor, borderColor: primaryColor }}
-                  className="hover:opacity-90"
+                  className={`hover:opacity-90 ${darkModeSupport ? "text-white" : ""}`}
                 >
                   Primary Button
                 </Button>
-                <Button style={{ borderColor: secondaryColor, color: secondaryColor }} className="hover:border-primary hover:text-primary">
+                <Button 
+                  style={{ borderColor: secondaryColor, color: secondaryColor }} 
+                  className={`hover:border-primary hover:text-primary ${darkModeSupport ? "border-gray-600 text-gray-300" : ""}`}
+                >
                   Secondary Button
                 </Button>
-                <Button type="text" style={{ color: accentColor }} className="hover:text-primary">
+                <Button 
+                  type="text" 
+                  style={{ color: accentColor }} 
+                  className={`hover:text-primary ${darkModeSupport ? "text-gray-400" : ""}`}
+                >
                   Text Button
                 </Button>
               </div>
@@ -779,6 +808,9 @@ export function BrandingSettings() {
         <div className="flex justify-end space-x-3">
           <Button onClick={() => setShowResetConfirm(true)}>
             Reset to Defaults
+          </Button>
+          <Button onClick={() => window.location.reload()}>
+            Refresh Page
           </Button>
           <Button 
             type="primary"

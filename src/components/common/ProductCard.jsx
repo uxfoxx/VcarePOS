@@ -7,7 +7,6 @@ const { Text } = Typography;
 export function ProductCard({
   product,
   onAddToCart,
-  onClick,
   showDetails = true,
   showPriceRange = false,
   className = '',

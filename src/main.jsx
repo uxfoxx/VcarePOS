@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
-import './styles/main.scss';
+import './index.css';
 
 // Set HTTP cache headers for static assets
 if ('serviceWorker' in navigator) {

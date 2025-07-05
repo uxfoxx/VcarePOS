@@ -47,15 +47,7 @@ export function DetailModal({
             </div>
             {data.isVariation && (
               <div>
-                <Tag color="purple">Variation: {data.variationName}</Tag>
-                <Text type="secondary" className="ml-2">
-                  Part of: {data.parentProductName}
-                </Text>
-              </div>
-            )}
-            {data.isVariant && (
-              <div>
-                <Tag color="blue">Variant: {data.variantName}</Tag>
+                <Tag color="purple">Variation: {data.variantName}</Tag>
                 <Text type="secondary" className="ml-2">
                   Part of: {data.parentProductName}
                 </Text>

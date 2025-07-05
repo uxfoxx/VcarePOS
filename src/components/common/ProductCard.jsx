@@ -8,7 +8,6 @@ export function ProductCard({
   product,
   onAddToCart,
   onClick,
-  hasVariants = false,
   showDetails = true,
   showPriceRange = false,
   className = '',
@@ -71,7 +70,7 @@ export function ProductCard({
               </Tag>
             </div>
           )}
-          {hasVariants && (
+          {product.hasVariants && (
             <div className="absolute bottom-2 right-2">
               <Tag color="blue" size="small">
                 Multiple Variants
@@ -113,7 +112,7 @@ export function ProductCard({
           <Text type="secondary" className="text-sm block mb-1">
             SKU: {product.barcode || 'N/A'}
           </Text>
-          {hasVariants && (
+          {product.hasVariants && (
             <Text type="secondary" className="text-xs block mb-1">
               Multiple variants available
             </Text>
@@ -167,13 +166,11 @@ export function ProductCard({
         >
           {product.stock === 0 
             ? 'Out of Stock' 
-            : hasVariants
+            : product.hasVariants
               ? 'Select Variant'
               : product.hasSizes 
                 ? 'Select Size' 
                 : product.isCustom
-                  ? 'Add to Cart'
-                  : 'Add with Addons'
                   ? 'Add to Cart'
                   : 'Add with Addons'
           }

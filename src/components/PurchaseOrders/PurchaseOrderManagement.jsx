@@ -1,0 +1,440 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Card, 
+  Space, 
+  Typography, 
+  Button, 
+  Table, 
+  Tag, 
+  Tooltip, 
+  Popconfirm,
+  message,
+  Row,
+  Col,
+  Select,
+  DatePicker,
+  Input
+} from 'antd';
+import { usePOS } from '../../contexts/POSContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { Icon } from '../common/Icon';
+import { ActionButton } from '../common/ActionButton';
+import { EnhancedTable } from '../common/EnhancedTable';
+import { EmptyState } from '../common/EmptyState';
+import { LoadingSkeleton } from '../common/LoadingSkeleton';
+import { PurchaseOrderModal } from './PurchaseOrderModal';
+import { PurchaseOrderDetailModal } from './PurchaseOrderDetailModal';
+import { getOrFetch } from '../../utils/cache';
+
+const { Title, Text } = Typography;
+const { Option } = Select;
+const { Search } = Input;
+
+export function PurchaseOrderManagement() {
+  const { state, dispatch } = usePOS();
+  const { currentUser, hasPermission } = useAuth();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [dateRange, setDateRange] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+
+  // Load purchase orders from state or cache
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // In a real app, this would fetch from an API
+        // For now, we'll use the mock data from state
+        const orders = state.purchaseOrders || [];
+        setPurchaseOrders(orders);
+      } catch (error) {
+        console.error('Error loading purchase orders:', error);
+        setPurchaseOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [state.purchaseOrders]);
+
+  // Filter purchase orders based on search term, status, and date range
+  const filteredOrders = purchaseOrders.filter(order => {
+    const matchesSearch = 
+      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.vendorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.createdBy.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
+    
+    let matchesDate = true;
+    if (dateRange && dateRange.length === 2) {
+      const orderDate = new Date(order.orderDate);
+      const startDate = dateRange[0].startOf('day').toDate();
+      const endDate = dateRange[1].endOf('day').toDate();
+      matchesDate = orderDate >= startDate && orderDate <= endDate;
+    }
+    
+    return matchesSearch && matchesStatus && matchesDate;
+  });
+
+  const handleCreateOrder = (orderData) => {
+    // In a real app, this would send to an API
+    const newOrder = {
+      ...orderData,
+      id: `PO-${Date.now()}`,
+      createdBy: `${currentUser.firstName} ${currentUser.lastName}`,
+      createdAt: new Date(),
+      status: 'draft'
+    };
+    
+    // Add to state
+    dispatch({ 
+      type: 'ADD_PURCHASE_ORDER', 
+      payload: newOrder 
+    });
+    
+    message.success('Purchase order created successfully');
+    return newOrder;
+  };
+
+  const handleUpdateOrder = (orderId, orderData) => {
+    // In a real app, this would send to an API
+    const updatedOrder = {
+      ...orderData,
+      id: orderId,
+      updatedAt: new Date()
+    };
+    
+    // Update in state
+    dispatch({ 
+      type: 'UPDATE_PURCHASE_ORDER', 
+      payload: updatedOrder 
+    });
+    
+    message.success('Purchase order updated successfully');
+    return updatedOrder;
+  };
+
+  const handleDeleteOrder = (orderId) => {
+    // In a real app, this would send to an API
+    dispatch({ 
+      type: 'DELETE_PURCHASE_ORDER', 
+      payload: orderId 
+    });
+    
+    message.success('Purchase order deleted successfully');
+  };
+
+  const handleBulkDelete = (orderIds) => {
+    orderIds.forEach(id => {
+      dispatch({ 
+        type: 'DELETE_PURCHASE_ORDER', 
+        payload: id 
+      });
+    });
+    
+    message.success(`${orderIds.length} purchase orders deleted successfully`);
+    setSelectedRowKeys([]);
+  };
+
+  const handleStatusChange = (orderId, newStatus) => {
+    const order = purchaseOrders.find(o => o.id === orderId);
+    if (!order) return;
+    
+    const updatedOrder = {
+      ...order,
+      status: newStatus,
+      updatedAt: new Date()
+    };
+    
+    // If status is changed to "completed", set completedAt
+    if (newStatus === 'completed') {
+      updatedOrder.completedAt = new Date();
+    }
+    
+    dispatch({ 
+      type: 'UPDATE_PURCHASE_ORDER', 
+      payload: updatedOrder 
+    });
+    
+    message.success(`Purchase order status updated to ${newStatus}`);
+    
+    // If we're viewing the order details, update the selected order
+    if (selectedOrder && selectedOrder.id === orderId) {
+      setSelectedOrder(updatedOrder);
+    }
+  };
+
+  const handleRowClick = (order) => {
+    setSelectedOrder(order);
+    setShowDetailModal(true);
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'draft': return 'default';
+      case 'pending': return 'blue';
+      case 'approved': return 'purple';
+      case 'ordered': return 'orange';
+      case 'received': return 'green';
+      case 'completed': return 'green';
+      case 'cancelled': return 'red';
+      default: return 'default';
+    }
+  };
+
+  const columns = [
+    {
+      title: 'PO Number',
+      dataIndex: 'id',
+      key: 'id',
+      width: 150,
+      render: (id) => <Text strong>{id}</Text>,
+      sorter: (a, b) => a.id.localeCompare(b.id),
+    },
+    {
+      title: 'Vendor',
+      dataIndex: 'vendorName',
+      key: 'vendorName',
+      width: 200,
+      render: (name, record) => (
+        <div>
+          <Text strong>{name}</Text>
+          <br />
+          <Text type="secondary" className="text-xs">{record.vendorEmail}</Text>
+        </div>
+      ),
+      sorter: (a, b) => a.vendorName.localeCompare(b.vendorName),
+    },
+    {
+      title: 'Order Date',
+      dataIndex: 'orderDate',
+      key: 'orderDate',
+      width: 120,
+      render: (date) => <Text>{new Date(date).toLocaleDateString()}</Text>,
+      sorter: (a, b) => new Date(a.orderDate) - new Date(b.orderDate),
+    },
+    {
+      title: 'Expected Delivery',
+      dataIndex: 'expectedDeliveryDate',
+      key: 'expectedDeliveryDate',
+      width: 150,
+      render: (date) => date ? <Text>{new Date(date).toLocaleDateString()}</Text> : <Text type="secondary">Not specified</Text>,
+      sorter: (a, b) => {
+        if (!a.expectedDeliveryDate) return 1;
+        if (!b.expectedDeliveryDate) return -1;
+        return new Date(a.expectedDeliveryDate) - new Date(b.expectedDeliveryDate);
+      },
+    },
+    {
+      title: 'Items',
+      key: 'items',
+      width: 100,
+      render: (record) => {
+        const totalItems = record.items.length;
+        const productCount = record.items.filter(item => item.type === 'product').length;
+        const materialCount = record.items.filter(item => item.type === 'material').length;
+        
+        return (
+          <div>
+            <Tag color="blue">{totalItems} items</Tag>
+            <div className="text-xs text-gray-500 mt-1">
+              {productCount > 0 && <span className="mr-2">{productCount} products</span>}
+              {materialCount > 0 && <span>{materialCount} materials</span>}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      title: 'Total',
+      dataIndex: 'total',
+      key: 'total',
+      width: 120,
+      render: (total) => <Text strong className="text-blue-600">LKR {total.toFixed(2)}</Text>,
+      sorter: (a, b) => a.total - b.total,
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      width: 120,
+      render: (status) => (
+        <Tag color={getStatusColor(status)} className="capitalize">
+          {status}
+        </Tag>
+      ),
+      filters: [
+        { text: 'Draft', value: 'draft' },
+        { text: 'Pending', value: 'pending' },
+        { text: 'Approved', value: 'approved' },
+        { text: 'Ordered', value: 'ordered' },
+        { text: 'Received', value: 'received' },
+        { text: 'Completed', value: 'completed' },
+        { text: 'Cancelled', value: 'cancelled' },
+      ],
+      onFilter: (value, record) => record.status === value,
+    },
+    {
+      title: 'Created By',
+      dataIndex: 'createdBy',
+      key: 'createdBy',
+      width: 150,
+      render: (name) => <Text>{name}</Text>,
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      fixed: 'right',
+      width: 120,
+      render: (record) => (
+        <Space>
+          <Tooltip title="View Details">
+            <ActionButton.Text
+              icon="visibility"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRowClick(record);
+              }}
+              className="text-blue-600"
+            />
+          </Tooltip>
+          {record.status === 'draft' && (
+            <Tooltip title="Edit">
+              <ActionButton.Text
+                icon="edit"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedOrder(record);
+                  setShowCreateModal(true);
+                }}
+                className="text-gray-600"
+              />
+            </Tooltip>
+          )}
+          {record.status !== 'completed' && record.status !== 'cancelled' && (
+            <Tooltip title="Delete">
+              <Popconfirm
+                title="Delete this purchase order?"
+                onConfirm={(e) => {
+                  e?.stopPropagation();
+                  handleDeleteOrder(record.id);
+                }}
+                okText="Delete"
+                cancelText="Cancel"
+                okButtonProps={{ danger: true }}
+              >
+                <ActionButton.Text
+                  icon="delete"
+                  danger
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </Popconfirm>
+            </Tooltip>
+          )}
+        </Space>
+      ),
+    },
+  ];
+
+  if (loading) {
+    return <LoadingSkeleton type="table" />;
+  }
+
+  return (
+    <>
+      <EnhancedTable
+        title="Purchase Orders"
+        icon="shopping_cart"
+        columns={columns}
+        dataSource={filteredOrders}
+        rowKey="id"
+        rowSelection={{
+          type: 'checkbox',
+          onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys),
+          getCheckboxProps: (record) => ({
+            disabled: record.status === 'completed' || record.status === 'cancelled'
+          })
+        }}
+        onDelete={handleBulkDelete}
+        onRow={(record) => ({
+          onClick: () => handleRowClick(record),
+          className: 'cursor-pointer hover:bg-blue-50'
+        })}
+        searchFields={['id', 'vendorName', 'createdBy']}
+        searchPlaceholder="Search purchase orders..."
+        extra={
+          <Space>
+            <Select
+              value={filterStatus}
+              onChange={setFilterStatus}
+              className="w-32"
+            >
+              <Option value="all">All Status</Option>
+              <Option value="draft">Draft</Option>
+              <Option value="pending">Pending</Option>
+              <Option value="approved">Approved</Option>
+              <Option value="ordered">Ordered</Option>
+              <Option value="received">Received</Option>
+              <Option value="completed">Completed</Option>
+              <Option value="cancelled">Cancelled</Option>
+            </Select>
+            <DatePicker.RangePicker
+              value={dateRange}
+              onChange={setDateRange}
+              placeholder={['Start Date', 'End Date']}
+            />
+            <ActionButton.Primary 
+              icon="add"
+              onClick={() => {
+                setSelectedOrder(null);
+                setShowCreateModal(true);
+              }}
+            >
+              Create Order
+            </ActionButton.Primary>
+          </Space>
+        }
+        emptyDescription="No purchase orders found"
+        emptyImage={<Icon name="shopping_cart" className="text-6xl text-gray-300" />}
+      />
+
+      {/* Create/Edit Purchase Order Modal */}
+      <PurchaseOrderModal
+        open={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false);
+          setSelectedOrder(null);
+        }}
+        onSubmit={selectedOrder ? 
+          (data) => handleUpdateOrder(selectedOrder.id, data) : 
+          handleCreateOrder
+        }
+        editingOrder={selectedOrder}
+        products={state.products}
+        rawMaterials={state.rawMaterials}
+      />
+
+      {/* Purchase Order Detail Modal */}
+      <PurchaseOrderDetailModal
+        open={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedOrder(null);
+        }}
+        order={selectedOrder}
+        onStatusChange={handleStatusChange}
+        onEdit={() => {
+          setShowDetailModal(false);
+          setShowCreateModal(true);
+        }}
+      />
+    </>
+  );
+}

@@ -54,17 +54,23 @@ export function LoginPage() {
               <div className="flex items-center justify-center lg:justify-start space-x-4">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
                   <img 
-                    src="/VCARELogo 1.png" 
+                    src={localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
+                      ? JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
+                      : "/VCARELogo 1.png"} 
                     alt="VCare Logo" 
                     className="w-10 h-10 object-contain"
                   />
                 </div>
                 <div>
                   <Title level={1} className="m-0 text-gray-900">
-                    VCare POS
+                    {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
+                      ? JSON.parse(localStorage.getItem('vcare_branding')).businessName.split(' ')[0] 
+                      : "VCare"} POS
                   </Title>
                   <Text type="secondary" className="text-lg">
-                    Furniture Store Management System
+                    {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).tagline 
+                      ? JSON.parse(localStorage.getItem('vcare_branding')).tagline 
+                      : "Furniture Store Management System"}
                   </Text>
                 </div>
               </div>
@@ -207,7 +213,9 @@ export function LoginPage() {
 
               <div className="mt-6 text-center">
                 <Text type="secondary" className="text-xs">
-                  © 2024 VCare Furniture Store. All rights reserved.
+                  © {new Date().getFullYear()} {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
+                    ? JSON.parse(localStorage.getItem('vcare_branding')).businessName 
+                    : "VCare Furniture Store"}. All rights reserved.
                 </Text>
               </div>
             </Card>

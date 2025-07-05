@@ -41,7 +41,11 @@ export function BrandingSettings() {
   const [showCropModal, setShowCropModal] = useState(false);
   const [cropSrc, setCropSrc] = useState(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [darkModeSupport, setDarkModeSupport] = useState(false);
+  const [darkModeSupport, setDarkModeSupport] = useState(
+    localStorage.getItem('vcare_branding') ? 
+      JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport || false : 
+      false
+  );
   const [crop, setCrop] = useState();
   const [imgRef, setImgRef] = useState(null);
   
@@ -719,7 +723,6 @@ export function BrandingSettings() {
                 <div 
                   className="w-12 h-12 rounded-lg flex items-center justify-center text-white"
                   style={{ backgroundColor: primaryColor }}
-                  className={darkModeSupport ? "bg-gray-800" : ""}
                 >
                   <Icon name="store" />
                 </div>

@@ -10,7 +10,9 @@ export function Footer({ style }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Text type="secondary" className="text-xs">
-            © 2024 VCare POS System. All rights reserved.
+            © {new Date().getFullYear()} {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
+              ? JSON.parse(localStorage.getItem('vcare_branding')).businessName 
+              : "VCare Furniture Store"}. All rights reserved.
           </Text>
           <Divider type="vertical" />
           <Text type="secondary" className="text-xs">

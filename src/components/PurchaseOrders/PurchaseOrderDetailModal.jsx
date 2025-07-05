@@ -35,6 +35,7 @@ export function PurchaseOrderDetailModal({
   const [showPdf, setShowPdf] = useState(false);
   const [showGRN, setShowGRN] = useState(false);
   const [lastGRNData, setLastGRNData] = useState(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   if (!order) return null;
 
@@ -43,7 +44,7 @@ export function PurchaseOrderDetailModal({
   };
 
   const handleDownloadPdf = async () => {
-    setLoading(true);
+    setPdfLoading(true);
     setShowPdf(true);
     
     // Wait for PDF to render
@@ -51,7 +52,7 @@ export function PurchaseOrderDetailModal({
       try {
         const element = document.getElementById('purchase-order-pdf');
         if (!element) {
-          console.error('PDF element not found');
+          message.error('PDF element not found');
           setLoading(false);
           return;
         }
@@ -94,9 +95,9 @@ export function PurchaseOrderDetailModal({
         message.success('Purchase order PDF downloaded successfully');
       } catch (error) {
         console.error('Error generating PDF:', error);
-        message.error('Failed to generate PDF');
+        message.error('Failed to generate PDF: ' + error.message);
       } finally {
-        setLoading(false);
+        setPdfLoading(false);
         setShowPdf(false);
       }
     }, 500);
@@ -343,8 +344,10 @@ export function PurchaseOrderDetailModal({
           <Button 
             key="download" 
             type="primary"
-            onClick={handleDownloadPdf}
-            loading={loading}
+            onClick={() => {
+              handleDownloadPdf();
+            }}
+            loading={pdfLoading}
             icon={<Icon name="download" />}
             className="bg-blue-600"
           >

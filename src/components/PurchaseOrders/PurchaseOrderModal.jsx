@@ -488,7 +488,7 @@ export function PurchaseOrderModal({
                         }
                       >
                         {itemType === 'product' ? (
-                          products.map(product => (
+                          products.filter(p => !p.isVariant).map(product => (
                             <Option key={product.id} value={product.id}>
                               {product.name} - {product.category}
                             </Option>

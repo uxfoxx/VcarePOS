@@ -11,7 +11,8 @@ import {
   Popconfirm, 
   message,
   Tag,
-  Tooltip
+  Tooltip,
+  Select
 } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
@@ -19,6 +20,7 @@ import { SearchInput } from '../common/SearchInput';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
+const { Option } = Select;
 
 export function VendorManagement() {
   const [vendors, setVendors] = useState([
@@ -133,11 +135,14 @@ export function VendorManagement() {
       title: 'Status',
       key: 'status',
       render: (record) => (
-        <Switch
-          checked={record.isActive}
-          onChange={() => handleToggleStatus(record)}
-          size="small"
-        />
+        <div 
+          className={`relative inline-block w-10 h-5 rounded-full transition-colors duration-200 ease-in-out ${record.isActive ? 'bg-blue-600' : 'bg-gray-300'}`}
+          onClick={() => handleToggleStatus(record)}
+        >
+          <span 
+            className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform duration-200 ease-in-out ${record.isActive ? 'transform translate-x-5' : ''}`}
+          />
+        </div>
       ),
       filters: [
         { text: 'Active', value: true },
@@ -288,19 +293,5 @@ export function VendorManagement() {
         </Form>
       </Modal>
     </Card>
-  );
-}
-
-// Add Switch component
-function Switch({ checked, onChange, size }) {
-  return (
-    <div 
-      className={`relative inline-block w-10 h-5 rounded-full transition-colors duration-200 ease-in-out ${checked ? 'bg-blue-600' : 'bg-gray-300'}`}
-      onClick={onChange}
-    >
-      <span 
-        className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform duration-200 ease-in-out ${checked ? 'transform translate-x-5' : ''}`}
-      />
-    </div>
   );
 }

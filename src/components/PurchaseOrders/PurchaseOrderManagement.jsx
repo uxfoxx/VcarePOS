@@ -13,7 +13,8 @@ import {
   Col,
   Select,
   DatePicker,
-  Input
+  Input,
+  Tabs
 } from 'antd';
 import { usePOS } from '../../contexts/POSContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -24,15 +25,17 @@ import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { PurchaseOrderModal } from './PurchaseOrderModal';
 import { PurchaseOrderDetailModal } from './PurchaseOrderDetailModal';
+import { VendorManagement } from './VendorManagement';
 import { getOrFetch } from '../../utils/cache';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { Search } = Input;
+const { TabPane } = Tabs;
 
 export function PurchaseOrderManagement() {
   const { state, dispatch } = usePOS();
-  const { currentUser, hasPermission } = useAuth();
+  const { currentUser, hasPermission, logAction } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [dateRange, setDateRange] = useState(null);
@@ -42,6 +45,7 @@ export function PurchaseOrderManagement() {
   const [loading, setLoading] = useState(true);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [activeTab, setActiveTab] = useState('orders');
 
   // Load purchase orders from state or cache
   useEffect(() => {
@@ -66,9 +70,9 @@ export function PurchaseOrderManagement() {
   // Filter purchase orders based on search term, status, and date range
   const filteredOrders = purchaseOrders.filter(order => {
     const matchesSearch = 
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.vendorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.createdBy.toLowerCase().includes(searchTerm.toLowerCase());
+      order.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.vendorName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.createdBy?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
     
@@ -90,7 +94,15 @@ export function PurchaseOrderManagement() {
       id: `PO-${Date.now()}`,
       createdBy: `${currentUser.firstName} ${currentUser.lastName}`,
       createdAt: new Date(),
-      status: 'draft'
+      status: 'draft',
+      timeline: [
+        {
+          status: 'draft',
+          timestamp: new Date(),
+          user: `${currentUser.firstName} ${currentUser.lastName}`,
+          notes: 'Purchase order created'
+        }
+      ]
     };
     
     // Add to state
@@ -99,15 +111,32 @@ export function PurchaseOrderManagement() {
       payload: newOrder 
     });
     
+    // Log action
+    if (logAction) {
+      logAction(
+        'CREATE',
+        'purchase-orders',
+        `Created purchase order: ${newOrder.id}`,
+        { orderId: newOrder.id, total: newOrder.total }
+      );
+    }
+    
     message.success('Purchase order created successfully');
     return newOrder;
   };
 
   const handleUpdateOrder = (orderId, orderData) => {
+    // Find existing order
+    const existingOrder = purchaseOrders.find(o => o.id === orderId);
+    if (!existingOrder) {
+      message.error('Purchase order not found');
+      return null;
+    }
+    
     // In a real app, this would send to an API
     const updatedOrder = {
+      ...existingOrder,
       ...orderData,
-      id: orderId,
       updatedAt: new Date()
     };
     
@@ -116,6 +145,16 @@ export function PurchaseOrderManagement() {
       type: 'UPDATE_PURCHASE_ORDER', 
       payload: updatedOrder 
     });
+    
+    // Log action
+    if (logAction) {
+      logAction(
+        'UPDATE',
+        'purchase-orders',
+        `Updated purchase order: ${updatedOrder.id}`,
+        { orderId: updatedOrder.id }
+      );
+    }
     
     message.success('Purchase order updated successfully');
     return updatedOrder;
@@ -128,6 +167,16 @@ export function PurchaseOrderManagement() {
       payload: orderId 
     });
     
+    // Log action
+    if (logAction) {
+      logAction(
+        'DELETE',
+        'purchase-orders',
+        `Deleted purchase order: ${orderId}`,
+        { orderId }
+      );
+    }
+    
     message.success('Purchase order deleted successfully');
   };
 
@@ -137,6 +186,16 @@ export function PurchaseOrderManagement() {
         type: 'DELETE_PURCHASE_ORDER', 
         payload: id 
       });
+      
+      // Log action
+      if (logAction) {
+        logAction(
+          'DELETE',
+          'purchase-orders',
+          `Deleted purchase order: ${id}`,
+          { orderId: id }
+        );
+      }
     });
     
     message.success(`${orderIds.length} purchase orders deleted successfully`);
@@ -150,7 +209,16 @@ export function PurchaseOrderManagement() {
     const updatedOrder = {
       ...order,
       status: newStatus,
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      timeline: [
+        ...(order.timeline || []),
+        {
+          status: newStatus,
+          timestamp: new Date(),
+          user: `${currentUser.firstName} ${currentUser.lastName}`,
+          notes: `Status changed to ${newStatus}`
+        }
+      ]
     };
     
     // If status is changed to "completed", set completedAt
@@ -162,6 +230,16 @@ export function PurchaseOrderManagement() {
       type: 'UPDATE_PURCHASE_ORDER', 
       payload: updatedOrder 
     });
+    
+    // Log action
+    if (logAction) {
+      logAction(
+        'UPDATE',
+        'purchase-orders',
+        `Updated purchase order status: ${orderId} to ${newStatus}`,
+        { orderId, status: newStatus }
+      );
+    }
     
     message.success(`Purchase order status updated to ${newStatus}`);
     
@@ -343,12 +421,12 @@ export function PurchaseOrderManagement() {
     },
   ];
 
-  if (loading) {
-    return <LoadingSkeleton type="table" />;
-  }
+  const renderOrdersTab = () => {
+    if (loading) {
+      return <LoadingSkeleton type="table" />;
+    }
 
-  return (
-    <>
+    return (
       <EnhancedTable
         title="Purchase Orders"
         icon="shopping_cart"
@@ -404,6 +482,41 @@ export function PurchaseOrderManagement() {
         emptyDescription="No purchase orders found"
         emptyImage={<Icon name="shopping_cart" className="text-6xl text-gray-300" />}
       />
+    );
+  };
+
+  const tabItems = [
+    {
+      key: 'orders',
+      label: (
+        <span className="flex items-center space-x-2">
+          <Icon name="shopping_cart" />
+          <span>Purchase Orders</span>
+        </span>
+      ),
+      children: renderOrdersTab()
+    },
+    {
+      key: 'vendors',
+      label: (
+        <span className="flex items-center space-x-2">
+          <Icon name="store" />
+          <span>Vendors</span>
+        </span>
+      ),
+      children: <VendorManagement />
+    }
+  ];
+
+  return (
+    <>
+      <Card>
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          items={tabItems}
+        />
+      </Card>
 
       {/* Create/Edit Purchase Order Modal */}
       <PurchaseOrderModal

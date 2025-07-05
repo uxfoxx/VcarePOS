@@ -28,6 +28,7 @@ const { Search } = Input;
 export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
   const { state } = usePOS();
   const [loading, setLoading] = useState(false);
+  const [editablePrice, setEditablePrice] = useState(0);
   const [selectedAddons, setSelectedAddons] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [totalPrice, setTotalPrice] = useState(0);
@@ -53,12 +54,18 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
     if (!product) return;
     
     const basePrice = product.price;
-    const addonsPrice = selectedAddons.reduce((sum, addon) => {
+    const addonsTotalPrice = selectedAddons.reduce((sum, addon) => {
       const material = state.rawMaterials.find(m => m.id === addon.id);
       return sum + (material ? material.unitPrice * addon.quantity : 0);
     }, 0);
     
-    setTotalPrice((basePrice + addonsPrice) * quantity);
+    const calculatedTotal = (basePrice + addonsTotalPrice) * quantity;
+    setTotalPrice(calculatedTotal);
+    
+    // Only set editable price initially or when it's 0
+    if (editablePrice === 0) {
+      setEditablePrice(calculatedTotal);
+    }
   }, [selectedAddons, quantity, product, state.rawMaterials]);
 
   const handleAddonChange = (addonId, checked) => {
@@ -88,7 +95,7 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
       
       // Create a copy of the product with addons
       const productWithAddons = {
-        ...product,
+        ...product, 
         addons: selectedAddons.map(addon => {
           const material = state.rawMaterials.find(m => m.id === addon.id);
           return {
@@ -98,11 +105,8 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
             price: material.unitPrice * addon.quantity
           };
         }),
-        // Calculate the total price including addons
-        addonPrice: selectedAddons.reduce((sum, addon) => {
-          const material = state.rawMaterials.find(m => m.id === addon.id);
-          return sum + (material ? material.unitPrice * addon.quantity : 0);
-        }, 0)
+        // Use the editable price instead of calculated price
+        price: editablePrice / quantity
       };
       
       // Add to cart with quantity
@@ -286,7 +290,7 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
           <div className="space-y-2">
             <div className="flex justify-between">
               <Text>Base Price:</Text>
-              <Text>LKR {product.price.toFixed(2)}</Text>
+              <Text>LKR {product.price.toFixed(2)} × {quantity}</Text>
             </div>
             
             {selectedAddons.length > 0 && (
@@ -306,12 +310,29 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
                 </div>
               </>
             )}
-            
+
+            <div className="flex justify-between items-center">
+              <Text strong>Final Price:</Text>
+              <InputNumber
+                className="w-32"
+                min={0}
+                value={editablePrice}
+                onChange={(value) => setEditablePrice(value)}
+                formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+                step={100}
+              />
+            </div>
+
+            <Text type="secondary" className="text-xs block">
+              Suggested price: LKR {totalPrice.toFixed(2)} (calculated from base price and addons)
+            </Text>
+
             <Divider className="my-2" />
             
             <div className="flex justify-between">
               <Text strong>Total:</Text>
-              <Text strong className="text-blue-600 text-lg">LKR {totalPrice.toFixed(2)}</Text>
+              <Text strong className="text-blue-600 text-lg">LKR {editablePrice.toFixed(2)}</Text>
             </div>
           </div>
         </div>

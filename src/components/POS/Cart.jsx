@@ -78,11 +78,11 @@ export function Cart() {
   const subtotal = state.cart.reduce((sum, item) => {
     // Include base price
     let itemTotal = item.product.price * item.quantity;
-    
+
     // Add addon prices if any
     if (item.product.addons) {
       const addonTotal = item.product.addons.reduce((addonSum, addon) => 
-        addonSum + addon.price, 0);
+        addonSum + addon.price, 0) * item.quantity;
       itemTotal += addonTotal;
     }
     
@@ -244,10 +244,10 @@ export function Cart() {
                   
                   // Calculate addon price if any
                   const addonPrice = item.product.addons ? 
-                    item.product.addons.reduce((sum, addon) => sum + addon.price, 0) : 0;
+                    item.product.addons.reduce((sum, addon) => sum + addon.price, 0) * item.quantity : 0;
                   
                   // Calculate total price including addons
-                  const itemTotalPrice = (item.product.price + addonPrice) * item.quantity;
+                  const itemTotalPrice = (item.product.price * item.quantity) + addonPrice;
                   
                   return (
                     <List.Item className="px-0 py-3 border-b border-gray-100">
@@ -302,7 +302,7 @@ export function Cart() {
                           </div>
                           <div className="text-right">
                             <Text strong className="text-blue-600">
-                              LKR {itemTotalPrice.toFixed(2)}
+                              {addon.name} × {addon.quantity} × {item.quantity}: +LKR {(addon.price * item.quantity).toFixed(2)}
                             </Text>
                             {itemTaxAmount > 0 && (
                               <>
@@ -345,7 +345,7 @@ export function Cart() {
                         
                         <div className="mt-1">
                           <Text type="secondary" className="text-xs">
-                            SKU: {item.product.barcode}
+                            {itemTaxAmount > 0 && ` + LKR ${itemTaxAmount.toFixed(2)} tax`} 
                           </Text>
                         </div>
                       </div>

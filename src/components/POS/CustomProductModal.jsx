@@ -34,7 +34,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
   const [loading, setLoading] = useState(false);
   const [selectedMaterials, setSelectedMaterials] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
-  const [customName, setCustomName] = useState('');
+  const [customName, setCustomName] = useState('Custom Product');
   const [customDescription, setCustomDescription] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
   const [editablePrice, setEditablePrice] = useState(0);
@@ -58,9 +58,12 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
   useEffect(() => {
     const calculatedPrice = selectedMaterials.reduce((sum, material) => {
       return sum + (material.quantity * material.unitPrice * 1.5); // 50% markup
-    }, 0);
+    }, 0); 
     setTotalPrice(calculatedPrice);
-    setEditablePrice(calculatedPrice);
+    // Only set editable price initially or when it's 0
+    if (editablePrice === 0) {
+      setEditablePrice(calculatedPrice);
+    }
   }, [selectedMaterials]);
 
   // Filter materials based on search term
@@ -183,6 +186,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
               <Text strong>Price:</Text>
               <InputNumber
                 className="w-full mt-1"
+                min={0}
                 value={editablePrice}
                 onChange={(value) => setEditablePrice(value)}
                 formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
@@ -191,7 +195,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
                 size="large"
               />
               <Text type="secondary" className="text-xs block mt-1">
-                Price is calculated based on materials (50% markup) but can be adjusted
+                Suggested price: LKR {totalPrice.toFixed(2)} (based on materials with 50% markup)
               </Text>
             </div>
           </div>

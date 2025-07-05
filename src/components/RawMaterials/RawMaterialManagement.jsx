@@ -342,7 +342,7 @@ export function RawMaterialManagement() {
               <Form.Item
                 name="unitPrice"
                 label="Unit Price (LKR)"
-                rules={[{ required: true, message: 'Please enter unit price' }]}
+                rules={[{ required: false, message: 'Please enter unit price' }]}
               >
                 <InputNumber
                   min={0}

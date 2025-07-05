@@ -57,11 +57,11 @@ export function CheckoutModal({
   const subtotal = cartItems.reduce((sum, item) => {
     // Include base price
     let itemTotal = item.product.price * item.quantity;
-    
+
     // Add addon prices if any
     if (item.product.addons) {
       const addonTotal = item.product.addons.reduce((addonSum, addon) => 
-        addonSum + addon.price, 0) * item.quantity;
+        addonSum + addon.price, 0);
       itemTotal += addonTotal;
     }
     

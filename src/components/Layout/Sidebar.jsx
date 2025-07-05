@@ -67,6 +67,12 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
       module: 'purchase-orders'
     },
     {
+      key: 'purchase-orders',
+      icon: <Icon name="shopping_cart" />,
+      label: 'Purchase Orders',
+      module: 'purchase-orders'
+    },
+    {
       key: 'user-management',
       icon: <Icon name="people" />,
       label: 'User Management',

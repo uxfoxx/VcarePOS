@@ -19,6 +19,7 @@ import { CouponManagement } from './components/Coupons/CouponManagement';
 import { TaxManagement } from './components/Tax/TaxManagement';
 import { UserManagement } from './components/Users/UserManagement';
 import { AuditTrail } from './components/AuditTrail/AuditTrail';
+import { PurchaseOrderManagement } from './components/PurchaseOrders/PurchaseOrderManagement';
 
 const { Sider, Content } = Layout;
 

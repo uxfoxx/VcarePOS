@@ -23,6 +23,7 @@ const initialState = {
         reports: { view: true, edit: true, delete: true },
         coupons: { view: true, edit: true, delete: true },
         tax: { view: true, edit: true, delete: true },
+        'purchase-orders': { view: true, edit: true, delete: true },
         settings: { view: true, edit: true, delete: true },
         'user-management': { view: true, edit: true, delete: true },
         'audit-trail': { view: true, edit: true, delete: true }
@@ -47,6 +48,7 @@ const initialState = {
         reports: { view: false, edit: false, delete: false },
         coupons: { view: true, edit: false, delete: false },
         tax: { view: false, edit: false, delete: false },
+        'purchase-orders': { view: false, edit: false, delete: false },
         settings: { view: false, edit: false, delete: false },
         'user-management': { view: false, edit: false, delete: false },
         'audit-trail': { view: false, edit: false, delete: false }
@@ -71,6 +73,7 @@ const initialState = {
         reports: { view: true, edit: false, delete: false },
         coupons: { view: true, edit: true, delete: true },
         tax: { view: true, edit: true, delete: false },
+        'purchase-orders': { view: true, edit: true, delete: false },
         settings: { view: true, edit: false, delete: false },
         'user-management': { view: true, edit: false, delete: false },
         'audit-trail': { view: true, edit: false, delete: false }

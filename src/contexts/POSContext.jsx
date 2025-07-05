@@ -17,6 +17,7 @@ const initialState = {
   rawMaterials: mockRawMaterials,
   transactions: mockTransactions,
   coupons: mockCoupons,
+  purchaseOrders: [],
   taxes: mockTaxes,
   categories: mockCategories,
   customers: []
@@ -459,6 +460,26 @@ function posReducer(state, action) {
         taxes: (state.taxes || []).filter(tax => tax.id !== action.payload)
       };
     }
+    case 'ADD_PURCHASE_ORDER': {
+      return {
+        ...state,
+        purchaseOrders: [action.payload, ...(state.purchaseOrders || [])]
+      };
+    }
+    case 'UPDATE_PURCHASE_ORDER': {
+      return {
+        ...state,
+        purchaseOrders: (state.purchaseOrders || []).map(order =>
+          order.id === action.payload.id ? action.payload : order
+        )
+      };
+    }
+    case 'DELETE_PURCHASE_ORDER': {
+      return {
+        ...state,
+        purchaseOrders: (state.purchaseOrders || []).filter(order => order.id !== action.payload)
+      };
+    }
     case 'ADD_CATEGORY': {
       // Invalidate categories cache
       invalidateCacheByPrefix('categories');
@@ -513,6 +534,9 @@ export function POSProvider({ children }) {
       'UPDATE_COUPON': { module: 'coupons', action: 'UPDATE' },
       'DELETE_COUPON': { module: 'coupons', action: 'DELETE' },
       'ADD_TAX': { module: 'tax', action: 'CREATE' },
+      'ADD_PURCHASE_ORDER': { module: 'purchase-orders', action: 'CREATE' },
+      'UPDATE_PURCHASE_ORDER': { module: 'purchase-orders', action: 'UPDATE' },
+      'DELETE_PURCHASE_ORDER': { module: 'purchase-orders', action: 'DELETE' },
       'UPDATE_TAX': { module: 'tax', action: 'UPDATE' },
       'DELETE_TAX': { module: 'tax', action: 'DELETE' },
       'UPDATE_PRODUCT_STOCK': { module: 'products', action: 'UPDATE' },
@@ -585,6 +609,16 @@ export function POSProvider({ children }) {
       case 'ADD_TAX':
         return `Created tax: ${action.payload.name} (${action.payload.rate}%)`;
       case 'UPDATE_TAX':
+        return `Updated tax: ${action.payload.name} (${action.payload.rate}%)`;
+      case 'DELETE_TAX':
+        return `Deleted tax with ID: ${action.payload}`;
+      case 'ADD_PURCHASE_ORDER':
+        return `Created purchase order: ${action.payload.id} (LKR ${action.payload.total.toFixed(2)})`;
+      case 'UPDATE_PURCHASE_ORDER':
+        return `Updated purchase order: ${action.payload.id}`;
+      case 'DELETE_PURCHASE_ORDER':
+        return `Deleted purchase order with ID: ${action.payload}`;
+      case 'UPDATE_PRODUCT_STOCK':
         return `Updated tax: ${action.payload.name} (${action.payload.rate}%)`;
       case 'DELETE_TAX':
         return `Deleted tax with ID: ${action.payload}`;

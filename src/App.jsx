@@ -18,6 +18,7 @@ import { SettingsPanel } from './components/Settings/SettingsPanel';
 import { CouponManagement } from './components/Coupons/CouponManagement';
 import { TaxManagement } from './components/Tax/TaxManagement';
 import { UserManagement } from './components/Users/UserManagement';
+import { PurchaseOrderManagement } from './components/PurchaseOrders/PurchaseOrderManagement';
 import { AuditTrail } from './components/AuditTrail/AuditTrail';
 
 const { Sider, Content } = Layout;
@@ -74,6 +75,11 @@ function AppContent() {
       'tax': (
         <ProtectedRoute module="tax" action="view">
           <TaxManagement />
+        </ProtectedRoute>
+      ),
+      'purchase-orders': (
+        <ProtectedRoute module="purchase-orders" action="view">
+          <PurchaseOrderManagement />
         </ProtectedRoute>
       ),
       'user-management': (

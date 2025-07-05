@@ -118,22 +118,8 @@ const cache = new BrowserCache({ stdTTL: 600, checkperiod: 60 });
  * @returns {Promise<any>} - Cached or fetched data
  */
 export const getOrFetch = async (key, fetchFn, ttl = 600) => {
-  // Try to get data from cache
-  const cachedData = cache.get(key);
-  
-  // If data exists in cache, return it
-  if (cachedData !== undefined) {
-    console.log(`Cache hit for key: ${key}`);
-    return cachedData;
-  }
-  
-  // If not in cache, fetch data
-  console.log(`Cache miss for key: ${key}, fetching data...`);
+  // Directly fetch data without caching
   const data = await fetchFn();
-  
-  // Store data in cache
-  cache.set(key, data, ttl);
-  
   return data;
 };
 
@@ -142,8 +128,8 @@ export const getOrFetch = async (key, fetchFn, ttl = 600) => {
  * @param {string} key - Cache key to invalidate
  */
 export const invalidateCache = (key) => {
-  console.log(`Invalidating cache for key: ${key}`);
-  cache.del(key);
+  // No-op since caching is disabled
+  return;
 };
 
 /**
@@ -151,23 +137,16 @@ export const invalidateCache = (key) => {
  * @param {string} prefix - Prefix of cache keys to invalidate
  */
 export const invalidateCacheByPrefix = (prefix) => {
-  console.log(`Invalidating cache for prefix: ${prefix}`);
-  const keys = cache.keys();
-  const keysToDelete = keys.filter(key => key.startsWith(prefix));
-  
-  keysToDelete.forEach(key => {
-    cache.del(key);
-  });
-  
-  return keysToDelete.length;
+  // No-op since caching is disabled
+  return 0;
 };
 
 /**
  * Flush the entire cache
  */
 export const flushCache = () => {
-  console.log('Flushing entire cache');
-  cache.flushAll();
+  // No-op since caching is disabled
+  return;
 };
 
 /**
@@ -175,13 +154,8 @@ export const flushCache = () => {
  * @returns {Object} - Cache statistics
  */
 export const getCacheStats = () => {
-  return {
-    keys: cache.keys().length,
-    hits: cache.getStats().hits,
-    misses: cache.getStats().misses,
-    ksize: cache.getStats().ksize,
-    vsize: cache.getStats().vsize
-  };
+  // Return empty stats since caching is disabled
+  return { keys: 0, hits: 0, misses: 0, ksize: 0, vsize: 0 };
 };
 
 export default cache;

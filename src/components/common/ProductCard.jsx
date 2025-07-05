@@ -25,7 +25,7 @@ export function ProductCard({
 
   const renderPrice = () => {
     if (showPriceRange && product.hasSizes && product.sizes && product.sizes.length > 1) {
-      const prices = product.sizes.map(s => s.price);
+      const prices = product.sizes.map(s => s.price || 0);
       const minPrice = Math.min(...prices);
       const maxPrice = Math.max(...prices);
       
@@ -35,7 +35,7 @@ export function ProductCard({
       return `LKR ${minPrice.toFixed(2)} - LKR ${maxPrice.toFixed(2)}`;
     }
     
-    return `LKR ${(product.price || 0).toFixed(2)}`;
+    return `LKR ${(product.price || 0).toFixed(2) || '0.00'}`;
   };
 
   return (

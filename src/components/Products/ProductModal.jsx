@@ -762,7 +762,7 @@ export function ProductModal({
               <Form.Item
                 name="price"
                 label="Price (LKR)"
-                rules={[
+                rules={hasSizes ? [] : [
                   { required: true, message: 'Please enter price' },
                   { type: 'number', min: 0.01, message: 'Price must be greater than 0' }
                 ]}
@@ -781,7 +781,7 @@ export function ProductModal({
               <Form.Item
                 name="stock"
                 label="Stock"
-                rules={[
+                rules={hasSizes ? [] : [
                   { required: true, message: 'Please enter stock' },
                   { type: 'number', min: 0, message: 'Stock cannot be negative' }
                 ]}

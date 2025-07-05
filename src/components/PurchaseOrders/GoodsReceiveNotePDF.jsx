@@ -113,17 +113,17 @@ export function GoodsReceiveNotePDF({ order, grnData, id }) {
       {/* Signatures */}
       <div className="flex justify-between mt-12">
         <div className="w-1/3">
-          <div className="border-t border-gray-400 pt-2 mt-12">
+          <div className="border-t border-gray-400 pt-2">
             <Text className="text-sm">Received By: {grnData.receivedBy}</Text>
           </div>
         </div>
         <div className="w-1/3">
-          <div className="border-t border-gray-400 pt-2 mt-12">
+          <div className="border-t border-gray-400 pt-2">
             <Text className="text-sm">Checked By: {grnData.checkedBy}</Text>
           </div>
         </div>
         <div className="w-1/3">
-          <div className="border-t border-gray-400 pt-2 mt-12">
+          <div className="border-t border-gray-400 pt-2">
             <Text className="text-sm">Authorized Signature</Text>
           </div>
         </div>

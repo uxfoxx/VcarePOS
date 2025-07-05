@@ -99,7 +99,7 @@ export function EnhancedTable({
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   // Enhanced columns with visibility, fixed settings, and working filters/sorters
-  const columns = useMemo(() => {
+  const enhancedColumns = useMemo(() => {
     return safeInitialColumns
       .filter(col => visibleColumns.includes(col.key))
       .map(col => ({
@@ -310,7 +310,7 @@ export function EnhancedTable({
 
   return (
     <>
-      <Card>
+      <Card className="overflow-x-auto">
         {(title || icon || extra || showSearch || showColumnConfig) && (
           <div className="flex items-center justify-between mb-4">
             {(title || icon) && (
@@ -371,7 +371,7 @@ export function EnhancedTable({
         )}
         
         <Table
-          columns={columns}
+          columns={enhancedColumns}
           dataSource={filteredData}
           rowKey={rowKey}
           onRow={onRow}

@@ -253,7 +253,12 @@ export function TransactionHistory() {
       key: 'customer',
       width: 150,
       render: (record) => (
-        <Text>{record.customerName || 'Walk-in Customer'}</Text>
+        <div>
+          <Text>{record.customerName || 'Walk-in Customer'}</Text>
+          {record.items.some(item => item.selectedVariant) && (
+            <Tag color="blue" className="ml-1">Has Variants</Tag>
+          )}
+        </div>
       ),
     },
     {

@@ -275,27 +275,98 @@ function posReducer(state, action) {
     case 'ADD_PRODUCT': {
       // Invalidate product cache
       invalidateCacheByPrefix('products');
+      
+      // If product has variants, add them as separate products with isVariant flag
+      let newProducts = [action.payload];
+      
+      if (action.payload.hasVariants && action.payload.variants) {
+        const variants = action.payload.variants.map(variant => {
+          // Create a product-like object for each variant
+          return {
+            id: variant.id,
+            parentProductId: action.payload.id,
+            name: `${action.payload.name} - ${variant.name}`,
+            description: variant.description || action.payload.description,
+            category: action.payload.category,
+            price: variant.price || action.payload.price,
+            stock: variant.stock || 0,
+            barcode: variant.sku || `${action.payload.barcode}-${variant.name.substring(0, 2).toUpperCase()}`,
+            image: variant.image || action.payload.image,
+            color: variant.color,
+            material: variant.material,
+            hasSizes: variant.hasSizes,
+            sizes: variant.sizes || [],
+            rawMaterials: variant.rawMaterials || [],
+            isVariant: true,
+            variantName: variant.name,
+            parentProductName: action.payload.name
+          };
+        });
+        
+        newProducts = [...newProducts, ...variants];
+      }
+      
       return {
         ...state,
-        products: [...state.products, action.payload]
+        products: [...state.products, ...newProducts]
       };
     }
     case 'UPDATE_PRODUCT': {
       // Invalidate product cache
       invalidateCacheByPrefix('products');
+      
+      // Handle variants update
+      let updatedProducts = state.products.map(product =>
+        product.id === action.payload.id ? action.payload : product
+      );
+      
+      // Remove old variants of this product
+      updatedProducts = updatedProducts.filter(product => 
+        !(product.isVariant && product.parentProductId === action.payload.id)
+      );
+      
+      // Add updated variants if any
+      if (action.payload.hasVariants && action.payload.variants) {
+        const newVariants = action.payload.variants.map(variant => {
+          return {
+            id: variant.id,
+            parentProductId: action.payload.id,
+            name: `${action.payload.name} - ${variant.name}`,
+            description: variant.description || action.payload.description,
+            category: action.payload.category,
+            price: variant.price || action.payload.price,
+            stock: variant.stock || 0,
+            barcode: variant.sku || `${action.payload.barcode}-${variant.name.substring(0, 2).toUpperCase()}`,
+            image: variant.image || action.payload.image,
+            color: variant.color,
+            material: variant.material,
+            hasSizes: variant.hasSizes,
+            sizes: variant.sizes || [],
+            rawMaterials: variant.rawMaterials || [],
+            isVariant: true,
+            variantName: variant.name,
+            parentProductName: action.payload.name
+          };
+        });
+        
+        updatedProducts = [...updatedProducts, ...newVariants];
+      }
+      
       return {
         ...state,
-        products: state.products.map(product =>
-          product.id === action.payload.id ? action.payload : product
-        )
+        products: updatedProducts
       };
     }
     case 'DELETE_PRODUCT': {
       // Invalidate product cache
       invalidateCacheByPrefix('products');
+      
+      // Also delete all variants of this product
       return {
         ...state,
-        products: state.products.filter(product => product.id !== action.payload)
+        products: state.products.filter(product => 
+          product.id !== action.payload && product.parentProductId !== action.payload
+        )
       };
     }
     case 'ADD_RAW_MATERIAL': {

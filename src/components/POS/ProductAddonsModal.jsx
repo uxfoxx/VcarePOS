@@ -106,7 +106,10 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
           };
         }),
         // Use the editable price instead of calculated price
-        price: editablePrice / quantity
+        price: editablePrice / quantity,
+        // Preserve variant and size information
+        selectedVariant: product.selectedVariant,
+        selectedSize: product.selectedSize
       };
       
       // Add to cart with quantity

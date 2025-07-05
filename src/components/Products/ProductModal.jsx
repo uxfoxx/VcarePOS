@@ -25,6 +25,7 @@ import {
 import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
+import { VariantManagementPanel } from './VariantManagementPanel';
 import { EnhancedStepper } from '../common/EnhancedStepper';
 
 const { Title, Text } = Typography;
@@ -53,6 +54,8 @@ export function ProductModal({
   const [hasAddons, setHasAddons] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [hasVariants, setHasVariants] = useState(false);
+  const [variants, setVariants] = useState([]);
   const [productData, setProductData] = useState({});
   const [materialSearchTerm, setMaterialSearchTerm] = useState('');
 
@@ -75,6 +78,7 @@ export function ProductModal({
       setProductData(formData);
       setHasSizes(editingProduct.hasSizes || false);
       setHasAddons(editingProduct.hasAddons || false);
+      setHasVariants(editingProduct.hasVariants || false);
       
       if (editingProduct.hasSizes && editingProduct.sizes) {
         setSizes(editingProduct.sizes);
@@ -122,6 +126,13 @@ export function ProductModal({
         setSelectedAddons([]);
       }
       
+      // Set variants if any
+      if (editingProduct.hasVariants && editingProduct.variants) {
+        setVariants(editingProduct.variants);
+      } else {
+        setVariants([]);
+      }
+      
       setImagePreview(editingProduct.image);
       setCurrentStep(0);
     } else if (open && !editingProduct) {
@@ -142,8 +153,10 @@ export function ProductModal({
       setSelectedMaterials([]);
       setSelectedAddons([]);
       setSizes([]);
+      setVariants([]);
       setHasSizes(false);
       setHasAddons(false);
+      setHasVariants(false);
       setImageFile(null);
       setImagePreview(null);
       setCurrentStep(0);
@@ -179,8 +192,17 @@ export function ProductModal({
       baseSteps.push({
         title: 'Sizes',
         description: 'Size variations',
-        icon: 'straighten',
+        icon: 'aspect_ratio',
         content: renderSizes
+      });
+    }
+    
+    if (hasVariants) {
+      baseSteps.push({
+        title: 'Variants',
+        description: 'Product variants',
+        icon: 'style',
+        content: renderVariants
       });
     }
     
@@ -287,6 +309,86 @@ export function ProductModal({
     message.success('Size removed');
   };
 
+  const handleAddVariant = (variantData) => {
+    const newVariant = {
+      id: `VARIANT-${Date.now()}`,
+      ...variantData,
+      sizes: variantData.hasSizes ? [] : null,
+      rawMaterials: []
+    };
+    
+    setVariants([...variants, newVariant]);
+    message.success('Variant added successfully');
+  };
+  
+  const handleUpdateVariant = (variantId, updatedData) => {
+    setVariants(variants.map(variant => 
+      variant.id === variantId ? { ...variant, ...updatedData } : variant
+    ));
+    message.success('Variant updated successfully');
+  };
+  
+  const handleRemoveVariant = (variantId) => {
+    setVariants(variants.filter(variant => variant.id !== variantId));
+    message.success('Variant removed');
+  };
+  
+  const handleAddVariantSize = (variantId, sizeData) => {
+    setVariants(variants.map(variant => {
+      if (variant.id === variantId) {
+        const sizes = variant.sizes || [];
+        return {
+          ...variant,
+          sizes: [...sizes, {
+            id: `SIZE-${Date.now()}`,
+            ...sizeData
+          }]
+        };
+      }
+      return variant;
+    }));
+    message.success('Size added to variant');
+  };
+  
+  const handleRemoveVariantSize = (variantId, sizeId) => {
+    setVariants(variants.map(variant => {
+      if (variant.id === variantId && variant.sizes) {
+        return {
+          ...variant,
+          sizes: variant.sizes.filter(size => size.id !== sizeId)
+        };
+      }
+      return variant;
+    }));
+    message.success('Size removed from variant');
+  };
+  
+  const handleAddVariantMaterial = (variantId, materialData) => {
+    setVariants(variants.map(variant => {
+      if (variant.id === variantId) {
+        return {
+          ...variant,
+          rawMaterials: [...(variant.rawMaterials || []), materialData]
+        };
+      }
+      return variant;
+    }));
+    message.success('Material added to variant');
+  };
+  
+  const handleRemoveVariantMaterial = (variantId, materialId) => {
+    setVariants(variants.map(variant => {
+      if (variant.id === variantId) {
+        return {
+          ...variant,
+          rawMaterials: (variant.rawMaterials || []).filter(m => m.rawMaterialId !== materialId)
+        };
+      }
+      return variant;
+    }));
+    message.success('Material removed from variant');
+  };
+
   const handleFormChange = (changedValues, allValues) => {
     setProductData(prev => ({ ...prev, ...allValues }));
   };
@@ -372,6 +474,12 @@ export function ProductModal({
         setCurrentStep(steps.length - 1);
         return;
       }
+      
+      if (hasVariants && variants.length === 0) {
+        setStepError('Please add at least one variant for this product');
+        setCurrentStep(steps.length - 1);
+        return;
+      }
 
       const productSubmissionData = {
         id: editingProduct?.id || `PROD-${Date.now()}`,
@@ -380,6 +488,7 @@ export function ProductModal({
         description: finalProductData.description || '',
         image: imagePreview || finalProductData.image || '',
         hasSizes: hasSizes,
+        hasVariants: hasVariants,
         hasAddons: hasAddons,
         
         // For products with sizes, calculate total stock from all sizes
@@ -398,12 +507,15 @@ export function ProductModal({
         rawMaterials: selectedMaterials.map(m => ({
           rawMaterialId: m.rawMaterialId,
           quantity: m.quantity
+          
         })),
         
         sizes: hasSizes ? sizes : [],
         
         addons: hasAddons ? selectedAddons : []
       };
+
+      if (hasVariants) productSubmissionData.variants = variants;
 
       await onSubmit(productSubmissionData);
       handleClose();
@@ -426,6 +538,7 @@ export function ProductModal({
     setSelectedAddons([]);
     setSizes([]);
     setHasSizes(false);
+    setHasVariants(false);
     setHasAddons(false);
     setImageFile(null);
     setImagePreview(null);
@@ -598,6 +711,25 @@ export function ProductModal({
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
+                <Text strong>Product Variants</Text>
+                <br />
+                <Text type="secondary" className="text-sm">
+                  Enable if this product has multiple variants (e.g., colors, materials)
+                </Text>
+              </div>
+              <Switch
+                checked={hasVariants}
+                onChange={setHasVariants}
+                checkedChildren="Yes"
+                unCheckedChildren="No"
+              />
+            </div>
+          </div>
+        </Col>
+        <Col span={12}>
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
                 <Text strong>Product Sizes</Text>
                 <br />
                 <Text type="secondary" className="text-sm">
@@ -613,6 +745,10 @@ export function ProductModal({
             </div>
           </div>
         </Col>
+      </Row>
+      
+      <Row gutter={16} className="mt-4">
+        <Col span={12}>
         <Col span={12}>
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center justify-between">
@@ -634,6 +770,14 @@ export function ProductModal({
         </Col>
       </Row>
 
+      {hasVariants && (
+        <Alert
+          message="Product Variants Enabled"
+          description="Since this product has variants, you'll be able to define different variants with their own properties, sizes, and raw materials in the Variants tab."
+          type="info"
+          showIcon
+        />
+      )}
       {!hasSizes && (
         <>
           <Row gutter={16}>
@@ -700,7 +844,7 @@ export function ProductModal({
         </>
       )}
 
-      {hasSizes && (
+      {(hasSizes || hasVariants) && (
         <Alert
           message="Product Sizes Enabled"
           description="Since this product has sizes, the price and stock will be set for each size individually. The fields below represent the base values for reference."
@@ -1147,6 +1291,20 @@ export function ProductModal({
         </div>
       )}
     </div>
+  );
+
+  const renderVariants = () => (
+    <VariantManagementPanel
+      variants={variants}
+      rawMaterials={state.rawMaterials}
+      onAddVariant={handleAddVariant}
+      onUpdateVariant={handleUpdateVariant}
+      onRemoveVariant={handleRemoveVariant}
+      onAddVariantSize={handleAddVariantSize}
+      onRemoveVariantSize={handleRemoveVariantSize}
+      onAddVariantMaterial={handleAddVariantMaterial}
+      onRemoveVariantMaterial={handleRemoveVariantMaterial}
+    />
   );
 
   const steps = getSteps();

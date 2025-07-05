@@ -285,12 +285,16 @@ export function CheckoutModal({
                     <div>
                       <Text strong className="text-sm">{item.product.name}</Text>
                       {item.selectedSize && (
-                        <>
-                          <br />
-                          <Text type="secondary" className="text-xs">
-                            Size: {item.selectedSize}
-                          </Text>
-                        </>
+                        <Text type="secondary" className="text-xs block">
+                          Size: {item.selectedSize}
+                        </Text>
+                      )}
+                      {item.selectedVariant && (
+                        <Text type="secondary" className="text-xs block">
+                          Variant: {item.selectedVariant}
+                        </Text>
+                          Variant: {item.selectedVariant}
+                        </Text>
                       )}
                       {item.product.isCustom && (
                         <Tag color="purple" className="ml-1">Custom</Tag>

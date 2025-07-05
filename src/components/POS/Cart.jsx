@@ -305,19 +305,21 @@ export function Cart() {
                               LKR {itemTotalPrice.toFixed(2)}
                             </Text>
                             {itemTaxAmount > 0 && (
-                              <>
-                                <br />
-                                <Text type="secondary" className="text-xs">
-                                  +LKR {itemTaxAmount.toFixed(2)} tax
-                                </Text>
-                              </>
+                              <Text type="secondary" className="text-xs block">
+                                Size: {item.selectedSize}
+                              </Text>
+                            )}
+                            {item.selectedVariant && (
+                              <Text type="secondary" className="text-xs block">
+                                Variant: {item.selectedVariant}
+                              </Text>
                             )}
                           </div>
                         </div>
                         
                         {/* Show addons if any */}
                         {item.product.addons && item.product.addons.length > 0 && (
-                          <div className="mt-2 pl-4 border-l-2 border-blue-200">
+                          <div className="mt-1 pl-4 border-l-2 border-blue-200">
                             <Text type="secondary" className="text-xs">Addons:</Text>
                             {item.product.addons.map((addon, idx) => (
                               <div key={idx} className="flex justify-between text-xs">

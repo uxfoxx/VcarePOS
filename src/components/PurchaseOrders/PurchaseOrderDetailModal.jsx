@@ -340,19 +340,6 @@ export function PurchaseOrderDetailModal({
               Edit
             </Button>
           ),
-          <Dropdown
-            key="status"
-            menu={{ items: statusMenuItems }}
-            disabled={statusMenuItems.length === 0}
-          >
-            <Button 
-              type="primary" 
-              className="bg-blue-600"
-              icon={<Icon name="update" />}
-            >
-              Update Status
-            </Button>
-          </Dropdown>,
           <Button 
             key="download" 
             type="primary"

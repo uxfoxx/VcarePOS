@@ -110,6 +110,9 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
         // Preserve variant and size information
         selectedVariant: product.selectedVariant,
         selectedSize: product.selectedSize
+        // Preserve variant and size information
+        selectedVariant: product.selectedVariant,
+        selectedSize: product.selectedSize
       };
       
       // Add to cart with quantity

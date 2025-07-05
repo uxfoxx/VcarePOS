@@ -230,6 +230,26 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
                         SKU: {item.product.barcode} | Qty: {item.quantity}
                       </Text>
                     </div>
+                      className="object-cover rounded"
+                      preview={false}
+                      style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                    />
+                    <div className="flex-1">
+                      <Text strong className="block">{item.product.name}</Text>
+                      {item.selectedVariant && (
+                        <Text type="secondary" className="text-sm">
+                          Variant: {item.selectedVariant}
+                        </Text>
+                      )}
+                      {item.selectedSize && (
+                        <Text type="secondary" className="text-sm">
+                          Size: {item.selectedSize}
+                        </Text>
+                      )}
+                      <Text type="secondary" className="text-sm">
+                        SKU: {item.product.barcode} | Qty: {item.quantity}
+                      </Text>
+                    </div>
                   </div>
                 </td>
                 <td className="border border-gray-300 p-3">

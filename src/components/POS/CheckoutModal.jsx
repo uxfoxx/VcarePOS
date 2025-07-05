@@ -288,6 +288,8 @@ export function CheckoutModal({
                         <Text type="secondary" className="text-xs block">
                           Size: {item.selectedSize}
                         </Text>
+                          Variant: {item.selectedVariant}
+                        </Text>
                       )}
                       {item.selectedVariant && (
                         <Text type="secondary" className="text-xs block">

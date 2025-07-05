@@ -37,6 +37,7 @@ export function BrandingSettings() {
   const [fontFamily, setFontFamily] = useState('Inter');
   const [showCropModal, setShowCropModal] = useState(false);
   const [cropSrc, setCropSrc] = useState(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [crop, setCrop] = useState();
   const [imgRef, setImgRef] = useState(null);
   
@@ -206,6 +207,52 @@ export function BrandingSettings() {
     });
     
     message.info('Branding settings reset to defaults');
+  };
+
+  // Reset to default black/gray/white theme
+  const handleResetToDefaultTheme = () => {
+    // Default black/gray/white theme values
+    const defaultTheme = {
+      primaryColor: '#333333',
+      secondaryColor: '#666666',
+      accentColor: '#999999',
+      fontFamily: 'Inter',
+      businessName: 'VCare Furniture Store',
+      tagline: 'Premium Furniture Solutions',
+      emailAddress: 'info@vcarefurniture.com',
+      phoneNumber: '(555) 123-4567',
+      address: '123 Main Street, City, State 12345',
+      website: 'www.vcarefurniture.com',
+      receiptFooter: 'Thank you for your business!',
+      invoiceNotes: 'Payment is due within 30 days.',
+      logoPreview: '/VCARELogo 1.png'
+    };
+    
+    // Update state
+    setPrimaryColor(defaultTheme.primaryColor);
+    setSecondaryColor(defaultTheme.secondaryColor);
+    setAccentColor(defaultTheme.accentColor);
+    setFontFamily(defaultTheme.fontFamily);
+    setLogoPreview(defaultTheme.logoPreview);
+    
+    // Update form values
+    form.setFieldsValue(defaultTheme);
+    
+    // Apply changes
+    applyBrandingChanges(defaultTheme);
+    
+    // Save to localStorage
+    localStorage.setItem('vcare_branding', JSON.stringify(defaultTheme));
+    
+    message.success('Reset to default black/gray/white theme');
+    
+    // Close confirmation modal
+    setShowResetConfirm(false);
+    
+    // Force reload to apply all changes
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
   };
 
   // Load saved branding on component mount
@@ -600,7 +647,7 @@ export function BrandingSettings() {
         <Divider />
         
         <div className="flex justify-end space-x-3">
-          <Button onClick={handleResetDefaults}>
+          <Button onClick={() => setShowResetConfirm(true)}>
             Reset to Defaults
           </Button>
           <ActionButton.Primary 
@@ -644,6 +691,69 @@ export function BrandingSettings() {
                 <img src={cropSrc} onLoad={onImageLoad} alt="Crop preview" />
               </ReactCrop>
             )}
+          </div>
+        </div>
+      </Modal>
+      
+      {/* Reset Confirmation Modal */}
+      <Modal
+        title="Reset Branding Settings"
+        open={showResetConfirm}
+        onCancel={() => setShowResetConfirm(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setShowResetConfirm(false)}>
+            Cancel
+          </Button>,
+          <Button 
+            key="reset-original" 
+            onClick={handleResetDefaults}
+          >
+            Reset to Original Blue Theme
+          </Button>,
+          <Button 
+            key="reset-default" 
+            type="primary"
+            onClick={handleResetToDefaultTheme}
+            className="bg-gray-800"
+          >
+            Reset to Black/Gray Theme
+          </Button>
+        ]}
+      >
+        <div className="space-y-4">
+          <Text>Choose a default theme to reset to:</Text>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="border rounded-lg p-4 cursor-pointer hover:border-blue-500" onClick={handleResetDefaults}>
+              <div className="flex items-center space-x-2 mb-2">
+                <div className="w-6 h-6 rounded-full bg-[#0E72BD]"></div>
+                <Text strong>Original Blue Theme</Text>
+              </div>
+              <div className="space-y-1">
+                <div className="h-2 w-full rounded-full bg-[#0E72BD]"></div>
+                <div className="h-2 w-3/4 rounded-full bg-[#52c41a]"></div>
+                <div className="h-2 w-1/2 rounded-full bg-[#fa8c16]"></div>
+              </div>
+            </div>
+            
+            <div className="border rounded-lg p-4 cursor-pointer hover:border-gray-500" onClick={handleResetToDefaultTheme}>
+              <div className="flex items-center space-x-2 mb-2">
+                <div className="w-6 h-6 rounded-full bg-[#333333]"></div>
+                <Text strong>Black/Gray Theme</Text>
+              </div>
+              <div className="space-y-1">
+                <div className="h-2 w-full rounded-full bg-[#333333]"></div>
+                <div className="h-2 w-3/4 rounded-full bg-[#666666]"></div>
+                <div className="h-2 w-1/2 rounded-full bg-[#999999]"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-yellow-50 p-3 rounded-lg mt-4">
+            <Text className="text-sm">
+              <Icon name="warning" className="mr-2 text-yellow-600" />
+              <strong>Warning:</strong> This will reset all branding settings including colors, logo, and business information. This action cannot be undone.
+            </Text>
           </div>
         </div>
       </Modal>

@@ -172,11 +172,25 @@ export function ProductDetailsSheet({ open, onClose, product }) {
           <div className="text-center mb-8">
             <div className="flex items-center justify-center space-x-4 mb-4">
               <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-xl">VC</span>
+                <img 
+                  src={localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
+                    ? JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
+                    : "/VCARELogo 1.png"} 
+                  alt="VCare Logo" 
+                  className="w-10 h-10 object-contain"
+                />
               </div>
               <div>
-                <Title level={2} className="m-0 text-blue-600">VCare Furniture Store</Title>
-                <Text type="secondary">Premium Furniture Solutions</Text>
+                <Title level={2} className="m-0 text-blue-600">
+                  {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
+                    ? JSON.parse(localStorage.getItem('vcare_branding')).businessName 
+                    : "VCare Furniture Store"}
+                </Title>
+                <Text type="secondary">
+                  {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).tagline 
+                    ? JSON.parse(localStorage.getItem('vcare_branding')).tagline 
+                    : "Premium Furniture Solutions"}
+                </Text>
               </div>
             </div>
             <Divider />
@@ -463,11 +477,18 @@ export function ProductDetailsSheet({ open, onClose, product }) {
           {/* Footer */}
           <div className="mt-8 pt-6 border-t text-center">
             <Text type="secondary" className="text-sm">
-              VCare Furniture Store - Your trusted partner for premium furniture solutions
+              {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
+                ? JSON.parse(localStorage.getItem('vcare_branding')).businessName 
+                : "VCare Furniture Store"} - Your trusted partner for premium furniture solutions
             </Text>
             <br />
             <Text type="secondary" className="text-sm">
-              123 Main Street, City, State 12345 | www.vcarefurniture.com
+              {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).address 
+                ? JSON.parse(localStorage.getItem('vcare_branding')).address 
+                : "123 Main Street, City, State 12345"} | 
+              {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).website 
+                ? JSON.parse(localStorage.getItem('vcare_branding')).website 
+                : "www.vcarefurniture.com"}
             </Text>
           </div>
         </div>

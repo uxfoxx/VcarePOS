@@ -200,18 +200,28 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
               {/* Company Header with Logo */}
               <div className="flex items-center justify-between mb-1 pb-1 border-b border-gray-400">
                 <div>
-                  <span style={{ fontWeight: 'bold', fontSize: '9px' }}>VCare Furniture</span>
+                  <span style={{ fontWeight: 'bold', fontSize: '9px' }}>
+                    {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
+                      ? JSON.parse(localStorage.getItem('vcare_branding')).businessName.substring(0, 15) 
+                      : "VCare Furniture"}
+                  </span>
                 </div>
                 <div style={{ 
                   width: '12px', 
                   height: '12px', 
-                  backgroundColor: '#2563eb', 
+                  backgroundColor: localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).primaryColor 
+                    ? JSON.parse(localStorage.getItem('vcare_branding')).primaryColor 
+                    : '#2563eb', 
                   borderRadius: '2px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
-                  <span style={{ color: 'white', fontWeight: 'bold', fontSize: '6px' }}>VC</span>
+                  <span style={{ color: 'white', fontWeight: 'bold', fontSize: '6px' }}>
+                    {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
+                      ? JSON.parse(localStorage.getItem('vcare_branding')).businessName.substring(0, 2).toUpperCase() 
+                      : "VC"}
+                  </span>
                 </div>
               </div>
 

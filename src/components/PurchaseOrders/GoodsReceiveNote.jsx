@@ -336,14 +336,14 @@ export function GoodsReceiveNote({
             loading={loading}
             className="bg-green-600"
           >
-            Complete & Generate GRN
+            Confirm & Generate GRN
           </Button>
         ]}
       >
         <div className="space-y-6">
           <Alert
             message="Goods Receiving Process"
-            description="Check the items you've received, enter the received quantity, and add any notes about condition or discrepancies. This will update your inventory and generate a Goods Receive Note (GRN)."
+            description="Check the items you've received, enter the received quantity, and add any notes. This will update your inventory and generate a Goods Receive Note (GRN)."
             type="info"
             showIcon
             className="mb-6"
@@ -455,7 +455,7 @@ export function GoodsReceiveNote({
           <div className="bg-gray-50 p-4 rounded-lg">
             <Text className="text-sm">
               <Icon name="info" className="mr-2 text-blue-600" />
-              <strong>Note:</strong> Completing this form will update your inventory with the received items and change the purchase order status to "received" or "completed" based on whether all items were received.
+              <strong>Note:</strong> Completing this form will update your inventory with the received items and change the purchase order status to "completed".
             </Text>
           </div>
         </div>

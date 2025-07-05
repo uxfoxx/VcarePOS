@@ -120,25 +120,15 @@ export function PurchaseOrderDetailModal({
 
   const getStatusStep = (status) => {
     const statusMap = {
-      'draft': 0,
-      'pending': 1,
-      'approved': 2,
-      'ordered': 3,
-      'received': 4,
-      'completed': 5,
-      'cancelled': -1
+      'pending': 0,
+      'completed': 1
     };
     return statusMap[status] || 0;
   };
 
   const statusItems = [
-    { key: 'draft', label: 'Draft' },
     { key: 'pending', label: 'Pending Approval' },
-    { key: 'approved', label: 'Approved' },
-    { key: 'ordered', label: 'Ordered' },
-    { key: 'received', label: 'Received' },
-    { key: 'completed', label: 'Completed' },
-    { key: 'cancelled', label: 'Cancelled' }
+    { key: 'completed', label: 'Completed' }
   ];
 
   const itemColumns = [
@@ -198,19 +188,14 @@ export function PurchaseOrderDetailModal({
       // Filter out statuses based on current status
       const currentStep = getStatusStep(order.status);
       const itemStep = getStatusStep(item.key);
-      
-      // If cancelled, only show draft option
-      if (order.status === 'cancelled') {
-        return item.key === 'draft';
-      }
-      
+
       // If completed, don't show any options
       if (order.status === 'completed') {
         return false;
       }
       
-      // Allow moving one step forward or to cancelled
-      return itemStep === currentStep + 1 || item.key === 'cancelled';
+      // Allow moving to completed
+      return item.key === 'completed';
     })
     .map(item => ({
       key: item.key,
@@ -234,7 +219,7 @@ export function PurchaseOrderDetailModal({
           <Button key="close" onClick={onClose}>
             Close
           </Button>,
-          order.status === 'ordered' && (
+          order.status === 'pending' && (
             <Button 
               key="receive" 
               onClick={handleReceiveGoods}
@@ -242,10 +227,10 @@ export function PurchaseOrderDetailModal({
               type="primary"
               className="bg-green-600"
             >
-              Receive Goods
+              Complete Order
             </Button>
           ),
-          order.status === 'draft' && (
+          order.status === 'pending' && (
             <Button 
               key="edit" 
               onClick={onEdit}
@@ -288,10 +273,6 @@ export function PurchaseOrderDetailModal({
                 <br />
                 <Tag color={
                   order.status === 'completed' ? 'green' :
-                  order.status === 'cancelled' ? 'red' :
-                  order.status === 'approved' ? 'purple' :
-                  order.status === 'ordered' ? 'orange' :
-                  order.status === 'received' ? 'green' :
                   order.status === 'pending' ? 'blue' : 'default'
                 } className="text-base px-3 py-1 mt-1 capitalize">
                   {order.status}
@@ -304,21 +285,14 @@ export function PurchaseOrderDetailModal({
               </div>
             </div>
             
-            {order.status !== 'cancelled' && (
-              <Steps
-                current={getStatusStep(order.status)}
-                size="small"
-                status={order.status === 'cancelled' ? 'error' : 'process'}
-                items={[
-                  { title: 'Draft' },
-                  { title: 'Pending' },
-                  { title: 'Approved' },
-                  { title: 'Ordered' },
-                  { title: 'Received' },
-                  { title: 'Completed' }
-                ]}
-              />
-            )}
+            <Steps
+              current={getStatusStep(order.status)}
+              size="small"
+              items={[
+                { title: 'Pending' },
+                { title: 'Completed' }
+              ]}
+            />
           </div>
 
           {/* Vendor Information */}

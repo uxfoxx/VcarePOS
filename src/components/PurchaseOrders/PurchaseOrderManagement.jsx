@@ -45,7 +45,7 @@ export function PurchaseOrderManagement() {
   const [loading, setLoading] = useState(true);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [activeTab, setActiveTab] = useState('orders');
+  const [activeTab, setActiveTab] = useState('orders'); 
 
   // Load purchase orders from state or cache
   useEffect(() => {
@@ -94,13 +94,13 @@ export function PurchaseOrderManagement() {
       id: `PO-${Date.now()}`,
       createdBy: `${currentUser.firstName} ${currentUser.lastName}`,
       createdAt: new Date(),
-      status: 'draft',
+      status: 'pending',
       timeline: [
         {
-          status: 'draft',
+          status: 'pending',
           timestamp: new Date(),
           user: `${currentUser.firstName} ${currentUser.lastName}`,
-          notes: 'Purchase order created'
+          notes: 'Purchase order created and pending'
         }
       ]
     };
@@ -206,17 +206,10 @@ export function PurchaseOrderManagement() {
     const order = purchaseOrders.find(o => o.id === orderId);
     if (!order) return;
 
-    // If status is changing to "ordered", set the order date to today
-    let additionalData = {};
-    if (newStatus === 'ordered' && order.status !== 'ordered') {
-      additionalData.orderedDate = new Date();
-    }
-    
     const updatedOrder = {
       ...order,
       status: newStatus,
       updatedAt: new Date(),
-      ...additionalData,
       timeline: [
         ...(order.timeline || []),
         {
@@ -227,11 +220,6 @@ export function PurchaseOrderManagement() {
         }
       ]
     };
-    
-    // If status is changed to "completed", set completedAt
-    if (newStatus === 'completed') {
-      updatedOrder.completedAt = new Date();
-    }
     
     dispatch({ 
       type: 'UPDATE_PURCHASE_ORDER', 
@@ -312,13 +300,8 @@ export function PurchaseOrderManagement() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'draft': return 'default';
       case 'pending': return 'blue';
-      case 'approved': return 'purple';
-      case 'ordered': return 'orange';
-      case 'received': return 'green';
       case 'completed': return 'green';
-      case 'cancelled': return 'red';
       default: return 'default';
     }
   };
@@ -405,13 +388,8 @@ export function PurchaseOrderManagement() {
         </Tag>
       ),
       filters: [
-        { text: 'Draft', value: 'draft' },
         { text: 'Pending', value: 'pending' },
-        { text: 'Approved', value: 'approved' },
-        { text: 'Ordered', value: 'ordered' },
-        { text: 'Received', value: 'received' },
         { text: 'Completed', value: 'completed' },
-        { text: 'Cancelled', value: 'cancelled' },
       ],
       onFilter: (value, record) => record.status === value,
     },
@@ -439,7 +417,7 @@ export function PurchaseOrderManagement() {
               className="text-blue-600"
             />
           </Tooltip>
-          {record.status === 'draft' && (
+          {record.status === 'pending' && (
             <Tooltip title="Edit">
               <ActionButton.Text
                 icon="edit"
@@ -452,7 +430,7 @@ export function PurchaseOrderManagement() {
               />
             </Tooltip>
           )}
-          {record.status !== 'completed' && record.status !== 'cancelled' && (
+          {record.status !== 'completed' && (
             <Tooltip title="Delete">
               <Popconfirm
                 title="Delete this purchase order?"
@@ -511,13 +489,8 @@ export function PurchaseOrderManagement() {
               className="w-32"
             >
               <Option value="all">All Status</Option>
-              <Option value="draft">Draft</Option>
               <Option value="pending">Pending</Option>
-              <Option value="approved">Approved</Option>
-              <Option value="ordered">Ordered</Option>
-              <Option value="received">Received</Option>
               <Option value="completed">Completed</Option>
-              <Option value="cancelled">Cancelled</Option>
             </Select>
             <DatePicker.RangePicker
               value={dateRange}

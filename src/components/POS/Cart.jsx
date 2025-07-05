@@ -302,7 +302,7 @@ export function Cart() {
                           </div>
                           <div className="text-right">
                             <Text strong className="text-blue-600">
-                              {addon.name} × {addon.quantity} × {item.quantity}: +LKR {(addon.price * item.quantity).toFixed(2)}
+                              LKR {itemTotalPrice.toFixed(2)}
                             </Text>
                             {itemTaxAmount > 0 && (
                               <>

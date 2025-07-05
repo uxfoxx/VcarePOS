@@ -21,7 +21,6 @@ import { PageHeader } from '../common/PageHeader';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { VariantSelectionModal } from './VariantSelectionModal';
-import { VariantSelectionModal } from './VariantSelectionModal';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { EmptyState } from '../common/EmptyState';
 import { CustomProductModal } from './CustomProductModal';
@@ -40,7 +39,6 @@ export function ProductGrid({ collapsed }) {
   const [selectedSize, setSelectedSize] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showVariantModal, setShowVariantModal] = useState(false);
-  const [showVariantModal, setShowVariantModal] = useState(false);
   const [showCustomProductModal, setShowCustomProductModal] = useState(false);
   const [showAddonsModal, setShowAddonsModal] = useState(false);
 
@@ -53,10 +51,6 @@ export function ProductGrid({ collapsed }) {
     .filter(product => {
       // Skip variants as they'll be shown through their parent product
       if (product.isVariant) return false;
-      
-      // Skip variants as they'll be shown through their parent product
-      if (product.isVariant) return false;
-      
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (product.barcode && product.barcode.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
@@ -90,16 +84,6 @@ export function ProductGrid({ collapsed }) {
   const handleVariantSelected = (variant, size = null) => {
     // Close variant modal
     setShowVariantModal(false);
-    
-    // Show addons modal for the selected variant
-    setSelectedProduct({...variant, selectedSize: size});
-    setShowAddonsModal(true);
-  };
-
-  const handleVariantSelected = (variant, size = null) => {
-    // Close variant modal
-    setShowVariantModal(false);
-    
     // Show addons modal for the selected variant
     setSelectedProduct({...variant, selectedSize: size});
     setShowAddonsModal(true);
@@ -248,7 +232,6 @@ export function ProductGrid({ collapsed }) {
                     }}
                     onAddToCart={handleAddToCart}
                     hasVariants={product.hasVariants}
-                    hasVariants={product.hasVariants}
                     onClick={handleProductClick}
                     showDetails={true}
                     showPriceRange={product.hasSizes && product.sizes?.length > 1}
@@ -259,14 +242,6 @@ export function ProductGrid({ collapsed }) {
           )}
         </div>
       </Card>
-
-      {/* Variant Selection Modal */}
-      <VariantSelectionModal
-        open={showVariantModal}
-        onClose={() => setShowVariantModal(false)}
-        product={selectedProduct}
-        onVariantSelected={handleVariantSelected}
-      />
 
       {/* Variant Selection Modal */}
       <VariantSelectionModal
@@ -475,21 +450,6 @@ export function ProductGrid({ collapsed }) {
                       }}
                     >
                       Select Variant
-                    </Button>
-                  ) : selectedProduct.hasSizes ? (
-                    <Button
-                      type="primary"
-                      size="large"
-                      icon={<Icon name="add_shopping_cart" />}
-                      onClick={handleAddSelectedSizeToCart}
-                      disabled={!selectedSizeData || selectedSizeData.stock === 0}
-                    >
-                      {!selectedSizeData 
-                        ? 'Select Size' 
-                        : selectedSizeData.stock === 0 
-                          ? 'Out of Stock' 
-                          : `Add to Cart - LKR ${selectedSizeData.price.toFixed(2)}`
-                      }
                     </Button>
                   ) : (
                     <Button

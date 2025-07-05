@@ -259,11 +259,6 @@ export function TransactionHistory() {
             <Tag color="blue" className="ml-1">Has Variants</Tag>
           )}
         </div>
-          <Text>{record.customerName || 'Walk-in Customer'}</Text>
-          {record.items.some(item => item.selectedVariant) && (
-            <Tag color="blue" className="ml-1">Has Variants</Tag>
-          )}
-        </div>
       ),
     },
     {

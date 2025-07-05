@@ -261,8 +261,6 @@ export function Cart() {
                                 <Text type="secondary" className="text-xs block">
                                   Size: {item.selectedSize}
                                 </Text>
-                                  Variant: {item.selectedVariant}
-                                </Text>
                               )}
                               {item.selectedVariant && (
                                 <Text type="secondary" className="text-xs block">
@@ -311,13 +309,6 @@ export function Cart() {
                             {itemTaxAmount > 0 && (
                               <Text type="secondary" className="text-xs block">
                                 +LKR {itemTaxAmount.toFixed(2)} tax
-                              </Text>
-                                Variant: {item.selectedVariant}
-                              </Text>
-                            )}
-                            {item.selectedVariant && (
-                              <Text type="secondary" className="text-xs block">
-                                Variant: {item.selectedVariant}
                               </Text>
                             )}
                           </div>

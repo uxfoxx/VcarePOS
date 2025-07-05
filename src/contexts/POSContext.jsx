@@ -399,11 +399,16 @@ function posReducer(state, action) {
     case 'UPDATE_RAW_MATERIAL_STOCK': {
       // Invalidate raw materials cache
       invalidateCacheByPrefix('raw-materials');
+      
+      // Check if we're adding or removing stock
+      const isAdding = action.payload.isAdding || false;
+      const quantityChange = isAdding ? action.payload.quantity : -action.payload.quantity;
+      
       return {
         ...state,
         rawMaterials: state.rawMaterials.map(material =>
           material.id === action.payload.materialId
-            ? { ...material, stockQuantity: Math.max(0, material.stockQuantity - action.payload.quantity) }
+            ? { ...material, stockQuantity: Math.max(0, material.stockQuantity + quantityChange) }
             : material
         )
       };

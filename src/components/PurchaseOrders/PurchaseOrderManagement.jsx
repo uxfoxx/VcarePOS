@@ -205,11 +205,18 @@ export function PurchaseOrderManagement() {
   const handleStatusChange = (orderId, newStatus) => {
     const order = purchaseOrders.find(o => o.id === orderId);
     if (!order) return;
+
+    // If status is changing to "ordered", set the order date to today
+    let additionalData = {};
+    if (newStatus === 'ordered' && order.status !== 'ordered') {
+      additionalData.orderedDate = new Date();
+    }
     
     const updatedOrder = {
       ...order,
       status: newStatus,
       updatedAt: new Date(),
+      ...additionalData,
       timeline: [
         ...(order.timeline || []),
         {
@@ -247,6 +254,55 @@ export function PurchaseOrderManagement() {
     if (selectedOrder && selectedOrder.id === orderId) {
       setSelectedOrder(updatedOrder);
     }
+  };
+
+  const handleUpdateInventory = (products, materials) => {
+    // Update product inventory
+    products.forEach(product => {
+      dispatch({
+        type: 'RESTORE_PRODUCT_STOCK',
+        payload: {
+          productId: product.id,
+          quantity: product.quantity
+        }
+      });
+      
+      // Log action
+      if (logAction) {
+        logAction(
+          'UPDATE',
+          'products',
+          `Updated product stock from PO: ${product.id} (+${product.quantity} units)`,
+          { productId: product.id, quantity: product.quantity }
+        );
+      }
+    });
+    
+    // Update raw materials inventory
+    materials.forEach(material => {
+      const rawMaterial = state.rawMaterials.find(m => m.id === material.id);
+      if (rawMaterial) {
+        dispatch({
+          type: 'UPDATE_RAW_MATERIAL',
+          payload: {
+            ...rawMaterial,
+            stockQuantity: rawMaterial.stockQuantity + material.quantity
+          }
+        });
+        
+        // Log action
+        if (logAction) {
+          logAction(
+            'UPDATE',
+            'raw-materials',
+            `Updated raw material stock from PO: ${material.id} (+${material.quantity} ${rawMaterial.unit})`,
+            { materialId: material.id, quantity: material.quantity }
+          );
+        }
+      }
+    });
+    
+    message.success('Inventory updated successfully');
   };
 
   const handleRowClick = (order) => {
@@ -543,6 +599,7 @@ export function PurchaseOrderManagement() {
         }}
         order={selectedOrder}
         onStatusChange={handleStatusChange}
+        onUpdateInventory={handleUpdateInventory}
         onEdit={() => {
           setShowDetailModal(false);
           setShowCreateModal(true);

@@ -17,6 +17,7 @@ import {
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { PurchaseOrderPDF } from './PurchaseOrderPDF';
+import { GoodsReceiveNote } from './GoodsReceiveNote';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -25,12 +26,14 @@ const { Title, Text } = Typography;
 export function PurchaseOrderDetailModal({ 
   open, 
   onClose, 
-  order, 
+  order,
   onStatusChange,
-  onEdit
+  onEdit,
+  onUpdateInventory
 }) {
   const [loading, setLoading] = useState(false);
   const [showPdf, setShowPdf] = useState(false);
+  const [showGRN, setShowGRN] = useState(false);
 
   if (!order) return null;
 
@@ -96,6 +99,23 @@ export function PurchaseOrderDetailModal({
         setShowPdf(false);
       }
     }, 500);
+  };
+
+  const handleReceiveGoods = () => {
+    setShowGRN(true);
+  };
+
+  const handleCompleteGRN = (orderId, grnData) => {
+    // Check if all items were received in full
+    const allItemsReceived = grnData.items.every(item => 
+      item.receivedQuantity === item.quantity
+    );
+    
+    // Update order status based on whether all items were received
+    const newStatus = allItemsReceived ? 'completed' : 'received';
+    onStatusChange(orderId, newStatus);
+    
+    setShowGRN(false);
   };
 
   const getStatusStep = (status) => {
@@ -214,6 +234,17 @@ export function PurchaseOrderDetailModal({
           <Button key="close" onClick={onClose}>
             Close
           </Button>,
+          order.status === 'ordered' && (
+            <Button 
+              key="receive" 
+              onClick={handleReceiveGoods}
+              icon={<Icon name="inventory" />}
+              type="primary"
+              className="bg-green-600"
+            >
+              Receive Goods
+            </Button>
+          ),
           order.status === 'draft' && (
             <Button 
               key="edit" 
@@ -384,6 +415,15 @@ export function PurchaseOrderDetailModal({
           )}
         </div>
       </Modal>
+      
+      {/* Goods Receive Note Modal */}
+      <GoodsReceiveNote
+        open={showGRN}
+        onClose={() => setShowGRN(false)}
+        order={order}
+        onComplete={handleCompleteGRN}
+        onUpdateInventory={onUpdateInventory}
+      />
 
       {/* Hidden PDF for download */}
       {showPdf && (

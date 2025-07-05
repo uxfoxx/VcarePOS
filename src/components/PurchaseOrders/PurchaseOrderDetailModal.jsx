@@ -108,7 +108,7 @@ export function PurchaseOrderDetailModal({
   const handleCompleteGRN = (orderId, grnData) => {
     // Check if all items were received in full
     const allItemsReceived = grnData.items.every(item => 
-      item.receivedQuantity === item.quantity
+      item.receivedQuantity >= item.quantity
     );
     
     // Update order status based on whether all items were received
@@ -116,6 +116,9 @@ export function PurchaseOrderDetailModal({
     onStatusChange(orderId, newStatus);
     
     setShowGRN(false);
+    
+    // Show success message
+    message.success(`Goods received successfully. Order status updated to ${newStatus}.`);
   };
 
   const getStatusStep = (status) => {
@@ -219,7 +222,7 @@ export function PurchaseOrderDetailModal({
           <Button key="close" onClick={onClose}>
             Close
           </Button>,
-          order.status === 'pending' && (
+          (order.status === 'pending' || order.status === 'received') && (
             <Button 
               key="receive" 
               onClick={handleReceiveGoods}
@@ -227,7 +230,7 @@ export function PurchaseOrderDetailModal({
               type="primary"
               className="bg-green-600"
             >
-              Complete Order
+              {order.status === 'received' ? 'Update Received Items' : 'Complete Order'}
             </Button>
           ),
           order.status === 'pending' && (
@@ -242,7 +245,7 @@ export function PurchaseOrderDetailModal({
           <Dropdown
             key="status"
             menu={{ items: statusMenuItems }}
-            disabled={order.status === 'completed' || statusMenuItems.length === 0}
+            disabled={statusMenuItems.length === 0}
           >
             <Button 
               type="primary" 
@@ -288,9 +291,13 @@ export function PurchaseOrderDetailModal({
             <Steps
               current={getStatusStep(order.status)}
               size="small"
-              items={[
-                { title: 'Pending' },
-                { title: 'Completed' }
+              items={order.status === 'received' ? [
+                { title: 'Pending', description: 'Order created' },
+                { title: 'Received', description: 'Partially received' },
+                { title: 'Completed', description: 'Fully received' }
+              ] : [
+                { title: 'Pending', description: 'Order created' },
+                { title: 'Completed', description: 'Order fulfilled' }
               ]}
             />
           </div>

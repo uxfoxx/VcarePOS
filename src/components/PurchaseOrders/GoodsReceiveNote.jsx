@@ -15,8 +15,10 @@ import {
   Tag,
   Alert,
   message,
-  Card
+  Card,
+  Select
 } from 'antd';
+import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { GoodsReceiveNotePDF } from './GoodsReceiveNotePDF';
@@ -33,6 +35,7 @@ export function GoodsReceiveNote({
   onComplete,
   onUpdateInventory
 }) {
+  const { users } = useAuth();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [receivedItems, setReceivedItems] = useState([]);
@@ -56,8 +59,8 @@ export function GoodsReceiveNote({
       
       // Set form values
       form.setFieldsValue({
-        receivedBy: '',
-        checkedBy: '',
+        receivedBy: undefined,
+        checkedBy: undefined,
         notes: '',
         receivedDate: new Date().toISOString().split('T')[0]
       });
@@ -168,7 +171,7 @@ export function GoodsReceiveNote({
       // Wait for PDF to render then download
       setTimeout(() => {
         handleDownloadPdf();
-      }, 500);
+      }, 0);
       
     } catch (error) {
       console.error('Error submitting GRN:', error);
@@ -183,6 +186,7 @@ export function GoodsReceiveNote({
       const element = document.getElementById('grn-pdf');
       if (!element) {
         console.error('PDF element not found');
+        setShowPdf(false);
         return;
       }
 
@@ -221,19 +225,13 @@ export function GoodsReceiveNote({
       // Download the PDF
       const filename = `goods-receive-note-${grnNumber}.pdf`;
       pdf.save(filename);
-      message.success('Goods Receive Note PDF downloaded successfully');
-      
-      // Close the modal after download
-      setTimeout(() => {
-        setShowPdf(false);
-        onClose();
-      }, 500);
+      message.success('Goods Receive Note PDF downloaded successfully');      
       
     } catch (error) {
       console.error('Error generating PDF:', error);
       message.error('Failed to generate PDF');
       setShowPdf(false);
-    }
+    } 
   };
 
   const columns = [
@@ -330,6 +328,13 @@ export function GoodsReceiveNote({
             Cancel
           </Button>,
           <Button 
+            key="view" 
+            onClick={() => setShowPdf(true)}
+            icon={<Icon name="visibility" />}
+          >
+            Preview GRN
+          </Button>,
+          <Button 
             key="submit" 
             type="primary" 
             onClick={handleSubmit}
@@ -380,19 +385,43 @@ export function GoodsReceiveNote({
               <Col span={8}>
                 <Form.Item
                   name="receivedBy"
-                  label="Received By"
+                  label="Received By (Select User)"
                   rules={[{ required: true, message: 'Please enter receiver name' }]}
                 >
-                  <Input placeholder="Enter name of receiver" />
+                  <Select
+                    placeholder="Select receiver"
+                    showSearch
+                    filterOption={(input, option) =>
+                      option.children.toLowerCase().includes(input.toLowerCase())
+                    }
+                  >
+                    {users.filter(user => user.isActive).map(user => (
+                      <Option key={user.id} value={`${user.firstName} ${user.lastName}`}>
+                        {user.firstName} {user.lastName} ({user.role})
+                      </Option>
+                    ))}
+                  </Select>
                 </Form.Item>
               </Col>
               <Col span={8}>
                 <Form.Item
                   name="checkedBy"
-                  label="Checked By"
+                  label="Checked By (Select User)"
                   rules={[{ required: true, message: 'Please enter checker name' }]}
                 >
-                  <Input placeholder="Enter name of checker" />
+                  <Select
+                    placeholder="Select checker"
+                    showSearch
+                    filterOption={(input, option) =>
+                      option.children.toLowerCase().includes(input.toLowerCase())
+                    }
+                  >
+                    {users.filter(user => user.isActive).map(user => (
+                      <Option key={user.id} value={`${user.firstName} ${user.lastName}`}>
+                        {user.firstName} {user.lastName} ({user.role})
+                      </Option>
+                    ))}
+                  </Select>
                 </Form.Item>
               </Col>
             </Row>
@@ -462,8 +491,32 @@ export function GoodsReceiveNote({
       </Modal>
 
       {/* Hidden PDF for download */}
-      {showPdf && (
-        <div style={{ position: 'absolute', left: '-9999px' }}>
+      <Modal
+        title={
+          <Space>
+            <Icon name="inventory" className="text-green-600" />
+            <span>Goods Receive Note Preview</span>
+          </Space>
+        }
+        open={showPdf}
+        onCancel={() => setShowPdf(false)}
+        width={1000}
+        footer={[
+          <Button key="close" onClick={() => setShowPdf(false)}>
+            Close
+          </Button>,
+          <Button 
+            key="download" 
+            type="primary"
+            onClick={handleDownloadPdf}
+            icon={<Icon name="download" />}
+            className="bg-green-600"
+          >
+            Download PDF
+          </Button>
+        ]}
+      >
+        <div className="max-h-[70vh] overflow-y-auto">
           <GoodsReceiveNotePDF 
             order={order} 
             grnData={{
@@ -477,7 +530,7 @@ export function GoodsReceiveNote({
             id="grn-pdf" 
           />
         </div>
-      )}
+      </Modal>
     </>
   );
 }

@@ -99,17 +99,17 @@ export function GoodsReceiveNotePDF({ order, grnData, id }) {
       {/* Signatures */}
       <div className="flex justify-between mt-12">
         <div className="w-1/3">
-          <div className="border-t border-gray-400 pt-2">
+          <div className="border-t border-gray-400 pt-2 mt-12">
             <Text className="text-sm">Received By: {grnData.receivedBy}</Text>
           </div>
         </div>
         <div className="w-1/3">
-          <div className="border-t border-gray-400 pt-2">
+          <div className="border-t border-gray-400 pt-2 mt-12">
             <Text className="text-sm">Checked By: {grnData.checkedBy}</Text>
           </div>
         </div>
         <div className="w-1/3">
-          <div className="border-t border-gray-400 pt-2">
+          <div className="border-t border-gray-400 pt-2 mt-12">
             <Text className="text-sm">Authorized Signature</Text>
           </div>
         </div>
@@ -120,6 +120,8 @@ export function GoodsReceiveNotePDF({ order, grnData, id }) {
         <Text>VCare Furniture Store | 123 Main Street, City, State 12345 | (555) 123-4567</Text>
         <br />
         <Text>Email: inventory@vcarefurniture.com | Website: www.vcarefurniture.com</Text>
+        <br />
+        <Text className="text-xs mt-2">GRN #{grnData.id} - Generated on {new Date().toLocaleDateString()}</Text>
       </div>
     </div>
   );

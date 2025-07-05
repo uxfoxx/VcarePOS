@@ -14,8 +14,11 @@ import {
   message,
   Select,
   Switch,
-  Tabs
+  Tabs,
+  Modal
 } from 'antd';
+import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 
@@ -26,29 +29,146 @@ const { Option } = Select;
 export function BrandingSettings() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState('/VCARELogo 1.png');
   const [primaryColor, setPrimaryColor] = useState('#0E72BD');
   const [secondaryColor, setSecondaryColor] = useState('#52c41a');
   const [accentColor, setAccentColor] = useState('#fa8c16');
   const [fontFamily, setFontFamily] = useState('Inter');
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [cropSrc, setCropSrc] = useState(null);
+  const [crop, setCrop] = useState();
+  const [imgRef, setImgRef] = useState(null);
+  
+  // Apply branding changes to the document
+  const applyBrandingChanges = (values) => {
+    // Create a style element if it doesn't exist
+    let styleEl = document.getElementById('branding-styles');
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'branding-styles';
+      document.head.appendChild(styleEl);
+    }
+    
+    // Update CSS variables
+    styleEl.innerHTML = `
+      :root {
+        --primary-color: ${values.primaryColor || primaryColor};
+        --secondary-color: ${values.secondaryColor || secondaryColor};
+        --accent-color: ${values.accentColor || accentColor};
+        --font-family: ${values.fontFamily || fontFamily}, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      
+      .ant-btn-primary {
+        background-color: ${values.primaryColor || primaryColor} !important;
+        border-color: ${values.primaryColor || primaryColor} !important;
+      }
+      
+      .text-blue-600, .text-\[#0E72BD\] {
+        color: ${values.primaryColor || primaryColor} !important;
+      }
+      
+      .bg-blue-600, .bg-\[#0E72BD\] {
+        background-color: ${values.primaryColor || primaryColor} !important;
+      }
+      
+      .border-blue-600, .border-\[#0E72BD\] {
+        border-color: ${values.primaryColor || primaryColor} !important;
+      }
+      
+      body {
+        font-family: ${values.fontFamily || fontFamily}, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+    `;
+    
+    // Update logo if changed
+    const logoElements = document.querySelectorAll('img[src="/VCARELogo 1.png"]');
+    logoElements.forEach(el => {
+      el.src = logoPreview;
+    });
+  };
   
   const handleSave = (values) => {
     setLoading(true);
     
-    // In a real app, this would save to a database or configuration file
-    setTimeout(() => {
-      message.success('Branding settings saved successfully');
-      setLoading(false);
-    }, 1000);
+    // Apply branding changes
+    applyBrandingChanges(values);
+    
+    // Save to localStorage for persistence
+    localStorage.setItem('vcare_branding', JSON.stringify({
+      ...values,
+      logoPreview
+    }));
+    
+    message.success('Branding settings saved and applied successfully');
+    setLoading(false);
   };
   
   const handleLogoUpload = (file) => {
     const reader = new FileReader();
     reader.onload = (e) => {
-      setLogoPreview(e.target.result);
+      setCropSrc(e.target.result);
+      setLogoFile(file);
+      setShowCropModal(true);
     };
     reader.readAsDataURL(file);
     return false; // Prevent automatic upload
+  };
+  
+  const onImageLoad = (e) => {
+    setImgRef(e.currentTarget);
+    
+    const { width, height } = e.currentTarget;
+    const cropPercentage = 0.8;
+    
+    const cropWidth = width * cropPercentage;
+    const cropHeight = height * cropPercentage;
+    
+    const x = (width - cropWidth) / 2;
+    const y = (height - cropHeight) / 2;
+    
+    const crop = {
+      unit: 'px',
+      x,
+      y,
+      width: cropWidth,
+      height: cropHeight,
+    };
+    
+    setCrop(crop);
+  };
+  
+  const handleCompleteCrop = () => {
+    if (!crop || !imgRef) {
+      message.error('Please select a crop area');
+      return;
+    }
+    
+    const canvas = document.createElement('canvas');
+    const scaleX = imgRef.naturalWidth / imgRef.width;
+    const scaleY = imgRef.naturalHeight / imgRef.height;
+    
+    canvas.width = crop.width;
+    canvas.height = crop.height;
+    
+    const ctx = canvas.getContext('2d');
+    
+    ctx.drawImage(
+      imgRef,
+      crop.x * scaleX,
+      crop.y * scaleY,
+      crop.width * scaleX,
+      crop.height * scaleY,
+      0,
+      0,
+      crop.width,
+      crop.height
+    );
+    
+    // Convert to base64
+    const base64Image = canvas.toDataURL('image/png');
+    setLogoPreview(base64Image);
+    setShowCropModal(false);
   };
   
   const handleResetDefaults = () => {
@@ -75,6 +195,17 @@ export function BrandingSettings() {
     
     message.info('Branding settings reset to defaults');
   };
+
+  // Load saved branding on component mount
+  React.useEffect(() => {
+    const savedBranding = localStorage.getItem('vcare_branding');
+    if (savedBranding) {
+      const parsedBranding = JSON.parse(savedBranding);
+      form.setFieldsValue(parsedBranding);
+      if (parsedBranding.logoPreview) setLogoPreview(parsedBranding.logoPreview);
+      applyBrandingChanges(parsedBranding);
+    }
+  }, []);
   
   const tabItems = [
     {
@@ -453,6 +584,41 @@ export function BrandingSettings() {
           </ActionButton.Primary>
         </div>
       </Form>
+      
+      {/* Image Crop Modal */}
+      <Modal
+        title="Crop Logo"
+        open={showCropModal}
+        onCancel={() => setShowCropModal(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setShowCropModal(false)}>
+            Cancel
+          </Button>,
+          <Button 
+            key="crop" 
+            type="primary" 
+            onClick={handleCompleteCrop}
+            className="bg-blue-600"
+          >
+            Apply Crop
+          </Button>
+        ]}
+        width={800}
+      >
+        <div className="text-center">
+          <Text type="secondary" className="mb-4 block">
+            Drag to adjust the crop area for your logo
+          </Text>
+          
+          <div className="max-h-[60vh] overflow-auto">
+            {cropSrc && (
+              <ReactCrop crop={crop} onChange={c => setCrop(c)} aspect={1}>
+                <img src={cropSrc} onLoad={onImageLoad} alt="Crop preview" />
+              </ReactCrop>
+            )}
+          </div>
+        </div>
+      </Modal>
     </Card>
   );
 }

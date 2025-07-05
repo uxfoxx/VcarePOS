@@ -228,11 +228,15 @@ function App() {
       theme={{
         algorithm: theme.defaultAlgorithm,
         token: {
-          colorPrimary: '#0E72BD',
+          colorPrimary: localStorage.getItem('vcare_branding') ? 
+            JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
+            '#0E72BD',
           borderRadius: 8,
           colorBgContainer: '#ffffff',
           colorBgLayout: '#f8fafc',
-          fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: localStorage.getItem('vcare_branding') ? 
+            `"${JSON.parse(localStorage.getItem('vcare_branding')).fontFamily || 'Inter'}", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif` : 
+            '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           fontSize: 14,
           lineHeight: 1.5,
           colorText: '#1f2937',

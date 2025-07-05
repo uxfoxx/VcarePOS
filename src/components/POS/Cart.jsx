@@ -258,12 +258,14 @@ export function Cart() {
                             <div>
                               <Text strong className="text-sm">{item.product.name}</Text>
                               {item.selectedSize && (
-                                <>
-                                  <br />
-                                  <Text type="secondary" className="text-xs">
-                                    Size: {item.selectedSize}
-                                  </Text>
-                                </>
+                                <Text type="secondary" className="text-xs block">
+                                  Size: {item.selectedSize}
+                                </Text>
+                              )}
+                              {item.selectedVariant && (
+                                <Text type="secondary" className="text-xs block">
+                                  Variant: {item.selectedVariant}
+                                </Text>
                               )}
                               {item.product.isCustom && (
                                 <Tag color="purple" className="ml-1">Custom</Tag>
@@ -321,13 +323,13 @@ export function Cart() {
                         {item.product.addons && item.product.addons.length > 0 && (
                           <div className="mt-1 pl-4 border-l-2 border-blue-200">
                             <Text type="secondary" className="text-xs">Addons:</Text>
-                            {item.product.addons.map((addon, idx) => (
+                            {item.product.addons.map((addonItem, idx) => (
                               <div key={idx} className="flex justify-between text-xs">
                                 <Text type="secondary">
-                                  {addon.name} × {addon.quantity}
+                                  {addonItem.name} × {addonItem.quantity}
                                 </Text>
                                 <Text type="secondary">
-                                  +LKR {addon.price.toFixed(2)}
+                                  +LKR {addonItem.price.toFixed(2)}
                                 </Text>
                               </div>
                             ))}

@@ -290,10 +290,10 @@ export function ProductGrid({ collapsed }) {
                 <div className="mb-6">
                   <Title level={2} className="text-green-600 mb-2">
                     {selectedSizeData 
-                      ? `LKR ${selectedSizeData.price.toFixed(2)}`
+                      ? `LKR ${(selectedSizeData.price || 0).toFixed(2)}`
                       : selectedProduct.hasSizes
-                        ? `From LKR ${Math.min(...selectedProduct.sizes.map(s => s.price)).toFixed(2)}`
-                        : `LKR ${selectedProduct.price.toFixed(2)}`
+                        ? `From LKR ${Math.min(...selectedProduct.sizes.map(s => s.price || 0)).toFixed(2)}`
+                        : `LKR ${(selectedProduct.price || 0).toFixed(2)}`
                     }
                   </Title>
                   
@@ -339,7 +339,7 @@ export function ProductGrid({ collapsed }) {
                         <div className="mb-2">
                           <Text type="secondary">Price:</Text>
                           <br />
-                          <Text strong>LKR {selectedSizeData.price.toFixed(2)}</Text>
+                          <Text strong>LKR {(selectedSizeData.price || 0).toFixed(2)}</Text>
                         </div>
                       </Col>
                       <Col span={12}>
@@ -437,7 +437,7 @@ export function ProductGrid({ collapsed }) {
                         ? 'Select Size' 
                         : selectedSizeData.stock === 0 
                           ? 'Out of Stock' 
-                          : `Add to Cart - LKR ${selectedSizeData.price.toFixed(2)}`
+                          : `Add to Cart - LKR ${(selectedSizeData.price || 0).toFixed(2)}`
                       }
                     </Button>
                   ) : (

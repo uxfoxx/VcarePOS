@@ -26,6 +26,7 @@ import { StockAlert } from '../common/StockAlert';
 import { ExportModal } from '../common/ExportModal';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { SearchInput } from '../common/SearchInput';
+import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { getOrFetch } from '../../utils/cache';
 import dayjs from 'dayjs';
 

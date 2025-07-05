@@ -20,7 +20,6 @@ import { TaxManagement } from './components/Tax/TaxManagement';
 import { UserManagement } from './components/Users/UserManagement';
 import { AuditTrail } from './components/AuditTrail/AuditTrail';
 import { PurchaseOrderManagement } from './components/PurchaseOrders/PurchaseOrderManagement';
-import { PurchaseOrderManagement } from './components/PurchaseOrders/PurchaseOrderManagement';
 
 const { Sider, Content } = Layout;
 

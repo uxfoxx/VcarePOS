@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ConfigProvider, Layout, theme } from 'antd';
+import { ConfigProvider, Layout, theme, Button, message } from 'antd';
 import { AuthProvider, useAuth } from './contexts/AuthContext'; 
 import { POSProvider, usePOS } from './contexts/POSContext'; 
 import { NotificationProvider, useNotifications } from './contexts/NotificationContext'; 
@@ -19,6 +19,7 @@ import { CouponManagement } from './components/Coupons/CouponManagement';
 import { TaxManagement } from './components/Tax/TaxManagement';
 import { UserManagement } from './components/Users/UserManagement';
 import { AuditTrail } from './components/AuditTrail/AuditTrail';
+import { supabase } from './utils/supabaseClient';
 import { PurchaseOrderManagement } from './components/PurchaseOrders/PurchaseOrderManagement';
 
 const { Sider, Content } = Layout;
@@ -26,8 +27,36 @@ const { Sider, Content } = Layout;
 function AppContent() {
   const { isAuthenticated, hasPermission } = useAuth();
   const { checkStockLevels } = useNotifications(); 
+  const { refreshData } = usePOS();
   const [activeTab, setActiveTab] = useState('pos'); 
   const [collapsed, setCollapsed] = useState(false);
+  const [supabaseConnected, setSupabaseConnected] = useState(false);
+
+  // Check if Supabase is connected
+  useEffect(() => {
+    const checkSupabaseConnection = async () => {
+      try {
+        if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+          setSupabaseConnected(false);
+          return;
+        }
+        
+        const { data, error } = await supabase.from('categories').select('count');
+        setSupabaseConnected(!error);
+      } catch (error) {
+        setSupabaseConnected(false);
+      }
+    };
+    
+    checkSupabaseConnection();
+  }, []);
+
+  // Connect to Supabase
+  const connectToSupabase = () => {
+    // In a real app, this would open a modal to configure Supabase
+    // For now, we'll just show a message
+    message.info('Please add your Supabase URL and Anon Key to the .env file and restart the app');
+  };
 
   // For development, always show the app
   // In production, uncomment the following code to enable authentication
@@ -171,36 +200,50 @@ function AppContent() {
   };
 
   return (
-    <Layout style={layoutStyle}>
-      <Sider 
-        width={siderWidth} 
-        style={siderStyle}
-        collapsible
-        collapsed={collapsed}
-        onCollapse={setCollapsed}
-        trigger={null}
-      >
-        <Sidebar 
-          activeTab={activeTab} 
-          onTabChange={setActiveTab}
+    <>
+      {!supabaseConnected && (
+        <div className="fixed top-4 right-4 z-50">
+          <Button 
+            type="primary" 
+            danger
+            onClick={connectToSupabase}
+            icon={<Icon name="cloud_off" />}
+          >
+            Connect to Supabase
+          </Button>
+        </div>
+      )}
+      <Layout style={layoutStyle}>
+        <Sider 
+          width={siderWidth} 
+          style={siderStyle}
+          collapsible
           collapsed={collapsed}
           onCollapse={setCollapsed}
-        />
-      </Sider>
-      <Layout>
-        <Header 
-          style={headerStyle}
-          collapsed={collapsed} 
-          onCollapse={setCollapsed}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
-        <Content style={contentStyle}>
-          {renderContent()}
-        </Content>
-        <Footer style={footerStyle} />
+          trigger={null}
+        >
+          <Sidebar 
+            activeTab={activeTab} 
+            onTabChange={setActiveTab}
+            collapsed={collapsed}
+            onCollapse={setCollapsed}
+          />
+        </Sider>
+        <Layout>
+          <Header 
+            style={headerStyle}
+            collapsed={collapsed} 
+            onCollapse={setCollapsed}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+          <Content style={contentStyle}>
+            {renderContent()}
+          </Content>
+          <Footer style={footerStyle} />
+        </Layout>
       </Layout>
-    </Layout>
+    </>
   );
 }
 

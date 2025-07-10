@@ -14,7 +14,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
 
-const { Title, Text } = Typography;
+const { Title, Text } = Typography; 
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -25,7 +25,7 @@ export function LoginPage() {
   const handleLogin = async (values) => {
     setLoading(true);
     setError('');
-    
+
     try {
       const result = await login(values.username, values.password);
       if (!result.success) {
@@ -36,7 +36,7 @@ export function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }; 
 
   const demoAccounts = [
     { username: 'admin', password: 'admin123', role: 'Administrator', description: 'Full system access' },

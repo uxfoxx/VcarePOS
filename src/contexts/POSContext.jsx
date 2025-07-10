@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { useNotifications } from './NotificationContext';
 import { supabase } from '../utils/supabaseClient';
-import { 
+import {
   productsApi, 
   rawMaterialsApi, 
   transactionsApi, 
@@ -16,7 +16,7 @@ const POSContext = createContext(null);
 
 export function POSProvider({ children }) {
   // State
-  const [state, setState] = useState({
+  const [state, setState] = useState({ 
     cart: [],
     products: [],
     rawMaterials: [],
@@ -25,7 +25,7 @@ export function POSProvider({ children }) {
     taxes: [],
     categories: [],
     purchaseOrders: [],
-    loading: true
+    loading: true 
   });
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +33,7 @@ export function POSProvider({ children }) {
   const { addNotification, checkStockLevels } = useNotifications();
 
   // Destructure state for easier access
-  const { 
+  const {
     cart, 
     products, 
     rawMaterials, 
@@ -41,7 +41,7 @@ export function POSProvider({ children }) {
     coupons, 
     taxes, 
     categories, 
-    purchaseOrders 
+    purchaseOrders
   } = state;
 
   // Load data when component mounts
@@ -52,7 +52,7 @@ export function POSProvider({ children }) {
   // Fetch all initial data
   const fetchInitialData = async () => {
     setLoading(true);
-    try {
+    try { 
       try {
         // Try API first
         const [
@@ -62,7 +62,7 @@ export function POSProvider({ children }) {
           couponsData,
           taxesData,
           categoriesData,
-          purchaseOrdersData
+          purchaseOrdersData 
         ] = await Promise.all([
           productsApi.getAll(),
           rawMaterialsApi.getAll(),
@@ -72,7 +72,7 @@ export function POSProvider({ children }) {
           categoriesApi.getAll(),
           purchaseOrdersApi.getAll()
         ]);
-        
+
         setState(prev => ({
           ...prev,
           products: productsData,
@@ -85,7 +85,7 @@ export function POSProvider({ children }) {
         }));
       } catch (apiError) {
         console.error('API fetch failed, falling back to Supabase:', apiError);
-        
+
         // Fallback to direct Supabase access
         const [
           { data: productsData },
@@ -94,7 +94,7 @@ export function POSProvider({ children }) {
           { data: couponsData },
           { data: taxesData },
           { data: categoriesData },
-          { data: purchaseOrdersData }
+          { data: purchaseOrdersData } 
         ] = await Promise.all([
           supabase.from('products').select('*'),
           supabase.from('raw_materials').select('*'),
@@ -104,13 +104,13 @@ export function POSProvider({ children }) {
           supabase.from('categories').select('*'),
           supabase.from('purchase_orders').select('*')
         ]);
-        
+
         // Get product sizes
         const { data: sizesData } = await supabase.from('product_sizes').select('*');
-        
+
         // Get product raw materials
         const { data: productMaterialsData } = await supabase.from('product_raw_materials').select('*');
-        
+
         // Get transaction items
         const { data: transactionItemsData } = await supabase.from('transaction_items').select('*');
         
@@ -127,7 +127,7 @@ export function POSProvider({ children }) {
               dimensions: size.dimensions,
               weight: size.weight
             }));
-          
+
           // Find raw materials for this product
           const materials = (productMaterialsData || [])
             .filter(material => material.product_id === product.id)
@@ -135,7 +135,7 @@ export function POSProvider({ children }) {
               rawMaterialId: material.raw_material_id,
               quantity: material.quantity
             }));
-          
+
           return {
             ...product,
             sizes: sizes,
@@ -161,7 +161,7 @@ export function POSProvider({ children }) {
               selectedVariant: item.selected_variant,
               addons: item.addons
             }));
-          
+
           return {
             ...transaction,
             items: items
@@ -181,7 +181,7 @@ export function POSProvider({ children }) {
       }
 
       // Check stock levels
-      if (checkStockLevels) {
+      if (checkStockLevels && state.rawMaterials && state.products) {
         checkStockLevels(state.rawMaterials, state.products);
       }
     } catch (error) {
@@ -196,7 +196,7 @@ export function POSProvider({ children }) {
   const addToCart = (product) => {
     // Ensure addons is always an array
     const productWithAddons = {
-      ...product,
+      ...product, 
       addons: product.addons || []
     };
     
@@ -206,7 +206,7 @@ export function POSProvider({ children }) {
       JSON.stringify(item.product.addons || []) === JSON.stringify(productWithAddons.addons || [])
     );
     
-    if (existingItem) {
+    if (existingItem) { 
       setState(prev => ({
         ...prev,
         cart: prev.cart.map(item =>
@@ -217,7 +217,7 @@ export function POSProvider({ children }) {
           : item
         )
       }));
-    } else {
+    } else { 
       setState(prev => ({
         ...prev,
         cart: [...prev.cart, { 
@@ -229,7 +229,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const removeFromCart = (productId, selectedSize) => {
+  const removeFromCart = (productId, selectedSize) => { 
     setState(prev => ({
       ...prev,
       cart: prev.cart.filter(item => 
@@ -238,7 +238,7 @@ export function POSProvider({ children }) {
     }));
   };
 
-  const updateQuantity = (productId, selectedSize, quantity) => {
+  const updateQuantity = (productId, selectedSize, quantity) => { 
     setState(prev => ({
       ...prev,
       cart: prev.cart.map(item =>
@@ -249,7 +249,7 @@ export function POSProvider({ children }) {
     }));
   };
 
-  const clearCart = () => {
+  const clearCart = () => { 
     setState(prev => ({
       ...prev,
       cart: []
@@ -257,7 +257,7 @@ export function POSProvider({ children }) {
   };
 
   // Product actions
-  const addProduct = async (product) => {
+  const addProduct = async (product) => { 
     try {
       const newProduct = await productsApi.create(product);
       setState(prev => ({
@@ -271,7 +271,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const updateProduct = async (id, product) => {
+  const updateProduct = async (id, product) => { 
     try {
       const updatedProduct = await productsApi.update(id, product);
       
@@ -290,7 +290,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const deleteProduct = async (id) => {
+  const deleteProduct = async (id) => { 
     try {
       await productsApi.delete(id);
       
@@ -305,7 +305,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const updateProductStock = async (productId, quantity, selectedSize) => {
+  const updateProductStock = async (productId, quantity, selectedSize) => { 
     try {
       const updatedProduct = await productsApi.updateStock(
         productId, 
@@ -323,7 +323,7 @@ export function POSProvider({ children }) {
       }));
       
       // Check stock levels
-      if (checkStockLevels) {
+      if (checkStockLevels && state.rawMaterials && state.products) {
         checkStockLevels(state.rawMaterials, state.products);
       }
       
@@ -334,7 +334,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const restoreProductStock = async (productId, quantity, selectedSize) => {
+  const restoreProductStock = async (productId, quantity, selectedSize) => { 
     try {
       const updatedProduct = await productsApi.updateStock(
         productId, 
@@ -352,7 +352,7 @@ export function POSProvider({ children }) {
       }));
       
       // Check stock levels
-      if (checkStockLevels) {
+      if (checkStockLevels && state.rawMaterials && state.products) {
         checkStockLevels(state.rawMaterials, state.products);
       }
       
@@ -364,7 +364,7 @@ export function POSProvider({ children }) {
   };
 
   // Raw Material actions
-  const addRawMaterial = async (material) => {
+  const addRawMaterial = async (material) => { 
     try {
       const newMaterial = await rawMaterialsApi.create(material);
       setState(prev => ({
@@ -378,7 +378,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const updateRawMaterial = async (id, material) => {
+  const updateRawMaterial = async (id, material) => { 
     try {
       const updatedMaterial = await rawMaterialsApi.update(id, material);
       
@@ -397,7 +397,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const deleteRawMaterial = async (id) => {
+  const deleteRawMaterial = async (id) => { 
     try {
       await rawMaterialsApi.delete(id);
       
@@ -412,7 +412,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const updateRawMaterialStock = async (materialId, quantity, isAdding = false) => {
+  const updateRawMaterialStock = async (materialId, quantity, isAdding = false) => { 
     try {
       const operation = isAdding ? 'add' : 'subtract';
       const updatedMaterial = await rawMaterialsApi.updateStock(
@@ -430,7 +430,7 @@ export function POSProvider({ children }) {
       }));
       
       // Check stock levels
-      if (checkStockLevels) {
+      if (checkStockLevels && state.rawMaterials && state.products) {
         checkStockLevels(state.rawMaterials, state.products);
       }
       
@@ -442,7 +442,7 @@ export function POSProvider({ children }) {
   };
 
   // Transaction actions
-  const addTransaction = async (transaction) => {
+  const addTransaction = async (transaction) => { 
     try {
       const newTransaction = await transactionsApi.create(transaction);
       setState(prev => ({
@@ -469,7 +469,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const updateTransaction = async (id, transaction) => {
+  const updateTransaction = async (id, transaction) => { 
     try {
       const updatedTransaction = await transactionsApi.update(id, transaction);
       
@@ -488,7 +488,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const updateTransactionStatus = async (id, status) => {
+  const updateTransactionStatus = async (id, status) => { 
     try {
       const result = await transactionsApi.updateStatus(id, status);
       
@@ -507,7 +507,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  // Coupon actions
+  // Coupon actions 
   const addCoupon = async (coupon) => {
     try {
       const newCoupon = await couponsApi.create(coupon);
@@ -522,7 +522,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const updateCoupon = async (id, coupon) => {
+  const updateCoupon = async (id, coupon) => { 
     try {
       const updatedCoupon = await couponsApi.update(id, coupon);
       
@@ -541,7 +541,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const deleteCoupon = async (id) => {
+  const deleteCoupon = async (id) => { 
     try {
       await couponsApi.delete(id);
       
@@ -556,7 +556,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  // Tax actions
+  // Tax actions 
   const addTax = async (tax) => {
     try {
       const newTax = await taxesApi.create(tax);
@@ -571,7 +571,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const updateTax = async (id, tax) => {
+  const updateTax = async (id, tax) => { 
     try {
       const updatedTax = await taxesApi.update(id, tax);
       
@@ -590,7 +590,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const deleteTax = async (id) => {
+  const deleteTax = async (id) => { 
     try {
       await taxesApi.delete(id);
       
@@ -605,7 +605,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  // Category actions
+  // Category actions 
   const addCategory = async (category) => {
     try {
       const newCategory = await categoriesApi.create(category);
@@ -620,7 +620,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const updateCategory = async (id, category) => {
+  const updateCategory = async (id, category) => { 
     try {
       const updatedCategory = await categoriesApi.update(id, category);
       
@@ -639,7 +639,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const deleteCategory = async (id) => {
+  const deleteCategory = async (id) => { 
     try {
       await categoriesApi.delete(id);
       
@@ -654,7 +654,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  // Purchase Order actions
+  // Purchase Order actions 
   const addPurchaseOrder = async (order) => {
     try {
       const newOrder = await purchaseOrdersApi.create(order);
@@ -669,7 +669,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const updatePurchaseOrder = async (id, order) => {
+  const updatePurchaseOrder = async (id, order) => { 
     try {
       const updatedOrder = await purchaseOrdersApi.update(id, order);
       
@@ -688,7 +688,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const deletePurchaseOrder = async (id) => {
+  const deletePurchaseOrder = async (id) => { 
     try {
       await purchaseOrdersApi.delete(id);
       
@@ -703,7 +703,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  // Cached data access methods
+  // Cached data access methods 
   const getProducts = async () => {
     try {
       const data = await productsApi.getAll();
@@ -715,7 +715,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const getRawMaterials = async () => {
+  const getRawMaterials = async () => { 
     try {
       const data = await rawMaterialsApi.getAll();
       setState(prev => ({ ...prev, rawMaterials: data }));
@@ -726,7 +726,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const getTransactions = async () => {
+  const getTransactions = async () => { 
     try {
       const data = await transactionsApi.getAll();
       setState(prev => ({ ...prev, transactions: data }));
@@ -737,7 +737,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const getCoupons = async () => {
+  const getCoupons = async () => { 
     try {
       const data = await couponsApi.getAll();
       setState(prev => ({ ...prev, coupons: data }));
@@ -748,7 +748,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const getTaxes = async () => {
+  const getTaxes = async () => { 
     try {
       const data = await taxesApi.getAll();
       setState(prev => ({ ...prev, taxes: data }));
@@ -759,7 +759,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const getCategories = async () => {
+  const getCategories = async () => { 
     try {
       const data = await categoriesApi.getAll();
       setState(prev => ({ ...prev, categories: data }));
@@ -770,7 +770,7 @@ export function POSProvider({ children }) {
     }
   };
 
-  const getPurchaseOrders = async () => {
+  const getPurchaseOrders = async () => { 
     try {
       const data = await purchaseOrdersApi.getAll();
       setState(prev => ({ ...prev, purchaseOrders: data }));
@@ -782,7 +782,7 @@ export function POSProvider({ children }) {
   };
 
   return (
-    <POSContext.Provider value={{ 
+    <POSContext.Provider value={{  
       // State
       ...state,
       
@@ -841,7 +841,7 @@ export function POSProvider({ children }) {
       
       // Refresh all data
       refreshData: fetchInitialData
-    }}>
+    }}> 
       {children}
     </POSContext.Provider>
   );
@@ -849,7 +849,7 @@ export function POSProvider({ children }) {
 
 export function usePOS() {
   const context = useContext(POSContext);
-  if (!context) {
+  if (!context) { 
     throw new Error('usePOS must be used within a POSProvider');
   }
   return context;

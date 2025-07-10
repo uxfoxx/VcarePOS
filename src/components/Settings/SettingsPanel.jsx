@@ -18,7 +18,6 @@ import {
 } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
-import { CacheStats } from '../common/CacheStats';
 import { BrandingSettings } from './BrandingSettings';
 
 const { Title, Text } = Typography;

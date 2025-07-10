@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
 import './styles/main.scss';
-import './styles/branding.css'; 
+import './styles/branding.css';
 
 // Apply saved branding on app start
 const applyInitialBranding = () => {

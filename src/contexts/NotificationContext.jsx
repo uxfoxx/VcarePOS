@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { notification as antdNotification, message } from 'antd';
+import { notification, message } from 'antd';
 import { Icon } from '../components/common/Icon';
 
 const initialState = {
@@ -79,22 +79,22 @@ export function NotificationProvider({ children }) {
     
     // Show Ant Design notification
     const antNotification = {
-      message: notification.title,
-      description: notification.message,
-      icon: <Icon name={notification.icon || 'notifications'} className={`text-${notification.type === 'error' ? 'red' : notification.type === 'warning' ? 'orange' : 'blue'}-500`} />,
+      message: notificationData.title,
+      description: notificationData.message,
+      icon: <Icon name={notificationData.icon || 'notifications'} className={`text-${notificationData.type === 'error' ? 'red' : notificationData.type === 'warning' ? 'orange' : 'blue'}-500`} />,
       placement: 'topRight',
-      duration: notification.persistent ? 0 : 4.5,
-      onClick: notification.onClick,
+      duration: notificationData.persistent ? 0 : 4.5,
+      onClick: notificationData.onClick,
     };
 
-    if (notification.type === 'error') {
-      antdNotification.error(antNotification);
-    } else if (notification.type === 'warning') {
-      antdNotification.warning(antNotification);
-    } else if (notification.type === 'success') {
-      antdNotification.success(antNotification);
+    if (notificationData.type === 'error') {
+      notification.error(antNotification);
+    } else if (notificationData.type === 'warning') {
+      notification.warning(antNotification);
+    } else if (notificationData.type === 'success') {
+      notification.success(antNotification);
     } else {
-      antdNotification.info(antNotification);
+      notification.info(antNotification);
     }
   };
 

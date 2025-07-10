@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ConfigProvider, Layout, theme, Button, message } from 'antd';
+import { Icon } from './components/common/Icon';
 import { AuthProvider, useAuth } from './contexts/AuthContext'; 
 import { POSProvider, usePOS } from './contexts/POSContext'; 
 import { NotificationProvider, useNotifications } from './contexts/NotificationContext'; 

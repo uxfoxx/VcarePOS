@@ -204,21 +204,21 @@ function AppContent() {
 
 function App() {
   const AppWithNotifications = () => {
-    const { state } = usePOS();
+    const { rawMaterials, products } = usePOS();
     const { checkStockLevels } = useNotifications();
     
     // Check stock levels periodically
     useEffect(() => {
       // Initial check
-      checkStockLevels(state.rawMaterials, state.products);
+      checkStockLevels(rawMaterials, products);
       
       // Set up interval for periodic checks (every 5 minutes)
       const interval = setInterval(() => {
-        checkStockLevels(state.rawMaterials, state.products);
+        checkStockLevels(rawMaterials, products);
       }, 5 * 60 * 1000);
       
       return () => clearInterval(interval);
-    }, [state.rawMaterials, state.products, checkStockLevels]);
+    }, [rawMaterials, products, checkStockLevels]);
     
     return <AppContent />;
   };

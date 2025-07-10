@@ -31,9 +31,35 @@ export function Cart() {
   const [couponCode, setCouponCode] = useState('');
   const [materialWarnings, setMaterialWarnings] = useState({ unavailableMaterials: [], lowMaterials: [] });
 
+  // Early return if state is not properly initialized
+  if (!state || !state.cart) {
+    return (
+      <Card 
+        className="h-full"
+        bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
+        title={
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <h2 className="text-xl font-bold m-0">Current Order</h2>
+              <Badge count={0} size="small" />
+            </div>
+          </div>
+        }
+      >
+        <div className="flex flex-col h-full items-center justify-center">
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="Loading cart..."
+            className="flex flex-col items-center justify-center h-full"
+          />
+        </div>
+      </Card>
+    );
+  }
+
   // Check raw material availability whenever cart changes
   useEffect(() => {
-    if (state.cart.length > 0) {
+    if (state.cart && state.cart.length > 0 && state.rawMaterials) {
       const warnings = checkRawMaterialAvailability(state.cart, state.rawMaterials);
       setMaterialWarnings(warnings);
     } else {

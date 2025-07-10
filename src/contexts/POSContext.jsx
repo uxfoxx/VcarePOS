@@ -98,38 +98,60 @@ export function POSProvider({ children }) {
       } catch (apiError) {
         console.error('API fetch failed, falling back to Supabase:', apiError);
 
-        // Fallback to direct Supabase access
-        const [
-          { data: productsData },
-          { data: rawMaterialsData },
-          { data: transactionsData },
-          { data: couponsData },
-          { data: taxesData },
-          { data: categoriesData },
-          { data: purchaseOrdersData } 
-        ] = await Promise.all([
-          supabase.from('products').select('*'),
-          supabase.from('raw_materials').select('*'),
-          supabase.from('transactions').select('*'),
-          supabase.from('coupons').select('*'),
-          supabase.from('taxes').select('*'),
-          supabase.from('categories').select('*'),
-          supabase.from('purchase_orders').select('*')
-        ]);
+        // Initialize all data variables with empty arrays
+        let productsData = [];
+        let rawMaterialsData = [];
+        let transactionsData = [];
+        let couponsData = [];
+        let taxesData = [];
+        let categoriesData = [];
+        let purchaseOrdersData = [];
+        let sizesData = [];
+        let productMaterialsData = [];
+        let transactionItemsData = [];
 
-        // Get product sizes
-        const { data: sizesData } = await supabase.from('product_sizes').select('*');
+        try {
+          // Fallback to direct Supabase access using Promise.allSettled for better error handling
+          const results = await Promise.allSettled([
+            supabase.from('products').select('*'),
+            supabase.from('raw_materials').select('*'),
+            supabase.from('transactions').select('*'),
+            supabase.from('coupons').select('*'),
+            supabase.from('taxes').select('*'),
+            supabase.from('categories').select('*'),
+            supabase.from('purchase_orders').select('*'),
+            supabase.from('product_sizes').select('*'),
+            supabase.from('product_raw_materials').select('*'),
+            supabase.from('transaction_items').select('*')
+          ]);
 
-        // Get product raw materials
-        const { data: productMaterialsData } = await supabase.from('product_raw_materials').select('*');
+          // Extract data from fulfilled promises, keep empty arrays for rejected ones
+          if (results[0].status === 'fulfilled') productsData = results[0].value.data || [];
+          if (results[1].status === 'fulfilled') rawMaterialsData = results[1].value.data || [];
+          if (results[2].status === 'fulfilled') transactionsData = results[2].value.data || [];
+          if (results[3].status === 'fulfilled') couponsData = results[3].value.data || [];
+          if (results[4].status === 'fulfilled') taxesData = results[4].value.data || [];
+          if (results[5].status === 'fulfilled') categoriesData = results[5].value.data || [];
+          if (results[6].status === 'fulfilled') purchaseOrdersData = results[6].value.data || [];
+          if (results[7].status === 'fulfilled') sizesData = results[7].value.data || [];
+          if (results[8].status === 'fulfilled') productMaterialsData = results[8].value.data || [];
+          if (results[9].status === 'fulfilled') transactionItemsData = results[9].value.data || [];
 
-        // Get transaction items
-        const { data: transactionItemsData } = await supabase.from('transaction_items').select('*');
-        
+          // Log any failed fetches
+          results.forEach((result, index) => {
+            if (result.status === 'rejected') {
+              const tables = ['products', 'raw_materials', 'transactions', 'coupons', 'taxes', 'categories', 'purchase_orders', 'product_sizes', 'product_raw_materials', 'transaction_items'];
+              console.error(`Failed to fetch ${tables[index]}:`, result.reason);
+            }
+          });
+        } catch (supabaseError) {
+          console.error('Supabase fetch failed:', supabaseError);
+          // All variables are already initialized with empty arrays above
+        }
         // Process products to include sizes and materials
-        const processedProducts = (productsData || []).map(product => {
+        const processedProducts = productsData.map(product => {
           // Find sizes for this product
-          const sizes = (sizesData || [])
+          const sizes = sizesData
             .filter(size => size.product_id === product.id)
             .map(size => ({
               id: size.id,
@@ -141,7 +163,7 @@ export function POSProvider({ children }) {
             }));
 
           // Find raw materials for this product
-          const materials = (productMaterialsData || [])
+          const materials = productMaterialsData
             .filter(material => material.product_id === product.id)
             .map(material => ({
               rawMaterialId: material.raw_material_id,
@@ -156,9 +178,9 @@ export function POSProvider({ children }) {
         });
         
         // Process transactions to include items
-        const processedTransactions = (transactionsData || []).map(transaction => {
+        const processedTransactions = transactionsData.map(transaction => {
           // Find items for this transaction
-          const items = (transactionItemsData || [])
+          const items = transactionItemsData
             .filter(item => item.transaction_id === transaction.id)
             .map(item => ({
               product: {
@@ -182,27 +204,36 @@ export function POSProvider({ children }) {
         
         setState(prev => ({
           ...prev,
-          products: processedProducts || [],
-          rawMaterials: rawMaterialsData || [],
-          transactions: processedTransactions || [],
-          coupons: couponsData || [],
-          taxes: taxesData || [],
-          categories: categoriesData || [],
-          purchaseOrders: purchaseOrdersData || []
+          products: processedProducts,
+          rawMaterials: rawMaterialsData,
+          transactions: processedTransactions,
+          coupons: couponsData,
+          taxes: taxesData,
+          categories: categoriesData,
+          purchaseOrders: purchaseOrdersData
         }));
       }
 
       // Check stock levels
       if (checkStockLevels) {
-        // Use the actual fetched data instead of state variables
-        const finalRawMaterials = rawMaterialsData || [];
-        const finalProducts = processedProducts || [];
-        if (Array.isArray(finalRawMaterials) && Array.isArray(finalProducts)) {
-          checkStockLevels(finalRawMaterials, finalProducts);
+        // Check stock levels with current state
+        if (Array.isArray(state.rawMaterials) && Array.isArray(state.products)) {
+          checkStockLevels(state.rawMaterials, state.products);
         }
       }
     } catch (error) {
       console.error('Error fetching initial data:', error);
+      // Ensure state is still properly initialized even if everything fails
+      setState(prev => ({
+        ...prev,
+        products: prev.products || [],
+        rawMaterials: prev.rawMaterials || [],
+        transactions: prev.transactions || [],
+        coupons: prev.coupons || [],
+        taxes: prev.taxes || [],
+        categories: prev.categories || [],
+        purchaseOrders: prev.purchaseOrders || []
+      }));
     } finally {
       setLoading(false);
       setState(prev => ({ ...prev, loading: false }));

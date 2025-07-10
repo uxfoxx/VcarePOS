@@ -194,9 +194,11 @@ export function POSProvider({ children }) {
 
       // Check stock levels
       if (checkStockLevels) {
-        const currentState = { ...state, ...{ rawMaterials, products } };
-        if (Array.isArray(currentState.rawMaterials) && Array.isArray(currentState.products)) {
-          checkStockLevels(currentState.rawMaterials, currentState.products);
+        // Use the actual fetched data instead of state variables
+        const finalRawMaterials = rawMaterialsData || [];
+        const finalProducts = processedProducts || [];
+        if (Array.isArray(finalRawMaterials) && Array.isArray(finalProducts)) {
+          checkStockLevels(finalRawMaterials, finalProducts);
         }
       }
     } catch (error) {

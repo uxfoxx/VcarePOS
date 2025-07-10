@@ -29,9 +29,7 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('pos');
   const [collapsed, setCollapsed] = useState(false);
 
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
+  // Removed login check - always show the main app
 
   const renderContent = () => {
     const contentMap = {

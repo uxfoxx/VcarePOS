@@ -67,7 +67,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
   }, [selectedMaterials]);
 
   // Filter materials based on search term
-  const filteredMaterials = state.rawMaterials.filter(material => 
+  const filteredMaterials = (state.rawMaterials || []).filter(material => 
     material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     material.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -279,7 +279,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
                     option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }
                 >
-                  {state.rawMaterials.map(material => (
+                  {(state.rawMaterials || []).map(material => (
                     <Option key={material.id} value={material.id}>
                       {material.name} (LKR {material.unitPrice}/{material.unit}) - Stock: {material.stockQuantity}
                     </Option>

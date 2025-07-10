@@ -31,23 +31,27 @@ const { Text, Title } = Typography;
 const { Search } = Input;
 
 export function ProductGrid({ collapsed }) {
-  const { state, dispatch } = usePOS();
+  const { 
+    products, 
+    categories, 
+    loading,
+    addToCart: addToCartAction 
+  } = usePOS();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedSize, setSelectedSize] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [showVariantModal, setShowVariantModal] = useState(false);
   const [showCustomProductModal, setShowCustomProductModal] = useState(false);
   const [showAddonsModal, setShowAddonsModal] = useState(false);
 
   // Get categories from state, including only active ones
-  const activeCategories = state.categories?.filter(cat => cat?.isActive) || [];
+  const activeCategories = categories?.filter(cat => cat?.isActive) || [];
   const categoryNames = ['All', ...activeCategories.map(cat => cat.name)];
   
   // Filter products
-  const filteredProducts = state.products
+  const filteredProducts = products
     .filter(product => {
       // Skip variants as they'll be shown through their parent product
       if (product.isVariant) return false;
@@ -92,7 +96,7 @@ export function ProductGrid({ collapsed }) {
   const handleAddToCartWithAddons = (productWithAddons, quantity = 1) => {
     // Add to cart multiple times based on quantity
     for (let i = 0; i < quantity; i++) {
-      dispatch({ type: 'ADD_TO_CART', payload: productWithAddons });
+      addToCartAction(productWithAddons);
     }
   };
 
@@ -133,7 +137,7 @@ export function ProductGrid({ collapsed }) {
   };
 
   const handleAddCustomProduct = (customProduct) => {
-    dispatch({ type: 'ADD_TO_CART', payload: customProduct });
+    addToCartAction(customProduct);
   };
 
   // Determine grid columns based on sidebar state

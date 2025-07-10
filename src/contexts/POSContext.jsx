@@ -76,25 +76,31 @@ export function POSProvider({ children }) {
 
   // Cart actions
   const addToCart = (product) => {
+    // Ensure addons is always an array
+    const productWithAddons = {
+      ...product,
+      addons: product.addons || []
+    };
+    
     const existingItem = cart.find(item => 
-      item.product.id === product.id && 
-      item.selectedSize === product.selectedSize &&
-      JSON.stringify(item.product.addons || []) === JSON.stringify(product.addons || [])
+      item.product.id === productWithAddons.id && 
+      item.selectedSize === productWithAddons.selectedSize &&
+      JSON.stringify(item.product.addons || []) === JSON.stringify(productWithAddons.addons || [])
     );
     
     if (existingItem) {
       setCart(cart.map(item =>
-        item.product.id === product.id && 
-        item.selectedSize === product.selectedSize &&
-        JSON.stringify(item.product.addons || []) === JSON.stringify(product.addons || [])
+        item.product.id === productWithAddons.id && 
+        item.selectedSize === productWithAddons.selectedSize &&
+        JSON.stringify(item.product.addons || []) === JSON.stringify(productWithAddons.addons || [])
           ? { ...item, quantity: item.quantity + 1 }
           : item
       ));
     } else {
       setCart([...cart, { 
-        product, 
+        product: productWithAddons, 
         quantity: 1,
-        selectedSize: product.selectedSize || null
+        selectedSize: productWithAddons.selectedSize || null
       }]);
     }
   };

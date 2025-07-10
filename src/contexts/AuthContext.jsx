@@ -15,6 +15,35 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     // Check if user is logged in
     const checkAuth = async () => {
+      // For development, set a default user if no token exists
+      if (import.meta.env.DEV) {
+        // Set default admin user for development
+        setCurrentUser({
+          id: 'USER-001',
+          username: 'admin',
+          firstName: 'Sarah',
+          lastName: 'Wilson',
+          email: 'admin@vcarefurniture.com',
+          role: 'admin',
+          permissions: {
+            "pos": {"view": true, "edit": true, "delete": true},
+            "products": {"view": true, "edit": true, "delete": true},
+            "raw-materials": {"view": true, "edit": true, "delete": true},
+            "transactions": {"view": true, "edit": true, "delete": true},
+            "reports": {"view": true, "edit": true, "delete": true},
+            "coupons": {"view": true, "edit": true, "delete": true},
+            "tax": {"view": true, "edit": true, "delete": true},
+            "purchase-orders": {"view": true, "edit": true, "delete": true},
+            "settings": {"view": true, "edit": true, "delete": true},
+            "user-management": {"view": true, "edit": true, "delete": true},
+            "audit-trail": {"view": true, "edit": true, "delete": true}
+          }
+        });
+        setIsAuthenticated(true);
+        setLoading(false);
+        return;
+      }
+      
       try {
         // Check for token in localStorage
         const token = localStorage.getItem('vcare_token');
@@ -183,7 +212,7 @@ export function AuthProvider({ children }) {
 
   const hasPermission = (module, action = 'view') => {
     if (!currentUser) return false;
-    return currentUser.permissions[module]?.[action] || false;
+    return currentUser.permissions && currentUser.permissions[module]?.[action] || false;
   };
 
   const addUser = (userData) => {

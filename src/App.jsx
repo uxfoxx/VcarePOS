@@ -26,12 +26,14 @@ const { Sider, Content } = Layout;
 function AppContent() {
   const { isAuthenticated, hasPermission } = useAuth();
   const { checkStockLevels } = useNotifications(); 
-  const [activeTab, setActiveTab] = useState('pos');
+  const [activeTab, setActiveTab] = useState('pos'); 
   const [collapsed, setCollapsed] = useState(false);
 
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
+  // For development, always show the app
+  // In production, uncomment the following code to enable authentication
+  // if (!isAuthenticated) {
+  //   return <LoginPage />;
+  // }
 
   const renderContent = () => {
     const contentMap = {

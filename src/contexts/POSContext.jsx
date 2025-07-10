@@ -52,7 +52,19 @@ export function POSProvider({ children }) {
   // Fetch all initial data
   const fetchInitialData = async () => {
     setLoading(true);
-    try { 
+    try {
+      // Initialize with empty arrays to prevent undefined errors
+      setState(prev => ({
+        ...prev,
+        products: [],
+        rawMaterials: [],
+        transactions: [],
+        coupons: [],
+        taxes: [],
+        categories: [],
+        purchaseOrders: []
+      }));
+      
       try {
         // Try API first
         const [
@@ -181,8 +193,11 @@ export function POSProvider({ children }) {
       }
 
       // Check stock levels
-      if (checkStockLevels && state.rawMaterials && state.products) {
-        checkStockLevels(state.rawMaterials, state.products);
+      if (checkStockLevels) {
+        const currentState = { ...state, ...{ rawMaterials, products } };
+        if (Array.isArray(currentState.rawMaterials) && Array.isArray(currentState.products)) {
+          checkStockLevels(currentState.rawMaterials, currentState.products);
+        }
       }
     } catch (error) {
       console.error('Error fetching initial data:', error);

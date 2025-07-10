@@ -43,14 +43,15 @@ export function Cart() {
 
   // Calculate taxes for each item and total
   const calculateTaxes = () => {
-    const activeTaxes = state.taxes?.filter(tax => tax.isActive) || [];
+    const activeTaxes = state.taxes && Array.isArray(state.taxes) ? state.taxes.filter(tax => tax.isActive) : [];
     let itemTaxes = [];
     let billTaxes = []; 
     
     // Calculate category taxes for each item
     state.cart.forEach(cartItem => {
-      const categoryTaxes = activeTaxes.filter(tax => 
-        tax.taxType === 'category' && 
+      const categoryTaxes = activeTaxes.filter(tax =>
+        tax.taxType === 'category' &&
+        Array.isArray(tax.applicableCategories) &&
         tax.applicableCategories.includes(cartItem.product.category)
       );
       
@@ -68,7 +69,7 @@ export function Cart() {
     });
 
     // Get full bill taxes
-    const fullBillTaxes = activeTaxes.filter(tax => tax.taxType === 'full_bill');
+    const fullBillTaxes = activeTaxes.filter(tax => tax && tax.taxType === 'full_bill');
     
     return { itemTaxes, fullBillTaxes };
   };

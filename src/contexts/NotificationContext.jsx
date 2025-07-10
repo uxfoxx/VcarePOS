@@ -101,6 +101,15 @@ export function NotificationProvider({ children }) {
   const checkStockLevels = (rawMaterials, products) => {
     if (!state.enableStockAlerts) return;
 
+    // Ensure we have arrays to work with
+    if (!Array.isArray(rawMaterials) || !Array.isArray(products)) {
+      console.warn('Invalid data passed to checkStockLevels', { 
+        rawMaterialsIsArray: Array.isArray(rawMaterials),
+        productsIsArray: Array.isArray(products)
+      });
+      return { unavailableMaterials: [], lowMaterials: [] };
+    }
+
     const alerts = [];
     const now = new Date();
 
@@ -190,11 +199,14 @@ export function NotificationProvider({ children }) {
   const checkRawMaterialAvailability = (cartItems, rawMaterials) => {
     const unavailableMaterials = [];
     const lowMaterials = [];
-
-    if (!cartItems || !rawMaterials) return { unavailableMaterials, lowMaterials };
+    
+    // Ensure we have arrays to work with
+    if (!Array.isArray(cartItems) || !Array.isArray(rawMaterials)) {
+      return { unavailableMaterials, lowMaterials };
+    }
 
     cartItems.forEach(cartItem => {
-      if (cartItem.product.rawMaterials) {
+      if (cartItem.product && Array.isArray(cartItem.product.rawMaterials)) {
         cartItem.product.rawMaterials.forEach(requiredMaterial => {
           const material = rawMaterials.find(m => m.id === requiredMaterial.rawMaterialId);
           if (material) {

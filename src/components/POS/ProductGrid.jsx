@@ -32,9 +32,9 @@ const { Search } = Input;
 
 export function ProductGrid({ collapsed }) {
   const { 
-    products,
-    categories,
-    loading,
+    products = [],
+    categories = [],
+    loading = false,
     addToCart,
     dispatch
   } = usePOS();
@@ -48,11 +48,11 @@ export function ProductGrid({ collapsed }) {
   const [showAddonsModal, setShowAddonsModal] = useState(false);
 
   // Get categories from state, including only active ones
-  const activeCategories = categories?.filter(cat => cat?.isActive) || [];
+  const activeCategories = Array.isArray(categories) ? categories.filter(cat => cat?.isActive) : [];
   const categoryNames = ['All', ...activeCategories.map(cat => cat.name)];
   
   // Filter products
-  const filteredProducts = products
+  const filteredProducts = Array.isArray(products) ? products
     .filter(product => {
       // Skip variants as they'll be shown through their parent product
       if (product.isVariant) return false;
@@ -60,7 +60,7 @@ export function ProductGrid({ collapsed }) {
                            (product.barcode && product.barcode.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
       return matchesSearch && matchesCategory;
-    });
+    }) : [];
 
   const handleAddToCart = (product) => {
     if (product.hasVariants) {

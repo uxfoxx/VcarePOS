@@ -25,11 +25,14 @@ export function LoginPage() {
   const handleLogin = async (values) => {
     setLoading(true);
     setError('');
-
+    
     try {
       const result = await login(values.username, values.password);
       if (!result.success) {
         setError(result.error || 'Login failed');
+      } else {
+        // Redirect to POS page on successful login
+        window.location.reload();
       }
     } catch (err) {
       setError('An error occurred during login');
@@ -65,7 +68,7 @@ export function LoginPage() {
                   <Title level={1} className="m-0 text-gray-900">
                     {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
                       ? JSON.parse(localStorage.getItem('vcare_branding')).businessName.split(' ')[0] 
-                      : "VCare"} POS
+                      : "VCare"} POS System
                   </Title>
                   <Text type="secondary" className="text-lg">
                     {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).tagline 

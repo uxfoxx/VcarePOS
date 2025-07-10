@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { useNotifications } from './NotificationContext';
+import { supabase } from '../utils/supabaseClient';
 import { 
   productsApi, 
   rawMaterialsApi, 
@@ -15,18 +16,33 @@ const POSContext = createContext(null);
 
 export function POSProvider({ children }) {
   // State
-  const [cart, setCart] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [rawMaterials, setRawMaterials] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [coupons, setCoupons] = useState([]);
-  const [taxes, setTaxes] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [state, setState] = useState({
+    cart: [],
+    products: [],
+    rawMaterials: [],
+    transactions: [],
+    coupons: [],
+    taxes: [],
+    categories: [],
+    purchaseOrders: [],
+    loading: true
+  });
   const [loading, setLoading] = useState(true);
 
   const { logAction } = useAuth();
   const { addNotification, checkStockLevels } = useNotifications();
+
+  // Destructure state for easier access
+  const { 
+    cart, 
+    products, 
+    rawMaterials, 
+    transactions, 
+    coupons, 
+    taxes, 
+    categories, 
+    purchaseOrders 
+  } = state;
 
   // Load data when component mounts
   useEffect(() => {
@@ -37,40 +53,142 @@ export function POSProvider({ children }) {
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      const [
-        productsData,
-        rawMaterialsData,
-        transactionsData,
-        couponsData,
-        taxesData,
-        categoriesData,
-        purchaseOrdersData
-      ] = await Promise.all([
-        productsApi.getAll(),
-        rawMaterialsApi.getAll(),
-        transactionsApi.getAll(),
-        couponsApi.getAll(),
-        taxesApi.getAll(),
-        categoriesApi.getAll(),
-        purchaseOrdersApi.getAll()
-      ]);
-
-      setProducts(productsData);
-      setRawMaterials(rawMaterialsData);
-      setTransactions(transactionsData);
-      setCoupons(couponsData);
-      setTaxes(taxesData);
-      setCategories(categoriesData);
-      setPurchaseOrders(purchaseOrdersData);
+      try {
+        // Try API first
+        const [
+          productsData,
+          rawMaterialsData,
+          transactionsData,
+          couponsData,
+          taxesData,
+          categoriesData,
+          purchaseOrdersData
+        ] = await Promise.all([
+          productsApi.getAll(),
+          rawMaterialsApi.getAll(),
+          transactionsApi.getAll(),
+          couponsApi.getAll(),
+          taxesApi.getAll(),
+          categoriesApi.getAll(),
+          purchaseOrdersApi.getAll()
+        ]);
+        
+        setState(prev => ({
+          ...prev,
+          products: productsData,
+          rawMaterials: rawMaterialsData,
+          transactions: transactionsData,
+          coupons: couponsData,
+          taxes: taxesData,
+          categories: categoriesData,
+          purchaseOrders: purchaseOrdersData
+        }));
+      } catch (apiError) {
+        console.error('API fetch failed, falling back to Supabase:', apiError);
+        
+        // Fallback to direct Supabase access
+        const [
+          { data: productsData },
+          { data: rawMaterialsData },
+          { data: transactionsData },
+          { data: couponsData },
+          { data: taxesData },
+          { data: categoriesData },
+          { data: purchaseOrdersData }
+        ] = await Promise.all([
+          supabase.from('products').select('*'),
+          supabase.from('raw_materials').select('*'),
+          supabase.from('transactions').select('*'),
+          supabase.from('coupons').select('*'),
+          supabase.from('taxes').select('*'),
+          supabase.from('categories').select('*'),
+          supabase.from('purchase_orders').select('*')
+        ]);
+        
+        // Get product sizes
+        const { data: sizesData } = await supabase.from('product_sizes').select('*');
+        
+        // Get product raw materials
+        const { data: productMaterialsData } = await supabase.from('product_raw_materials').select('*');
+        
+        // Get transaction items
+        const { data: transactionItemsData } = await supabase.from('transaction_items').select('*');
+        
+        // Process products to include sizes and materials
+        const processedProducts = (productsData || []).map(product => {
+          // Find sizes for this product
+          const sizes = (sizesData || [])
+            .filter(size => size.product_id === product.id)
+            .map(size => ({
+              id: size.id,
+              name: size.name,
+              price: size.price,
+              stock: size.stock,
+              dimensions: size.dimensions,
+              weight: size.weight
+            }));
+          
+          // Find raw materials for this product
+          const materials = (productMaterialsData || [])
+            .filter(material => material.product_id === product.id)
+            .map(material => ({
+              rawMaterialId: material.raw_material_id,
+              quantity: material.quantity
+            }));
+          
+          return {
+            ...product,
+            sizes: sizes,
+            rawMaterials: materials
+          };
+        });
+        
+        // Process transactions to include items
+        const processedTransactions = (transactionsData || []).map(transaction => {
+          // Find items for this transaction
+          const items = (transactionItemsData || [])
+            .filter(item => item.transaction_id === transaction.id)
+            .map(item => ({
+              product: {
+                id: item.product_id,
+                name: item.product_name,
+                price: item.product_price,
+                barcode: item.product_barcode,
+                category: item.product_category
+              },
+              quantity: item.quantity,
+              selectedSize: item.selected_size,
+              selectedVariant: item.selected_variant,
+              addons: item.addons
+            }));
+          
+          return {
+            ...transaction,
+            items: items
+          };
+        });
+        
+        setState(prev => ({
+          ...prev,
+          products: processedProducts || [],
+          rawMaterials: rawMaterialsData || [],
+          transactions: processedTransactions || [],
+          coupons: couponsData || [],
+          taxes: taxesData || [],
+          categories: categoriesData || [],
+          purchaseOrders: purchaseOrdersData || []
+        }));
+      }
 
       // Check stock levels
       if (checkStockLevels) {
-        checkStockLevels(rawMaterialsData, productsData);
+        checkStockLevels(state.rawMaterials, state.products);
       }
     } catch (error) {
       console.error('Error fetching initial data:', error);
     } finally {
       setLoading(false);
+      setState(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -82,52 +200,70 @@ export function POSProvider({ children }) {
       addons: product.addons || []
     };
     
-    const existingItem = cart.find(item => 
+    const existingItem = state.cart.find(item => 
       item.product.id === productWithAddons.id && 
       item.selectedSize === productWithAddons.selectedSize &&
       JSON.stringify(item.product.addons || []) === JSON.stringify(productWithAddons.addons || [])
     );
     
     if (existingItem) {
-      setCart(cart.map(item =>
+      setState(prev => ({
+        ...prev,
+        cart: prev.cart.map(item =>
         item.product.id === productWithAddons.id && 
         item.selectedSize === productWithAddons.selectedSize &&
         JSON.stringify(item.product.addons || []) === JSON.stringify(productWithAddons.addons || [])
           ? { ...item, quantity: item.quantity + 1 }
           : item
-      ));
+        )
+      }));
     } else {
-      setCart([...cart, { 
+      setState(prev => ({
+        ...prev,
+        cart: [...prev.cart, { 
         product: productWithAddons, 
         quantity: 1,
         selectedSize: productWithAddons.selectedSize || null
-      }]);
+        }]
+      }));
     }
   };
 
   const removeFromCart = (productId, selectedSize) => {
-    setCart(cart.filter(item => 
+    setState(prev => ({
+      ...prev,
+      cart: prev.cart.filter(item => 
       !(item.product.id === productId && item.selectedSize === selectedSize)
-    ));
+      )
+    }));
   };
 
   const updateQuantity = (productId, selectedSize, quantity) => {
-    setCart(cart.map(item =>
+    setState(prev => ({
+      ...prev,
+      cart: prev.cart.map(item =>
       item.product.id === productId && item.selectedSize === selectedSize
         ? { ...item, quantity }
         : item
-    ).filter(item => item.quantity > 0));
+      ).filter(item => item.quantity > 0)
+    }));
   };
 
   const clearCart = () => {
-    setCart([]);
+    setState(prev => ({
+      ...prev,
+      cart: []
+    }));
   };
 
   // Product actions
   const addProduct = async (product) => {
     try {
       const newProduct = await productsApi.create(product);
-      setProducts([...products, newProduct]);
+      setState(prev => ({
+        ...prev,
+        products: [...prev.products, newProduct]
+      }));
       return newProduct;
     } catch (error) {
       console.error('Error adding product:', error);
@@ -140,9 +276,12 @@ export function POSProvider({ children }) {
       const updatedProduct = await productsApi.update(id, product);
       
       // Update products state
-      setProducts(products.map(p => 
+      setState(prev => ({
+        ...prev,
+        products: prev.products.map(p => 
         p.id === id ? updatedProduct : p
-      ));
+        )
+      }));
       
       return updatedProduct;
     } catch (error) {
@@ -156,7 +295,10 @@ export function POSProvider({ children }) {
       await productsApi.delete(id);
       
       // Update products state
-      setProducts(products.filter(p => p.id !== id));
+      setState(prev => ({
+        ...prev,
+        products: prev.products.filter(p => p.id !== id)
+      }));
     } catch (error) {
       console.error('Error deleting product:', error);
       throw error;
@@ -173,13 +315,16 @@ export function POSProvider({ children }) {
       );
       
       // Update products state
-      setProducts(products.map(p => 
+      setState(prev => ({
+        ...prev,
+        products: prev.products.map(p => 
         p.id === productId ? updatedProduct : p
-      ));
+        )
+      }));
       
       // Check stock levels
       if (checkStockLevels) {
-        checkStockLevels(rawMaterials, products);
+        checkStockLevels(state.rawMaterials, state.products);
       }
       
       return updatedProduct;
@@ -199,13 +344,16 @@ export function POSProvider({ children }) {
       );
       
       // Update products state
-      setProducts(products.map(p => 
+      setState(prev => ({
+        ...prev,
+        products: prev.products.map(p => 
         p.id === productId ? updatedProduct : p
-      ));
+        )
+      }));
       
       // Check stock levels
       if (checkStockLevels) {
-        checkStockLevels(rawMaterials, products);
+        checkStockLevels(state.rawMaterials, state.products);
       }
       
       return updatedProduct;
@@ -219,7 +367,10 @@ export function POSProvider({ children }) {
   const addRawMaterial = async (material) => {
     try {
       const newMaterial = await rawMaterialsApi.create(material);
-      setRawMaterials([...rawMaterials, newMaterial]);
+      setState(prev => ({
+        ...prev,
+        rawMaterials: [...prev.rawMaterials, newMaterial]
+      }));
       return newMaterial;
     } catch (error) {
       console.error('Error adding raw material:', error);
@@ -232,9 +383,12 @@ export function POSProvider({ children }) {
       const updatedMaterial = await rawMaterialsApi.update(id, material);
       
       // Update raw materials state
-      setRawMaterials(rawMaterials.map(m => 
+      setState(prev => ({
+        ...prev,
+        rawMaterials: prev.rawMaterials.map(m => 
         m.id === id ? updatedMaterial : m
-      ));
+        )
+      }));
       
       return updatedMaterial;
     } catch (error) {
@@ -248,7 +402,10 @@ export function POSProvider({ children }) {
       await rawMaterialsApi.delete(id);
       
       // Update raw materials state
-      setRawMaterials(rawMaterials.filter(m => m.id !== id));
+      setState(prev => ({
+        ...prev,
+        rawMaterials: prev.rawMaterials.filter(m => m.id !== id)
+      }));
     } catch (error) {
       console.error('Error deleting raw material:', error);
       throw error;
@@ -265,13 +422,16 @@ export function POSProvider({ children }) {
       );
       
       // Update raw materials state
-      setRawMaterials(rawMaterials.map(m => 
+      setState(prev => ({
+        ...prev,
+        rawMaterials: prev.rawMaterials.map(m => 
         m.id === materialId ? updatedMaterial : m
-      ));
+        )
+      }));
       
       // Check stock levels
       if (checkStockLevels) {
-        checkStockLevels(rawMaterials, products);
+        checkStockLevels(state.rawMaterials, state.products);
       }
       
       return updatedMaterial;
@@ -285,7 +445,10 @@ export function POSProvider({ children }) {
   const addTransaction = async (transaction) => {
     try {
       const newTransaction = await transactionsApi.create(transaction);
-      setTransactions([newTransaction, ...transactions]);
+      setState(prev => ({
+        ...prev,
+        transactions: [newTransaction, ...prev.transactions]
+      }));
       
       // Send notification
       if (addNotification) {
@@ -311,9 +474,12 @@ export function POSProvider({ children }) {
       const updatedTransaction = await transactionsApi.update(id, transaction);
       
       // Update transactions state
-      setTransactions(transactions.map(t => 
+      setState(prev => ({
+        ...prev,
+        transactions: prev.transactions.map(t => 
         t.id === id ? updatedTransaction : t
-      ));
+        )
+      }));
       
       return updatedTransaction;
     } catch (error) {
@@ -327,9 +493,12 @@ export function POSProvider({ children }) {
       const result = await transactionsApi.updateStatus(id, status);
       
       // Update transactions state
-      setTransactions(transactions.map(t => 
+      setState(prev => ({
+        ...prev,
+        transactions: prev.transactions.map(t => 
         t.id === id ? { ...t, status } : t
-      ));
+        )
+      }));
       
       return result;
     } catch (error) {
@@ -342,7 +511,10 @@ export function POSProvider({ children }) {
   const addCoupon = async (coupon) => {
     try {
       const newCoupon = await couponsApi.create(coupon);
-      setCoupons([...coupons, newCoupon]);
+      setState(prev => ({
+        ...prev,
+        coupons: [...prev.coupons, newCoupon]
+      }));
       return newCoupon;
     } catch (error) {
       console.error('Error adding coupon:', error);
@@ -355,9 +527,12 @@ export function POSProvider({ children }) {
       const updatedCoupon = await couponsApi.update(id, coupon);
       
       // Update coupons state
-      setCoupons(coupons.map(c => 
+      setState(prev => ({
+        ...prev,
+        coupons: prev.coupons.map(c => 
         c.id === id ? updatedCoupon : c
-      ));
+        )
+      }));
       
       return updatedCoupon;
     } catch (error) {
@@ -371,7 +546,10 @@ export function POSProvider({ children }) {
       await couponsApi.delete(id);
       
       // Update coupons state
-      setCoupons(coupons.filter(c => c.id !== id));
+      setState(prev => ({
+        ...prev,
+        coupons: prev.coupons.filter(c => c.id !== id)
+      }));
     } catch (error) {
       console.error('Error deleting coupon:', error);
       throw error;
@@ -382,7 +560,10 @@ export function POSProvider({ children }) {
   const addTax = async (tax) => {
     try {
       const newTax = await taxesApi.create(tax);
-      setTaxes([...taxes, newTax]);
+      setState(prev => ({
+        ...prev,
+        taxes: [...prev.taxes, newTax]
+      }));
       return newTax;
     } catch (error) {
       console.error('Error adding tax:', error);
@@ -395,9 +576,12 @@ export function POSProvider({ children }) {
       const updatedTax = await taxesApi.update(id, tax);
       
       // Update taxes state
-      setTaxes(taxes.map(t => 
+      setState(prev => ({
+        ...prev,
+        taxes: prev.taxes.map(t => 
         t.id === id ? updatedTax : t
-      ));
+        )
+      }));
       
       return updatedTax;
     } catch (error) {
@@ -411,7 +595,10 @@ export function POSProvider({ children }) {
       await taxesApi.delete(id);
       
       // Update taxes state
-      setTaxes(taxes.filter(t => t.id !== id));
+      setState(prev => ({
+        ...prev,
+        taxes: prev.taxes.filter(t => t.id !== id)
+      }));
     } catch (error) {
       console.error('Error deleting tax:', error);
       throw error;
@@ -422,7 +609,10 @@ export function POSProvider({ children }) {
   const addCategory = async (category) => {
     try {
       const newCategory = await categoriesApi.create(category);
-      setCategories([...categories, newCategory]);
+      setState(prev => ({
+        ...prev,
+        categories: [...prev.categories, newCategory]
+      }));
       return newCategory;
     } catch (error) {
       console.error('Error adding category:', error);
@@ -435,9 +625,12 @@ export function POSProvider({ children }) {
       const updatedCategory = await categoriesApi.update(id, category);
       
       // Update categories state
-      setCategories(categories.map(c => 
+      setState(prev => ({
+        ...prev,
+        categories: prev.categories.map(c => 
         c.id === id ? updatedCategory : c
-      ));
+        )
+      }));
       
       return updatedCategory;
     } catch (error) {
@@ -451,7 +644,10 @@ export function POSProvider({ children }) {
       await categoriesApi.delete(id);
       
       // Update categories state
-      setCategories(categories.filter(c => c.id !== id));
+      setState(prev => ({
+        ...prev,
+        categories: prev.categories.filter(c => c.id !== id)
+      }));
     } catch (error) {
       console.error('Error deleting category:', error);
       throw error;
@@ -462,7 +658,10 @@ export function POSProvider({ children }) {
   const addPurchaseOrder = async (order) => {
     try {
       const newOrder = await purchaseOrdersApi.create(order);
-      setPurchaseOrders([newOrder, ...purchaseOrders]);
+      setState(prev => ({
+        ...prev,
+        purchaseOrders: [newOrder, ...prev.purchaseOrders]
+      }));
       return newOrder;
     } catch (error) {
       console.error('Error adding purchase order:', error);
@@ -475,9 +674,12 @@ export function POSProvider({ children }) {
       const updatedOrder = await purchaseOrdersApi.update(id, order);
       
       // Update purchase orders state
-      setPurchaseOrders(purchaseOrders.map(o => 
+      setState(prev => ({
+        ...prev,
+        purchaseOrders: prev.purchaseOrders.map(o => 
         o.id === id ? updatedOrder : o
-      ));
+        )
+      }));
       
       return updatedOrder;
     } catch (error) {
@@ -491,7 +693,10 @@ export function POSProvider({ children }) {
       await purchaseOrdersApi.delete(id);
       
       // Update purchase orders state
-      setPurchaseOrders(purchaseOrders.filter(o => o.id !== id));
+      setState(prev => ({
+        ...prev,
+        purchaseOrders: prev.purchaseOrders.filter(o => o.id !== id)
+      }));
     } catch (error) {
       console.error('Error deleting purchase order:', error);
       throw error;
@@ -502,7 +707,7 @@ export function POSProvider({ children }) {
   const getProducts = async () => {
     try {
       const data = await productsApi.getAll();
-      setProducts(data);
+      setState(prev => ({ ...prev, products: data }));
       return data;
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -513,7 +718,7 @@ export function POSProvider({ children }) {
   const getRawMaterials = async () => {
     try {
       const data = await rawMaterialsApi.getAll();
-      setRawMaterials(data);
+      setState(prev => ({ ...prev, rawMaterials: data }));
       return data;
     } catch (error) {
       console.error('Error fetching raw materials:', error);
@@ -524,7 +729,7 @@ export function POSProvider({ children }) {
   const getTransactions = async () => {
     try {
       const data = await transactionsApi.getAll();
-      setTransactions(data);
+      setState(prev => ({ ...prev, transactions: data }));
       return data;
     } catch (error) {
       console.error('Error fetching transactions:', error);
@@ -535,7 +740,7 @@ export function POSProvider({ children }) {
   const getCoupons = async () => {
     try {
       const data = await couponsApi.getAll();
-      setCoupons(data);
+      setState(prev => ({ ...prev, coupons: data }));
       return data;
     } catch (error) {
       console.error('Error fetching coupons:', error);
@@ -546,7 +751,7 @@ export function POSProvider({ children }) {
   const getTaxes = async () => {
     try {
       const data = await taxesApi.getAll();
-      setTaxes(data);
+      setState(prev => ({ ...prev, taxes: data }));
       return data;
     } catch (error) {
       console.error('Error fetching taxes:', error);
@@ -557,7 +762,7 @@ export function POSProvider({ children }) {
   const getCategories = async () => {
     try {
       const data = await categoriesApi.getAll();
-      setCategories(data);
+      setState(prev => ({ ...prev, categories: data }));
       return data;
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -568,7 +773,7 @@ export function POSProvider({ children }) {
   const getPurchaseOrders = async () => {
     try {
       const data = await purchaseOrdersApi.getAll();
-      setPurchaseOrders(data);
+      setState(prev => ({ ...prev, purchaseOrders: data }));
       return data;
     } catch (error) {
       console.error('Error fetching purchase orders:', error);
@@ -579,15 +784,7 @@ export function POSProvider({ children }) {
   return (
     <POSContext.Provider value={{ 
       // State
-      cart,
-      products,
-      rawMaterials,
-      transactions,
-      coupons,
-      taxes,
-      categories,
-      purchaseOrders,
-      loading,
+      ...state,
       
       // Cart actions
       addToCart,

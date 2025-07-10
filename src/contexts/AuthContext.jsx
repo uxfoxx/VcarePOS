@@ -1,88 +1,74 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { message } from 'antd';
 import { authApi, auditApi } from '../api/apiClient';
-
+import { supabase } from '../utils/supabaseClient';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // Always authenticated
-  const [currentUser, setCurrentUser] = useState({
-    id: 'USER-001',
-    username: 'admin',
-    firstName: 'Admin',
-    lastName: 'User',
-    email: 'admin@vcarefurniture.com',
-    role: 'admin',
-    permissions: {
-      'pos': { view: true, edit: true, delete: true },
-      'products': { view: true, edit: true, delete: true },
-      'raw-materials': { view: true, edit: true, delete: true },
-      'transactions': { view: true, edit: true, delete: true },
-      'reports': { view: true, edit: true, delete: true },
-      'coupons': { view: true, edit: true, delete: true },
-      'tax': { view: true, edit: true, delete: true },
-      'purchase-orders': { view: true, edit: true, delete: true },
-      'settings': { view: true, edit: true, delete: true },
-      'user-management': { view: true, edit: true, delete: true },
-      'audit-trail': { view: true, edit: true, delete: true }
-    }
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [auditTrail, setAuditTrail] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Skip authentication check, always set loading to false
-    setLoading(false);
-    
-    // Initialize with some mock users
-    setUsers([
-      {
-        id: 'USER-001',
-        username: 'admin',
-        firstName: 'Admin',
-        lastName: 'User',
-        email: 'admin@vcarefurniture.com',
-        role: 'admin',
-        isActive: true,
-        permissions: {
-          'pos': { view: true, edit: true, delete: true },
-          'products': { view: true, edit: true, delete: true },
-          'raw-materials': { view: true, edit: true, delete: true },
-          'transactions': { view: true, edit: true, delete: true },
-          'reports': { view: true, edit: true, delete: true },
-          'coupons': { view: true, edit: true, delete: true },
-          'tax': { view: true, edit: true, delete: true },
-          'purchase-orders': { view: true, edit: true, delete: true },
-          'settings': { view: true, edit: true, delete: true },
-          'user-management': { view: true, edit: true, delete: true },
-          'audit-trail': { view: true, edit: true, delete: true }
+    // Check if user is logged in
+    const checkAuth = async () => {
+      try {
+        // Check for token in localStorage
+        const token = localStorage.getItem('vcare_token');
+        
+        if (token) {
+          // Try to get current user from API
+          try {
+            const user = await authApi.getCurrentUser();
+            setCurrentUser(user);
+            setIsAuthenticated(true);
+          } catch (apiError) {
+            console.error('API auth check failed, trying Supabase:', apiError);
+            
+            // Try Supabase session
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (session) {
+              // Get user data from users table
+              const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('email', session.user.email)
+                .single();
+              
+              if (!userError && userData) {
+                setCurrentUser({
+                  id: userData.id,
+                  username: userData.username,
+                  firstName: userData.first_name,
+                  lastName: userData.last_name,
+                  email: userData.email,
+                  role: userData.role,
+                  permissions: userData.permissions || {}
+                });
+                setIsAuthenticated(true);
+              } else {
+                // Invalid token, remove it
+                localStorage.removeItem('vcare_token');
+              }
+            } else {
+              // No valid session, remove token
+              localStorage.removeItem('vcare_token');
+            }
+          }
         }
-      },
-      {
-        id: 'USER-002',
-        username: 'cashier1',
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@vcarefurniture.com',
-        role: 'cashier',
-        isActive: true,
-        permissions: {
-          'pos': { view: true, edit: true, delete: false },
-          'products': { view: true, edit: false, delete: false },
-          'raw-materials': { view: false, edit: false, delete: false },
-          'transactions': { view: true, edit: false, delete: false },
-          'reports': { view: false, edit: false, delete: false },
-          'coupons': { view: true, edit: false, delete: false },
-          'tax': { view: false, edit: false, delete: false },
-          'purchase-orders': { view: false, edit: false, delete: false },
-          'settings': { view: false, edit: false, delete: false },
-          'user-management': { view: false, edit: false, delete: false },
-          'audit-trail': { view: false, edit: false, delete: false }
-        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        localStorage.removeItem('vcare_token');
+      } finally {
+        setLoading(false);
       }
-    ]);
+    };
+    
+    checkAuth();
   }, []);
 
   // Fetch users when authenticated
@@ -101,9 +87,26 @@ export function AuthProvider({ children }) {
 
   const fetchUsers = async () => {
     try {
-      // Skip API call, we're using mock data
-      // const data = await usersApi.getAll();
-      // setUsers(data);
+      // Try to fetch users from Supabase
+      const { data, error } = await supabase.from('users').select('*');
+      
+      if (!error && data) {
+        // Transform to match our expected format
+        const formattedUsers = data.map(user => ({
+          id: user.id,
+          username: user.username,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          email: user.email,
+          role: user.role,
+          isActive: user.is_active,
+          permissions: user.permissions || {},
+          createdAt: user.created_at,
+          lastLogin: user.last_login
+        }));
+        
+        setUsers(formattedUsers);
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
     }
@@ -111,9 +114,25 @@ export function AuthProvider({ children }) {
 
   const fetchAuditTrail = async () => {
     try {
-      // Skip API call, we're using mock data
-      // const data = await auditApi.getAll();
-      // setAuditTrail([]);
+      // Try to fetch audit trail from Supabase
+      const { data, error } = await supabase.from('audit_trail').select('*');
+      
+      if (!error && data) {
+        // Transform to match our expected format
+        const formattedAudit = data.map(entry => ({
+          id: entry.id,
+          userId: entry.user_id,
+          userName: entry.user_name,
+          action: entry.action,
+          module: entry.module,
+          description: entry.description,
+          details: entry.details,
+          ipAddress: entry.ip_address,
+          timestamp: entry.timestamp
+        }));
+        
+        setAuditTrail(formattedAudit);
+      }
     } catch (error) {
       console.error('Error fetching audit trail:', error);
     }
@@ -121,9 +140,19 @@ export function AuthProvider({ children }) {
 
   const login = async (username, password) => {
     try {
-      // Skip actual login, always return success
-      message.success(`Welcome back, Admin!`);
-      return { success: true, user: currentUser };
+      const response = await authApi.login(username, password);
+      
+      // Save token to localStorage
+      if (response.token) {
+        localStorage.setItem('vcare_token', response.token);
+      }
+      
+      // Set current user
+      setCurrentUser(response.user);
+      setIsAuthenticated(true);
+      
+      message.success(`Welcome back, ${response.user.firstName}!`);
+      return { success: true, user: response.user };
     } catch (error) {
       message.error(error.message || 'Invalid username or password');
       return { success: false, error: error.message || 'Invalid credentials' };
@@ -132,8 +161,17 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     try {
-      // Skip actual logout
-      message.info('Logout is disabled in this demo mode');
+      // Call logout API
+      if (isAuthenticated) {
+        authApi.logout().catch(console.error);
+      }
+      
+      // Clear token and user data
+      localStorage.removeItem('vcare_token');
+      setCurrentUser(null);
+      setIsAuthenticated(false);
+      
+      message.info('You have been logged out');
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -150,30 +188,79 @@ export function AuthProvider({ children }) {
 
   const addUser = (userData) => {
     // Mock implementation
-    const newUser = { ...userData, id: `USER-${Date.now()}` };
-    setUsers([...users, newUser]);
-    return Promise.resolve(newUser);
+    return supabase.from('users').insert({
+      id: userData.id || `USER-${Date.now()}`,
+      username: userData.username,
+      email: userData.email,
+      first_name: userData.firstName,
+      last_name: userData.lastName,
+      role: userData.role,
+      is_active: userData.isActive,
+      permissions: userData.permissions
+    }).select().then(({ data, error }) => {
+      if (error) throw error;
+      
+      const newUser = {
+        id: data[0].id,
+        username: data[0].username,
+        firstName: data[0].first_name,
+        lastName: data[0].last_name,
+        email: data[0].email,
+        role: data[0].role,
+        isActive: data[0].is_active,
+        permissions: data[0].permissions
+      };
+      
+      setUsers([...users, newUser]);
+      return newUser;
+    });
   };
 
   const updateUser = (userData) => {
     // Mock implementation
-    const updatedUser = { ...userData };
-    setUsers(users.map(user => 
-      user.id === updatedUser.id ? updatedUser : user
-    ));
-    
-    // Update current user if it's the same user
-    if (currentUser?.id === updatedUser.id) {
-      setCurrentUser(updatedUser);
-    }
-    
-    return Promise.resolve(updatedUser);
+    return supabase.from('users').update({
+      username: userData.username,
+      email: userData.email,
+      first_name: userData.firstName,
+      last_name: userData.lastName,
+      role: userData.role,
+      is_active: userData.isActive,
+      permissions: userData.permissions
+    }).eq('id', userData.id).select().then(({ data, error }) => {
+      if (error) throw error;
+      
+      const updatedUser = {
+        id: data[0].id,
+        username: data[0].username,
+        firstName: data[0].first_name,
+        lastName: data[0].last_name,
+        email: data[0].email,
+        role: data[0].role,
+        isActive: data[0].is_active,
+        permissions: data[0].permissions
+      };
+      
+      setUsers(users.map(user => 
+        user.id === updatedUser.id ? updatedUser : user
+      ));
+      
+      // Update current user if it's the same user
+      if (currentUser?.id === updatedUser.id) {
+        setCurrentUser(updatedUser);
+      }
+      
+      return updatedUser;
+    });
   };
 
   const deleteUser = (userId) => {
     // Mock implementation
-    setUsers(users.filter(user => user.id !== userId));
-    return Promise.resolve();
+    return supabase.from('users').delete().eq('id', userId).then(({ error }) => {
+      if (error) throw error;
+      
+      setUsers(users.filter(user => user.id !== userId));
+      return true;
+    });
   };
 
   const getAuditTrail = async () => {

@@ -18,8 +18,8 @@ import {
 import { usePOS } from '../../contexts/POSContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { ActionButton } from '../common/ActionButton';
-import { Icon } from '../common/Icon';
-import { CheckoutModal } from './CheckoutModal';
+import { Icon } from '../common/Icon'; 
+import { CheckoutModal } from '../POS/CheckoutModal';
 
 const { Title, Text } = Typography;
 
@@ -45,7 +45,7 @@ export function Cart() {
   const calculateTaxes = () => {
     const activeTaxes = state.taxes?.filter(tax => tax.isActive) || [];
     let itemTaxes = [];
-    let billTaxes = [];
+    let billTaxes = []; 
     
     // Calculate category taxes for each item
     state.cart.forEach(cartItem => {
@@ -294,7 +294,7 @@ export function Cart() {
                           <div className="flex items-center space-x-2">
                             <Text className="text-sm">LKR {item.product.price.toFixed(2)}</Text>
                             <InputNumber
-                              min={1}
+                              min={1} 
                               max={100}
                               value={item.quantity}
                               onChange={(value) => handleQuantityChange(item.product.id, item.selectedSize, value || 1)}
@@ -314,8 +314,8 @@ export function Cart() {
                           </div>
                         </div>
                         
-                        {/* Show addons if any */}
-                        {item.product.addons && item.product.addons.length > 0 && (
+                        {/* Show addons if any */ }
+                        {item.product.addons && Array.isArray(item.product.addons) && item.product.addons.length > 0 && (
                           <div className="mt-1 pl-4 border-l-2 border-blue-200">
                             <Text type="secondary" className="text-xs">Addons:</Text>
                             {item.product.addons.map((addonItem, idx) => (

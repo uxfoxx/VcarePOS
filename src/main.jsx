@@ -1,7 +1,25 @@
 import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
 import './styles/main.scss';
-import './styles/branding.css';
+import './styles/branding.css'; 
+
+// Load environment variables
+const loadEnv = () => {
+  // Check if we're running in development mode
+  if (import.meta.env.DEV) {
+    console.log('Running in development mode');
+    
+    // Log environment variables (without exposing sensitive data)
+    console.log('Environment variables loaded:', {
+      SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Not set',
+      SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Set' : 'Not set',
+      API_URL: import.meta.env.VITE_API_URL || 'Not set'
+    });
+  }
+};
+
+// Call the function to load environment variables
+loadEnv();
 
 // Apply saved branding on app start
 const applyInitialBranding = () => {

@@ -2,7 +2,9 @@
  * API client for communicating with the backend
  */
 
-const API_URL = 'http://localhost:3000/api';
+import { supabase } from '../utils/supabaseClient';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 /**
  * Make an API request
@@ -14,58 +16,199 @@ async function apiRequest(endpoint, options = {}) {
   // Get token from localStorage
   const token = localStorage.getItem('vcare_token');
   
-  // Set default headers
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers
-  };
+  try {
+    // Set default headers
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers
+    };
+    
+    // Add authorization header if token exists
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    // Make request
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers
+    });
+    
+    // Parse response
+    const data = await response.json();
+    
+    // Handle error responses
+    if (!response.ok) {
+      throw new Error(data.message || 'Something went wrong');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error(`API request error for ${endpoint}:`, error);
+    
+    // Fall back to Supabase direct access if API fails
+    if (endpoint.startsWith('/products')) {
+      return fallbackToSupabase('products', endpoint, options);
+    } else if (endpoint.startsWith('/raw-materials')) {
+      return fallbackToSupabase('raw_materials', endpoint, options);
+    } else if (endpoint.startsWith('/transactions')) {
+      return fallbackToSupabase('transactions', endpoint, options);
+    } else if (endpoint.startsWith('/categories')) {
+      return fallbackToSupabase('categories', endpoint, options);
+    } else if (endpoint.startsWith('/coupons')) {
+      return fallbackToSupabase('coupons', endpoint, options);
+    } else if (endpoint.startsWith('/taxes')) {
+      return fallbackToSupabase('taxes', endpoint, options);
+    }
+    
+    throw error;
+  }
+}
+
+// Fallback to direct Supabase access if API fails
+async function fallbackToSupabase(table, endpoint, options) {
+  console.log(`Falling back to direct Supabase access for ${table}`);
   
-  // Add authorization header if token exists
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  if (options.method === 'GET' || !options.method) {
+    const { data, error } = await supabase.from(table).select('*');
+    if (error) throw error;
+    return data;
+  } else if (options.method === 'POST') {
+    const body = JSON.parse(options.body);
+    const { data, error } = await supabase.from(table).insert(body).select();
+    if (error) throw error;
+    return data[0];
+  } else if (options.method === 'PUT') {
+    const id = endpoint.split('/').pop();
+    const body = JSON.parse(options.body);
+    const { data, error } = await supabase.from(table).update(body).eq('id', id).select();
+    if (error) throw error;
+    return data[0];
+  } else if (options.method === 'DELETE') {
+    const id = endpoint.split('/').pop();
+    const { error } = await supabase.from(table).delete().eq('id', id);
+    if (error) throw error;
+    return { success: true };
   }
   
-  // Make request
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers
-  });
-  
-  // Parse response
-  const data = await response.json();
-  
-  // Handle error responses
-  if (!response.ok) {
-    throw new Error(data.message || 'Something went wrong');
-  }
-  
-  return data;
+  throw new Error('Unsupported method in fallback');
 }
 
 // Auth API
 export const authApi = {
   login: async (username, password) => {
-    return apiRequest('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ username, password })
-    });
+    try {
+      // Try API first
+      return await apiRequest('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password })
+      });
+    } catch (error) {
+      console.error('API login failed, trying Supabase:', error);
+      
+      // Fallback to Supabase auth
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: username,
+        password: password,
+      });
+      
+      if (authError) throw authError;
+      
+      // Get user profile from users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', username)
+        .single();
+      
+      if (userError) throw userError;
+      
+      return {
+        success: true,
+        token: data.session.access_token,
+        user: {
+          id: userData.id,
+          username: userData.username,
+          firstName: userData.first_name,
+          lastName: userData.last_name,
+          email: userData.email,
+          role: userData.role,
+          permissions: userData.permissions,
+          lastLogin: userData.last_login
+        }
+      };
+    }
   },
   
   logout: async () => {
-    return apiRequest('/auth/logout', {
-      method: 'POST'
-    });
+    try {
+      // Try API first
+      await apiRequest('/auth/logout', {
+        method: 'POST'
+      });
+    } catch (error) {
+      console.error('API logout failed, trying Supabase:', error);
+      
+      // Fallback to Supabase auth
+      await supabase.auth.signOut();
+    }
+    
+    return { success: true };
   },
   
   getCurrentUser: async () => {
-    return apiRequest('/auth/me');
+    try {
+      // Try API first
+      return await apiRequest('/auth/me');
+    } catch (error) {
+      console.error('API getCurrentUser failed, trying Supabase:', error);
+      
+      // Fallback to Supabase auth
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) throw new Error('Not authenticated');
+      
+      // Get user profile from users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', user.email)
+        .single();
+      
+      if (userError) throw userError;
+      
+      return {
+        id: userData.id,
+        username: userData.username,
+        firstName: userData.first_name,
+        lastName: userData.last_name,
+        email: userData.email,
+        role: userData.role,
+        permissions: userData.permissions,
+        lastLogin: userData.last_login
+      };
+    }
   },
   
   changePassword: async (currentPassword, newPassword) => {
-    return apiRequest('/auth/change-password', {
-      method: 'PUT',
-      body: JSON.stringify({ currentPassword, newPassword })
-    });
+    try {
+      // Try API first
+      return await apiRequest('/auth/change-password', {
+        method: 'PUT',
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+    } catch (error) {
+      console.error('API changePassword failed, trying Supabase:', error);
+      
+      // Fallback to Supabase auth
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (updateError) throw updateError;
+      
+      return { success: true, message: 'Password updated successfully' };
+    }
   }
 };
 

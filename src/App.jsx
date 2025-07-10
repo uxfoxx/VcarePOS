@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ConfigProvider, Layout, theme } from 'antd';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { POSProvider, usePOS } from './contexts/POSContext';
-import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext'; 
+import { POSProvider, usePOS } from './contexts/POSContext'; 
+import { NotificationProvider, useNotifications } from './contexts/NotificationContext'; 
 import { LoginPage } from './components/Auth/LoginPage';
 import { Header } from './components/Layout/Header';
 import { Sidebar } from './components/Layout/Sidebar';
@@ -25,11 +25,13 @@ const { Sider, Content } = Layout;
 
 function AppContent() {
   const { isAuthenticated, hasPermission } = useAuth();
-  const { checkStockLevels } = useNotifications();
+  const { checkStockLevels } = useNotifications(); 
   const [activeTab, setActiveTab] = useState('pos');
   const [collapsed, setCollapsed] = useState(false);
 
-  // Removed login check - always show the main app
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   const renderContent = () => {
     const contentMap = {

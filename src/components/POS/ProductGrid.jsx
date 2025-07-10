@@ -32,10 +32,11 @@ const { Search } = Input;
 
 export function ProductGrid({ collapsed }) {
   const { 
-    products, 
-    categories, 
+    products,
+    categories,
     loading,
-    addToCart: addToCartAction 
+    addToCart,
+    dispatch
   } = usePOS();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -96,7 +97,7 @@ export function ProductGrid({ collapsed }) {
   const handleAddToCartWithAddons = (productWithAddons, quantity = 1) => {
     // Add to cart multiple times based on quantity
     for (let i = 0; i < quantity; i++) {
-      addToCartAction(productWithAddons);
+      addToCart(productWithAddons);
     }
   };
 
@@ -137,7 +138,7 @@ export function ProductGrid({ collapsed }) {
   };
 
   const handleAddCustomProduct = (customProduct) => {
-    addToCartAction(customProduct);
+    addToCart(customProduct);
   };
 
   // Determine grid columns based on sidebar state

@@ -6,52 +6,104 @@ import { authApi, auditApi } from '../api/apiClient';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(true); // Always authenticated
+  const [currentUser, setCurrentUser] = useState({
+    id: 'USER-001',
+    username: 'admin',
+    firstName: 'Admin',
+    lastName: 'User',
+    email: 'admin@vcarefurniture.com',
+    role: 'admin',
+    permissions: {
+      'pos': { view: true, edit: true, delete: true },
+      'products': { view: true, edit: true, delete: true },
+      'raw-materials': { view: true, edit: true, delete: true },
+      'transactions': { view: true, edit: true, delete: true },
+      'reports': { view: true, edit: true, delete: true },
+      'coupons': { view: true, edit: true, delete: true },
+      'tax': { view: true, edit: true, delete: true },
+      'purchase-orders': { view: true, edit: true, delete: true },
+      'settings': { view: true, edit: true, delete: true },
+      'user-management': { view: true, edit: true, delete: true },
+      'audit-trail': { view: true, edit: true, delete: true }
+    }
+  });
   const [users, setUsers] = useState([]);
   const [auditTrail, setAuditTrail] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in
-    const token = localStorage.getItem('vcare_token');
-    if (token) {
-      // Verify token and get user data
-      authApi.getCurrentUser()
-        .then(user => {
-          setCurrentUser(user);
-          setIsAuthenticated(true);
-        })
-        .catch(() => {
-          // Invalid token, remove it
-          localStorage.removeItem('vcare_token');
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
-      setLoading(false);
-    }
+    // Skip authentication check, always set loading to false
+    setLoading(false);
+    
+    // Initialize with some mock users
+    setUsers([
+      {
+        id: 'USER-001',
+        username: 'admin',
+        firstName: 'Admin',
+        lastName: 'User',
+        email: 'admin@vcarefurniture.com',
+        role: 'admin',
+        isActive: true,
+        permissions: {
+          'pos': { view: true, edit: true, delete: true },
+          'products': { view: true, edit: true, delete: true },
+          'raw-materials': { view: true, edit: true, delete: true },
+          'transactions': { view: true, edit: true, delete: true },
+          'reports': { view: true, edit: true, delete: true },
+          'coupons': { view: true, edit: true, delete: true },
+          'tax': { view: true, edit: true, delete: true },
+          'purchase-orders': { view: true, edit: true, delete: true },
+          'settings': { view: true, edit: true, delete: true },
+          'user-management': { view: true, edit: true, delete: true },
+          'audit-trail': { view: true, edit: true, delete: true }
+        }
+      },
+      {
+        id: 'USER-002',
+        username: 'cashier1',
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@vcarefurniture.com',
+        role: 'cashier',
+        isActive: true,
+        permissions: {
+          'pos': { view: true, edit: true, delete: false },
+          'products': { view: true, edit: false, delete: false },
+          'raw-materials': { view: false, edit: false, delete: false },
+          'transactions': { view: true, edit: false, delete: false },
+          'reports': { view: false, edit: false, delete: false },
+          'coupons': { view: true, edit: false, delete: false },
+          'tax': { view: false, edit: false, delete: false },
+          'purchase-orders': { view: false, edit: false, delete: false },
+          'settings': { view: false, edit: false, delete: false },
+          'user-management': { view: false, edit: false, delete: false },
+          'audit-trail': { view: false, edit: false, delete: false }
+        }
+      }
+    ]);
   }, []);
 
   // Fetch users when authenticated
   useEffect(() => {
-    if (isAuthenticated && currentUser?.role === 'admin') {
+    if (currentUser?.role === 'admin') {
       fetchUsers();
     }
   }, [isAuthenticated, currentUser]);
 
   // Fetch audit trail when authenticated
   useEffect(() => {
-    if (isAuthenticated && hasPermission('audit-trail', 'view')) {
+    if (hasPermission('audit-trail', 'view')) {
       fetchAuditTrail();
     }
   }, [isAuthenticated, currentUser]);
 
   const fetchUsers = async () => {
     try {
-      const data = await usersApi.getAll();
-      setUsers(data);
+      // Skip API call, we're using mock data
+      // const data = await usersApi.getAll();
+      // setUsers(data);
     } catch (error) {
       console.error('Error fetching users:', error);
     }
@@ -59,8 +111,9 @@ export function AuthProvider({ children }) {
 
   const fetchAuditTrail = async () => {
     try {
-      const data = await auditApi.getAll();
-      setAuditTrail(data);
+      // Skip API call, we're using mock data
+      // const data = await auditApi.getAll();
+      // setAuditTrail([]);
     } catch (error) {
       console.error('Error fetching audit trail:', error);
     }
@@ -68,17 +121,9 @@ export function AuthProvider({ children }) {
 
   const login = async (username, password) => {
     try {
-      const response = await authApi.login(username, password);
-      
-      // Save token to localStorage
-      localStorage.setItem('vcare_token', response.token);
-      
-      // Set current user
-      setCurrentUser(response.user);
-      setIsAuthenticated(true);
-      
-      message.success(`Welcome back, ${response.user.firstName}!`);
-      return { success: true, user: response.user };
+      // Skip actual login, always return success
+      message.success(`Welcome back, Admin!`);
+      return { success: true, user: currentUser };
     } catch (error) {
       message.error(error.message || 'Invalid username or password');
       return { success: false, error: error.message || 'Invalid credentials' };
@@ -87,17 +132,8 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     try {
-      // Call logout API
-      if (isAuthenticated) {
-        authApi.logout().catch(console.error);
-      }
-      
-      // Clear token and user data
-      localStorage.removeItem('vcare_token');
-      setCurrentUser(null);
-      setIsAuthenticated(false);
-      
-      message.info('You have been logged out');
+      // Skip actual logout
+      message.info('Logout is disabled in this demo mode');
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -113,41 +149,37 @@ export function AuthProvider({ children }) {
   };
 
   const addUser = (userData) => {
-    return usersApi.create(userData)
-      .then(newUser => {
-        setUsers([...users, newUser]);
-        return newUser;
-      });
+    // Mock implementation
+    const newUser = { ...userData, id: `USER-${Date.now()}` };
+    setUsers([...users, newUser]);
+    return Promise.resolve(newUser);
   };
 
   const updateUser = (userData) => {
-    return usersApi.update(userData.id, userData)
-      .then(updatedUser => {
-        setUsers(users.map(user => 
-          user.id === updatedUser.id ? updatedUser : user
-        ));
-        
-        // Update current user if it's the same user
-        if (currentUser?.id === updatedUser.id) {
-          setCurrentUser(updatedUser);
-        }
-        
-        return updatedUser;
-      });
+    // Mock implementation
+    const updatedUser = { ...userData };
+    setUsers(users.map(user => 
+      user.id === updatedUser.id ? updatedUser : user
+    ));
+    
+    // Update current user if it's the same user
+    if (currentUser?.id === updatedUser.id) {
+      setCurrentUser(updatedUser);
+    }
+    
+    return Promise.resolve(updatedUser);
   };
 
   const deleteUser = (userId) => {
-    return usersApi.delete(userId)
-      .then(() => {
-        setUsers(users.filter(user => user.id !== userId));
-      });
+    // Mock implementation
+    setUsers(users.filter(user => user.id !== userId));
+    return Promise.resolve();
   };
 
   const getAuditTrail = async () => {
     try {
-      const data = await auditApi.getAll();
-      setAuditTrail(data);
-      return data;
+      // Mock implementation
+      return auditTrail;
     } catch (error) {
       console.error('Error fetching audit trail:', error);
       return auditTrail;
@@ -156,9 +188,8 @@ export function AuthProvider({ children }) {
 
   const getUsers = async () => {
     try {
-      const data = await usersApi.getAll();
-      setUsers(data);
-      return data;
+      // Mock implementation
+      return users;
     } catch (error) {
       console.error('Error fetching users:', error);
       return users;

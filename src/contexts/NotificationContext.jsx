@@ -200,13 +200,13 @@ export function NotificationProvider({ children }) {
     const unavailableMaterials = [];
     const lowMaterials = [];
     
-    // Ensure we have arrays to work with
+    // Ensure we have valid arrays to work with
     if (!Array.isArray(cartItems) || !Array.isArray(rawMaterials)) {
       return { unavailableMaterials, lowMaterials };
     }
 
     cartItems.forEach(cartItem => {
-      if (cartItem.product && Array.isArray(cartItem.product.rawMaterials)) {
+      if (cartItem?.product && Array.isArray(cartItem.product.rawMaterials)) {
         cartItem.product.rawMaterials.forEach(requiredMaterial => {
           const material = rawMaterials.find(m => m.id === requiredMaterial.rawMaterialId);
           if (material) {

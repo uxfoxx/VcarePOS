@@ -35,7 +35,7 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Filter raw materials that can be used as addons (only those with enough stock)
-  const availableAddons = (state.rawMaterials || []).filter(material => 
+  const availableAddons = (state?.rawMaterials || []).filter(material => 
     material.stockQuantity > 0 &&
     material.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -55,7 +55,7 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
     
     const basePrice = product.price;
     const addonsTotalPrice = selectedAddons.reduce((sum, addon) => {
-      const material = (state.rawMaterials || []).find(m => m.id === addon.id);
+      const material = (state?.rawMaterials || []).find(m => m.id === addon.id);
       return sum + (material ? material.unitPrice * addon.quantity : 0);
     }, 0);
     
@@ -71,7 +71,7 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
   const handleAddonChange = (addonId, checked) => {
     if (checked) {
       // Add the addon
-      const material = (state.rawMaterials || []).find(m => m.id === addonId);
+      const material = (state?.rawMaterials || []).find(m => m.id === addonId);
       if (material) {
         setSelectedAddons([...selectedAddons, { id: addonId, quantity: 1 }]);
       }
@@ -264,7 +264,7 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
             <List
               dataSource={selectedAddons}
               renderItem={addon => {
-                const material = (state.rawMaterials || []).find(m => m.id === addon.id);
+                const material = (state?.rawMaterials || []).find(m => m.id === addon.id);
                 if (!material) return null;
                 
                 return (
@@ -302,7 +302,7 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
                   <Text>Addons:</Text>
                   <Text>
                     LKR {selectedAddons.reduce((sum, addon) => {
-                      const material = (state.rawMaterials || []).find(m => m.id === addon.id);
+                      const material = (state?.rawMaterials || []).find(m => m.id === addon.id);
                       return sum + (material ? material.unitPrice * addon.quantity : 0);
                     }, 0).toFixed(2)}
                   </Text>

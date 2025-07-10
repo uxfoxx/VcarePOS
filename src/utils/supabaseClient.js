@@ -1,18 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://example.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Check if Supabase credentials are available
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase credentials not found in environment variables. Using mock data instead.');
+  console.warn('Supabase credentials not found in environment variables. Please connect to Supabase using the "Connect to Supabase" button.');
 }
 
 // Create client with fallback to mock data if credentials are missing
 export const supabase = createClient(
-  supabaseUrl, 
-  supabaseAnonKey,
+  supabaseUrl || 'https://example.supabase.co', 
+  supabaseAnonKey || 'your-anon-key',
   {
     auth: {
       persistSession: true,
@@ -25,6 +25,11 @@ export const supabase = createClient(
 // Helper functions for common operations
 export const fetchData = async (table, options = {}) => {
   try {
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.warn(`Supabase not configured. Cannot fetch data from ${table}.`);
+      return [];
+    }
+    
     let query = supabase.from(table).select(options.select || '*');
     
     if (options.filters) {
@@ -49,6 +54,11 @@ export const fetchData = async (table, options = {}) => {
 
 export const insertData = async (table, data) => {
   try {
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.warn(`Supabase not configured. Cannot insert data into ${table}.`);
+      throw new Error('Supabase not configured');
+    }
+    
     const { data: result, error } = await supabase.from(table).insert(data).select();
     if (error) throw error;
     return result[0];
@@ -60,6 +70,11 @@ export const insertData = async (table, data) => {
 
 export const updateData = async (table, id, data) => {
   try {
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.warn(`Supabase not configured. Cannot update data in ${table}.`);
+      throw new Error('Supabase not configured');
+    }
+    
     const { data: result, error } = await supabase
       .from(table)
       .update(data)
@@ -76,6 +91,11 @@ export const updateData = async (table, id, data) => {
 
 export const deleteData = async (table, id) => {
   try {
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.warn(`Supabase not configured. Cannot delete data from ${table}.`);
+      throw new Error('Supabase not configured');
+    }
+    
     const { error } = await supabase.from(table).delete().eq('id', id);
     if (error) throw error;
     return true;

@@ -17,8 +17,8 @@ const POSContext = createContext(null);
 export function POSProvider({ children }) {
   // State
   const [state, setState] = useState({ 
-    cart: [],
-    products: [],
+    cart: [], // Initialize with empty arrays to prevent undefined errors
+    products: [], 
     rawMaterials: [],
     transactions: [],
     coupons: [],
@@ -52,19 +52,8 @@ export function POSProvider({ children }) {
   // Fetch all initial data
   const fetchInitialData = async () => {
     setLoading(true);
+    
     try {
-      // Initialize with empty arrays to prevent undefined errors
-      setState(prev => ({
-        ...prev,
-        products: [],
-        rawMaterials: [],
-        transactions: [],
-        coupons: [],
-        taxes: [],
-        categories: [],
-        purchaseOrders: []
-      }));
-      
       try {
         // Try API first
         const [
@@ -98,142 +87,123 @@ export function POSProvider({ children }) {
       } catch (apiError) {
         console.error('API fetch failed, falling back to Supabase:', apiError);
 
-        // Initialize all data variables with empty arrays
-        let productsData = [];
-        let rawMaterialsData = [];
-        let transactionsData = [];
-        let couponsData = [];
-        let taxesData = [];
-        let categoriesData = [];
-        let purchaseOrdersData = [];
-        let sizesData = [];
-        let productMaterialsData = [];
-        let transactionItemsData = [];
-
         try {
-          // Fallback to direct Supabase access using Promise.allSettled for better error handling
-          const results = await Promise.allSettled([
-            supabase.from('products').select('*'),
-            supabase.from('raw_materials').select('*'),
-            supabase.from('transactions').select('*'),
-            supabase.from('coupons').select('*'),
-            supabase.from('taxes').select('*'),
-            supabase.from('categories').select('*'),
-            supabase.from('purchase_orders').select('*'),
-            supabase.from('product_sizes').select('*'),
-            supabase.from('product_raw_materials').select('*'),
-            supabase.from('transaction_items').select('*')
-          ]);
+          // Check if Supabase is configured
+          if (!supabase || !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+            console.error('Supabase is not properly configured. Please connect to Supabase first.');
+            throw new Error('Supabase not configured');
+          }
+          
+          // Fetch data from Supabase
+          const { data: productsData, error: productsError } = await supabase.from('products').select('*');
+          if (productsError) throw productsError;
+          
+          const { data: rawMaterialsData, error: materialsError } = await supabase.from('raw_materials').select('*');
+          if (materialsError) throw materialsError;
+          
+          const { data: transactionsData, error: transactionsError } = await supabase.from('transactions').select('*');
+          if (transactionsError) throw transactionsError;
+          
+          const { data: couponsData, error: couponsError } = await supabase.from('coupons').select('*');
+          if (couponsError) throw couponsError;
+          
+          const { data: taxesData, error: taxesError } = await supabase.from('taxes').select('*');
+          if (taxesError) throw taxesError;
+          
+          const { data: categoriesData, error: categoriesError } = await supabase.from('categories').select('*');
+          if (categoriesError) throw categoriesError;
+          
+          const { data: purchaseOrdersData, error: purchaseOrdersError } = await supabase.from('purchase_orders').select('*');
+          if (purchaseOrdersError) throw purchaseOrdersError;
+          
+          // Get product sizes
+          const { data: sizesData, error: sizesError } = await supabase.from('product_sizes').select('*');
+          if (sizesError) throw sizesError;
+          
+          // Get product raw materials
+          const { data: productMaterialsData, error: productMaterialsError } = await supabase.from('product_raw_materials').select('*');
+          if (productMaterialsError) throw productMaterialsError;
+          
+          // Get transaction items
+          const { data: transactionItemsData, error: transactionItemsError } = await supabase.from('transaction_items').select('*');
+          if (transactionItemsError) throw transactionItemsError;
 
-          // Extract data from fulfilled promises, keep empty arrays for rejected ones
-          if (results[0].status === 'fulfilled') productsData = results[0].value.data || [];
-          if (results[1].status === 'fulfilled') rawMaterialsData = results[1].value.data || [];
-          if (results[2].status === 'fulfilled') transactionsData = results[2].value.data || [];
-          if (results[3].status === 'fulfilled') couponsData = results[3].value.data || [];
-          if (results[4].status === 'fulfilled') taxesData = results[4].value.data || [];
-          if (results[5].status === 'fulfilled') categoriesData = results[5].value.data || [];
-          if (results[6].status === 'fulfilled') purchaseOrdersData = results[6].value.data || [];
-          if (results[7].status === 'fulfilled') sizesData = results[7].value.data || [];
-          if (results[8].status === 'fulfilled') productMaterialsData = results[8].value.data || [];
-          if (results[9].status === 'fulfilled') transactionItemsData = results[9].value.data || [];
+          // Process products to include sizes and materials
+          const processedProducts = (productsData || []).map(product => {
+            // Find sizes for this product
+            const sizes = (sizesData || [])
+              .filter(size => size.product_id === product.id)
+              .map(size => ({
+                id: size.id,
+                name: size.name,
+                price: size.price,
+                stock: size.stock,
+                dimensions: size.dimensions,
+                weight: size.weight
+              }));
 
-          // Log any failed fetches
-          results.forEach((result, index) => {
-            if (result.status === 'rejected') {
-              const tables = ['products', 'raw_materials', 'transactions', 'coupons', 'taxes', 'categories', 'purchase_orders', 'product_sizes', 'product_raw_materials', 'transaction_items'];
-              console.error(`Failed to fetch ${tables[index]}:`, result.reason);
-            }
+            // Find raw materials for this product
+            const materials = (productMaterialsData || [])
+              .filter(material => material.product_id === product.id)
+              .map(material => ({
+                rawMaterialId: material.raw_material_id,
+                quantity: material.quantity
+              }));
+
+            return {
+              ...product,
+              sizes: sizes,
+              rawMaterials: materials
+            };
           });
+          
+          // Process transactions to include items
+          const processedTransactions = (transactionsData || []).map(transaction => {
+            // Find items for this transaction
+            const items = (transactionItemsData || [])
+              .filter(item => item.transaction_id === transaction.id)
+              .map(item => ({
+                product: {
+                  id: item.product_id,
+                  name: item.product_name,
+                  price: item.product_price,
+                  barcode: item.product_barcode,
+                  category: item.product_category
+                },
+                quantity: item.quantity,
+                selectedSize: item.selected_size,
+                selectedVariant: item.selected_variant,
+                addons: item.addons
+              }));
+
+            return {
+              ...transaction,
+              items: items
+            };
+          });
+
+          setState(prev => ({
+            ...prev,
+            products: processedProducts || [],
+            rawMaterials: rawMaterialsData || [],
+            transactions: processedTransactions || [],
+            coupons: couponsData || [],
+            taxes: taxesData || [],
+            categories: categoriesData || [],
+            purchaseOrders: purchaseOrdersData || []
+          }));
         } catch (supabaseError) {
           console.error('Supabase fetch failed:', supabaseError);
-          // All variables are already initialized with empty arrays above
+          // Keep the state with empty arrays if Supabase fails
         }
-        // Process products to include sizes and materials
-        const processedProducts = productsData.map(product => {
-          // Find sizes for this product
-          const sizes = sizesData
-            .filter(size => size.product_id === product.id)
-            .map(size => ({
-              id: size.id,
-              name: size.name,
-              price: size.price,
-              stock: size.stock,
-              dimensions: size.dimensions,
-              weight: size.weight
-            }));
-
-          // Find raw materials for this product
-          const materials = productMaterialsData
-            .filter(material => material.product_id === product.id)
-            .map(material => ({
-              rawMaterialId: material.raw_material_id,
-              quantity: material.quantity
-            }));
-
-          return {
-            ...product,
-            sizes: sizes,
-            rawMaterials: materials
-          };
-        });
-        
-        // Process transactions to include items
-        const processedTransactions = transactionsData.map(transaction => {
-          // Find items for this transaction
-          const items = transactionItemsData
-            .filter(item => item.transaction_id === transaction.id)
-            .map(item => ({
-              product: {
-                id: item.product_id,
-                name: item.product_name,
-                price: item.product_price,
-                barcode: item.product_barcode,
-                category: item.product_category
-              },
-              quantity: item.quantity,
-              selectedSize: item.selected_size,
-              selectedVariant: item.selected_variant,
-              addons: item.addons
-            }));
-
-          return {
-            ...transaction,
-            items: items
-          };
-        });
-        
-        setState(prev => ({
-          ...prev,
-          products: processedProducts,
-          rawMaterials: rawMaterialsData,
-          transactions: processedTransactions,
-          coupons: couponsData,
-          taxes: taxesData,
-          categories: categoriesData,
-          purchaseOrders: purchaseOrdersData
-        }));
       }
 
       // Check stock levels
-      if (checkStockLevels) {
-        // Check stock levels with current state
-        if (Array.isArray(state.rawMaterials) && Array.isArray(state.products)) {
-          checkStockLevels(state.rawMaterials, state.products);
-        }
+      if (checkStockLevels && Array.isArray(state.rawMaterials) && Array.isArray(state.products)) {
+        checkStockLevels(state.rawMaterials, state.products);
       }
     } catch (error) {
       console.error('Error fetching initial data:', error);
-      // Ensure state is still properly initialized even if everything fails
-      setState(prev => ({
-        ...prev,
-        products: prev.products || [],
-        rawMaterials: prev.rawMaterials || [],
-        transactions: prev.transactions || [],
-        coupons: prev.coupons || [],
-        taxes: prev.taxes || [],
-        categories: prev.categories || [],
-        purchaseOrders: prev.purchaseOrders || []
-      }));
     } finally {
       setLoading(false);
       setState(prev => ({ ...prev, loading: false }));

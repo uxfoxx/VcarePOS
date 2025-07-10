@@ -2,7 +2,7 @@
  * API client for communicating with the backend
  */
 
-import { supabase } from '../utils/supabaseClient';
+import { supabase, fetchData, insertData, updateData, deleteData } from '../utils/supabaseClient';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -19,7 +19,7 @@ async function apiRequest(endpoint, options = {}) {
   try {
     // Set default headers
     const headers = {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json', 
       ...options.headers
     };
     
@@ -37,7 +37,7 @@ async function apiRequest(endpoint, options = {}) {
     // Parse response
     const data = await response.json();
     
-    // Handle error responses
+    // Handle error responses from API
     if (!response.ok) {
       throw new Error(data.message || 'Something went wrong');
     }
@@ -48,47 +48,65 @@ async function apiRequest(endpoint, options = {}) {
     
     // Fall back to Supabase direct access if API fails
     if (endpoint.startsWith('/products')) {
-      return fallbackToSupabase('products', endpoint, options);
+      return fallbackToSupabase('products', endpoint, options, 'products');
     } else if (endpoint.startsWith('/raw-materials')) {
-      return fallbackToSupabase('raw_materials', endpoint, options);
+      return fallbackToSupabase('raw_materials', endpoint, options, 'raw-materials');
     } else if (endpoint.startsWith('/transactions')) {
-      return fallbackToSupabase('transactions', endpoint, options);
+      return fallbackToSupabase('transactions', endpoint, options, 'transactions');
     } else if (endpoint.startsWith('/categories')) {
-      return fallbackToSupabase('categories', endpoint, options);
+      return fallbackToSupabase('categories', endpoint, options, 'categories');
     } else if (endpoint.startsWith('/coupons')) {
-      return fallbackToSupabase('coupons', endpoint, options);
+      return fallbackToSupabase('coupons', endpoint, options, 'coupons');
     } else if (endpoint.startsWith('/taxes')) {
-      return fallbackToSupabase('taxes', endpoint, options);
+      return fallbackToSupabase('taxes', endpoint, options, 'taxes');
     }
     
     throw error;
   }
 }
 
-// Fallback to direct Supabase access if API fails
-async function fallbackToSupabase(table, endpoint, options) {
-  console.log(`Falling back to direct Supabase access for ${table}`);
+// Improved fallback to direct Supabase access if API fails
+async function fallbackToSupabase(table, endpoint, options, resourceType) {
+  console.log(`Falling back to direct Supabase access for ${resourceType}`);
+  
+  if (!supabase || !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+    console.error('Supabase is not properly configured. Please connect to Supabase first.');
+    return resourceType === 'products' || resourceType === 'categories' ? [] : {};
+  }
   
   if (options.method === 'GET' || !options.method) {
-    const { data, error } = await supabase.from(table).select('*');
-    if (error) throw error;
-    return data;
+    try {
+      return await fetchData(table);
+    } catch (error) {
+      console.error(`Error fetching ${resourceType} from Supabase:`, error);
+      return [];
+    }
   } else if (options.method === 'POST') {
-    const body = JSON.parse(options.body);
-    const { data, error } = await supabase.from(table).insert(body).select();
-    if (error) throw error;
-    return data[0];
+    try {
+      const body = JSON.parse(options.body);
+      return await insertData(table, body);
+    } catch (error) {
+      console.error(`Error creating ${resourceType} in Supabase:`, error);
+      throw error;
+    }
   } else if (options.method === 'PUT') {
-    const id = endpoint.split('/').pop();
-    const body = JSON.parse(options.body);
-    const { data, error } = await supabase.from(table).update(body).eq('id', id).select();
-    if (error) throw error;
-    return data[0];
+    try {
+      const id = endpoint.split('/').pop();
+      const body = JSON.parse(options.body);
+      return await updateData(table, id, body);
+    } catch (error) {
+      console.error(`Error updating ${resourceType} in Supabase:`, error);
+      throw error;
+    }
   } else if (options.method === 'DELETE') {
-    const id = endpoint.split('/').pop();
-    const { error } = await supabase.from(table).delete().eq('id', id);
-    if (error) throw error;
-    return { success: true };
+    try {
+      const id = endpoint.split('/').pop();
+      await deleteData(table, id);
+      return { success: true };
+    } catch (error) {
+      console.error(`Error deleting ${resourceType} from Supabase:`, error);
+      throw error;
+    }
   }
   
   throw new Error('Unsupported method in fallback');

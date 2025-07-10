@@ -39,6 +39,7 @@ export function VariantSelectionModal({
 
   if (!product) return null;
 
+  // Ensure variants is always an array
   const variants = product.variants || [];
 
   const handleVariantSelect = (variant) => {

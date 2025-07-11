@@ -28,7 +28,7 @@ const { TextArea } = Input;
 const { Search } = Input;
 
 export function CustomProductModal({ open, onClose, onAddToCart }) {
-  const { state } = usePOS();
+  const { rawMaterials } = usePOS();
   const [form] = Form.useForm();
   const [materialsForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -67,13 +67,13 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
   }, [selectedMaterials]);
 
   // Filter materials based on search term
-  const filteredMaterials = (state?.rawMaterials || []).filter(material => 
+  const filteredMaterials = (rawMaterials || []).filter(material => 
     material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     material.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAddMaterial = (values) => {
-    const material = (state?.rawMaterials || []).find(m => m.id === values.materialId);
+    const material = (rawMaterials || []).find(m => m.id === values.materialId);
     if (!material) {
       message.error('Material not found');
       return;
@@ -279,7 +279,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
                     option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }
                 >
-                  {(state?.rawMaterials || []).map(material => (
+                  {(rawMaterials || []).map(material => (
                     <Option key={material.id} value={material.id}>
                       {material.name} (LKR {material.unitPrice}/{material.unit}) - Stock: {material.stockQuantity}
                     </Option>

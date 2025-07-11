@@ -11,8 +11,6 @@ const loadEnv = () => {
     
     // Log environment variables (without exposing sensitive data)
     console.log('Environment variables loaded:', {
-      SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Not set',
-      SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Set' : 'Not set',
       API_URL: import.meta.env.VITE_API_URL || 'Not set'
     });
   }

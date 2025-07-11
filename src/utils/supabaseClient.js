@@ -1,106 +1,44 @@
-import { createClient } from '@supabase/supabase-js';
+/**
+ * This file previously contained Supabase client configuration.
+ * The application now uses a direct connection to PostgreSQL via the backend API.
+ */
 
-// Initialize Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-// Check if Supabase credentials are available
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase credentials not found in environment variables. Please connect to Supabase using the "Connect to Supabase" button.');
-}
-
-// Create client with fallback to mock data if credentials are missing
-export const supabase = createClient(
-  supabaseUrl || 'https://example.supabase.co', 
-  supabaseAnonKey || 'your-anon-key',
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
-    }
-  }
-);
+// Set supabase to null to ensure any accidental usage will fail explicitly
+export const supabase = null;
 
 // Helper functions for common operations
 export const fetchData = async (table, options = {}) => {
   try {
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.warn(`Supabase not configured. Cannot fetch data from ${table}.`);
-      return [];
-    }
-    
-    let query = supabase.from(table).select(options.select || '*');
-    
-    if (options.filters) {
-      Object.entries(options.filters).forEach(([key, value]) => {
-        query = query.eq(key, value);
-      });
-    }
-    
-    if (options.order) {
-      query = query.order(options.order.column, { ascending: options.order.ascending });
-    }
-    
-    const { data, error } = await query;
-    
-    if (error) throw error;
-    return data;
+    throw new Error(`Direct Supabase access is no longer supported. Please use the API endpoints instead.`);
   } catch (error) {
-    console.error(`Error fetching data from ${table}:`, error);
-    return [];
+    console.error(`Error: Supabase is no longer used. Please use the API endpoints.`);
+    throw error;
   }
 };
 
 export const insertData = async (table, data) => {
   try {
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.warn(`Supabase not configured. Cannot insert data into ${table}.`);
-      throw new Error('Supabase not configured');
-    }
-    
-    const { data: result, error } = await supabase.from(table).insert(data).select();
-    if (error) throw error;
-    return result[0];
+    throw new Error(`Direct Supabase access is no longer supported. Please use the API endpoints instead.`);
   } catch (error) {
-    console.error(`Error inserting data into ${table}:`, error);
+    console.error(`Error: Supabase is no longer used. Please use the API endpoints.`);
     throw error;
   }
 };
 
 export const updateData = async (table, id, data) => {
   try {
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.warn(`Supabase not configured. Cannot update data in ${table}.`);
-      throw new Error('Supabase not configured');
-    }
-    
-    const { data: result, error } = await supabase
-      .from(table)
-      .update(data)
-      .eq('id', id)
-      .select();
-    
-    if (error) throw error;
-    return result[0];
+    throw new Error(`Direct Supabase access is no longer supported. Please use the API endpoints instead.`);
   } catch (error) {
-    console.error(`Error updating data in ${table}:`, error);
+    console.error(`Error: Supabase is no longer used. Please use the API endpoints.`);
     throw error;
   }
 };
 
 export const deleteData = async (table, id) => {
   try {
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.warn(`Supabase not configured. Cannot delete data from ${table}.`);
-      throw new Error('Supabase not configured');
-    }
-    
-    const { error } = await supabase.from(table).delete().eq('id', id);
-    if (error) throw error;
-    return true;
+    throw new Error(`Direct Supabase access is no longer supported. Please use the API endpoints instead.`);
   } catch (error) {
-    console.error(`Error deleting data from ${table}:`, error);
+    console.error(`Error: Supabase is no longer used. Please use the API endpoints.`);
     throw error;
   }
 };

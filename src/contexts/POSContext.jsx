@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { useNotifications } from './NotificationContext';
-import { supabase } from '../utils/supabaseClient';
 import {
   productsApi, 
   rawMaterialsApi, 
@@ -52,163 +51,48 @@ export function POSProvider({ children }) {
   // Fetch all initial data
   const fetchInitialData = async () => {
     setLoading(true);
-    
     try {
-      try {
-        // Try API first
-        const [
-          productsData,
-          rawMaterialsData,
-          transactionsData,
-          couponsData,
-          taxesData,
-          categoriesData,
-          purchaseOrdersData 
-        ] = await Promise.all([
-          productsApi.getAll(),
-          rawMaterialsApi.getAll(),
-          transactionsApi.getAll(),
-          couponsApi.getAll(),
-          taxesApi.getAll(),
-          categoriesApi.getAll(),
-          purchaseOrdersApi.getAll()
-        ]);
+      // Fetch all data from API
+      const [
+        productsData,
+        rawMaterialsData,
+        transactionsData,
+        couponsData,
+        taxesData,
+        categoriesData,
+        purchaseOrdersData 
+      ] = await Promise.all([
+        productsApi.getAll(),
+        rawMaterialsApi.getAll(),
+        transactionsApi.getAll(),
+        couponsApi.getAll(),
+        taxesApi.getAll(),
+        categoriesApi.getAll(),
+        purchaseOrdersApi.getAll()
+      ]);
 
-        setState(prev => ({
-          ...prev,
-          products: productsData,
-          rawMaterials: rawMaterialsData,
-          transactions: transactionsData,
-          coupons: couponsData,
-          taxes: taxesData,
-          categories: categoriesData,
-          purchaseOrders: purchaseOrdersData
-        }));
-      } catch (apiError) {
-        console.error('API fetch failed, falling back to Supabase:', apiError);
-
-        try {
-          // Check if Supabase is configured
-          if (!supabase || !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-            console.error('Supabase is not properly configured. Please connect to Supabase first.');
-            throw new Error('Supabase not configured');
-          }
-          
-          // Fetch data from Supabase
-          const { data: productsData, error: productsError } = await supabase.from('products').select('*');
-          if (productsError) throw productsError;
-          
-          const { data: rawMaterialsData, error: materialsError } = await supabase.from('raw_materials').select('*');
-          if (materialsError) throw materialsError;
-          
-          const { data: transactionsData, error: transactionsError } = await supabase.from('transactions').select('*');
-          if (transactionsError) throw transactionsError;
-          
-          const { data: couponsData, error: couponsError } = await supabase.from('coupons').select('*');
-          if (couponsError) throw couponsError;
-          
-          const { data: taxesData, error: taxesError } = await supabase.from('taxes').select('*');
-          if (taxesError) throw taxesError;
-          
-          const { data: categoriesData, error: categoriesError } = await supabase.from('categories').select('*');
-          if (categoriesError) throw categoriesError;
-          
-          const { data: purchaseOrdersData, error: purchaseOrdersError } = await supabase.from('purchase_orders').select('*');
-          if (purchaseOrdersError) throw purchaseOrdersError;
-          
-          // Get product sizes
-          const { data: sizesData, error: sizesError } = await supabase.from('product_sizes').select('*');
-          if (sizesError) throw sizesError;
-          
-          // Get product raw materials
-          const { data: productMaterialsData, error: productMaterialsError } = await supabase.from('product_raw_materials').select('*');
-          if (productMaterialsError) throw productMaterialsError;
-          
-          // Get transaction items
-          const { data: transactionItemsData, error: transactionItemsError } = await supabase.from('transaction_items').select('*');
-          if (transactionItemsError) throw transactionItemsError;
-
-          // Process products to include sizes and materials
-          const processedProducts = (productsData || []).map(product => {
-            // Find sizes for this product
-            const sizes = (sizesData || [])
-              .filter(size => size.product_id === product.id)
-              .map(size => ({
-                id: size.id,
-                name: size.name,
-                price: size.price,
-                stock: size.stock,
-                dimensions: size.dimensions,
-                weight: size.weight
-              }));
-
-            // Find raw materials for this product
-            const materials = (productMaterialsData || [])
-              .filter(material => material.product_id === product.id)
-              .map(material => ({
-                rawMaterialId: material.raw_material_id,
-                quantity: material.quantity
-              }));
-
-            return {
-              ...product,
-              sizes: sizes,
-              rawMaterials: materials
-            };
-          });
-          
-          // Process transactions to include items
-          const processedTransactions = (transactionsData || []).map(transaction => {
-            // Find items for this transaction
-            const items = (transactionItemsData || [])
-              .filter(item => item.transaction_id === transaction.id)
-              .map(item => ({
-                product: {
-                  id: item.product_id,
-                  name: item.product_name,
-                  price: item.product_price,
-                  barcode: item.product_barcode,
-                  category: item.product_category
-                },
-                quantity: item.quantity,
-                selectedSize: item.selected_size,
-                selectedVariant: item.selected_variant,
-                addons: item.addons
-              }));
-
-            return {
-              ...transaction,
-              items: items
-            };
-          });
-
-          setState(prev => ({
-            ...prev,
-            products: processedProducts || [],
-            rawMaterials: rawMaterialsData || [],
-            transactions: processedTransactions || [],
-            coupons: couponsData || [],
-            taxes: taxesData || [],
-            categories: categoriesData || [],
-            purchaseOrders: purchaseOrdersData || []
-          }));
-        } catch (supabaseError) {
-          console.error('Supabase fetch failed:', supabaseError);
-          // Keep the state with empty arrays if Supabase fails
-        }
-      }
-
+      setState(prev => ({
+        ...prev,
+        products: productsData || [],
+        rawMaterials: rawMaterialsData || [],
+        transactions: transactionsData || [],
+        coupons: couponsData || [],
+        taxes: taxesData || [],
+        categories: categoriesData || [],
+        purchaseOrders: purchaseOrdersData || []
+      }));
+      
       // Check stock levels
       if (checkStockLevels && Array.isArray(state.rawMaterials) && Array.isArray(state.products)) {
         checkStockLevels(state.rawMaterials, state.products);
       }
     } catch (error) {
       console.error('Error fetching initial data:', error);
+      // Keep the state with empty arrays if API fails
     } finally {
       setLoading(false);
       setState(prev => ({ ...prev, loading: false }));
     }
-  };
 
   // Cart actions
   const addToCart = (product) => {

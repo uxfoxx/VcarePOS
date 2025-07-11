@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { message } from 'antd';
 import { authApi, auditApi } from '../api/apiClient';
-import { supabase } from '../utils/supabaseClient';
 
 const AuthContext = createContext(null);
 
@@ -105,37 +104,28 @@ export function AuthProvider({ children }) {
     if (currentUser?.role === 'admin') {
       fetchUsers();
     }
-  }, [isAuthenticated, currentUser]);
+  }, [isAuthenticated, currentUser, fetchUsers]);
 
   // Fetch audit trail when authenticated
   useEffect(() => {
     if (hasPermission('audit-trail', 'view')) {
       fetchAuditTrail();
     }
-  }, [isAuthenticated, currentUser]);
+  }, [isAuthenticated, currentUser, hasPermission, fetchAuditTrail]);
 
   const fetchUsers = async () => {
     try {
-      // Try to fetch users from Supabase
-      const { data, error } = await supabase.from('users').select('*');
+      // Fetch users from API
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/users`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('vcare_token')}`
+        }
+      });
       
-      if (!error && data) {
-        // Transform to match our expected format
-        const formattedUsers = data.map(user => ({
-          id: user.id,
-          username: user.username,
-          firstName: user.first_name,
-          lastName: user.last_name,
-          email: user.email,
-          role: user.role,
-          isActive: user.is_active,
-          permissions: user.permissions || {},
-          createdAt: user.created_at,
-          lastLogin: user.last_login
-        }));
-        
-        setUsers(formattedUsers);
-      }
+      if (!response.ok) throw new Error('Failed to fetch users');
+      
+      const data = await response.json();
+      setUsers(data);
     } catch (error) {
       console.error('Error fetching users:', error);
     }
@@ -143,25 +133,17 @@ export function AuthProvider({ children }) {
 
   const fetchAuditTrail = async () => {
     try {
-      // Try to fetch audit trail from Supabase
-      const { data, error } = await supabase.from('audit_trail').select('*');
+      // Fetch audit trail from API
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/audit`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('vcare_token')}`
+        }
+      });
       
-      if (!error && data) {
-        // Transform to match our expected format
-        const formattedAudit = data.map(entry => ({
-          id: entry.id,
-          userId: entry.user_id,
-          userName: entry.user_name,
-          action: entry.action,
-          module: entry.module,
-          description: entry.description,
-          details: entry.details,
-          ipAddress: entry.ip_address,
-          timestamp: entry.timestamp
-        }));
-        
-        setAuditTrail(formattedAudit);
-      }
+      if (!response.ok) throw new Error('Failed to fetch audit trail');
+      
+      const data = await response.json();
+      setAuditTrail(data);
     } catch (error) {
       console.error('Error fetching audit trail:', error);
     }
@@ -216,62 +198,58 @@ export function AuthProvider({ children }) {
   };
 
   const addUser = (userData) => {
-    // Mock implementation
-    return supabase.from('users').insert({
-      id: userData.id || `USER-${Date.now()}`,
-      username: userData.username,
-      email: userData.email,
-      first_name: userData.firstName,
-      last_name: userData.lastName,
-      role: userData.role,
-      is_active: userData.isActive,
-      permissions: userData.permissions
-    }).select().then(({ data, error }) => {
-      if (error) throw error;
-      
-      const newUser = {
-        id: data[0].id,
-        username: data[0].username,
-        firstName: data[0].first_name,
-        lastName: data[0].last_name,
-        email: data[0].email,
-        role: data[0].role,
-        isActive: data[0].is_active,
-        permissions: data[0].permissions
-      };
-      
-      setUsers([...users, newUser]);
+    return fetch(`${import.meta.env.VITE_API_URL}/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('vcare_token')}`
+      },
+      body: JSON.stringify({
+        id: userData.id || `USER-${Date.now()}`,
+        username: userData.username,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        role: userData.role,
+        isActive: userData.isActive,
+        permissions: userData.permissions
+      })
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to create user');
+      return response.json();
+    })
+    .then(newUser => {
+      setUsers(prevUsers => [...prevUsers, newUser]);
       return newUser;
     });
   };
 
   const updateUser = (userData) => {
-    // Mock implementation
-    return supabase.from('users').update({
-      username: userData.username,
-      email: userData.email,
-      first_name: userData.firstName,
-      last_name: userData.lastName,
-      role: userData.role,
-      is_active: userData.isActive,
-      permissions: userData.permissions
-    }).eq('id', userData.id).select().then(({ data, error }) => {
-      if (error) throw error;
-      
-      const updatedUser = {
-        id: data[0].id,
-        username: data[0].username,
-        firstName: data[0].first_name,
-        lastName: data[0].last_name,
-        email: data[0].email,
-        role: data[0].role,
-        isActive: data[0].is_active,
-        permissions: data[0].permissions
-      };
-      
-      setUsers(users.map(user => 
-        user.id === updatedUser.id ? updatedUser : user
-      ));
+    return fetch(`${import.meta.env.VITE_API_URL}/users/${userData.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('vcare_token')}`
+      },
+      body: JSON.stringify({
+        username: userData.username,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        role: userData.role,
+        isActive: userData.isActive,
+        permissions: userData.permissions
+      })
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to update user');
+      return response.json();
+    })
+    .then(updatedUser => {
+      setUsers(prevUsers => 
+        prevUsers.map(user => user.id === updatedUser.id ? updatedUser : user)
+      );
       
       // Update current user if it's the same user
       if (currentUser?.id === updatedUser.id) {
@@ -283,11 +261,15 @@ export function AuthProvider({ children }) {
   };
 
   const deleteUser = (userId) => {
-    // Mock implementation
-    return supabase.from('users').delete().eq('id', userId).then(({ error }) => {
-      if (error) throw error;
-      
-      setUsers(users.filter(user => user.id !== userId));
+    return fetch(`${import.meta.env.VITE_API_URL}/users/${userId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('vcare_token')}`
+      }
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to delete user');
+      setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
       return true;
     });
   };

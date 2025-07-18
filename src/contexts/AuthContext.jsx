@@ -14,34 +14,34 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     // Check if user is logged in
     const checkAuth = async () => {
-      // For development, set a default user if no token exists
-      if (import.meta.env.DEV) {
-        // Set default admin user for development
-        setCurrentUser({
-          id: 'USER-001',
-          username: 'admin',
-          firstName: 'Sarah',
-          lastName: 'Wilson',
-          email: 'admin@vcarefurniture.com',
-          role: 'admin',
-          permissions: {
-            "pos": {"view": true, "edit": true, "delete": true},
-            "products": {"view": true, "edit": true, "delete": true},
-            "raw-materials": {"view": true, "edit": true, "delete": true},
-            "transactions": {"view": true, "edit": true, "delete": true},
-            "reports": {"view": true, "edit": true, "delete": true},
-            "coupons": {"view": true, "edit": true, "delete": true},
-            "tax": {"view": true, "edit": true, "delete": true},
-            "purchase-orders": {"view": true, "edit": true, "delete": true},
-            "settings": {"view": true, "edit": true, "delete": true},
-            "user-management": {"view": true, "edit": true, "delete": true},
-            "audit-trail": {"view": true, "edit": true, "delete": true}
-          }
-        });
-        setIsAuthenticated(true);
-        setLoading(false);
-        return;
-      }
+      // // For development, set a default user if no token exists
+      // if (import.meta.env.DEV) {
+      //   // Set default admin user for development
+      //   setCurrentUser({
+      //     id: 'USER-001',
+      //     username: 'admin',
+      //     firstName: 'Sarah',
+      //     lastName: 'Wilson',
+      //     email: 'admin@vcarefurniture.com',
+      //     role: 'admin',
+      //     permissions: {
+      //       "pos": {"view": true, "edit": true, "delete": true},
+      //       "products": {"view": true, "edit": true, "delete": true},
+      //       "raw-materials": {"view": true, "edit": true, "delete": true},
+      //       "transactions": {"view": true, "edit": true, "delete": true},
+      //       "reports": {"view": true, "edit": true, "delete": true},
+      //       "coupons": {"view": true, "edit": true, "delete": true},
+      //       "tax": {"view": true, "edit": true, "delete": true},
+      //       "purchase-orders": {"view": true, "edit": true, "delete": true},
+      //       "settings": {"view": true, "edit": true, "delete": true},
+      //       "user-management": {"view": true, "edit": true, "delete": true},
+      //       "audit-trail": {"view": true, "edit": true, "delete": true}
+      //     }
+      //   });
+      //   setIsAuthenticated(true);
+      //   setLoading(false);
+      //   return;
+      // }
       
       try {
         // Check for token in localStorage
@@ -54,7 +54,7 @@ export function AuthProvider({ children }) {
             setCurrentUser(user);
             setIsAuthenticated(true);
           } catch (apiError) {
-            console.error('API auth check failed, trying Supabase:', apiError);
+            console.error('API auth check failed', apiError);
             
             // Try Supabase session
             const { data: { session } } = await supabase.auth.getSession();
@@ -99,20 +99,6 @@ export function AuthProvider({ children }) {
     checkAuth();
   }, []);
 
-  // Fetch users when authenticated
-  useEffect(() => {
-    if (currentUser?.role === 'admin') {
-      fetchUsers();
-    }
-  }, [isAuthenticated, currentUser, fetchUsers]);
-
-  // Fetch audit trail when authenticated
-  useEffect(() => {
-    if (hasPermission('audit-trail', 'view')) {
-      fetchAuditTrail();
-    }
-  }, [isAuthenticated, currentUser, hasPermission, fetchAuditTrail]);
-
   const fetchUsers = async () => {
     try {
       // Fetch users from API
@@ -129,6 +115,11 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error('Error fetching users:', error);
     }
+  };
+
+  const hasPermission = (module, action = 'view') => {
+    if (!currentUser) return false;
+    return currentUser.permissions && currentUser.permissions[module]?.[action] || false;
   };
 
   const fetchAuditTrail = async () => {
@@ -148,6 +139,24 @@ export function AuthProvider({ children }) {
       console.error('Error fetching audit trail:', error);
     }
   };
+
+  // Fetch users when authenticated
+  useEffect(() => {
+    if (currentUser?.role === 'admin') {
+      fetchUsers();
+    }
+  }, [isAuthenticated, currentUser]);
+
+  // Fetch audit trail when authenticated
+  useEffect(() => {
+    if (hasPermission('audit-trail', 'view')) {
+      fetchAuditTrail();
+    }
+  }, [isAuthenticated, currentUser]);
+
+
+
+
 
   const login = async (username, password) => {
     try {
@@ -192,87 +201,84 @@ export function AuthProvider({ children }) {
   // The actual logging is now handled by the backend middleware
   const logAction = () => {};
 
-  const hasPermission = (module, action = 'view') => {
-    if (!currentUser) return false;
-    return currentUser.permissions && currentUser.permissions[module]?.[action] || false;
-  };
 
-  const addUser = (userData) => {
-    return fetch(`${import.meta.env.VITE_API_URL}/users`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('vcare_token')}`
-      },
-      body: JSON.stringify({
-        id: userData.id || `USER-${Date.now()}`,
-        username: userData.username,
-        email: userData.email,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        role: userData.role,
-        isActive: userData.isActive,
-        permissions: userData.permissions
-      })
-    })
-    .then(response => {
-      if (!response.ok) throw new Error('Failed to create user');
-      return response.json();
-    })
-    .then(newUser => {
-      setUsers(prevUsers => [...prevUsers, newUser]);
-      return newUser;
-    });
-  };
 
-  const updateUser = (userData) => {
-    return fetch(`${import.meta.env.VITE_API_URL}/users/${userData.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('vcare_token')}`
-      },
-      body: JSON.stringify({
-        username: userData.username,
-        email: userData.email,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        role: userData.role,
-        isActive: userData.isActive,
-        permissions: userData.permissions
-      })
-    })
-    .then(response => {
-      if (!response.ok) throw new Error('Failed to update user');
-      return response.json();
-    })
-    .then(updatedUser => {
-      setUsers(prevUsers => 
-        prevUsers.map(user => user.id === updatedUser.id ? updatedUser : user)
-      );
+  // const addUser = (userData) => {
+  //   return fetch(`${import.meta.env.VITE_API_URL}/users`, {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //       'Authorization': `Bearer ${localStorage.getItem('vcare_token')}`
+  //     },
+  //     body: JSON.stringify({
+  //       id: userData.id || `USER-${Date.now()}`,
+  //       username: userData.username,
+  //       email: userData.email,
+  //       firstName: userData.firstName,
+  //       lastName: userData.lastName,
+  //       role: userData.role,
+  //       isActive: userData.isActive,
+  //       permissions: userData.permissions
+  //     })
+  //   })
+  //   .then(response => {
+  //     if (!response.ok) throw new Error('Failed to create user');
+  //     return response.json();
+  //   })
+  //   .then(newUser => {
+  //     setUsers(prevUsers => [...prevUsers, newUser]);
+  //     return newUser;
+  //   });
+  // };
+
+  // const updateUser = (userData) => {
+  //   return fetch(`${import.meta.env.VITE_API_URL}/users/${userData.id}`, {
+  //     method: 'PUT',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //       'Authorization': `Bearer ${localStorage.getItem('vcare_token')}`
+  //     },
+  //     body: JSON.stringify({
+  //       username: userData.username,
+  //       email: userData.email,
+  //       firstName: userData.firstName,
+  //       lastName: userData.lastName,
+  //       role: userData.role,
+  //       isActive: userData.isActive,
+  //       permissions: userData.permissions
+  //     })
+  //   })
+  //   .then(response => {
+  //     if (!response.ok) throw new Error('Failed to update user');
+  //     return response.json();
+  //   })
+  //   .then(updatedUser => {
+  //     setUsers(prevUsers => 
+  //       prevUsers.map(user => user.id === updatedUser.id ? updatedUser : user)
+  //     );
       
-      // Update current user if it's the same user
-      if (currentUser?.id === updatedUser.id) {
-        setCurrentUser(updatedUser);
-      }
+  //     // Update current user if it's the same user
+  //     if (currentUser?.id === updatedUser.id) {
+  //       setCurrentUser(updatedUser);
+  //     }
       
-      return updatedUser;
-    });
-  };
+  //     return updatedUser;
+  //   });
+  // };
 
-  const deleteUser = (userId) => {
-    return fetch(`${import.meta.env.VITE_API_URL}/users/${userId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('vcare_token')}`
-      }
-    })
-    .then(response => {
-      if (!response.ok) throw new Error('Failed to delete user');
-      setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
-      return true;
-    });
-  };
+  // const deleteUser = (userId) => {
+  //   return fetch(`${import.meta.env.VITE_API_URL}/users/${userId}`, {
+  //     method: 'DELETE',
+  //     headers: {
+  //       'Authorization': `Bearer ${localStorage.getItem('vcare_token')}`
+  //     }
+  //   })
+  //   .then(response => {
+  //     if (!response.ok) throw new Error('Failed to delete user');
+  //     setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+  //     return true;
+  //   });
+  // };
 
   const getAuditTrail = async () => {
     try {
@@ -284,15 +290,15 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const getUsers = async () => {
-    try {
-      // Mock implementation
-      return users;
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      return users;
-    }
-  };
+  // const getUsers = async () => {
+  //   try {
+  //     // Mock implementation
+  //     return users;
+  //   } catch (error) {
+  //     console.error('Error fetching users:', error);
+  //     return users;
+  //   }
+  // };
 
   return (
     <AuthContext.Provider value={{
@@ -305,10 +311,10 @@ export function AuthProvider({ children }) {
       logout,
       logAction,
       hasPermission,
-      addUser,
-      updateUser,
-      deleteUser,
-      getUsers,
+      // addUser,
+      // updateUser,
+      // deleteUser,
+      // getUsers,
       getAuditTrail
     }}>
       {children}

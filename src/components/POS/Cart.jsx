@@ -15,7 +15,10 @@ import {
   Tag,
   Empty
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { addToCart, removeFromCart, updateQuantity, clearCart } from '../../features/cart/cartSlice';
+import { fetchTaxes } from '../../features/taxes/taxesSlice';
+import { fetchCoupons } from '../../features/coupons/couponsSlice';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon'; 
@@ -24,15 +27,19 @@ import { CheckoutModal } from '../POS/CheckoutModal';
 const { Title, Text } = Typography;
 
 export function Cart() {
-  const { state, dispatch } = usePOS();
+  const dispatch = useDispatch();
+  const cart = useSelector(state => state.cart.cart);
+  const taxes = useSelector(state => state.taxes.taxesList);
+  const coupons = useSelector(state => state.coupons.couponsList);
+  const loading = useSelector(state => state.cart.loading || state.taxes.loading || state.coupons.loading);
   const { checkRawMaterialAvailability } = useNotifications();
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponCode, setCouponCode] = useState('');
   const [materialWarnings, setMaterialWarnings] = useState({ unavailableMaterials: [], lowMaterials: [] });
 
-  // Early return if state is not properly initialized
-  if (!state || !state.cart) {
+  // Early return if cart is not properly initialized
+  if (!cart) {
     return (
       <Card 
         className="h-full"
@@ -59,22 +66,28 @@ export function Cart() {
 
   // Check raw material availability whenever cart changes
   useEffect(() => {
-    if (state.cart && state.cart.length > 0 && state.rawMaterials) {
-      const warnings = checkRawMaterialAvailability(state.cart, state.rawMaterials);
+    if (cart && cart.length > 0) {
+      const warnings = checkRawMaterialAvailability(cart);
       setMaterialWarnings(warnings);
     } else {
       setMaterialWarnings({ unavailableMaterials: [], lowMaterials: [] });
     }
-  }, [state.cart, state.rawMaterials, checkRawMaterialAvailability]);
+  }, [cart, checkRawMaterialAvailability]);
+
+  // Fetch taxes and coupons on mount
+  useEffect(() => {
+    dispatch(fetchTaxes());
+    dispatch(fetchCoupons());
+  }, [dispatch]);
 
   // Calculate taxes for each item and total
   const calculateTaxes = () => {
-    const activeTaxes = state.taxes && Array.isArray(state.taxes) ? state.taxes.filter(tax => tax.isActive) : [];
+    const activeTaxes = Array.isArray(taxes) ? taxes.filter(tax => tax.isActive) : [];
     let itemTaxes = [];
     let billTaxes = []; 
     
     // Calculate category taxes for each item
-    state.cart.forEach(cartItem => {
+    cart.forEach(cartItem => {
       const categoryTaxes = activeTaxes.filter(tax =>
         tax.taxType === 'category' &&
         Array.isArray(tax.applicableCategories) &&
@@ -102,7 +115,7 @@ export function Cart() {
 
   const { itemTaxes, fullBillTaxes } = calculateTaxes();
   
-  const subtotal = state.cart.reduce((sum, item) => {
+  const subtotal = cart.reduce((sum, item) => {
     // Include base price
     let itemTotal = item.product.price * item.quantity;
 
@@ -127,20 +140,14 @@ export function Cart() {
 
   const handleQuantityChange = (productId, selectedSize, newQuantity) => {
     if (newQuantity <= 0) {
-      dispatch({ 
-        type: 'REMOVE_FROM_CART', 
-        payload: { productId, selectedSize } 
-      });
+      dispatch(removeFromCart({ productId, selectedSize }));
     } else {
-      dispatch({ 
-        type: 'UPDATE_QUANTITY', 
-        payload: { productId, selectedSize, quantity: newQuantity } 
-      });
+      dispatch(updateQuantity({ productId, selectedSize, quantity: newQuantity }));
     }
   };
 
   const handleApplyCoupon = () => {
-    const coupon = state.coupons?.find(c => c.code === couponCode && c.isActive);
+    const coupon = coupons?.find(c => c.code === couponCode && c.isActive);
     if (coupon) {
       // Check if coupon is valid
       const now = new Date();
@@ -175,7 +182,7 @@ export function Cart() {
   };
 
   const handleProceedToCheckout = () => {
-    if (state.cart.length === 0) {
+    if (cart.length === 0) {
       message.warning('Cart is empty');
       return;
     }
@@ -199,7 +206,7 @@ export function Cart() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <h2 className="text-xl font-bold m-0">Current Order</h2>
-              <Badge count={state.cart.length} size="small" />
+              <Badge count={cart.length} size="small" />
             </div>
           </div>
         }
@@ -255,7 +262,7 @@ export function Cart() {
 
           {/* Cart Items */}
           <div className="flex-1 overflow-y-auto p-4">
-            {state.cart.length === 0 ? (
+            {cart.length === 0 ? (
               <Empty
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
                 description="Your cart is empty"
@@ -263,7 +270,7 @@ export function Cart() {
               />
             ) : (
               <List
-                dataSource={state.cart}
+                dataSource={cart}
                 renderItem={(item, index) => {
                   // Get category taxes for this item
                   const itemCategoryTaxes = itemTaxes.filter(tax => tax.productId === item.product.id);
@@ -301,13 +308,7 @@ export function Cart() {
                           </div>
                           <Popconfirm
                             title="Remove item?"
-                            onConfirm={() => dispatch({ 
-                              type: 'REMOVE_FROM_CART', 
-                              payload: { 
-                                productId: item.product.id, 
-                                selectedSize: item.selectedSize 
-                              } 
-                            })}
+                            onConfirm={() => dispatch(removeFromCart({ productId: item.product.id, selectedSize: item.selectedSize }))}
                           >
                             <ActionButton.Text 
                               icon="close"
@@ -472,7 +473,7 @@ export function Cart() {
               size="large"
               block
               onClick={handleProceedToCheckout}
-              disabled={state.cart.length === 0}
+              disabled={cart.length === 0}
               className="bg-blue-600 hover:bg-blue-700 h-12 text-lg font-semibold"
             >
               Proceed to Checkout
@@ -487,7 +488,7 @@ export function Cart() {
       <CheckoutModal
         open={showCheckoutModal}
         onClose={() => setShowCheckoutModal(false)}
-        cartItems={state.cart}
+        cartItems={cart}
         orderTotal={total}
         appliedCoupon={appliedCoupon}
         couponDiscount={couponDiscount}

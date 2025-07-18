@@ -6,6 +6,276 @@ const { authenticate, hasPermission, logAction } = require('../middleware/auth')
 const router = express.Router();
 
 /**
+ * @swagger
+ * tags:
+ *   name: Products
+ *   description: Product management
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Product:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           example: PROD-123456
+ *         name:
+ *           type: string
+ *           example: Wooden Table
+ *         description:
+ *           type: string
+ *           example: Premium oak wood dining table
+ *         category:
+ *           type: string
+ *           example: Furniture
+ *         price:
+ *           type: number
+ *           example: 199.99
+ *         stock:
+ *           type: integer
+ *           example: 50
+ *         barcode:
+ *           type: string
+ *           example: 1234567890123
+ *         image:
+ *           type: string
+ *           example: https://example.com/image.jpg
+ *         weight:
+ *           type: number
+ *           example: 12.5
+ *         color:
+ *           type: string
+ *           example: Brown
+ *         material:
+ *           type: string
+ *           example: Oak Wood
+ *         dimensions:
+ *           type: object
+ *           example: { length: 120, width: 60, height: 75 }
+ *         hasSizes:
+ *           type: boolean
+ *         hasVariants:
+ *           type: boolean
+ *         hasAddons:
+ *           type: boolean
+ *         isVariant:
+ *           type: boolean
+ *         isCustom:
+ *           type: boolean
+ *         parentProductId:
+ *           type: string
+ *           example: PROD-654321
+ *         variantName:
+ *           type: string
+ *           example: Large
+ *         parentProductName:
+ *           type: string
+ *           example: Wooden Table
+ *         sizes:
+ *           type: array
+ *           items:
+ *             type: object
+ *         rawMaterials:
+ *           type: array
+ *           items:
+ *             type: object
+ *         addons:
+ *           type: array
+ *           items:
+ *             type: object
+ *         variants:
+ *           type: array
+ *           items:
+ *             type: object
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ */
+
+/**
+ * @swagger
+ * /api/products:
+ *   get:
+ *     summary: Get all products
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of products
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Product'
+ *   post:
+ *     summary: Create a new product
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Product'
+ *     responses:
+ *       201:
+ *         description: Product created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Product'
+ *       400:
+ *         description: Validation error
+ */
+
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   get:
+ *     summary: Get a product by ID
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Product ID
+ *     responses:
+ *       200:
+ *         description: Product found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Product'
+ *       404:
+ *         description: Product not found
+ *   put:
+ *     summary: Update a product
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Product ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Product'
+ *     responses:
+ *       200:
+ *         description: Product updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Product'
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Product not found
+ *   delete:
+ *     summary: Delete a product
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Product ID
+ *     responses:
+ *       200:
+ *         description: Product deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Product deleted successfully
+ *       404:
+ *         description: Product not found
+ */
+
+/**
+ * @swagger
+ * /api/products/{id}/stock:
+ *   put:
+ *     summary: Update product stock
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Product ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               quantity:
+ *                 type: integer
+ *                 example: 10
+ *               operation:
+ *                 type: string
+ *                 enum: [add, subtract]
+ *                 example: add
+ *               selectedSize:
+ *                 type: string
+ *                 example: Large
+ *     responses:
+ *       200:
+ *         description: Product stock updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 name:
+ *                   type: string
+ *                 stock:
+ *                   type: integer
+ *                 hasSizes:
+ *                   type: boolean
+ *                 sizes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Product or size not found
+ */
+
+/**
  * @route   GET /api/products
  * @desc    Get all products
  * @access  Private
@@ -947,5 +1217,57 @@ router.put(
     }
   }
 );
+
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
+
+/**
+ * @swagger
+ * security:
+ *   - bearerAuth: []
+ */
+
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: User login
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: admin
+ *               password:
+ *                 type: string
+ *                 example: password123
+ *     responses:
+ *       200:
+ *         description: Successful login
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       401:
+ *         description: Invalid credentials
+ *       500:
+ *         description: Server error
+ */
 
 module.exports = router;

@@ -1,4 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { 
+  fetchVendors, 
+  addVendor, 
+  updateVendor, 
+  deleteVendor
+} from '../../features/vendors/vendorsSlice';
 import { 
   Card, 
   Table, 
@@ -23,17 +30,17 @@ const { TextArea } = Input;
 const { Option } = Select;
 
 export function VendorManagement() {
-  const [vendors, setVendors] = useState([
-    { id: 'V001', name: 'Premium Wood Co.', email: 'orders@premiumwood.com', phone: '123-456-7890', address: '123 Wood Lane, Timber City', category: 'Wood', isActive: true },
-    { id: 'V002', name: 'MetalWorks Inc.', email: 'sales@metalworks.com', phone: '234-567-8901', address: '456 Steel Ave, Metal Town', category: 'Hardware', isActive: true },
-    { id: 'V003', name: 'Luxury Fabrics Inc.', email: 'orders@luxuryfabrics.com', phone: '345-678-9012', address: '789 Textile Blvd, Fabric City', category: 'Upholstery', isActive: true },
-    { id: 'V004', name: 'FastenRight Co.', email: 'support@fastenright.com', phone: '456-789-0123', address: '101 Screw Drive, Fastener Village', category: 'Hardware', isActive: true },
-    { id: 'V005', name: 'Crystal Glass Co.', email: 'orders@crystalglass.com', phone: '567-890-1234', address: '202 Clear View, Glass City', category: 'Materials', isActive: false }
-  ]);
+  const dispatch = useDispatch();
+  const vendors = useSelector(state => state.vendors.vendorsList);
+  const loading = useSelector(state => state.vendors.loading);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [editingVendor, setEditingVendor] = useState(null);
   const [form] = Form.useForm();
+
+  useEffect(() => {
+    dispatch(fetchVendors());
+  }, [dispatch]);
 
   const filteredVendors = vendors.filter(vendor => 
     vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -46,11 +53,9 @@ export function VendorManagement() {
       .then(values => {
         if (editingVendor) {
           // Update existing vendor
-          const updatedVendors = vendors.map(vendor => 
-            vendor.id === editingVendor.id ? { ...vendor, ...values } : vendor
-          );
-          setVendors(updatedVendors);
-          message.success('Vendor updated successfully');
+          const updatedVendor = { ...editingVendor, ...values };
+          dispatch(updateVendor(updatedVendor));
+          message.success('Vendor updated successfully'); // todo
         } else {
           // Add new vendor
           const newVendor = {
@@ -58,8 +63,8 @@ export function VendorManagement() {
             ...values,
             isActive: true
           };
-          setVendors([...vendors, newVendor]);
-          message.success('Vendor added successfully');
+          dispatch(addVendor(newVendor));
+          message.success('Vendor added successfully'); // todo
         }
         setModalVisible(false);
         form.resetFields();
@@ -77,15 +82,13 @@ export function VendorManagement() {
   };
 
   const handleDelete = (vendorId) => {
-    setVendors(vendors.filter(vendor => vendor.id !== vendorId));
-    message.success('Vendor deleted successfully');
+    dispatch(deleteVendor({ id: vendorId }));
+    message.success('Vendor deleted successfully'); // todo
   };
 
   const handleToggleStatus = (vendor) => {
-    const updatedVendors = vendors.map(v => 
-      v.id === vendor.id ? { ...v, isActive: !v.isActive } : v
-    );
-    setVendors(updatedVendors);
+    const updatedVendor = { ...vendor, isActive: !vendor.isActive };
+    dispatch(updateVendor(updatedVendor));
     message.success(`Vendor ${!vendor.isActive ? 'activated' : 'deactivated'} successfully`);
   };
 
@@ -209,6 +212,7 @@ export function VendorManagement() {
         columns={columns}
         dataSource={filteredVendors}
         rowKey="id"
+        loading={loading}
         pagination={{
           pageSize: 10,
           showSizeChanger: true,

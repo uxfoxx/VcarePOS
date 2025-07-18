@@ -17,7 +17,9 @@ import {
   Row,
   Col
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchRawMaterials } from '../../features/rawMaterials/rawMaterialsSlice';
+import { addToCart } from '../../features/cart/cartSlice';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { EnhancedStepper } from '../common/EnhancedStepper';
@@ -27,8 +29,9 @@ const { Option } = Select;
 const { TextArea } = Input;
 const { Search } = Input;
 
-export function CustomProductModal({ open, onClose, onAddToCart }) {
-  const { rawMaterials } = usePOS();
+export function CustomProductModal({ open, onClose }) {
+  const dispatch = useDispatch();
+  const rawMaterials = useSelector(state => state.rawMaterials.rawMaterialsList);
   const [form] = Form.useForm();
   const [materialsForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -43,6 +46,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
   // Reset form when modal opens
   useEffect(() => {
     if (open) {
+      dispatch(fetchRawMaterials());
       form.resetFields();
       setSelectedMaterials([]);
       setTotalPrice(0);
@@ -52,7 +56,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
       setCurrentStep(0);
       setSearchTerm('');
     }
-  }, [open, form]);
+  }, [open, dispatch, form]);
 
   // Calculate total price whenever selected materials change
   useEffect(() => {
@@ -126,23 +130,19 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
       message.error('Please add at least one material');
       return;
     }
-
     if (!customName.trim()) {
       message.error('Please enter a name for the custom product');
       return;
     }
-
     try {
       setLoading(true);
-      
-      // Create custom product
       const customProduct = {
         id: `CUSTOM-${Date.now()}`,
         name: customName,
         description: customDescription || 'Custom product',
         price: editablePrice,
         category: 'Custom',
-        stock: 999, // Unlimited stock for custom products
+        stock: 999,
         barcode: `CUSTOM-${Date.now()}`,
         rawMaterials: selectedMaterials.map(m => ({
           rawMaterialId: m.id,
@@ -150,10 +150,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
         })),
         isCustom: true
       };
-
-      // Add to cart
-      onAddToCart(customProduct);
-      
+      dispatch(addToCart({ product: customProduct }));
       message.success('Custom product added to cart');
       onClose();
     } catch (error) {

@@ -6,6 +6,168 @@ const { authenticate, hasPermission } = require('../middleware/auth');
 const router = express.Router();
 
 /**
+ * @swagger
+ * tags:
+ *   name: Taxes
+ *   description: Tax management
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Tax:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           example: TAX-123456
+ *         name:
+ *           type: string
+ *           example: VAT
+ *         description:
+ *           type: string
+ *           example: Value Added Tax
+ *         rate:
+ *           type: number
+ *           example: 15
+ *         taxType:
+ *           type: string
+ *           enum: [full_bill, category]
+ *           example: full_bill
+ *         isActive:
+ *           type: boolean
+ *           example: true
+ *         applicableCategories:
+ *           type: array
+ *           items:
+ *             type: string
+ *           example: ["Furniture", "Electronics"]
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ */
+
+/**
+ * @swagger
+ * /api/taxes:
+ *   get:
+ *     summary: Get all taxes
+ *     tags: [Taxes]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of taxes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Tax'
+ *   post:
+ *     summary: Create a new tax
+ *     tags: [Taxes]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Tax'
+ *     responses:
+ *       201:
+ *         description: Tax created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Tax'
+ *       400:
+ *         description: Validation error
+ */
+
+/**
+ * @swagger
+ * /api/taxes/{id}:
+ *   get:
+ *     summary: Get a tax by ID
+ *     tags: [Taxes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Tax ID
+ *     responses:
+ *       200:
+ *         description: Tax found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Tax'
+ *       404:
+ *         description: Tax not found
+ *   put:
+ *     summary: Update a tax
+ *     tags: [Taxes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Tax ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Tax'
+ *     responses:
+ *       200:
+ *         description: Tax updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Tax'
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Tax not found
+ *   delete:
+ *     summary: Delete a tax
+ *     tags: [Taxes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Tax ID
+ *     responses:
+ *       200:
+ *         description: Tax deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Tax deleted successfully
+ *       404:
+ *         description: Tax not found
+ */
+
+/**
  * @route   GET /api/taxes
  * @desc    Get all taxes
  * @access  Private

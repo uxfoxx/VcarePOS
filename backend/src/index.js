@@ -18,6 +18,9 @@ const auditRoutes = require('./routes/audit');
 // Import middleware
 const { logAction } = require('./middleware/auth');
 
+// Import and configure Swagger
+const setupSwagger = require('./swagger');
+
 // Load environment variables
 dotenv.config();
 
@@ -41,6 +44,9 @@ app.use('/api/purchase-orders', purchaseOrdersRoutes);
 app.use('/api/vendors', vendorsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/audit', auditRoutes);
+
+// Swagger docs
+setupSwagger(app);
 
 // Test route
 app.get('/api/health', (req, res) => {

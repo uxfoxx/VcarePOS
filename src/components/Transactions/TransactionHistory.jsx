@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { 
   Card, 
   Space, 
@@ -14,7 +15,6 @@ import {
   Tooltip,
   Image
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
@@ -26,12 +26,21 @@ import { EnhancedTable } from '../common/EnhancedTable';
 import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { RefundModal } from './RefundModal';
+import { 
+  fetchTransactions,
+  fetchTransactionById, 
+  updateTransactionStatus, 
+  processRefund,
+  fetchTransactionsSucceeded,
+  processRefundSucceeded,
+  restoreProductStock
+} from '../../features/transactions/transactionsSlice';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 export function TransactionHistory() {
-  const { state, dispatch } = usePOS();
+  const dispatch = useDispatch();
   const { logAction } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPeriod, setFilterPeriod] = useState('all');
@@ -41,24 +50,41 @@ export function TransactionHistory() {
   const [showInventoryLabelsModal, setShowInventoryLabelsModal] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [invoiceType, setInvoiceType] = useState('detailed');
-  const [loading, setLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
+  // Get transactions data from Redux store
+  const { transactionsList, loading, error } = useSelector(state => state.transactions);
+
+  useEffect(() => {
+    // Fetch transactions when component mounts
+    dispatch(fetchTransactions());
+  }, [dispatch]);
+
   // Sort transactions by timestamp (latest first) by default
-  const sortedTransactions = [...state.transactions].sort((a, b) => 
+  const sortedTransactions = [...transactionsList].sort((a, b) => 
     new Date(b.timestamp) - new Date(a.timestamp)
   );
 
   const filteredTransactions = sortedTransactions.filter(transaction => {
     const matchesSearch = transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          transaction.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.cashier.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         transaction.cashier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          transaction.salesperson?.toLowerCase().includes(searchTerm.toLowerCase());
     
     if (filterPeriod === 'today') {
       const today = new Date();
       const transactionDate = new Date(transaction.timestamp);
       return matchesSearch && transactionDate.toDateString() === today.toDateString();
+    } else if (filterPeriod === 'week') {
+      const weekStart = new Date();
+      weekStart.setDate(weekStart.getDate() - 7);
+      const transactionDate = new Date(transaction.timestamp);
+      return matchesSearch && transactionDate >= weekStart;
+    } else if (filterPeriod === 'month') {
+      const monthStart = new Date();
+      monthStart.setMonth(monthStart.getMonth() - 1);
+      const transactionDate = new Date(transaction.timestamp);
+      return matchesSearch && transactionDate >= monthStart;
     }
     
     return matchesSearch;
@@ -116,29 +142,28 @@ export function TransactionHistory() {
 
   const handleProcessRefund = async (refundData) => {
     try {
-      // Add refund to transaction
+      // Create the updated transaction with refund information
       const updatedTransaction = {
         ...selectedTransaction,
         refunds: [...(selectedTransaction.refunds || []), refundData],
         status: refundData.refundType === 'full' ? 'refunded' : 'partially-refunded'
       };
 
-      // Update transaction in state
-      dispatch({
-        type: 'UPDATE_TRANSACTION',
-        payload: updatedTransaction
-      });
+      // Dispatch the processRefund Redux action
+      dispatch(processRefund({
+        transactionId: selectedTransaction.id,
+        refundData,
+        updatedTransaction
+      }));
 
-      // Restore inventory for refunded items
+      // Restore inventory for refunded items if needed
       if (refundData.refundItems && refundData.refundItems.length > 0) {
         refundData.refundItems.forEach(item => {
-          dispatch({
-            type: 'RESTORE_PRODUCT_STOCK',
-            payload: {
-              productId: item.product.id,
-              quantity: item.refundQuantity
-            }
-          });
+          // Use the new Redux action for restoring product stock
+          dispatch(restoreProductStock({
+            productId: item.product.id,
+            quantity: item.refundQuantity
+          }));
         });
       }
 
@@ -165,10 +190,12 @@ export function TransactionHistory() {
   };
 
   const handleUpdateStatus = (transactionId, newStatus) => {
-    dispatch({
-      type: 'UPDATE_TRANSACTION_STATUS',
-      payload: { transactionId, status: newStatus }
-    });
+    // Dispatch the updateTransactionStatus Redux action
+    dispatch(updateTransactionStatus({ 
+      transactionId, 
+      status: newStatus 
+    }));
+    
     message.success(`Order status updated to ${newStatus}`);
     
     if (selectedTransaction && selectedTransaction.id === transactionId) {

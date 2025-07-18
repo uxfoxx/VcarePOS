@@ -31,7 +31,7 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 export function VariantManagement() {
-  const { state, dispatch } = usePOS();
+  const { state, dispatch: dispatchPOS } = usePOS();
   const [activeTab, setActiveTab] = useState('types');
   const [searchTerm, setSearchTerm] = useState('');
   const [showTypeModal, setShowTypeModal] = useState(false);
@@ -69,10 +69,10 @@ export function VariantManagement() {
       };
 
       if (editingType) {
-        dispatch({ type: 'UPDATE_VARIANT_TYPE', payload: typeData });
+        dispatchPOS({ type: 'UPDATE_VARIANT_TYPE', payload: typeData });
         message.success('Variant type updated successfully');
       } else {
-        dispatch({ type: 'ADD_VARIANT_TYPE', payload: typeData });
+        dispatchPOS({ type: 'ADD_VARIANT_TYPE', payload: typeData });
         message.success('Variant type created successfully');
       }
 
@@ -100,10 +100,10 @@ export function VariantManagement() {
       };
 
       if (editingOption) {
-        dispatch({ type: 'UPDATE_VARIANT_OPTION', payload: optionData });
+        dispatchPOS({ type: 'UPDATE_VARIANT_OPTION', payload: optionData });
         message.success('Variant option updated successfully');
       } else {
-        dispatch({ type: 'ADD_VARIANT_OPTION', payload: optionData });
+        dispatchPOS({ type: 'ADD_VARIANT_OPTION', payload: optionData });
         message.success('Variant option created successfully');
       }
 
@@ -136,24 +136,24 @@ export function VariantManagement() {
       return;
     }
 
-    dispatch({ type: 'DELETE_VARIANT_TYPE', payload: typeId });
+    dispatchPOS({ type: 'DELETE_VARIANT_TYPE', payload: typeId });
     message.success('Variant type deleted successfully');
   };
 
   const handleDeleteOption = (optionId) => {
-    dispatch({ type: 'DELETE_VARIANT_OPTION', payload: optionId });
+    dispatchPOS({ type: 'DELETE_VARIANT_OPTION', payload: optionId });
     message.success('Variant option deleted successfully');
   };
 
   const handleToggleTypeStatus = (type) => {
     const updatedType = { ...type, isActive: !type.isActive };
-    dispatch({ type: 'UPDATE_VARIANT_TYPE', payload: updatedType });
+    dispatchPOS({ type: 'UPDATE_VARIANT_TYPE', payload: updatedType });
     message.success(`Variant type ${updatedType.isActive ? 'activated' : 'deactivated'}`);
   };
 
   const handleToggleOptionStatus = (option) => {
     const updatedOption = { ...option, isActive: !option.isActive };
-    dispatch({ type: 'UPDATE_VARIANT_OPTION', payload: updatedOption });
+    dispatchPOS({ type: 'UPDATE_VARIANT_OPTION', payload: updatedOption });
     message.success(`Variant option ${updatedOption.isActive ? 'activated' : 'deactivated'}`);
   };
 

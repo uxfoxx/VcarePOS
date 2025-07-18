@@ -23,6 +23,13 @@ import { ActionButton } from '../common/ActionButton';
 import { EnhancedStepper } from '../common/EnhancedStepper';
 import { InvoiceModal } from '../Invoices/InvoiceModal';
 import { InventoryLabelModal } from '../Invoices/InventoryLabelModal';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchUsers } from '../../features/users/usersSlice';
+import { clearCart } from '../../features/cart/cartSlice';
+import { updateProductStock } from '../../features/products/productsSlice';
+import { updateCoupon } from '../../features/coupons/couponsSlice';
+import { createTransaction } from '../../features/transactions/transactionsSlice';
+import { updateStock } from '../../features/rawMaterials/rawMaterialsSlice';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -40,8 +47,9 @@ export function CheckoutModal({
   categoryTaxTotal,
   fullBillTaxTotal
 }) {
-  const { state, dispatch } = usePOS();
-  const { users, currentUser } = useAuth();
+  const dispatch = useDispatch();
+  const users = useSelector(state => state.users.usersList);
+  const { currentUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [customerForm] = Form.useForm();
   const [paymentForm] = Form.useForm();
@@ -53,6 +61,12 @@ export function CheckoutModal({
   const [completedTransaction, setCompletedTransaction] = useState(null);
   const [showInvoice, setShowInvoice] = useState(false);
   const [showInventoryLabels, setShowInventoryLabels] = useState(false);
+
+  React.useEffect(() => {
+    if (open) {
+      dispatch(fetchUsers());
+    }
+  }, [open, dispatch]);
 
   const subtotal = cartItems.reduce((sum, item) => {
     // Include base price
@@ -153,42 +167,34 @@ export function CheckoutModal({
 
       // Update product stock
       cartItems.forEach(item => {
-        dispatch({ 
-          type: 'UPDATE_PRODUCT_STOCK', 
-          payload: { 
-            productId: item.product.id, 
+        // Skip update for custom products
+        if (!item.product.id.toString().startsWith('CUSTOM')) {
+          dispatch(updateProductStock({
+            id: item.product.id,
             quantity: item.quantity,
-            selectedSize: item.selectedSize
-          }
-        });
+            selectedSize: item.selectedSize,
+            operation: 'subtract'
+          }));
+        }
         
         // Update raw material stock for addons if any
         if (item.product.addons) {
           item.product.addons.forEach(addon => {
-            dispatch({
-              type: 'UPDATE_RAW_MATERIAL_STOCK',
-              payload: {
-                materialId: addon.id,
-                quantity: addon.quantity * item.quantity
-              }
-            });
+            dispatch(updateStock({
+              id: addon.id,
+              quantity: addon.quantity * item.quantity,
+              operation: 'subtract'
+            }));
           });
         }
       });
 
       // Update coupon usage if applied
       if (appliedCoupon) {
-        dispatch({
-          type: 'UPDATE_COUPON',
-          payload: {
-            ...appliedCoupon,
-            usedCount: (appliedCoupon.usedCount || 0) + 1
-          }
-        });
+        dispatch(updateCoupon({...appliedCoupon,usedCount: (appliedCoupon.usedCount || 0) + 1}));
       }
-
-      dispatch({ type: 'ADD_TRANSACTION', payload: transaction });
-      dispatch({ type: 'CLEAR_CART' });
+      dispatch(createTransaction(transaction));
+      dispatch(clearCart());
       
       message.success('Order completed successfully!');
       

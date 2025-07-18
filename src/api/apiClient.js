@@ -3,7 +3,7 @@
  */
 
 // Import only the supabase client to check if it's null (for error messages)
-import { supabase } from '../utils/supabaseClient';
+// import { supabase } from '../utils/supabaseClient';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -40,6 +40,8 @@ async function apiRequest(endpoint, options = {}) {
     
     // Handle error responses from API
     if (!response.ok) {
+      console.error(`API request failed for ${endpoint}:`, data);
+      console.error('Response:', data);
       throw new Error(data.message || 'Something went wrong');
     }    
     return data;
@@ -138,6 +140,7 @@ export const productsApi = {
 // Raw Materials API
 export const rawMaterialsApi = {
   getAll: async () => {
+    console.log("getAll")
     return apiRequest('/raw-materials');
   },
   

@@ -6,6 +6,250 @@ const { authenticate, hasPermission } = require('../middleware/auth');
 const router = express.Router();
 
 /**
+ * @swagger
+ * tags:
+ *   name: Transactions
+ *   description: Sales transaction management
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Transaction:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           example: TXN-123456
+ *         customerName:
+ *           type: string
+ *           example: John Doe
+ *         customerPhone:
+ *           type: string
+ *           example: '+94112223344'
+ *         customerEmail:
+ *           type: string
+ *           example: johndoe@example.com
+ *         customerAddress:
+ *           type: string
+ *           example: '123 Main St, City'
+ *         cashier:
+ *           type: string
+ *           example: Jane Smith
+ *         salesperson:
+ *           type: string
+ *           example: Alex Brown
+ *         salespersonId:
+ *           type: string
+ *           example: USER-123456
+ *         paymentMethod:
+ *           type: string
+ *           example: cash
+ *         subtotal:
+ *           type: number
+ *           example: 1000.00
+ *         categoryTaxTotal:
+ *           type: number
+ *           example: 50.00
+ *         fullBillTaxTotal:
+ *           type: number
+ *           example: 25.00
+ *         totalTax:
+ *           type: number
+ *           example: 75.00
+ *         discount:
+ *           type: number
+ *           example: 100.00
+ *         total:
+ *           type: number
+ *           example: 975.00
+ *         appliedCoupon:
+ *           type: string
+ *           example: SAVE10
+ *         notes:
+ *           type: string
+ *         status:
+ *           type: string
+ *           example: completed
+ *         timestamp:
+ *           type: string
+ *           format: date-time
+ *         appliedTaxes:
+ *           type: object
+ *         items:
+ *           type: array
+ *           items:
+ *             type: object
+ *         refunds:
+ *           type: array
+ *           items:
+ *             type: object
+ */
+
+/**
+ * @swagger
+ * /api/transactions:
+ *   get:
+ *     summary: Get all transactions
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of transactions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Transaction'
+ *   post:
+ *     summary: Create a new transaction
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Transaction'
+ *     responses:
+ *       201:
+ *         description: Transaction created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Transaction'
+ *       400:
+ *         description: Validation error
+ */
+
+/**
+ * @swagger
+ * /api/transactions/{id}:
+ *   get:
+ *     summary: Get a transaction by ID
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Transaction ID
+ *     responses:
+ *       200:
+ *         description: Transaction found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Transaction'
+ *       404:
+ *         description: Transaction not found
+ */
+
+/**
+ * @swagger
+ * /api/transactions/{id}/status:
+ *   put:
+ *     summary: Update transaction status
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Transaction ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [completed, refunded, partially-refunded]
+ *                 example: refunded
+ *     responses:
+ *       200:
+ *         description: Transaction status updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 status:
+ *                   type: string
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Transaction not found
+ */
+
+/**
+ * @swagger
+ * /api/transactions/{id}/refund:
+ *   post:
+ *     summary: Process a refund for a transaction
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Transaction ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refundType:
+ *                 type: string
+ *                 enum: [full, partial, items]
+ *                 example: full
+ *               refundAmount:
+ *                 type: number
+ *                 example: 100.00
+ *               reason:
+ *                 type: string
+ *               notes:
+ *                 type: string
+ *               refundMethod:
+ *                 type: string
+ *                 example: cash
+ *               refundItems:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *     responses:
+ *       201:
+ *         description: Refund processed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Transaction not found
+ */
+
+/**
  * @route   GET /api/transactions
  * @desc    Get all transactions
  * @access  Private

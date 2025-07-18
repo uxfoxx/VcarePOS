@@ -6,6 +6,230 @@ const { authenticate, hasPermission } = require('../middleware/auth');
 const router = express.Router();
 
 /**
+ * @swagger
+ * tags:
+ *   name: Coupons
+ *   description: Coupon management
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Coupon:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           example: COUPON-123456
+ *         code:
+ *           type: string
+ *           example: SAVE10
+ *         description:
+ *           type: string
+ *           example: 10% off on all products
+ *         discountType:
+ *           type: string
+ *           enum: [percentage, fixed]
+ *           example: percentage
+ *         discountPercent:
+ *           type: number
+ *           example: 10
+ *         discountAmount:
+ *           type: number
+ *           example: 100
+ *         minimumAmount:
+ *           type: number
+ *           example: 500
+ *         maxDiscount:
+ *           type: number
+ *           example: 200
+ *         usageLimit:
+ *           type: integer
+ *           example: 100
+ *         usedCount:
+ *           type: integer
+ *           example: 10
+ *         validFrom:
+ *           type: string
+ *           format: date-time
+ *         validTo:
+ *           type: string
+ *           format: date-time
+ *         isActive:
+ *           type: boolean
+ *           example: true
+ *         applicableCategories:
+ *           type: array
+ *           items:
+ *             type: string
+ *           example: ["Furniture", "Electronics"]
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ */
+
+/**
+ * @swagger
+ * /api/coupons:
+ *   get:
+ *     summary: Get all coupons
+ *     tags: [Coupons]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of coupons
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Coupon'
+ *   post:
+ *     summary: Create a new coupon
+ *     tags: [Coupons]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Coupon'
+ *     responses:
+ *       201:
+ *         description: Coupon created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Coupon'
+ *       400:
+ *         description: Validation error
+ */
+
+/**
+ * @swagger
+ * /api/coupons/{id}:
+ *   get:
+ *     summary: Get a coupon by ID
+ *     tags: [Coupons]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Coupon ID
+ *     responses:
+ *       200:
+ *         description: Coupon found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Coupon'
+ *       404:
+ *         description: Coupon not found
+ *   put:
+ *     summary: Update a coupon
+ *     tags: [Coupons]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Coupon ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Coupon'
+ *     responses:
+ *       200:
+ *         description: Coupon updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Coupon'
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Coupon not found
+ *   delete:
+ *     summary: Delete a coupon
+ *     tags: [Coupons]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Coupon ID
+ *     responses:
+ *       200:
+ *         description: Coupon deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Coupon deleted successfully
+ *       404:
+ *         description: Coupon not found
+ */
+
+/**
+ * @swagger
+ * /api/coupons/validate/{code}:
+ *   get:
+ *     summary: Validate a coupon code
+ *     tags: [Coupons]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: code
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Coupon code
+ *       - in: query
+ *         name: amount
+ *         required: false
+ *         schema:
+ *           type: number
+ *         description: Order amount to validate against coupon
+ *     responses:
+ *       200:
+ *         description: Coupon validation result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 valid:
+ *                   type: boolean
+ *                 coupon:
+ *                   $ref: '#/components/schemas/Coupon'
+ *                 discount:
+ *                   type: number
+ *                 message:
+ *                   type: string
+ *       404:
+ *         description: Coupon not found
+ */
+
+/**
  * @route   GET /api/coupons
  * @desc    Get all coupons
  * @access  Private

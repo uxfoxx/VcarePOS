@@ -1,0 +1,68 @@
+import { takeLatest, call, put } from "redux-saga/effects";
+import {
+  fetchTransactions,
+  fetchTransactionById,
+  createTransaction,
+  updateTransactionStatus,
+  processRefund,
+  fetchTransactionsSucceeded,
+  fetchTransactionByIdSucceeded,
+  createTransactionSucceeded,
+  updateTransactionStatusSucceeded,
+  processRefundSucceeded,
+  failed
+} from "./transactionsSlice";
+import { transactionsApi } from "../../api/apiClient";
+
+function* fetchTransactionsSaga() {
+  try {
+    const data = yield call(transactionsApi.getAll);
+    yield put(fetchTransactionsSucceeded(data));
+  } catch (error) {
+    yield put(failed(error.message));
+  }
+}
+
+function* fetchTransactionByIdSaga(action) {
+  try {
+    const data = yield call(transactionsApi.getById, action.payload.id);
+    yield put(fetchTransactionByIdSucceeded(data));
+  } catch (error) {
+    yield put(failed(error.message));
+  }
+}
+
+function* createTransactionSaga(action) {
+  try {
+    const data = yield call(transactionsApi.create, action.payload);
+    yield put(createTransactionSucceeded(data));
+  } catch (error) {
+    yield put(failed(error.message));
+  }
+}
+
+function* updateTransactionStatusSaga(action) {
+  try {
+    const data = yield call(transactionsApi.updateStatus, action.payload.id, action.payload.status);
+    yield put(updateTransactionStatusSucceeded(data));
+  } catch (error) {
+    yield put(failed(error.message));
+  }
+}
+
+function* processRefundSaga(action) {
+  try {
+    const data = yield call(transactionsApi.processRefund, action.payload.id, action.payload.refundData);
+    yield put(processRefundSucceeded(data));
+  } catch (error) {
+    yield put(failed(error.message));
+  }
+}
+
+export default function* transactionsSaga() {
+  yield takeLatest(fetchTransactions.type, fetchTransactionsSaga);
+  yield takeLatest(fetchTransactionById.type, fetchTransactionByIdSaga);
+  yield takeLatest(createTransaction.type, createTransactionSaga);
+  yield takeLatest(updateTransactionStatus.type, updateTransactionStatusSaga);
+  yield takeLatest(processRefund.type, processRefundSaga);
+}

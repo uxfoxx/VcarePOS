@@ -17,16 +17,19 @@ import {
   Input,
   Image
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchRawMaterials } from '../../features/rawMaterials/rawMaterialsSlice';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
+import { addToCart } from '../../features/cart/cartSlice';
 
 const { Title, Text } = Typography;
 const { Group: CheckboxGroup } = Checkbox;
 const { Search } = Input;
 
-export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
-  const { rawMaterials } = usePOS();
+export function ProductAddonsModal({ open, onClose, product }) {
+  const dispatch = useDispatch();
+  const rawMaterials = useSelector(state => state.rawMaterials.rawMaterialsList);
   const [loading, setLoading] = useState(false);
   const [editablePrice, setEditablePrice] = useState(0);
   const [selectedAddons, setSelectedAddons] = useState([]);
@@ -43,11 +46,12 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
   // Reset selections when modal opens or product changes
   useEffect(() => {
     if (open) {
+      dispatch(fetchRawMaterials());
       setSelectedAddons([]);
       setQuantity(1);
       setSearchTerm('');
     }
-  }, [open, product]);
+  }, [open, product, dispatch]);
 
   // Calculate total price whenever selected addons or quantity changes
   useEffect(() => {
@@ -89,13 +93,10 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
 
   const handleSubmit = () => {
     if (!product) return;
-    
     try {
       setLoading(true);
-      
-      // Create a copy of the product with addons
       const productWithAddons = {
-        ...product, 
+        ...product,
         addons: selectedAddons.map(addon => {
           const material = rawMaterials.find(m => m.id === addon.id);
           return {
@@ -105,16 +106,11 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
             price: material.unitPrice * addon.quantity
           };
         }),
-        // Use the editable price instead of calculated price
         price: editablePrice / quantity,
-        // Preserve variant and size information
         selectedVariant: product.selectedVariant,
         selectedSize: product.selectedSize
       };
-      
-      // Add to cart with quantity
-      onAddToCart(productWithAddons, quantity);
-      
+      dispatch(addToCart({ product: productWithAddons, quantity }));
       message.success('Product added to cart with addons');
       onClose();
     } catch (error) {
@@ -166,9 +162,9 @@ export function ProductAddonsModal({ open, onClose, product, onAddToCart }) {
                   </Tag>
                 </div>
               </div>
-            </div>
+            </div> 
             <div className="text-right">
-              <Text strong className="text-xl text-blue-600">LKR {product.price.toFixed(2)}</Text>
+              <Text strong className="text-xl text-blue-600">LKR {(product.price || 0).toFixed(2)}</Text>
               <div className="mt-2">
                 <Text strong>Quantity: </Text>
                 <InputNumber

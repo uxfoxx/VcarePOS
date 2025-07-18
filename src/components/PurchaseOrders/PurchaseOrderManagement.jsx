@@ -16,7 +16,7 @@ import {
   Input,
   Tabs
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
+import { useSelector, useDispatch } from 'react-redux';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
@@ -26,7 +26,15 @@ import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { PurchaseOrderModal } from './PurchaseOrderModal';
 import { PurchaseOrderDetailModal } from './PurchaseOrderDetailModal';
 import { VendorManagement } from './VendorManagement';
-import { getOrFetch } from '../../utils/cache';
+import { 
+  fetchPurchaseOrders,
+  addPurchaseOrder,
+  updatePurchaseOrder,
+  deletePurchaseOrder,
+  updatePurchaseOrderStatus
+} from '../../features/purchaseOrders/purchaseOrdersSlice';
+import { fetchProducts } from '../../features/products/productsSlice';
+import { fetchRawMaterials } from '../../features/rawMaterials/rawMaterialsSlice';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -34,7 +42,11 @@ const { Search } = Input;
 const { TabPane } = Tabs;
 
 export function PurchaseOrderManagement() {
-  const { state, dispatch } = usePOS();
+  const dispatch = useDispatch();
+  const purchaseOrders = useSelector(state => state.purchaseOrders.purchaseOrdersList);
+  const loading = useSelector(state => state.purchaseOrders.loading);
+  const products = useSelector(state => state.products.productsList);
+  const rawMaterials = useSelector(state => state.rawMaterials.rawMaterialsList);
   const { currentUser, hasPermission, logAction } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -42,30 +54,15 @@ export function PurchaseOrderManagement() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [activeTab, setActiveTab] = useState('orders'); 
 
   // Load purchase orders from state or cache
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        // In a real app, this would fetch from an API
-        // For now, we'll use the mock data from state
-        const orders = state.purchaseOrders || [];
-        setPurchaseOrders(orders);
-      } catch (error) {
-        console.error('Error loading purchase orders:', error);
-        setPurchaseOrders([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, [state.purchaseOrders]);
+    dispatch(fetchPurchaseOrders());
+    dispatch(fetchProducts());
+    dispatch(fetchRawMaterials());
+  }, [dispatch]);
 
   // Filter purchase orders based on search term, status, and date range
   const filteredOrders = purchaseOrders.filter(order => {
@@ -106,10 +103,7 @@ export function PurchaseOrderManagement() {
     };
     
     // Add to state
-    dispatch({ 
-      type: 'ADD_PURCHASE_ORDER', 
-      payload: newOrder 
-    });
+    dispatch(addPurchaseOrder(newOrder));
     
     // Log action
     if (logAction) {
@@ -141,10 +135,7 @@ export function PurchaseOrderManagement() {
     };
     
     // Update in state
-    dispatch({ 
-      type: 'UPDATE_PURCHASE_ORDER', 
-      payload: updatedOrder 
-    });
+    dispatch(updatePurchaseOrder(updatedOrder));
     
     // Log action
     if (logAction) {
@@ -162,10 +153,7 @@ export function PurchaseOrderManagement() {
 
   const handleDeleteOrder = (orderId) => {
     // In a real app, this would send to an API
-    dispatch({ 
-      type: 'DELETE_PURCHASE_ORDER', 
-      payload: orderId 
-    });
+    dispatch(deletePurchaseOrder({ id: orderId }));
     
     // Log action
     if (logAction) {
@@ -182,10 +170,7 @@ export function PurchaseOrderManagement() {
 
   const handleBulkDelete = (orderIds) => {
     orderIds.forEach(id => {
-      dispatch({ 
-        type: 'DELETE_PURCHASE_ORDER', 
-        payload: id 
-      });
+      dispatch(deletePurchaseOrder({ id }));
       
       // Log action
       if (logAction) {
@@ -221,10 +206,7 @@ export function PurchaseOrderManagement() {
       ]
     };
     
-    dispatch({ 
-      type: 'UPDATE_PURCHASE_ORDER', 
-      payload: updatedOrder 
-    });
+    dispatch(updatePurchaseOrder(updatedOrder));
     
     // Log action
     if (logAction) {
@@ -244,9 +226,9 @@ export function PurchaseOrderManagement() {
     }
   };
 
-  const handleUpdateInventory = (products, materials) => {
+  const handleUpdateInventory = (productsToUpdate, materials) => {
     // Update product inventory
-    products.forEach(product => {
+    productsToUpdate.forEach(product => {
       dispatch({
         type: 'RESTORE_PRODUCT_STOCK',
         payload: {
@@ -265,10 +247,9 @@ export function PurchaseOrderManagement() {
         );
       }
     });
-    
     // Update raw materials inventory
     materials.forEach(material => {
-      const rawMaterial = state.rawMaterials.find(m => m.id === material.id);
+      const rawMaterial = rawMaterials.find(m => m.id === material.id);
       if (rawMaterial) {
         dispatch({
           type: 'UPDATE_RAW_MATERIAL',
@@ -289,7 +270,6 @@ export function PurchaseOrderManagement() {
         }
       }
     });
-    
     message.success('Inventory updated successfully');
   };
 
@@ -559,8 +539,8 @@ export function PurchaseOrderManagement() {
           handleCreateOrder
         }
         editingOrder={selectedOrder}
-        products={state.products}
-        rawMaterials={state.rawMaterials}
+        products={products}
+        rawMaterials={rawMaterials}
       />
 
       {/* Purchase Order Detail Modal */}

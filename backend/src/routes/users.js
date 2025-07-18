@@ -7,6 +7,173 @@ const { hashPassword } = require('../utils/auth');
 const router = express.Router();
 
 /**
+ * @swagger
+ * tags:
+ *   name: Users
+ *   description: User management
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           example: USER-123456
+ *         username:
+ *           type: string
+ *           example: johndoe
+ *         email:
+ *           type: string
+ *           example: johndoe@example.com
+ *         firstName:
+ *           type: string
+ *           example: John
+ *         lastName:
+ *           type: string
+ *           example: Doe
+ *         role:
+ *           type: string
+ *           enum: [admin, manager, cashier]
+ *           example: admin
+ *         isActive:
+ *           type: boolean
+ *           example: true
+ *         permissions:
+ *           type: object
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         lastLogin:
+ *           type: string
+ *           format: date-time
+ */
+
+/**
+ * @swagger
+ * /api/users:
+ *   get:
+ *     summary: Get all users
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
+ *   post:
+ *     summary: Create a new user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       201:
+ *         description: User created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Validation error
+ */
+
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   get:
+ *     summary: Get a user by ID
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       404:
+ *         description: User not found
+ *   put:
+ *     summary: Update a user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       200:
+ *         description: User updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: User not found
+ *   delete:
+ *     summary: Delete a user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: User deleted successfully
+ *       400:
+ *         description: Cannot delete own account
+ *       404:
+ *         description: User not found
+ */
+
+/**
  * @route   GET /api/users
  * @desc    Get all users
  * @access  Private (Admin and Manager only)

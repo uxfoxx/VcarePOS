@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { 
   Table, 
   Input, 
@@ -18,18 +19,23 @@ import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
 import { SearchInput } from '../common/SearchInput';
 import { FormModal } from '../common/FormModal';
+import { fetchCategories, addCategories, updateCategories, deleteCategories } from '../../features/categories/categoriesSlice';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 export function CategoryManagement() {
   const { state, dispatch } = usePOS();
+  const dispatch2 = useDispatch();
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [form] = Form.useForm();
+  const {categoriesList, error} = useSelector(state => state.categories);
 
-  const categories = state.categories || [];
+  useEffect(() => { dispatch2(fetchCategories()); }, [dispatch2]);
+
+  const categories = categoriesList || [];
 
   const filteredCategories = categories.filter(category =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -58,10 +64,12 @@ export function CategoryManagement() {
       };
 
       if (editingCategory) {
-        dispatch({ type: 'UPDATE_CATEGORY', payload: categoryData });
+        dispatch2(updateCategories({categoryData}));
+        // dispatch({ type: 'UPDATE_CATEGORY', payload: categoryData });
         message.success('Category updated successfully');
       } else {
-        dispatch({ type: 'ADD_CATEGORY', payload: categoryData });
+        dispatch2(addCategories({categoryData}));
+        // dispatch({ type: 'ADD_CATEGORY', payload: categoryData });
         message.success('Category added successfully');
       }
 
@@ -74,6 +82,7 @@ export function CategoryManagement() {
   };
 
   const handleEdit = (category) => {
+    console.log("category modal",category)
     setEditingCategory(category);
     form.setFieldsValue(category);
     setShowModal(true);
@@ -91,13 +100,15 @@ export function CategoryManagement() {
       return;
     }
 
-    dispatch({ type: 'DELETE_CATEGORY', payload: categoryId });
+    dispatch2(deleteCategories({categoryId}));
+    // dispatch({ type: 'DELETE_CATEGORY', payload: categoryId });
     message.success('Category deleted successfully');
   };
 
   const handleToggleStatus = (category) => {
     const updatedCategory = { ...category, isActive: !category.isActive };
-    dispatch({ type: 'UPDATE_CATEGORY', payload: updatedCategory });
+    dispatch2(updateCategories({categoryData:updatedCategory}));
+    // dispatch({ type: 'UPDATE_CATEGORY', payload: updatedCategory });
     message.success(`Category ${updatedCategory.isActive ? 'activated' : 'deactivated'}`);
   };
 
@@ -286,11 +297,8 @@ export function CategoryManagement() {
           />
         </Form.Item>
 
-        <Form.Item name="isActive" valuePropName="checked" initialValue={true}>
-          <div className="flex items-center space-x-2">
-            <Switch />
-            <Text>Active</Text>
-          </div>
+        <Form.Item name="isActive" label="Status" valuePropName="checked" initialValue={true}>
+          <Switch />
         </Form.Item>
       </FormModal>
     </>

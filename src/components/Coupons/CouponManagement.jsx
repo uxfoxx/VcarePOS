@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   Button, 
@@ -18,7 +18,14 @@ import {
   Col,
   Tooltip
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
+import { useSelector, useDispatch } from 'react-redux';
+import dayjs from 'dayjs';
+import {
+  addCoupon,
+  updateCoupon,
+  deleteCoupon,
+  fetchCoupons
+} from '../../features/coupons/couponsSlice';
 import { Icon } from '../common/Icon';
 import { SearchInput } from '../common/SearchInput';
 import { ActionButton } from '../common/ActionButton';
@@ -33,17 +40,21 @@ const { TextArea } = Input;
 const { RangePicker } = DatePicker;
 
 export function CouponManagement() {
-  const { state, dispatch } = usePOS();
+  const dispatch = useDispatch();
+  const coupons = useSelector(state => state.coupons.couponsList) || [];
+  const loading = useSelector(state => state.coupons.loading);
+  const categories = useSelector(state => state.categories.categoriesList) || [];
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState(null);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
-  const coupons = state.coupons || [];
+  useEffect(() => {
+    dispatch(fetchCoupons());
+  }, [dispatch]);
 
   const filteredCoupons = coupons.filter(coupon =>
     coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -52,7 +63,6 @@ export function CouponManagement() {
 
   const handleSubmit = async (values) => {
     try {
-      setLoading(true);
       const couponData = {
         id: editingCoupon?.id || `COUPON-${Date.now()}`,
         code: values.code.toUpperCase(),
@@ -72,11 +82,11 @@ export function CouponManagement() {
       };
 
       if (editingCoupon) {
-        dispatch({ type: 'UPDATE_COUPON', payload: couponData });
-        message.success('Coupon updated successfully');
+        dispatch(updateCoupon(couponData));
+        message.success('Coupon update requested');
       } else {
-        dispatch({ type: 'ADD_COUPON', payload: couponData });
-        message.success('Coupon created successfully');
+        dispatch(addCoupon(couponData));
+        message.success('Coupon creation requested');
       }
 
       setShowModal(false);
@@ -84,8 +94,6 @@ export function CouponManagement() {
       form.resetFields();
     } catch (error) {
       message.error('Please fill in all required fields');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -102,22 +110,22 @@ export function CouponManagement() {
   };
 
   const handleDelete = (couponId) => {
-    dispatch({ type: 'DELETE_COUPON', payload: couponId });
-    message.success('Coupon deleted successfully');
+    dispatch(deleteCoupon({ id: couponId }));
+    message.success('Coupon delete requested');
   };
 
   const handleBulkDelete = (couponIds) => {
     couponIds.forEach(id => {
-      dispatch({ type: 'DELETE_COUPON', payload: id });
+      dispatch(deleteCoupon({ id }));
     });
-    message.success(`${couponIds.length} coupons deleted successfully`);
+    message.success(`${couponIds.length} coupon delete requests sent`);
     setSelectedRowKeys([]);
   };
 
   const handleToggleStatus = (coupon) => {
     const updatedCoupon = { ...coupon, isActive: !coupon.isActive };
-    dispatch({ type: 'UPDATE_COUPON', payload: updatedCoupon });
-    message.success(`Coupon ${updatedCoupon.isActive ? 'activated' : 'deactivated'}`);
+    dispatch(updateCoupon(updatedCoupon));
+    message.success(`Coupon ${updatedCoupon.isActive ? 'activate' : 'deactivate'} requested`);
   };
 
   const handleRowClick = (coupon) => {
@@ -447,7 +455,7 @@ export function CouponManagement() {
 
           <Form.Item name="applicableCategories" label="Applicable Categories">
             <Select mode="multiple" placeholder="Select categories (leave empty for all)">
-              {state.categories?.filter(cat => cat.isActive).map(cat => (
+              {categories.filter(cat => cat.isActive).map(cat => (
                 <Option key={cat.id} value={cat.name}>{cat.name}</Option>
               ))}
             </Select>
@@ -460,11 +468,8 @@ export function CouponManagement() {
             />
           </Form.Item>
 
-          <Form.Item name="isActive" valuePropName="checked" initialValue={true}>
-            <div className="flex items-center space-x-2">
+          <Form.Item name="isActive" label="Active" valuePropName="checked" initialValue={true}>
               <Switch />
-              <Text>Active</Text>
-            </div>
           </Form.Item>
 
           <div className="flex justify-end space-x-2 mt-6">

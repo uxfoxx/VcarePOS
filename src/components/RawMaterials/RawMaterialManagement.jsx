@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { 
   Card, 
   Button, 
@@ -25,13 +26,15 @@ import { EnhancedTable } from '../common/EnhancedTable';
 import { DetailModal } from '../common/DetailModal';
 import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
+import { fetchRawMaterials, addRawMaterials, updateRawMaterials, deleteRawMaterials } from '../../features/rawMaterials/rawMaterialsSlice';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
 export function RawMaterialManagement() {
-  const { state, dispatch } = usePOS();
+  const { state, dispatch: dispatchPOS } = usePOS();
+  const dispatch2 = useDispatch();
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
@@ -41,10 +44,13 @@ export function RawMaterialManagement() {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const {rawMaterialsList, error} = useSelector(state => state.rawMaterials);
 
-  const categories = ['All', ...new Set(state.rawMaterials.map(m => m.category))];
+  useEffect(() => { dispatch2(fetchRawMaterials()); }, [dispatch2]);
+
+  const categories = ['All', ...new Set(rawMaterialsList.map(m => m.category))];
   
-  const filteredMaterials = state.rawMaterials.filter(material => {
+  const filteredMaterials = rawMaterialsList.filter(material => {
     const matchesSearch = material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          material.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          material.supplier?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -52,7 +58,7 @@ export function RawMaterialManagement() {
     return matchesSearch && matchesCategory;
   });
 
-  const lowStockMaterials = state.rawMaterials.filter(m => m.stockQuantity <= m.minimumStock);
+  const lowStockMaterials = rawMaterialsList.filter(m => m.stockQuantity <= m.minimumStock);
 
   const handleSubmit = async (values) => {
     try {
@@ -70,10 +76,12 @@ export function RawMaterialManagement() {
       };
 
       if (editingMaterial) {
-        dispatch({ type: 'UPDATE_RAW_MATERIAL', payload: materialData });
+        dispatch2(updateRawMaterials({materialData}));
+        // dispatch({ type: 'UPDATE_RAW_MATERIAL', payload: materialData });
         message.success('Raw material updated successfully');
       } else {
-        dispatch({ type: 'ADD_RAW_MATERIAL', payload: materialData });
+        dispatch2(addRawMaterials({materialData}));
+        // dispatch({ type: 'ADD_RAW_MATERIAL', payload: materialData });
         message.success('Raw material added successfully');
       }
 
@@ -94,8 +102,9 @@ export function RawMaterialManagement() {
   };
 
   const handleDelete = (materialId) => {
-    dispatch({ type: 'DELETE_RAW_MATERIAL', payload: materialId });
-    message.success('Raw material deleted successfully');
+    dispatch2(deleteRawMaterials({materialId}));
+    // dispatch({ type: 'DELETE_RAW_MATERIAL', payload: materialId });
+    // message.success('Raw material deleted successfully');
   };
 
   const handleBulkDelete = (materialIds) => {

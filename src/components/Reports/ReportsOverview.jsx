@@ -18,7 +18,12 @@ import {
   Tooltip,
   Image
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchRawMaterials } from '../../features/rawMaterials/rawMaterialsSlice';
+import { fetchProducts } from '../../features/products/productsSlice';
+import { fetchTransactions } from '../../features/transactions/transactionsSlice';
+import { fetchCoupons } from '../../features/coupons/couponsSlice';
+import { fetchCategories } from '../../features/categories/categoriesSlice';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
@@ -27,7 +32,6 @@ import { ExportModal } from '../common/ExportModal';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { SearchInput } from '../common/SearchInput';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
-import { getOrFetch } from '../../utils/cache';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -35,7 +39,15 @@ const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 export function ReportsOverview() {
-  const { state, getProducts, getRawMaterials, getTransactions, getCoupons, getCategories } = usePOS();
+  const dispatch = useDispatch();
+  
+  // Get data from Redux store
+  const { rawMaterialsList, loading: rawMaterialsLoading } = useSelector(state => state.rawMaterials);
+  const { productsList, loading: productsLoading } = useSelector(state => state.products);
+  const { transactionsList, loading: transactionsLoading } = useSelector(state => state.transactions);
+  const { couponsList, loading: couponsLoading } = useSelector(state => state.coupons);
+  const { categoriesList, loading: categoriesLoading } = useSelector(state => state.categories);
+  
   const { stockAlerts } = useNotifications();
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportDataType, setExportDataType] = useState('comprehensive');
@@ -44,32 +56,23 @@ export function ReportsOverview() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [products, setProducts] = useState([]);
-  const [rawMaterials, setRawMaterials] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [coupons, setCoupons] = useState([]);
-  const [categories, setCategories] = useState([]);
-
-  // Load cached data
+  
+  // Load data from Redux stores
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      // Use state data directly
-      setProducts(state.products);
-      setRawMaterials(state.rawMaterials);
-      setTransactions(state.transactions);
-      setCoupons(state.coupons);
-      setCategories(state.categories);
-      setLoading(false);
-    };
-    
-    fetchData();
-  }, [state]);
+    // Fetch all required data from Redux stores
+    dispatch(fetchRawMaterials());
+    dispatch(fetchProducts());
+    dispatch(fetchTransactions());
+    dispatch(fetchCoupons());
+    dispatch(fetchCategories());
+  }, [dispatch]);
+
+  // Check if data is still loading
+  const isLoading = rawMaterialsLoading || productsLoading || transactionsLoading || couponsLoading || categoriesLoading;
 
   // Filter transactions based on date
   const getFilteredTransactions = () => {
-    let filtered = [...transactions];
+    let filtered = [...(transactionsList || [])];
     
     if (dateFilter === 'today') {
       const today = dayjs().startOf('day');
@@ -104,20 +107,20 @@ export function ReportsOverview() {
   const filteredTransactions = getFilteredTransactions();
   const totalRevenue = filteredTransactions.reduce((sum, transaction) => sum + transaction.total, 0);
   const totalTransactions = filteredTransactions.length;
-  const totalProducts = products.length;
-  const totalRawMaterials = rawMaterials.length;
+  const totalProducts = (productsList || []).length;
+  const totalRawMaterials = (rawMaterialsList || []).length;
   const averageOrderValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
 
   // Calculate raw material value
-  const rawMaterialValue = rawMaterials.reduce((sum, material) => 
+  const rawMaterialValue = (rawMaterialsList || []).reduce((sum, material) => 
     sum + (material.stockQuantity * material.unitPrice), 0
   );
 
   // Get stock alerts
-  const lowStockMaterials = rawMaterials.filter(m => m.stockQuantity <= m.minimumStock);
-  const outOfStockMaterials = rawMaterials.filter(m => m.stockQuantity === 0);
-  const lowStockProducts = products.filter(p => p.stock <= 10 && p.stock > 0);
-  const outOfStockProducts = products.filter(p => p.stock === 0);
+  const lowStockMaterials = (rawMaterialsList || []).filter(m => m.stockQuantity <= m.minimumStock);
+  const outOfStockMaterials = (rawMaterialsList || []).filter(m => m.stockQuantity === 0);
+  const lowStockProducts = (productsList || []).filter(p => p.stock <= 10 && p.stock > 0);
+  const outOfStockProducts = (productsList || []).filter(p => p.stock === 0);
 
   // Calculate top selling products
   const productSales = {};
@@ -279,7 +282,7 @@ export function ReportsOverview() {
       dataIndex: 'category',
       key: 'category',
       render: (category) => <Tag color="blue">{category}</Tag>,
-      filters: [...new Set(products.map(p => p.category))].map(cat => ({
+      filters: [...new Set(productsList.map(p => p.category))].map(cat => ({
         text: cat,
         value: cat
       })),
@@ -394,7 +397,7 @@ export function ReportsOverview() {
       dataIndex: 'category',
       key: 'category',
       render: (category) => <Tag color="blue">{category}</Tag>,
-      filters: [...new Set(rawMaterials.map(m => m.category))].map(cat => ({
+      filters: [...new Set(rawMaterialsList.map(m => m.category))].map(cat => ({
         text: cat,
         value: cat
       })),
@@ -651,7 +654,7 @@ export function ReportsOverview() {
             }
           >
             <List
-              dataSource={rawMaterials.slice(0, 5)}
+              dataSource={rawMaterialsList.slice(0, 5)}
               renderItem={(material) => {
                 const stockPercentage = Math.min((material.stockQuantity / (material.minimumStock * 3)) * 100, 100);
                 const isLowStock = material.stockQuantity <= material.minimumStock;
@@ -709,7 +712,7 @@ export function ReportsOverview() {
         title="Product Reports"
         icon="inventory_2"
         columns={productColumns}
-        dataSource={products.filter(p => 
+        dataSource={productsList.filter(p => 
           p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
           p.barcode?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -803,7 +806,7 @@ export function ReportsOverview() {
         title="Raw Material Reports"
         icon="category"
         columns={materialColumns}
-        dataSource={rawMaterials.filter(m => 
+        dataSource={rawMaterialsList.filter(m => 
           m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           m.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
           m.supplier?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -877,7 +880,7 @@ export function ReportsOverview() {
     }
   ];
 
-  if (loading) {
+  if (isLoading) {
     return <LoadingSkeleton type="table" />;
   }
 
@@ -897,13 +900,13 @@ export function ReportsOverview() {
         onClose={() => setShowExportModal(false)}
         dataType={exportDataType}
         data={{
-          products,
-          rawMaterials,
+          products: productsList,
+          rawMaterials: rawMaterialsList,
           transactions: filteredTransactions,
-          coupons,
+          coupons: couponsList,
           users: [], // Would come from auth context
           auditTrail: [], // Would come from auth context
-          categories
+          categories: categoriesList
         }}
       />
     </>

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { 
   Card, 
   Space, 
@@ -29,12 +30,13 @@ import { DetailModal } from '../common/DetailModal';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
+import { fetchProducts, deleteProducts, updateProduct, addProduct } from '../../features/products/productsSlice';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
 
 export function ProductManagement() {
-  const { state, dispatch } = usePOS();
+  const dispatch = useDispatch();
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -44,8 +46,11 @@ export function ProductManagement() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('products');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const {productsList, error} = useSelector(state => state.products);
 
-  const filteredProducts = state.products.filter(product =>
+  useEffect(() => { dispatch(fetchProducts()); }, [dispatch]);
+
+  const filteredProducts = productsList.filter(product =>
     (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (product.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (product.barcode || '').includes(searchTerm)
@@ -55,10 +60,10 @@ export function ProductManagement() {
     try {
       setLoading(true);
       if (editingProduct) {
-        dispatch({ type: 'UPDATE_PRODUCT', payload: productData });
+        dispatch(updateProduct(productData));
         message.success('Product updated successfully');
       } else {
-        dispatch({ type: 'ADD_PRODUCT', payload: productData });
+        dispatch(addProduct(productData));
         message.success('Product added successfully');
       }
 
@@ -77,13 +82,14 @@ export function ProductManagement() {
   };
 
   const handleDelete = (productId) => {
-    dispatch({ type: 'DELETE_PRODUCT', payload: productId });
-    message.success('Product deleted successfully');
+    dispatch(deleteProducts({productId}));
+    // dispatch({ type: 'DELETE_PRODUCT', payload: productId });
+    // message.success('Product deleted successfully');
   };
 
   const handleBulkDelete = (productIds) => {
     productIds.forEach(id => {
-      dispatch({ type: 'DELETE_PRODUCT', payload: id });
+      dispatch(deleteProducts({productId: id}));
     });
     message.success(`${productIds.length} products deleted successfully`);
     setSelectedRowKeys([]);
@@ -135,7 +141,7 @@ export function ProductManagement() {
           {category}
         </Tag>
       ),
-      filters: [...new Set(state.products.map(p => p.category))].map(cat => ({
+      filters: [...new Set(productsList.map(p => p.category))].map(cat => ({
         text: cat,
         value: cat
       })),

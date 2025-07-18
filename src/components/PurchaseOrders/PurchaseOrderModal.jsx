@@ -67,14 +67,15 @@ export function PurchaseOrderModal({
         paymentTerms: editingOrder.paymentTerms,
         shippingMethod: editingOrder.shippingMethod
       });
-      
       setItems(editingOrder.items || []);
+      setActiveTab('1');
     } else if (open) {
       form.resetFields();
       form.setFieldsValue({
         orderDate: dayjs()
       });
       setItems([]);
+      setActiveTab('1');
     }
   }, [editingOrder, open, form]);
 

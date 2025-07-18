@@ -1,7 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Card, 
-  Button, 
   Input, 
   Space, 
   Modal, 
@@ -19,7 +17,15 @@ import {
   Alert,
   Tooltip
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  addTax,
+  updateTax,
+  deleteTax,
+  fetchTaxes,
+} from '../../features/taxes/taxesSlice';
+import { fetchCategories } from '../../features/categories/categoriesSlice';
+import { fetchProducts } from '../../features/products/productsSlice';
 import { Icon } from '../common/Icon';
 import { SearchInput } from '../common/SearchInput';
 import { ActionButton } from '../common/ActionButton';
@@ -34,21 +40,28 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 export function TaxManagement() {
-  const { state, dispatch } = usePOS();
+  const dispatch = useDispatch();
+  const taxes = useSelector(state => state.taxes.taxesList) || [];
+  const categories = useSelector(state => state.categories.categoriesList)?.filter(cat => cat.isActive) || [];
+  const products = useSelector(state => state.products.productsList) || [];
+  const loading = useSelector(state => state.taxes.loading);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingTax, setEditingTax] = useState(null);
   const [selectedTax, setSelectedTax] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const [taxType, setTaxType] = useState('full_bill');
   const [showGlobalTaxSettings, setShowGlobalTaxSettings] = useState(false);
   const [globalTaxEnabled, setGlobalTaxEnabled] = useState(true);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
-  const taxes = state.taxes || [];
-  const categories = state.categories?.filter(cat => cat.isActive) || [];
+  useEffect(() => {
+    dispatch(fetchTaxes());
+    dispatch(fetchCategories());
+    dispatch(fetchProducts());
+  }, [dispatch]);
 
   const filteredTaxes = taxes.filter(tax =>
     tax.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -57,7 +70,6 @@ export function TaxManagement() {
 
   const handleSubmit = async (values) => {
     try {
-      setLoading(true);
       const taxData = {
         id: editingTax?.id || `TAX-${Date.now()}`,
         name: values.name,
@@ -70,10 +82,10 @@ export function TaxManagement() {
       };
 
       if (editingTax) {
-        dispatch({ type: 'UPDATE_TAX', payload: taxData });
+        dispatch(updateTax(taxData));
         message.success('Tax updated successfully');
       } else {
-        dispatch({ type: 'ADD_TAX', payload: taxData });
+        dispatch(addTax(taxData));
         message.success('Tax added successfully');
       }
 
@@ -83,8 +95,6 @@ export function TaxManagement() {
       setTaxType('full_bill');
     } catch (error) {
       message.error('Please fill in all required fields');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -99,13 +109,13 @@ export function TaxManagement() {
   };
 
   const handleDelete = (taxId) => {
-    dispatch({ type: 'DELETE_TAX', payload: taxId });
+    dispatch(deleteTax(taxId));
     message.success('Tax deleted successfully');
   };
 
   const handleBulkDelete = (taxIds) => {
     taxIds.forEach(id => {
-      dispatch({ type: 'DELETE_TAX', payload: id });
+      dispatch(deleteTax(id));
     });
     message.success(`${taxIds.length} taxes deleted successfully`);
     setSelectedRowKeys([]);
@@ -113,7 +123,7 @@ export function TaxManagement() {
 
   const handleToggleStatus = (tax) => {
     const updatedTax = { ...tax, isActive: !tax.isActive };
-    dispatch({ type: 'UPDATE_TAX', payload: updatedTax });
+    dispatch(updateTax(updatedTax));
     message.success(`Tax ${updatedTax.isActive ? 'activated' : 'deactivated'}`);
   };
 
@@ -125,33 +135,27 @@ export function TaxManagement() {
   const handleTaxTypeChange = (e) => {
     const newTaxType = e.target.value;
     setTaxType(newTaxType);
-    
     if (newTaxType === 'full_bill') {
       form.setFieldsValue({ applicableCategories: [] });
     }
   };
 
   const handleSaveGlobalTaxSettings = () => {
-    // Update all taxes to be inactive if global tax is disabled
     if (!globalTaxEnabled) {
       const updatedTaxes = taxes.map(tax => ({
         ...tax,
         isActive: false
       }));
-      
       updatedTaxes.forEach(tax => {
-        dispatch({ type: 'UPDATE_TAX', payload: tax });
+        dispatch(updateTax(tax));
       });
-      
       message.success('All taxes have been disabled');
     } else {
-      // If enabling taxes, make sure at least one tax is active
       if (taxes.every(tax => !tax.isActive)) {
-        // Activate the first tax if none are active
         if (taxes.length > 0) {
           const firstTax = taxes[0];
           const updatedTax = { ...firstTax, isActive: true };
-          dispatch({ type: 'UPDATE_TAX', payload: updatedTax });
+          dispatch(updateTax(updatedTax));
           message.success(`${firstTax.name} has been activated`);
         } else {
           message.info('No taxes available to activate. Please create a tax first.');
@@ -160,7 +164,6 @@ export function TaxManagement() {
         message.success('Taxes have been enabled');
       }
     }
-    
     setShowGlobalTaxSettings(false);
   };
 
@@ -432,7 +435,7 @@ export function TaxManagement() {
                   <div className="flex items-center justify-between">
                     <span>{category.name}</span>
                     <Text type="secondary" className="text-xs ml-2">
-                      {state.products.filter(p => p.category === category.name).length} products
+                      {products.filter(p => p.category === category.name).length} products
                     </Text>
                   </div>
                 </Option>
@@ -448,11 +451,8 @@ export function TaxManagement() {
           />
         </Form.Item>
 
-        <Form.Item name="isActive" valuePropName="checked" initialValue={true}>
-          <div className="flex items-center space-x-2">
+        <Form.Item name="isActive" label="Active Status" valuePropName="checked" initialValue={true}>
             <Switch />
-            <Text>Active</Text>
-          </div>
         </Form.Item>
 
         {taxType === 'full_bill' && (

@@ -6,6 +6,279 @@ const { authenticate, hasPermission } = require('../middleware/auth');
 const router = express.Router();
 
 /**
+ * @swagger
+ * tags:
+ *   name: RawMaterials
+ *   description: Raw materials management
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     RawMaterial:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           example: RM-123456
+ *         name:
+ *           type: string
+ *           example: Oak Wood Planks
+ *         category:
+ *           type: string
+ *           example: Wood
+ *         unit:
+ *           type: string
+ *           example: sq ft
+ *         stockQuantity:
+ *           type: number
+ *           example: 500
+ *         unitPrice:
+ *           type: number
+ *           example: 12.5
+ *         supplier:
+ *           type: string
+ *           example: Premium Wood Co.
+ *         minimumStock:
+ *           type: number
+ *           example: 50
+ *         description:
+ *           type: string
+ *           example: High-quality oak wood planks for table making
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ */
+
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
+
+/**
+ * @swagger
+ * security:
+ *   - bearerAuth: []
+ */
+
+/**
+ * @swagger
+ * /api/raw-materials:
+ *   get:
+ *     summary: Get all raw materials
+ *     tags: [RawMaterials]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of raw materials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/RawMaterial'
+ *   post:
+ *     summary: Create a new raw material
+ *     tags: [RawMaterials]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RawMaterial'
+ *     responses:
+ *       201:
+ *         description: Raw material created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/RawMaterial'
+ *       400:
+ *         description: Validation error
+ */
+
+/**
+ * @swagger
+ * /api/raw-materials/{id}:
+ *   get:
+ *     summary: Get a raw material by ID
+ *     tags: [RawMaterials]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Raw material ID
+ *     responses:
+ *       200:
+ *         description: Raw material found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/RawMaterial'
+ *       404:
+ *         description: Raw material not found
+ *   put:
+ *     summary: Update a raw material
+ *     tags: [RawMaterials]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Raw material ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RawMaterial'
+ *     responses:
+ *       200:
+ *         description: Raw material updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/RawMaterial'
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Raw material not found
+ *   delete:
+ *     summary: Delete a raw material
+ *     tags: [RawMaterials]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Raw material ID
+ *     responses:
+ *       200:
+ *         description: Raw material deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Raw material deleted successfully
+ *       400:
+ *         description: Cannot delete material (used in products/addons)
+ *       404:
+ *         description: Raw material not found
+ */
+
+/**
+ * @swagger
+ * /api/raw-materials/{id}/stock:
+ *   put:
+ *     summary: Update raw material stock
+ *     tags: [RawMaterials]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Raw material ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               quantity:
+ *                 type: number
+ *                 example: 10
+ *               operation:
+ *                 type: string
+ *                 enum: [add, subtract]
+ *                 example: add
+ *     responses:
+ *       200:
+ *         description: Raw material stock updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 name:
+ *                   type: string
+ *                 stockQuantity:
+ *                   type: number
+ *                 unit:
+ *                   type: string
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Raw material not found
+ */
+
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: User login
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: admin
+ *               password:
+ *                 type: string
+ *                 example: password123
+ *     responses:
+ *       200:
+ *         description: Successful login
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       401:
+ *         description: Invalid credentials
+ *       500:
+ *         description: Server error
+ */
+
+/**
  * @route   GET /api/raw-materials
  * @desc    Get all raw materials
  * @access  Private
@@ -389,5 +662,41 @@ router.put(
     }
   }
 );
+
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: User login
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: admin
+ *               password:
+ *                 type: string
+ *                 example: password123
+ *     responses:
+ *       200:
+ *         description: Successful login
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       401:
+ *         description: Invalid credentials
+ *       500:
+ *         description: Server error
+ */
 
 module.exports = router;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   Space, 
@@ -21,18 +21,31 @@ import { DetailModal } from '../common/DetailModal';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchUsers, updateUser, deleteUser } from '../../features/users/usersSlice';
 
 const { Title, Text } = Typography;
 
 export function UserManagement() {
-  const { users, currentUser, hasPermission, updateUser, deleteUser } = useAuth();
+  const dispatch = useDispatch();
+  const { currentUser, hasPermission } = useAuth();
+
+  const users = useSelector(state => state.users.usersList);
+  const loading = useSelector(state => state.users.loading);
+
+
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+
+  useEffect(() => {
+    if (currentUser?.role === 'admin') {
+      dispatch(fetchUsers());
+    }
+  }, [currentUser, dispatch]);
 
   const filteredUsers = users.filter(user =>
     user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -56,13 +69,11 @@ export function UserManagement() {
       message.error('You do not have permission to delete users');
       return;
     }
-    
     if (userId === currentUser?.id) {
       message.error('You cannot delete your own account');
       return;
     }
-    
-    deleteUser(userId);
+    dispatch(deleteUser({ userId }));
     message.success('User deleted successfully');
   };
 
@@ -71,7 +82,6 @@ export function UserManagement() {
       message.error('You do not have permission to delete users');
       return;
     }
-    
     // Filter out current user from deletion
     const validUserIds = userIds.filter(id => id !== currentUser?.id);
     
@@ -84,7 +94,7 @@ export function UserManagement() {
     }
     
     validUserIds.forEach(id => {
-      deleteUser(id);
+      dispatch(deleteUser({ userId: id }));
     });
     
     message.success(`${validUserIds.length} users deleted successfully`);
@@ -96,14 +106,12 @@ export function UserManagement() {
       message.error('You do not have permission to modify users');
       return;
     }
-    
     if (user.id === currentUser?.id) {
       message.error('You cannot deactivate your own account');
       return;
     }
-    
     const updatedUser = { ...user, isActive: !user.isActive };
-    updateUser(updatedUser);
+    dispatch(updateUser({ id: updatedUser.id, userData: updatedUser }));
     message.success(`User ${updatedUser.isActive ? 'activated' : 'deactivated'}`);
   };
 

@@ -350,6 +350,7 @@ export function EnhancedTable({
                   <ActionButton 
                     danger
                     icon="delete"
+                    disabled
                   >
                     Delete Selected ({selectedRowKeys.length})
                   </ActionButton>

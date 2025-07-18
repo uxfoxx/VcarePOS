@@ -21,6 +21,7 @@ import { TaxManagement } from './components/Tax/TaxManagement';
 import { UserManagement } from './components/Users/UserManagement';
 import { AuditTrail } from './components/AuditTrail/AuditTrail';
 import { PurchaseOrderManagement } from './components/PurchaseOrders/PurchaseOrderManagement';
+import ReduxErrorNotification from './components/common/ReduxErrorNotification';
 
 const { Sider, Content } = Layout;
 
@@ -33,9 +34,9 @@ function AppContent() {
 
   // For development, always show the app
   // In production, uncomment the following code to enable authentication
-  // if (!isAuthenticated) {
-  //   return <LoginPage />;
-  // }
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   const renderContent = () => {
     const contentMap = {
@@ -201,7 +202,7 @@ function AppContent() {
           <Content style={contentStyle}>
             {renderContent()}
           </Content>
-          <Footer style={footerStyle} />
+          {/* <Footer style={footerStyle} /> */}
         </Layout>
       </Layout>
     </>
@@ -510,6 +511,7 @@ function App() {
       <AuthProvider>
         <NotificationProvider>
           <POSProvider>
+            <ReduxErrorNotification />
             <AppWithNotifications />
           </POSProvider>
         </NotificationProvider>

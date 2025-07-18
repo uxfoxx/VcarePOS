@@ -14,7 +14,9 @@ import {
   Input,
   Button
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchProducts } from '../../features/products/productsSlice';
+import { fetchCategories } from '../../features/categories/categoriesSlice';
 import { SearchInput } from '../common/SearchInput';
 import { ProductCard } from '../common/ProductCard';
 import { PageHeader } from '../common/PageHeader';
@@ -25,19 +27,17 @@ import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { EmptyState } from '../common/EmptyState';
 import { CustomProductModal } from './CustomProductModal';
 import { ProductAddonsModal } from './ProductAddonsModal';
+import { addToCart } from '../../features/cart/cartSlice';
 
 const { Option } = Select;
 const { Text, Title } = Typography;
 const { Search } = Input;
 
 export function ProductGrid({ collapsed }) {
-  const { 
-    products = [],
-    categories = [],
-    loading = false,
-    addToCart,
-    dispatch
-  } = usePOS();
+  const dispatch = useDispatch();
+  const products = useSelector(state => state.products.productsList);
+  const categories = useSelector(state => state.categories.categoriesList);
+  const loading = useSelector(state => state.products.loading || state.categories.loading);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -46,6 +46,11 @@ export function ProductGrid({ collapsed }) {
   const [showVariantModal, setShowVariantModal] = useState(false);
   const [showCustomProductModal, setShowCustomProductModal] = useState(false);
   const [showAddonsModal, setShowAddonsModal] = useState(false);
+
+  React.useEffect(() => {
+    dispatch(fetchProducts());
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
   // Get categories from state, including only active ones
   const activeCategories = Array.isArray(categories) ? categories.filter(cat => cat?.isActive) : [];
@@ -63,24 +68,12 @@ export function ProductGrid({ collapsed }) {
     }) : [];
 
   const handleAddToCart = (product) => {
-    if (product.hasVariants) {
-      // Show variant selection modal
+    if (product.hasVariants || product.hasSizes) {
       setSelectedProduct(product);
       setShowVariantModal(true);
-    } else if (product.hasSizes) {
-      // Show variant selection modal
-      setSelectedProduct(product);
-      setShowVariantModal(true);
-    } else if (product.hasSizes) {
-      // Show size selection modal
-      setSelectedProduct(product);
-      setSelectedSize(null);
-      setShowDetailModal(true);
     } else if (product.isCustom) {
-      // Add custom product directly
-      dispatch({ type: 'ADD_TO_CART', payload: product });
+      dispatch(addToCart({ product }));
     } else {
-      // Show addons modal for regular products
       setSelectedProduct(product);
       setShowAddonsModal(true);
     }
@@ -95,13 +88,11 @@ export function ProductGrid({ collapsed }) {
   };
 
   const handleAddToCartWithAddons = (productWithAddons, quantity = 1) => {
-    // Add to cart multiple times based on quantity
-    for (let i = 0; i < quantity; i++) {
-      addToCart(productWithAddons);
-    }
+    dispatch(addToCart({ product: productWithAddons, quantity }));
   };
 
   const handleProductClick = (product) => {
+    console.log('Product clicked:', product);
     setSelectedProduct(product);
     setSelectedSize(null);
     setShowDetailModal(true);
@@ -166,6 +157,7 @@ export function ProductGrid({ collapsed }) {
   }
 
   const selectedSizeData = getSelectedSizeData();
+  
 
   return (
     <>
@@ -237,7 +229,7 @@ export function ProductGrid({ collapsed }) {
                     }}
                     onAddToCart={handleAddToCart}
                     hasVariants={product.hasVariants}
-                    onClick={handleProductClick}
+                    onClick={() => handleAddToCart(product)}
                     showDetails={true}
                     showPriceRange={product.hasSizes && product.sizes?.length > 1}
                   />
@@ -310,8 +302,8 @@ export function ProductGrid({ collapsed }) {
                       : selectedProduct.stock > 0 ? 'green' : 'red'
                   } className="text-base px-3 py-1">
                     {selectedSizeData
-                      ? `${selectedSizeData.stock} in stock`
-                      : `${selectedProduct.stock} in stock`
+                      ? `${selectedSizeData.stock} in stock ---1`
+                      : `${selectedProduct.stock} in stock ---2`
                     }
                   </Tag>
                 </div>

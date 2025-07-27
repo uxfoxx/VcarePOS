@@ -11,6 +11,7 @@ import usersSaga from '../features/users/usersSaga';
 import auditSaga from '../features/audit/auditSaga';
 import purchaseOrdersSaga from '../features/purchaseOrders/purchaseOrdersSaga';
 import vendorsSaga from '../features/vendors/vendorsSaga';
+import notificationsSaga from '../features/notifications/notificationsSaga';
 
 
 export default function* rootSaga() {
@@ -26,5 +27,6 @@ export default function* rootSaga() {
     purchaseOrdersSaga(),
     vendorsSaga(),
     categoriesSaga(),
+    notificationsSaga(),
   ]);
 }

@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import  { useState, useEffect } from 'react';
 import { 
   Card, 
   Row, 
   Col, 
-  Empty,
   Modal,
-  Descriptions,
   Image,
   Tag,
   Select,
@@ -14,8 +12,10 @@ import {
   Input,
   Button
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
-import { SearchInput } from '../common/SearchInput';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchProducts } from '../../features/products/productsSlice';
+import { fetchCategories } from '../../features/categories/categoriesSlice';
+import { addToCart } from '../../features/cart/cartSlice';
 import { ProductCard } from '../common/ProductCard';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
@@ -23,56 +23,40 @@ import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { EmptyState } from '../common/EmptyState';
 import { CustomProductModal } from './CustomProductModal';
 import { ProductAddonsModal } from './ProductAddonsModal';
-import { getOrFetch } from '../../utils/cache';
 
 const { Option } = Select;
 const { Text, Title } = Typography;
 const { Search } = Input;
 
 export function ProductGrid({ collapsed }) {
-  const { state, dispatch, getProducts, getCategories } = usePOS();
+  const dispatch = useDispatch();
+  const { productsList, loading: productsLoading, error: productsError } = useSelector(state => state.products);
+  const { categoriesList, loading: categoriesLoading, error: categoriesError } = useSelector(state => state.categories);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedSize, setSelectedSize] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [showCustomProductModal, setShowCustomProductModal] = useState(false);
   const [showAddonsModal, setShowAddonsModal] = useState(false);
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
 
-  // Load cached products and categories
+  // Load products and categories from Redux
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [productsData, categoriesData] = await Promise.all([
-          getProducts ? getProducts() : state.products,
-          getCategories ? getCategories() : state.categories
-        ]);
-        
-        setProducts(productsData);
-        setCategories(categoriesData);
-      } catch (error) {
-        console.error('Error loading cached data:', error);
-        // Fallback to state data
-        setProducts(state.products);
-        setCategories(state.categories);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, [state.products, state.categories, getProducts, getCategories]);
+    dispatch(fetchProducts());
+    dispatch(fetchCategories());
+  }, [dispatch]);
+
+  // Calculate loading state - show loading if still fetching OR if no data but no error
+  const isLoading = productsLoading || categoriesLoading || 
+    (!productsList.length && !productsError) ||
+    (!categoriesList.length && !categoriesError);
   
   // Get categories from state, including only active ones
-  const activeCategories = categories?.filter(cat => cat.isActive) || [];
+  const activeCategories = categoriesList?.filter(cat => cat.isActive) || [];
   const categoryNames = ['All', ...activeCategories.map(cat => cat.name)];
   
-  // Filter products
-  const filteredProducts = products
+  // Filter products with null safety
+  const filteredProducts = (productsList || [])
     .filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (product.barcode && product.barcode.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -88,7 +72,7 @@ export function ProductGrid({ collapsed }) {
       setShowDetailModal(true);
     } else if (product.isCustom) {
       // Add custom product directly
-      dispatch({ type: 'ADD_TO_CART', payload: product });
+      dispatch(addToCart({ product }));
     } else {
       // Show addons modal for regular products
       setSelectedProduct(product);
@@ -97,10 +81,13 @@ export function ProductGrid({ collapsed }) {
   };
 
   const handleAddToCartWithAddons = (productWithAddons, quantity = 1) => {
-    // Add to cart multiple times based on quantity
-    for (let i = 0; i < quantity; i++) {
-      dispatch({ type: 'ADD_TO_CART', payload: productWithAddons });
-    }
+    // Add to cart with all necessary parameters
+    dispatch(addToCart({ 
+      product: productWithAddons, 
+      quantity,
+      selectedSize: productWithAddons.selectedSize,
+      addons: productWithAddons.addons
+    }));
   };
 
   const handleProductClick = (product) => {
@@ -140,7 +127,7 @@ export function ProductGrid({ collapsed }) {
   };
 
   const handleAddCustomProduct = (customProduct) => {
-    dispatch({ type: 'ADD_TO_CART', payload: customProduct });
+    dispatch(addToCart({ product: customProduct }));
   };
 
   // Determine grid columns based on sidebar state
@@ -154,7 +141,25 @@ export function ProductGrid({ collapsed }) {
     }
   };
 
-  if (loading) {
+  // Show error state if there are errors
+  if (productsError || categoriesError) {
+    return (
+      <Card 
+        className="h-full"
+        bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
+      >
+        <div className="p-4 flex items-center justify-center h-full">
+          <EmptyState
+            icon="error_outline"
+            title="Failed to Load Products"
+            description={productsError || categoriesError || "An error occurred while loading data"}
+          />
+        </div>
+      </Card>
+    );
+  }
+
+  if (isLoading) {
     return (
       <Card 
         className="h-full"

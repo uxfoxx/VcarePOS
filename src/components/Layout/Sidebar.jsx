@@ -1,7 +1,7 @@
 import React from 'react';
 import { Layout, Menu, Typography, Badge } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNotifications } from '../../contexts/NotificationContext';
+import { useReduxNotifications as useNotifications } from '../../hooks/useReduxNotifications';
 import { Icon } from '../common/Icon';
 
 const { Sider } = Layout;

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import { message } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
@@ -8,8 +8,6 @@ import {
   changePassword as changePasswordAction,
   clearAuthError
 } from '../features/auth/authSlice';
-import { auditApi } from '../api/apiClient';
-
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {

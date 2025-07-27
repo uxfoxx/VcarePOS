@@ -1,16 +1,17 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { ConfigProvider, Layout, theme, Spin } from 'antd';
-import { AuthProvider, useAuth } from './contexts/AuthContext'; 
-import { POSProvider, usePOS } from './contexts/POSContext'; 
-import { NotificationProvider, useNotifications } from './contexts/NotificationContext'; 
+import { AuthProvider } from './contexts/AuthContext'; 
 import { LoginPage } from './components/Auth/LoginPage';
 import { Header } from './components/Layout/Header';
 import { Sidebar } from './components/Layout/Sidebar';
 import { ProtectedRoute } from './components/Layout/ProtectedRoute';
 import ReduxErrorNotification from './components/common/ReduxErrorNotification';
+import NotificationDisplay from './components/common/NotificationDisplay';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useSelector, useDispatch } from 'react-redux';
 import { getCurrentUser } from './features/auth/authSlice';
+import { checkStockLevels } from './features/notifications/notificationsSlice';
+import { useReduxNotifications } from './hooks/useReduxNotifications';
 
 // Lazy load heavy components
 const ProductGrid = lazy(() => import('./components/POS/ProductGrid').then(module => ({ default: module.ProductGrid })));
@@ -237,18 +238,6 @@ function AppContent() {
     transition: 'all 0.2s',
   };
 
-  const footerStyle = {
-    background: '#ffffff',
-    borderTop: '1px solid #e5e7eb',
-    textAlign: 'center',
-    position: 'fixed',
-    width: contentWidth,
-    right: 0,
-    bottom: 0,
-    zIndex: 50,
-    transition: 'all 0.2s',
-  };
-
   return (
     <>
       <TokenValidator />
@@ -288,9 +277,10 @@ function AppContent() {
 
 function App() {
   const AppWithNotifications = () => {
-    const { rawMaterials, products } = usePOS();
-    const { checkStockLevels } = useNotifications();
     const dispatch = useDispatch();
+    const { rawMaterialsList } = useSelector(state => state.rawMaterials);
+    const { productsList } = useSelector(state => state.products);
+    const { settings } = useReduxNotifications();
     
     // Check for existing token on app load and try to restore session
     useEffect(() => {
@@ -300,22 +290,30 @@ function App() {
       }
     }, [dispatch]);
     
-    // Check stock levels periodically
+    // Check stock levels periodically using Redux
     useEffect(() => {
       // Initial check
-      checkStockLevels(rawMaterials, products);
+      dispatch(checkStockLevels());
       
-      // Set up interval for periodic checks (every 5 minutes)
+      // Set up interval for periodic checks
       const interval = setInterval(() => {
-        checkStockLevels(rawMaterials, products);
-      }, 5 * 60 * 1000);
+        dispatch(checkStockLevels());
+      }, settings.stockCheckInterval);
       
       return () => clearInterval(interval);
-    }, [rawMaterials, products, checkStockLevels]);
+    }, [dispatch, settings.stockCheckInterval]);
+    
+    // Also check stock levels when raw materials or products change
+    useEffect(() => {
+      if (rawMaterialsList.length > 0 || productsList.length > 0) {
+        dispatch(checkStockLevels());
+      }
+    }, [rawMaterialsList, productsList, dispatch]);
     
     // Wrap AppContent with ErrorBoundary to catch any rendering errors
     return (
       <ErrorBoundary showErrorDetails={import.meta.env.DEV}>
+        <NotificationDisplay />
         <AppContent />
       </ErrorBoundary>
     );
@@ -600,12 +598,8 @@ function App() {
       }}
     >
       <AuthProvider>
-        <NotificationProvider>
-          <POSProvider>
-            <ReduxErrorNotification />
-            <AppWithNotifications />
-          </POSProvider>
-        </NotificationProvider>
+          <ReduxErrorNotification />
+          <AppWithNotifications />
       </AuthProvider>
     </ConfigProvider>
   );

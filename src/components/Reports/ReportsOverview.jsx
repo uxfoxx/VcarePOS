@@ -24,7 +24,7 @@ import { fetchProducts } from '../../features/products/productsSlice';
 import { fetchTransactions } from '../../features/transactions/transactionsSlice';
 import { fetchCoupons } from '../../features/coupons/couponsSlice';
 import { fetchCategories } from '../../features/categories/categoriesSlice';
-import { useNotifications } from '../../contexts/NotificationContext';
+import { useReduxNotifications as useNotifications } from '../../hooks/useReduxNotifications';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { StockAlert } from '../common/StockAlert';

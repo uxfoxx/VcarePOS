@@ -1,4 +1,4 @@
-import  { useState } from 'react';
+import  { useState, useEffect } from 'react';
 import { 
   Layout, 
   Avatar, 
@@ -15,7 +15,7 @@ import {
 import { useDispatch } from 'react-redux';
 import { logout as logoutAction } from '../../features/auth/authSlice';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNotifications } from '../../contexts/NotificationContext';
+import { useReduxNotifications as useNotifications } from '../../hooks/useReduxNotifications';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
 
@@ -25,9 +25,16 @@ const { Text, Title } = Typography;
 export function Header({ collapsed, onCollapse, activeTab, style, onTabChange }) {
   const dispatch = useDispatch();
   const { currentUser } = useAuth();
-  const { notifications, stockAlerts, markAsRead, clearAllNotifications, markAllAsRead } = useNotifications();
+  const { notifications, stockAlerts, markAsRead, clearAllNotifications, markAllAsRead, clearStockAlerts } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  const [readStockAlerts, setReadStockAlerts] = useState(new Set());
+
+  // Clean up read stock alerts when stock alerts change (e.g., when alerts are resolved)
+  useEffect(() => {
+    const currentAlertIds = new Set(stockAlerts.map(alert => alert.id));
+    setReadStockAlerts(prev => new Set([...prev].filter(id => currentAlertIds.has(id))));
+  }, [stockAlerts]);
 
   // Handler for logout
   const handleLogout = () => {
@@ -71,16 +78,24 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
       timestamp: alert.timestamp,
       icon: alert.type === 'critical' ? 'error' : 'warning',
       type: alert.type === 'critical' ? 'error' : 'warning',
-      read: false,
-      navigateTo: alert.navigateTo
+      read: readStockAlerts.has(alert.id),
+      navigateTo: alert.navigateTo,
+      isStockAlert: true
     })),
-    ...notifications
+    ...notifications.map(notif => ({
+      ...notif,
+      isStockAlert: false
+    }))
   ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
   const unreadCount = allNotifications.filter(n => !n.read).length;
 
   const handleNotificationClick = (notification) => {
-    markAsRead(notification.id);
+    if (notification.isStockAlert) {
+      setReadStockAlerts(prev => new Set([...prev, notification.id]));
+    } else {
+      markAsRead(notification.id);
+    }
     
     // Navigate to relevant page if specified
     if (notification.navigateTo && onTabChange) {
@@ -91,12 +106,21 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
   };
 
   const handleClearAll = () => {
+    // Clear regular notifications
     clearAllNotifications();
+    // Clear stock alerts
+    clearStockAlerts();
+    // Clear local read state for stock alerts
+    setReadStockAlerts(new Set());
     setShowNotifications(false);
   };
 
   const handleMarkAllRead = () => {
+    // Mark all regular notifications as read
     markAllAsRead();
+    // Mark all stock alerts as read locally
+    const allStockAlertIds = stockAlerts.map(alert => alert.id);
+    setReadStockAlerts(prev => new Set([...prev, ...allStockAlertIds]));
   };
 
   // Tour steps for different pages

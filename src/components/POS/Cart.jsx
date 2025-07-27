@@ -19,7 +19,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { addToCart, removeFromCart, updateQuantity, clearCart } from '../../features/cart/cartSlice';
 import { fetchTaxes } from '../../features/taxes/taxesSlice';
 import { fetchCoupons } from '../../features/coupons/couponsSlice';
-import { useNotifications } from '../../contexts/NotificationContext';
+import { useReduxNotifications as useNotifications } from '../../hooks/useReduxNotifications';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon'; 
 import { CheckoutModal } from '../POS/CheckoutModal';

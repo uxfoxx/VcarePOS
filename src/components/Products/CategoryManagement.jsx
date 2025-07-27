@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
   Table, 
@@ -14,34 +14,35 @@ import {
   Card,
   Switch
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
 import { ActionButton } from '../common/ActionButton';
-import { Icon } from '../common/Icon';
 import { SearchInput } from '../common/SearchInput';
 import { FormModal } from '../common/FormModal';
 import { fetchCategories, addCategories, updateCategories, deleteCategories } from '../../features/categories/categoriesSlice';
+import { fetchProducts } from '../../features/products/productsSlice';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 export function CategoryManagement() {
-  const { state } = usePOS();
-  const dispatch2 = useDispatch();
+  const dispatch = useDispatch();
+  const { categoriesList} = useSelector(state => state.categories);
+  const { productsList } = useSelector(state => state.products);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [form] = Form.useForm();
-  const {categoriesList, error} = useSelector(state => state.categories);
 
-  useEffect(() => { dispatch2(fetchCategories()); }, [dispatch2]);
+  useEffect(() => { 
+    dispatch(fetchCategories()); 
+    dispatch(fetchProducts());
+  }, [dispatch]);
 
-  const categories = categoriesList || [];
+  const categories = categoriesList
 
   const filteredCategories = categories.filter(category =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+    category.description?.toLowerCase().includes(searchTerm.toLowerCase()));  
+  
   const handleSubmit = async (values) => {
     try {
       // Check for duplicate category names
@@ -64,11 +65,11 @@ export function CategoryManagement() {
       };
 
       if (editingCategory) {
-        dispatch2(updateCategories({categoryData}));
+        dispatch(updateCategories({categoryData}));
         // dispatch({ type: 'UPDATE_CATEGORY', payload: categoryData });
         message.success('Category updated successfully');
       } else {
-        dispatch2(addCategories({categoryData}));
+        dispatch(addCategories({categoryData}));
         // dispatch({ type: 'ADD_CATEGORY', payload: categoryData });
         message.success('Category added successfully');
       }
@@ -76,7 +77,7 @@ export function CategoryManagement() {
       setShowModal(false);
       setEditingCategory(null);
       form.resetFields();
-    } catch (error) {
+    } catch {
       message.error('Please fill in all required fields');
     }
   };
@@ -90,8 +91,8 @@ export function CategoryManagement() {
 
   const handleDelete = (categoryId) => {
     // Check if category is being used by any products
-    const categoryToDelete = categories.find(cat => cat.id === categoryId);
-    const productsUsingCategory = state.products.filter(product => 
+    const categoryToDelete = categoriesList.find(cat => cat.id === categoryId);
+    const productsUsingCategory = productsList.filter(product => 
       product.category === categoryToDelete?.name
     );
 
@@ -100,20 +101,20 @@ export function CategoryManagement() {
       return;
     }
 
-    dispatch2(deleteCategories({categoryId}));
+    dispatch(deleteCategories({categoryId}));
     // dispatch({ type: 'DELETE_CATEGORY', payload: categoryId });
     message.success('Category deleted successfully');
   };
 
   const handleToggleStatus = (category) => {
     const updatedCategory = { ...category, isActive: !category.isActive };
-    dispatch2(updateCategories({categoryData:updatedCategory}));
+    dispatch(updateCategories({categoryData:updatedCategory}));
     // dispatch({ type: 'UPDATE_CATEGORY', payload: updatedCategory });
     message.success(`Category ${updatedCategory.isActive ? 'activated' : 'deactivated'}`);
   };
 
   const getProductCount = (categoryName) => {
-    return state.products.filter(product => product.category === categoryName).length;
+    return productsList.filter(product => product.category === categoryName).length;
   };
 
   const columns = [
@@ -238,7 +239,7 @@ export function CategoryManagement() {
             <Card size="small">
               <div className="text-center">
                 <div className="text-2xl font-bold text-orange-600">
-                  {state.products.length}
+                  {productsList.length}
                 </div>
                 <div className="text-sm text-gray-500">Total Products</div>
               </div>

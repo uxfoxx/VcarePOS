@@ -10,14 +10,15 @@
     "lint:fix": "eslint . --fix --report-unused-disable-directives",
     "type-check": "tsc --noEmit",
     "preview": "vite preview",
-    "pm2:serve": "pm2 serve dist 3001 --spa --name vcare-pos-frontend",
-    "pm2:start:config": "pm2 start ecosystem.config.js",
-    "pm2:stop": "pm2 stop vcare-pos-frontend",
-    "pm2:restart": "pm2 restart vcare-pos-frontend",
-    "pm2:status": "pm2 status vcare-pos-frontend",
-    "pm2:logs": "pm2 logs vcare-pos-frontend",
-    "pm2:delete": "pm2 delete vcare-pos-frontend",
-    "start:prod": "npm run build && npm run pm2:serve"
+    "serve:prod": "npx serve -s dist -p 3001",
+    "pm2:serve": "npx pm2 start \"npx serve -s dist -p 3001\" --name vcare-pos-frontend",
+    "pm2:start:config": "npx pm2 start ecosystem.config.mjs",
+    "pm2:stop": "npx pm2 stop vcare-pos-frontend",
+    "pm2:restart": "npx pm2 restart vcare-pos-frontend",
+    "pm2:status": "npx pm2 status vcare-pos-frontend",
+    "pm2:logs": "npx pm2 logs vcare-pos-frontend",
+    "pm2:delete": "npx pm2 delete vcare-pos-frontend",
+    "start:prod": "npm run build && npm run serve:prod"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.2",

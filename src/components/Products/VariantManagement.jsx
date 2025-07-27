@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Card, 
   Space, 
@@ -17,13 +17,11 @@ import {
   InputNumber,
   ColorPicker
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
 import { PageHeader } from '../common/PageHeader';
 import { SearchInput } from '../common/SearchInput';
 import { ActionButton } from '../common/ActionButton';
 import { EnhancedTable } from '../common/EnhancedTable';
-import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 
 const { Title, Text } = Typography;
@@ -31,7 +29,6 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 export function VariantManagement() {
-  const { state, dispatch: dispatchPOS } = usePOS();
   const [activeTab, setActiveTab] = useState('types');
   const [searchTerm, setSearchTerm] = useState('');
   const [showTypeModal, setShowTypeModal] = useState(false);
@@ -43,8 +40,8 @@ export function VariantManagement() {
   const [typeForm] = Form.useForm();
   const [optionForm] = Form.useForm();
 
-  const variantTypes = state.variantTypes || [];
-  const variantOptions = state.variantOptions || [];
+  const variantTypes =  [];
+  const variantOptions =  [];
 
   const filteredTypes = variantTypes.filter(type =>
     type.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -60,7 +57,7 @@ export function VariantManagement() {
   const handleSubmitType = async (values) => {
     try {
       setLoading(true);
-      const typeData = {
+      const _typeData = {
         id: editingType?.id || `VT-${Date.now()}`,
         name: values.name,
         description: values.description,
@@ -69,17 +66,17 @@ export function VariantManagement() {
       };
 
       if (editingType) {
-        dispatchPOS({ type: 'UPDATE_VARIANT_TYPE', payload: typeData });
+        // dispatchPOS({ type: 'UPDATE_VARIANT_TYPE', payload: typeData });
         message.success('Variant type updated successfully');
       } else {
-        dispatchPOS({ type: 'ADD_VARIANT_TYPE', payload: typeData });
+        // dispatchPOS({ type: 'ADD_VARIANT_TYPE', payload: typeData });
         message.success('Variant type created successfully');
       }
 
       setShowTypeModal(false);
       setEditingType(null);
       typeForm.resetFields();
-    } catch (error) {
+    } catch{
       message.error('Please fill in all required fields');
     } finally {
       setLoading(false);
@@ -89,7 +86,7 @@ export function VariantManagement() {
   const handleSubmitOption = async (values) => {
     try {
       setLoading(true);
-      const optionData = {
+      const _optionData = {
         id: editingOption?.id || `VO-${Date.now()}`,
         variantTypeId: values.variantTypeId,
         name: values.name,
@@ -100,17 +97,17 @@ export function VariantManagement() {
       };
 
       if (editingOption) {
-        dispatchPOS({ type: 'UPDATE_VARIANT_OPTION', payload: optionData });
+        // dispatchPOS({ type: 'UPDATE_VARIANT_OPTION', payload: optionData });
         message.success('Variant option updated successfully');
       } else {
-        dispatchPOS({ type: 'ADD_VARIANT_OPTION', payload: optionData });
+        // dispatchPOS({ type: 'ADD_VARIANT_OPTION', payload: optionData });
         message.success('Variant option created successfully');
       }
 
       setShowOptionModal(false);
       setEditingOption(null);
       optionForm.resetFields();
-    } catch (error) {
+    } catch  {
       message.error('Please fill in all required fields');
     } finally {
       setLoading(false);
@@ -136,24 +133,24 @@ export function VariantManagement() {
       return;
     }
 
-    dispatchPOS({ type: 'DELETE_VARIANT_TYPE', payload: typeId });
+    // dispatchPOS({ type: 'DELETE_VARIANT_TYPE', payload: typeId });
     message.success('Variant type deleted successfully');
   };
 
-  const handleDeleteOption = (optionId) => {
-    dispatchPOS({ type: 'DELETE_VARIANT_OPTION', payload: optionId });
+  const handleDeleteOption = (_optionId) => {
+    // dispatchPOS({ type: 'DELETE_VARIANT_OPTION', payload: optionId });
     message.success('Variant option deleted successfully');
   };
 
   const handleToggleTypeStatus = (type) => {
     const updatedType = { ...type, isActive: !type.isActive };
-    dispatchPOS({ type: 'UPDATE_VARIANT_TYPE', payload: updatedType });
+    // dispatchPOS({ type: 'UPDATE_VARIANT_TYPE', payload: updatedType });
     message.success(`Variant type ${updatedType.isActive ? 'activated' : 'deactivated'}`);
   };
 
   const handleToggleOptionStatus = (option) => {
     const updatedOption = { ...option, isActive: !option.isActive };
-    dispatchPOS({ type: 'UPDATE_VARIANT_OPTION', payload: updatedOption });
+    // dispatchPOS({ type: 'UPDATE_VARIANT_OPTION', payload: updatedOption });
     message.success(`Variant option ${updatedOption.isActive ? 'activated' : 'deactivated'}`);
   };
 

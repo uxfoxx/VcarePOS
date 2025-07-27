@@ -11,6 +11,7 @@ import auditReducer from '../features/audit/auditSlice';
 import purchaseOrdersReducer from '../features/purchaseOrders/purchaseOrdersSlice';
 import vendorsReducer from '../features/vendors/vendorsSlice';
 import cartReducer from '../features/cart/cartSlice';
+import notificationsReducer from '../features/notifications/notificationsSlice';
 
 
 const rootReducer = combineReducers({
@@ -26,6 +27,7 @@ const rootReducer = combineReducers({
   purchaseOrders: purchaseOrdersReducer,
   vendors: vendorsReducer,
   cart: cartReducer,
+  notifications: notificationsReducer,
 });
 
 export default rootReducer;

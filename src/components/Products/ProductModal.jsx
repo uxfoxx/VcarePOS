@@ -758,8 +758,8 @@ export function ProductModal({
           showIcon
         />
       )}
-      {!hasSizes && !hasVariants && (
-        <>
+    
+        
           <Row gutter={16}>
             <Col span={8}>
               <Form.Item
@@ -815,13 +815,17 @@ export function ProductModal({
                 <Input placeholder="Enter SKU or barcode" />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            
+          </Row>
+      {!hasSizes && !hasVariants && (
+        <Row gutter={16}>
+          <Col span={8}>
               <Form.Item name="color" label="Color">
                 <Input placeholder="Enter color" />
               </Form.Item>
             </Col>
-          </Row>
-        </>
+            </Row>
+       
       )}
 
       {!hasSizes && (

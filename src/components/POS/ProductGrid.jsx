@@ -1,25 +1,21 @@
 import React, { useState } from 'react';
-import { 
-  Card, 
-  Row, 
-  Col, 
-  Empty,
-  Modal,
-  Descriptions,
-  Image,
-  Tag,
-  Select,
-  Space,
+import {
+  Card,
+  Button,
   Typography,
+  Modal,
+  Row,
+  Col,
+  Space,
+  Tag,
+  Image,
+  Select,
   Input,
-  Button
 } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchProducts } from '../../features/products/productsSlice';
 import { fetchCategories } from '../../features/categories/categoriesSlice';
-import { SearchInput } from '../common/SearchInput';
 import { ProductCard } from '../common/ProductCard';
-import { PageHeader } from '../common/PageHeader';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { VariantSelectionModal } from './VariantSelectionModal';
@@ -83,19 +79,21 @@ export function ProductGrid({ collapsed }) {
     // Close variant modal
     setShowVariantModal(false);
     // Show addons modal for the selected variant
-    setSelectedProduct({...variant, selectedSize: size});
+    
+    // Handle case where variant is null (product has sizes but no variants)
+    if (variant === null) {
+      // Use the original product with the selected size
+      setSelectedProduct({...selectedProduct, selectedSize: size});
+    } else {
+      // Use the selected variant with the selected size
+      setSelectedProduct({...variant, selectedSize: size});
+    }
+    
     setShowAddonsModal(true);
   };
 
   const handleAddToCartWithAddons = (productWithAddons, quantity = 1) => {
     dispatch(addToCart({ product: productWithAddons, quantity }));
-  };
-
-  const handleProductClick = (product) => {
-    console.log('Product clicked:', product);
-    setSelectedProduct(product);
-    setSelectedSize(null);
-    setShowDetailModal(true);
   };
 
   const handleSizeChange = (sizeName) => {
@@ -108,24 +106,6 @@ export function ProductGrid({ collapsed }) {
     }
     
     return selectedProduct.sizes.find(size => size.name === selectedSize);
-  };
-
-  const handleAddSelectedSizeToCart = () => {
-    const sizeData = getSelectedSizeData();
-    if (sizeData && sizeData.stock > 0) {
-      const productWithSize = {
-        ...selectedProduct,
-        price: sizeData.price,
-        selectedSize: selectedSize,
-        dimensions: sizeData.dimensions,
-        weight: sizeData.weight
-      };
-      
-      // Show addons modal for the selected size
-      setShowDetailModal(false);
-      setSelectedProduct(productWithSize);
-      setShowAddonsModal(true);
-    }
   };
 
   const handleAddCustomProduct = (customProduct) => {
@@ -440,13 +420,13 @@ export function ProductGrid({ collapsed }) {
                     <Button
                       type="primary"
                       size="large"
-                      icon={<Icon name="style" />}
+                      icon={<Icon name="straighten" />}
                       onClick={() => {
                         setShowDetailModal(false);
                         setShowVariantModal(true);
                       }}
                     >
-                      Select Variant
+                      Select Size
                     </Button>
                   ) : (
                     <Button

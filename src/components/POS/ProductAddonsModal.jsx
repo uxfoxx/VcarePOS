@@ -24,7 +24,6 @@ import { ActionButton } from '../common/ActionButton';
 import { addToCart } from '../../features/cart/cartSlice';
 
 const { Title, Text } = Typography;
-const { Group: CheckboxGroup } = Checkbox;
 const { Search } = Input;
 
 export function ProductAddonsModal({ open, onClose, product }) {
@@ -39,7 +38,7 @@ export function ProductAddonsModal({ open, onClose, product }) {
   
   // Filter raw materials that can be used as addons (only those with enough stock)
   const availableAddons = (rawMaterials || []).filter(material => 
-    product?.addons.some(addon => addon.id === material.id) &&
+    product?.addons?.some(addon => addon.id === material.id) &&
     material.stockQuantity > 0 &&
     material.name.toLowerCase().includes(searchTerm.toLowerCase())
   );

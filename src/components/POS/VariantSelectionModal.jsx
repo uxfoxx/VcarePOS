@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Modal, 
   Typography, 
@@ -13,16 +13,15 @@ import {
   Space
 } from 'antd';
 import { Icon } from '../common/Icon';
-import { ActionButton } from '../common/ActionButton';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TabPane } = Tabs;
 
 export function VariantSelectionModal({ 
   open, 
   onClose, 
   product, 
-  onVariantSelected 
+  onVariantSelected
 }) {
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
@@ -77,7 +76,7 @@ export function VariantSelectionModal({
     // and it's the same as the original product, pass null as the variant to indicate no variant was selected
     const variantToPass = selectedVariant === product && !product.hasVariants ? null : selectedVariant;
     
-    onVariantSelected(variantToPass, selectedSize?.name);
+    onVariantSelected(variantToPass, selectedSize?.name); 
   };
 // here is the model
   return (

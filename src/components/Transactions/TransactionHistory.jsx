@@ -127,17 +127,17 @@ export function TransactionHistory() {
 
   const handleCloseInvoiceModal = () => {
     setShowInvoiceModal(false);
-    setSelectedTransaction(null);
+    // setSelectedTransaction(null);
   };
 
   const handleCloseInventoryLabelsModal = () => {
     setShowInventoryLabelsModal(false);
-    setSelectedTransaction(null);
+    // setSelectedTransaction(null);
   };
 
   const handleCloseRefundModal = () => {
     setShowRefundModal(false);
-    setSelectedTransaction(null);
+    // setSelectedTransaction(null);
   };
 
   const handleProcessRefund = async (refundData) => {

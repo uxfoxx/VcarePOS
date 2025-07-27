@@ -31,7 +31,6 @@ export function CheckoutModal({
   open, 
   onClose, 
   cartItems, 
-  orderTotal, 
   appliedCoupon, 
   couponDiscount,
   itemTaxes,
@@ -39,7 +38,7 @@ export function CheckoutModal({
   categoryTaxTotal,
   fullBillTaxTotal
 }) {
-  const { state, dispatch } = usePOS();
+  const {  dispatch } = usePOS();
   const { users, currentUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [customerForm] = Form.useForm();
@@ -632,7 +631,6 @@ export function CheckoutModal({
               View Invoice
             </Button>
           ]}
-          destroyOnClose
         >
           <div className="text-center py-8">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -693,7 +691,7 @@ export function CheckoutModal({
         open={showInvoice}
         onClose={() => {
           setShowInvoice(false);
-          setCompletedTransaction(null);
+          // setCompletedTransaction(null);
         }}
         transaction={completedTransaction}
         type="detailed"
@@ -704,7 +702,7 @@ export function CheckoutModal({
         open={showInventoryLabels}
         onClose={() => {
           setShowInventoryLabels(false);
-          setCompletedTransaction(null);
+          // setCompletedTransaction(null);
         }}
         transaction={completedTransaction}
       />

@@ -71,7 +71,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/coupons:
+ * /coupons:
  *   get:
  *     summary: Get all coupons
  *     tags: [Coupons]
@@ -110,7 +110,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/coupons/{id}:
+ * /coupons/{id}:
  *   get:
  *     summary: Get a coupon by ID
  *     tags: [Coupons]
@@ -190,7 +190,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/coupons/validate/{code}:
+ * /coupons/validate/{code}:
  *   get:
  *     summary: Validate a coupon code
  *     tags: [Coupons]

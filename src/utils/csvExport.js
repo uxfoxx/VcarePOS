@@ -435,8 +435,8 @@ export function exportAuditTrail(auditTrail, filters = {}) {
 }
 
 // Export all data as a comprehensive report
-export function exportComprehensiveReport(data, filters = {}) {
-  const { products, rawMaterials, transactions, coupons, users, auditTrail } = data;
+export function exportComprehensiveReport(data, _filters = {}) {
+  const { products, rawMaterials, transactions, coupons, users } = data;
   
   // Create a summary report
   const summaryData = [{

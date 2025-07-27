@@ -7,7 +7,7 @@
 export const supabase = null;
 
 // Helper functions for common operations
-export const fetchData = async (table, options = {}) => {
+export const fetchData = async (_table, _options = {}) => {
   try {
     throw new Error(`Direct Supabase access is no longer supported. Please use the API endpoints instead.`);
   } catch (error) {
@@ -16,7 +16,7 @@ export const fetchData = async (table, options = {}) => {
   }
 };
 
-export const insertData = async (table, data) => {
+export const insertData = async (_table, _data) => {
   try {
     throw new Error(`Direct Supabase access is no longer supported. Please use the API endpoints instead.`);
   } catch (error) {
@@ -25,7 +25,7 @@ export const insertData = async (table, data) => {
   }
 };
 
-export const updateData = async (table, id, data) => {
+export const updateData = async (_table, _id, _data) => {
   try {
     throw new Error(`Direct Supabase access is no longer supported. Please use the API endpoints instead.`);
   } catch (error) {
@@ -34,7 +34,7 @@ export const updateData = async (table, id, data) => {
   }
 };
 
-export const deleteData = async (table, id) => {
+export const deleteData = async (_table, _id) => {
   try {
     throw new Error(`Direct Supabase access is no longer supported. Please use the API endpoints instead.`);
   } catch (error) {

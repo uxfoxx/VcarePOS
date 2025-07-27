@@ -31,7 +31,7 @@ const transactionsSlice = createSlice({
       state.loading = true;
       state.error = null;
     },
-    restoreProductStock(state, action) {
+    restoreProductStock(_state, _action) {
       // TODO
       // This action will be handled by the saga to restore product stock after refund
       // No state changes needed here as it will be handled by products reducer

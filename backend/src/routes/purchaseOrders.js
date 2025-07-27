@@ -81,7 +81,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/purchase-orders:
+ * /purchase-orders:
  *   get:
  *     summary: Get all purchase orders
  *     tags: [PurchaseOrders]
@@ -152,7 +152,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/purchase-orders/{id}:
+ * /purchase-orders/{id}:
  *   get:
  *     summary: Get a purchase order by ID
  *     tags: [PurchaseOrders]
@@ -234,7 +234,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/purchase-orders/{id}/status:
+ * /purchase-orders/{id}/status:
  *   put:
  *     summary: Update purchase order status
  *     tags: [PurchaseOrders]
@@ -287,7 +287,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/purchase-orders/{id}/receive:
+ * /purchase-orders/{id}/receive:
  *   post:
  *     summary: Create a goods receive note for a purchase order
  *     tags: [PurchaseOrders]

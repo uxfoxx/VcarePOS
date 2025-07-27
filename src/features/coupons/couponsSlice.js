@@ -61,7 +61,7 @@ const couponsSlice = createSlice({
       state.loading = false;
       state.couponsList = state.couponsList.filter(c => c.id !== action.payload.id);
     },
-    validateCouponSucceeded(state, action) {
+    validateCouponSucceeded(state, _action) {
       state.loading = false;
       // Optionally store validation result
     },

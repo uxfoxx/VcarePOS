@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import  { useState } from 'react';
 import { 
   Layout, 
   Avatar, 
@@ -9,12 +9,12 @@ import {
   Tooltip,
   List,
   Empty,
-  Divider,
   Tag,
   Tour
 } from 'antd';
+import { useDispatch } from 'react-redux';
+import { logout as logoutAction } from '../../features/auth/authSlice';
 import { useAuth } from '../../contexts/AuthContext';
-import { usePOS } from '../../contexts/POSContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
@@ -23,11 +23,16 @@ const { Header: AntHeader } = Layout;
 const { Text, Title } = Typography;
 
 export function Header({ collapsed, onCollapse, activeTab, style, onTabChange }) {
-  const { currentUser, logout } = useAuth();
-  const { state } = usePOS();
+  const dispatch = useDispatch();
+  const { currentUser } = useAuth();
   const { notifications, stockAlerts, markAsRead, clearAllNotifications, markAllAsRead } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+
+  // Handler for logout
+  const handleLogout = () => {
+    dispatch(logoutAction());
+  };
 
   const userMenuItems = [
     {
@@ -53,7 +58,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
       icon: <Icon name="logout" />,
       label: 'Sign Out',
       danger: true,
-      onClick: logout
+      onClick: handleLogout
     },
   ];
 

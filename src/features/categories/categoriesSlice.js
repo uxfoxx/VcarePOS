@@ -10,22 +10,22 @@ const categoriesSlice = createSlice({
   name: "categories",
   initialState,
   reducers: {
-    fetchCategories(state, action) {
+    fetchCategories(state, _action) {
       state.loading = true;
       state.error = null;
     },
 
-    addCategories(state, action) {
+    addCategories(state, _action) {
       state.loading = true;
       state.error = null;
     },
 
-    updateCategories(state, action) {
+    updateCategories(state, _action) {
       state.loading = true;
       state.error = null;
     },
 
-    deleteCategories(state, action) {
+    deleteCategories(state, _action) {
       state.loading = true;
       state.error = null;
     },

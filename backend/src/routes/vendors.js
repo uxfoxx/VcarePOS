@@ -47,7 +47,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/vendors:
+ * /vendors:
  *   get:
  *     summary: Get all vendors
  *     tags: [Vendors]
@@ -86,7 +86,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/vendors/{id}:
+ * /vendors/{id}:
  *   get:
  *     summary: Get a vendor by ID
  *     tags: [Vendors]

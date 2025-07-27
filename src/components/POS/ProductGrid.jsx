@@ -302,8 +302,8 @@ export function ProductGrid({ collapsed }) {
                       : selectedProduct.stock > 0 ? 'green' : 'red'
                   } className="text-base px-3 py-1">
                     {selectedSizeData
-                      ? `${selectedSizeData.stock} in stock ---1`
-                      : `${selectedProduct.stock} in stock ---2`
+                      ? `${selectedSizeData.stock} in stock`
+                      : `${selectedProduct.stock} in stock`
                     }
                   </Tag>
                 </div>

@@ -10,22 +10,22 @@ const rawMaterialsSlice = createSlice({
   name: "rawMaterials",
   initialState,
   reducers: {
-    fetchRawMaterials(state, action) {
+    fetchRawMaterials(state, _action) {
       state.loading = true;
       state.error = null;
     },
 
-    addRawMaterials(state, action) {
+    addRawMaterials(state, _action) {
       state.loading = true;
       state.error = null;
     },
 
-    updateRawMaterials(state, action) {
+    updateRawMaterials(state, _action) {
       state.loading = true;
       state.error = null;
     },
 
-    deleteRawMaterials(state, action) {
+    deleteRawMaterials(state, _action) {
       state.loading = true;
       state.error = null;
     },
@@ -33,10 +33,6 @@ const rawMaterialsSlice = createSlice({
     updateStock(state) {
       state.loading = true;
       state.error = null;
-    },
-    fetchRawMaterialsSucceeded(state, action) {
-      state.loading = false;
-      state.rawMaterialsList = action.payload;
     },
 
     addRawMaterialsSucceeded(state, action) {

@@ -12,7 +12,7 @@ import {
 } from "./categoriesSlice";
 import { categoriesApi } from "../../api/apiClient";
 
-function* fetchCategoriesSaga(action) {
+function* fetchCategoriesSaga(_action) {
   try {
     const data = yield call(categoriesApi.getAll);
     yield put(fetchCategoriesSucceeded(data));

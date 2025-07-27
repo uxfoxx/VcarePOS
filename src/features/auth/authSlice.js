@@ -5,6 +5,7 @@ const initialState = {
   loading: false,
   error: null,
   isAuthenticated: false,
+  sessionExpiredMessage: null,
 };
 
 const authSlice = createSlice({
@@ -14,6 +15,7 @@ const authSlice = createSlice({
     login(state) {
       state.loading = true;
       state.error = null;
+      state.sessionExpiredMessage = null;
     },
     logout(state) {
       state.loading = true;
@@ -32,6 +34,7 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.isAuthenticated = true;
       state.error = null;
+      state.sessionExpiredMessage = null;
     },
     logoutSucceeded(state) {
       state.loading = false;
@@ -49,12 +52,19 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = null;
     },
+    sessionExpired(state, action) {
+      state.loading = false;
+      state.user = null;
+      state.isAuthenticated = false;
+      state.sessionExpiredMessage = action.payload || 'Your session has expired. Please log in again.';
+    },
     failed(state, action) {
       state.loading = false;
       state.error = action.payload;
     },
     clearAuthError(state) {
       state.error = null;
+      state.sessionExpiredMessage = null;
     }
   },
 });
@@ -68,6 +78,7 @@ export const {
   logoutSucceeded,
   getCurrentUserSucceeded,
   changePasswordSucceeded,
+  sessionExpired,
   failed,
   clearAuthError
 } = authSlice.actions;

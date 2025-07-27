@@ -1,39 +1,92 @@
-import React, { useState, useEffect } from 'react';
-import { ConfigProvider, Layout, theme, Button, message } from 'antd';
-import { Icon } from './components/common/Icon';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { ConfigProvider, Layout, theme, Spin } from 'antd';
 import { AuthProvider, useAuth } from './contexts/AuthContext'; 
 import { POSProvider, usePOS } from './contexts/POSContext'; 
 import { NotificationProvider, useNotifications } from './contexts/NotificationContext'; 
 import { LoginPage } from './components/Auth/LoginPage';
 import { Header } from './components/Layout/Header';
 import { Sidebar } from './components/Layout/Sidebar';
-import { Footer } from './components/Layout/Footer';
 import { ProtectedRoute } from './components/Layout/ProtectedRoute';
-import { ProductGrid } from './components/POS/ProductGrid';
-import { Cart } from './components/POS/Cart';
-import { ProductManagement } from './components/Products/ProductManagement';
-import { RawMaterialManagement } from './components/RawMaterials/RawMaterialManagement';
-import { TransactionHistory } from './components/Transactions/TransactionHistory';
-import { ReportsOverview } from './components/Reports/ReportsOverview';
-import { SettingsPanel } from './components/Settings/SettingsPanel';
-import { CouponManagement } from './components/Coupons/CouponManagement';
-import { TaxManagement } from './components/Tax/TaxManagement';
-import { UserManagement } from './components/Users/UserManagement';
-import { AuditTrail } from './components/AuditTrail/AuditTrail';
-import { PurchaseOrderManagement } from './components/PurchaseOrders/PurchaseOrderManagement';
 import ReduxErrorNotification from './components/common/ReduxErrorNotification';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { useSelector, useDispatch } from 'react-redux';
+import { getCurrentUser } from './features/auth/authSlice';
+
+// Lazy load heavy components
+const ProductGrid = lazy(() => import('./components/POS/ProductGrid').then(module => ({ default: module.ProductGrid })));
+const Cart = lazy(() => import('./components/POS/Cart').then(module => ({ default: module.Cart })));
+const ProductManagement = lazy(() => import('./components/Products/ProductManagement').then(module => ({ default: module.ProductManagement })));
+const RawMaterialManagement = lazy(() => import('./components/RawMaterials/RawMaterialManagement').then(module => ({ default: module.RawMaterialManagement })));
+const TransactionHistory = lazy(() => import('./components/Transactions/TransactionHistory').then(module => ({ default: module.TransactionHistory })));
+const ReportsOverview = lazy(() => import('./components/Reports/ReportsOverview').then(module => ({ default: module.ReportsOverview })));
+const SettingsPanel = lazy(() => import('./components/Settings/SettingsPanel').then(module => ({ default: module.SettingsPanel })));
+const CouponManagement = lazy(() => import('./components/Coupons/CouponManagement').then(module => ({ default: module.CouponManagement })));
+const TaxManagement = lazy(() => import('./components/Tax/TaxManagement').then(module => ({ default: module.TaxManagement })));
+const UserManagement = lazy(() => import('./components/Users/UserManagement').then(module => ({ default: module.UserManagement })));
+const AuditTrail = lazy(() => import('./components/AuditTrail/AuditTrail').then(module => ({ default: module.AuditTrail })));
+const PurchaseOrderManagement = lazy(() => import('./components/PurchaseOrders/PurchaseOrderManagement').then(module => ({ default: module.PurchaseOrderManagement })));
+
+// Loading component
+const ComponentLoader = () => (
+  <div style={{ 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    height: '300px' 
+  }}>
+    <Spin size="large" tip="Loading..." />
+  </div>
+);
 
 const { Sider, Content } = Layout;
 
-function AppContent() {
-  const { isAuthenticated, hasPermission } = useAuth();
-  const { checkStockLevels } = useNotifications(); 
-  const { refreshData } = usePOS();
-  const [activeTab, setActiveTab] = useState('pos'); 
-  const [collapsed, setCollapsed] = useState(false);
+/**
+ * Component that periodically checks token validity
+ */
+function TokenValidator() {
+  const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector(state => state.auth);
+  
+  useEffect(() => {
+    // Function to validate token
+    const validateToken = () => {
+      const token = localStorage.getItem('vcare_token');
+      if (token && isAuthenticated) {
+        // Check if token is expired
+        try {
+          const tokenData = JSON.parse(atob(token.split('.')[1]));
+          const expiry = tokenData.exp * 1000; // Convert to milliseconds
+          
+          // If token is expired or will expire in 5 minutes, refresh user data
+          if (Date.now() > expiry - 5 * 60 * 1000) {
+            dispatch(getCurrentUser());
+          }
+        } catch (error) {
+          console.error('Error validating token:', error);
+        }
+      }
+    };
 
-  // For development, always show the app
-  // In production, uncomment the following code to enable authentication
+    // Check token validity immediately
+    validateToken();
+    
+    // Then check periodically (every 5 minutes)
+    const interval = setInterval(validateToken, 5 * 60 * 1000);
+    
+    // Cleanup on unmount
+    return () => clearInterval(interval);
+  }, [dispatch, isAuthenticated]);
+  
+  // This component doesn't render anything
+  return null;
+}
+
+function AppContent() {
+  const { isAuthenticated } = useSelector(state => state.auth);
+  const [activeTab, setActiveTab] = useState('pos'); 
+  const [collapsed, setCollapsed] = useState(true);
+
+  // If not authenticated, show login page
   if (!isAuthenticated) {
     return <LoginPage />;
   }
@@ -44,63 +97,86 @@ function AppContent() {
         <ProtectedRoute module="pos" action="view">
           <div className="flex h-full gap-6">
             <div className="flex-1" data-tour="product-grid">
-              <ProductGrid collapsed={collapsed} />
+              <Suspense fallback={<ComponentLoader />}>
+                <ProductGrid collapsed={collapsed} />
+              </Suspense>
             </div>
             <div className="w-96" data-tour="cart">
-              <Cart />
+              <Suspense fallback={<ComponentLoader />}>
+                <Cart />
+              </Suspense>
             </div>
           </div>
         </ProtectedRoute>
       ),
       'products': (
         <ProtectedRoute module="products" action="view">
-          <ProductManagement />
+          <Suspense fallback={<ComponentLoader />}>
+            <ProductManagement />
+          </Suspense>
         </ProtectedRoute>
       ),
       'raw-materials': (
         <ProtectedRoute module="raw-materials" action="view">
-          <RawMaterialManagement />
+          <Suspense fallback={<ComponentLoader />}>
+            <RawMaterialManagement />
+          </Suspense>
         </ProtectedRoute>
       ),
       'transactions': (
         <ProtectedRoute module="transactions" action="view">
-          <TransactionHistory />
+          <Suspense fallback={<ComponentLoader />}>
+            <TransactionHistory />
+          </Suspense>
         </ProtectedRoute>
       ),
       'reports': (
         <ProtectedRoute module="reports" action="view">
-          <ReportsOverview />
+          <Suspense fallback={<ComponentLoader />}>
+            <ReportsOverview />
+          </Suspense>
         </ProtectedRoute>
       ),
       'coupons': (
         <ProtectedRoute module="coupons" action="view">
-          <CouponManagement />
+          <Suspense fallback={<ComponentLoader />}>
+            <CouponManagement />
+          </Suspense>
         </ProtectedRoute>
       ),
       'tax': (
         <ProtectedRoute module="tax" action="view">
-          <TaxManagement />
+          <Suspense fallback={<ComponentLoader />}>
+            <TaxManagement />
+          </Suspense>
         </ProtectedRoute>
       ),
       'purchase-orders': (
         <ProtectedRoute module="purchase-orders" action="view">
-          <PurchaseOrderManagement />
+          <Suspense fallback={<ComponentLoader />}>
+            <PurchaseOrderManagement />
+          </Suspense>
         </ProtectedRoute>
       ),
       'user-management': (
         <ProtectedRoute module="user-management" action="view">
-          <UserManagement />
+          <Suspense fallback={<ComponentLoader />}>
+            <UserManagement />
+          </Suspense>
         </ProtectedRoute>
       ),
       'audit-trail': (
         <ProtectedRoute module="audit-trail" action="view">
-          
-          <AuditTrail />
+          <Suspense fallback={<ComponentLoader />}>
+            <AuditTrail />
+          </Suspense>
         </ProtectedRoute>
       ),
       'settings': (
         <ProtectedRoute module="settings" action="view">
-          <SettingsPanel />
+          <Suspense fallback={<ComponentLoader />}>
+            <SettingsPanel />
+          </Suspense>
         </ProtectedRoute>
       ),
     };
@@ -175,6 +251,7 @@ function AppContent() {
 
   return (
     <>
+      <TokenValidator />
       <Layout style={layoutStyle}>
         <Sider 
           width={siderWidth} 
@@ -213,6 +290,15 @@ function App() {
   const AppWithNotifications = () => {
     const { rawMaterials, products } = usePOS();
     const { checkStockLevels } = useNotifications();
+    const dispatch = useDispatch();
+    
+    // Check for existing token on app load and try to restore session
+    useEffect(() => {
+      const token = localStorage.getItem('vcare_token');
+      if (token) {
+        dispatch(getCurrentUser());
+      }
+    }, [dispatch]);
     
     // Check stock levels periodically
     useEffect(() => {
@@ -227,7 +313,12 @@ function App() {
       return () => clearInterval(interval);
     }, [rawMaterials, products, checkStockLevels]);
     
-    return <AppContent />;
+    // Wrap AppContent with ErrorBoundary to catch any rendering errors
+    return (
+      <ErrorBoundary showErrorDetails={import.meta.env.DEV}>
+        <AppContent />
+      </ErrorBoundary>
+    );
   };
 
   return (

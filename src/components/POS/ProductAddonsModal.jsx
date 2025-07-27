@@ -39,6 +39,7 @@ export function ProductAddonsModal({ open, onClose, product }) {
   
   // Filter raw materials that can be used as addons (only those with enough stock)
   const availableAddons = (rawMaterials || []).filter(material => 
+    product?.addons.some(addon => addon.id === material.id) &&
     material.stockQuantity > 0 &&
     material.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -65,11 +66,12 @@ export function ProductAddonsModal({ open, onClose, product }) {
     
     const calculatedTotal = (basePrice + addonsTotalPrice) * quantity;
     setTotalPrice(calculatedTotal);
+    setEditablePrice(calculatedTotal);
     
     // Only set editable price initially or when it's 0
-    if (editablePrice === 0) {
-      setEditablePrice(calculatedTotal);
-    }
+    // if (editablePrice === 0) {
+    //   setEditablePrice(calculatedTotal);
+    // }
   }, [selectedAddons, quantity, product, rawMaterials]);
 
   const handleAddonChange = (addonId, checked) => {
@@ -310,7 +312,7 @@ export function ProductAddonsModal({ open, onClose, product }) {
               </>
             )}
 
-            <div className="flex justify-between items-center">
+            {/* <div className="flex justify-between items-center">
               <Text strong>Final Price:</Text>
               <InputNumber
                 className="w-32"
@@ -321,7 +323,7 @@ export function ProductAddonsModal({ open, onClose, product }) {
                 parser={value => value.replace(/LKR\s?|(,*)/g, '')}
                 step={100}
               />
-            </div>
+            </div> */}
 
             <Text type="secondary" className="text-xs block">
               Suggested price: LKR {totalPrice.toFixed(2)} (calculated from base price and addons)

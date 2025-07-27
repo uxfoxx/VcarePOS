@@ -30,7 +30,7 @@ const auditSlice = createSlice({
       state.loading = false;
       state.auditList = action.payload;
     },
-    fetchAuditByIdSucceeded(state, action) {
+    fetchAuditByIdSucceeded(state, _action) {
       state.loading = false;
       // Optionally store a single audit entry if needed
     },

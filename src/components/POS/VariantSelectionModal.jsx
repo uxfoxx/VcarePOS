@@ -33,7 +33,16 @@ export function VariantSelectionModal({
     if (open && product) {
       setSelectedVariant(null);
       setSelectedSize(null);
-      setActiveTab('1');
+      // If product has variants, start at variants tab
+      // If product has no variants but has sizes, start at sizes tab
+      // Otherwise start at variants tab
+      setActiveTab(product.hasVariants ? '1' : product.hasSizes ? '2' : '1');
+      
+      // If product has no variants but has sizes, set the product itself as the "selected variant"
+      // This allows us to use the existing size selection UI
+      if (!product.hasVariants && product.hasSizes) {
+        setSelectedVariant(product);
+      }
     }
   }, [open, product]);
 
@@ -59,20 +68,30 @@ export function VariantSelectionModal({
   const handleAddToCart = () => {
     if (!selectedVariant) return;
     
-    // If variant has sizes, require size selection
+    // If variant/product has sizes, require size selection
     if (selectedVariant.hasSizes && !selectedSize) {
       return;
     }
     
-    onVariantSelected(selectedVariant, selectedSize?.name);
+    // If we're using the product itself as the "variant" (for products with sizes but no variants)
+    // and it's the same as the original product, pass null as the variant to indicate no variant was selected
+    const variantToPass = selectedVariant === product && !product.hasVariants ? null : selectedVariant;
+    
+    onVariantSelected(variantToPass, selectedSize?.name);
   };
-
+// here is the model
   return (
     <Modal
       title={
         <Space>
           <Icon name="style" className="text-blue-600" />
-          <span>Select Variant for {product.name}</span>
+          <span>
+            {product.hasVariants 
+              ? `Select Variant for ${product.name}` 
+              : product.hasSizes 
+                ? `Select Size for ${product.name}` 
+                : `Options for ${product.name}`}
+          </span>
         </Space>
       }
       open={open}
@@ -85,12 +104,12 @@ export function VariantSelectionModal({
         <Button
           key="add"
           type="primary"
-          disabled={!selectedVariant || (selectedVariant.hasSizes && !selectedSize)}
+          disabled={(product.hasVariants && !selectedVariant) || (selectedVariant && selectedVariant.hasSizes && !selectedSize)}
           onClick={handleAddToCart}
           icon={<Icon name="add_shopping_cart" />}
         >
           {!selectedVariant 
-            ? 'Select a Variant' 
+            ? (product.hasVariants ? 'Select a Variant' : 'Continue')
             : selectedVariant.hasSizes && !selectedSize 
               ? 'Select a Size' 
               : 'Add to Cart'
@@ -107,6 +126,9 @@ export function VariantSelectionModal({
             </span>
           } 
           key="1"
+          disabled={!product.hasVariants}
+          // Hide this tab completely if product has no variants
+          style={product.hasVariants ? {} : { display: 'none' }}
         >
           <div className="space-y-4">
             <Text>Select a variant of {product.name}:</Text>
@@ -194,25 +216,28 @@ export function VariantSelectionModal({
         >
           {selectedVariant && selectedVariant.hasSizes ? (
             <div className="space-y-4">
-              <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                <div className="flex items-center space-x-4">
-                  <div className="w-16 h-16 bg-white rounded overflow-hidden flex-shrink-0">
-                    <Image
-                      alt={selectedVariant.name}
-                      src={selectedVariant.image || product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
-                      className="w-full h-full object-cover"
-                      preview={false}
-                    />
-                  </div>
-                  <div>
-                    <Text strong className="text-lg">{selectedVariant.name}</Text>
-                    <br />
-                    <Text type="secondary">{selectedVariant.description}</Text>
+              {/* Only show variant info if it's different from the product (i.e., we have an actual variant) */}
+              {selectedVariant !== product && (
+                <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-white rounded overflow-hidden flex-shrink-0">
+                      <Image
+                        alt={selectedVariant.name}
+                        src={selectedVariant.image || product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
+                        className="w-full h-full object-cover"
+                        preview={false}
+                      />
+                    </div>
+                    <div>
+                      <Text strong className="text-lg">{selectedVariant.name}</Text>
+                      <br />
+                      <Text type="secondary">{selectedVariant.description}</Text>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
               
-              <Text>Select a size for {selectedVariant.name}:</Text>
+              <Text>Select a size for {selectedVariant === product ? product.name : selectedVariant.name}:</Text>
               
               {selectedVariant.sizes?.length > 0 ? (
                 <Row gutter={[16, 16]}>

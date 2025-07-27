@@ -10,7 +10,8 @@ const options = {
       description: 'API documentation for VcarePOS backend',
     },
     servers: [
-      { url: 'http://localhost:3000' }
+      { url: 'http://localhost:3000/api/' },
+      { url: 'http://68.183.182.142:3000/api/' }
     ],
   },
   apis: ['./src/routes/*.js'], // All route files

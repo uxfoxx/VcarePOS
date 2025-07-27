@@ -25,7 +25,7 @@ const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 export function CategoryManagement() {
-  const { state, dispatch } = usePOS();
+  const { state } = usePOS();
   const dispatch2 = useDispatch();
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);

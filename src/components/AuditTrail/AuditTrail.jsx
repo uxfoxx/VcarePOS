@@ -45,7 +45,7 @@ export function AuditTrail() {
     if (hasPermission('audit-trail', 'view')) {
       dispatch(fetchAudit());
     }
-  }, [dispatch, hasPermission]);
+  }, [dispatch]);
 
   const filteredAuditTrail = auditList.filter(entry => {
     const matchesSearch = entry.description.toLowerCase().includes(searchTerm.toLowerCase()) ||

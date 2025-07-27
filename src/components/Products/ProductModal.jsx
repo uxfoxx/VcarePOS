@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { 
   Modal, 
   Form, 
@@ -22,7 +23,6 @@ import {
   Steps,
   Tabs
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { VariantManagementPanel } from './VariantManagementPanel';
@@ -39,7 +39,6 @@ export function ProductModal({
   onSubmit, 
   editingProduct = null 
 }) {
-  const { state } = usePOS();
   const [currentStep, setCurrentStep] = useState(0);
   const [productForm] = Form.useForm();
   const [materialsForm] = Form.useForm();
@@ -58,6 +57,9 @@ export function ProductModal({
   const [variants, setVariants] = useState([]);
   const [productData, setProductData] = useState({});
   const [materialSearchTerm, setMaterialSearchTerm] = useState('');
+  const {rawMaterialsList, error} = useSelector(state => state.rawMaterials);
+  const {categoriesList } = useSelector(state => state.categories);
+
 
   // Initialize form data when editing
   useEffect(() => {
@@ -87,7 +89,7 @@ export function ProductModal({
       }
       
       const enrichedMaterials = (editingProduct.rawMaterials || []).map(rawMat => {
-        const fullMaterial = state.rawMaterials?.find(m => m.id === rawMat.rawMaterialId);
+        const fullMaterial = rawMaterialsList?.find(m => m.id === rawMat.rawMaterialId);
         if (fullMaterial) {
           return {
             rawMaterialId: rawMat.rawMaterialId,
@@ -113,7 +115,7 @@ export function ProductModal({
       // Set addons if any
       if (editingProduct.addons) {
         setSelectedAddons(editingProduct.addons.map(addon => {
-          const material = state.rawMaterials?.find(m => m.id === addon.id);
+          const material = rawMaterialsList?.find(m => m.id === addon.id);
           return {
             id: addon.id,
             name: material?.name || addon.name,
@@ -161,7 +163,7 @@ export function ProductModal({
       setImagePreview(null);
       setCurrentStep(0);
     }
-  }, [editingProduct, open, productForm, state.rawMaterials]);
+  }, [editingProduct, open, productForm, rawMaterialsList]);
 
   const getSteps = () => {
     const baseSteps = [
@@ -170,15 +172,16 @@ export function ProductModal({
         description: 'Basic information',
         icon: 'inventory_2',
         content: renderProductDetails
-      },
-      {
+      }
+    ];
+    if (!hasVariants) {
+       baseSteps.push({
         title: 'Raw Materials',
         description: 'Materials used',
         icon: 'category',
         content: renderRawMaterials
-      }
-    ];
-    
+      });
+    }
     if (hasAddons) {
       baseSteps.push({
         title: 'Add-ons',
@@ -221,7 +224,7 @@ export function ProductModal({
   };
 
   const handleAddMaterial = (values) => {
-    const material = state.rawMaterials.find(m => m.id === values.materialId);
+    const material = rawMaterialsList.find(m => m.id === values.materialId);
     if (!material) {
       message.error('Material not found');
       return;
@@ -253,7 +256,7 @@ export function ProductModal({
   };
 
   const handleAddAddon = (values) => {
-    const material = state.rawMaterials.find(m => m.id === values.materialId);
+    const material = rawMaterialsList.find(m => m.id === values.materialId);
     if (!material) {
       message.error('Material not found');
       return;
@@ -663,7 +666,7 @@ export function ProductModal({
   ];
 
   // Filter raw materials for addons
-  const filteredRawMaterials = state.rawMaterials.filter(material => 
+  const filteredRawMaterials = rawMaterialsList.filter(material => 
     material.name.toLowerCase().includes(materialSearchTerm.toLowerCase()) ||
     material.category.toLowerCase().includes(materialSearchTerm.toLowerCase())
   );
@@ -674,7 +677,7 @@ export function ProductModal({
       layout="vertical" 
       className="space-y-4"
       onValuesChange={handleFormChange}
-      preserve={false}
+      preserve={true}
     >
       <Row gutter={16}>
         <Col span={16}>
@@ -696,7 +699,7 @@ export function ProductModal({
             rules={[{ required: true, message: 'Please select category' }]}
           >
             <Select placeholder="Select category" allowClear>
-              {state.categories?.filter(cat => cat.isActive).map(category => (
+              {categoriesList?.filter(cat => cat.isActive).map(category => (
                 <Option key={category.id} value={category.name}>
                   {category.name}
                 </Option>
@@ -755,7 +758,7 @@ export function ProductModal({
           showIcon
         />
       )}
-      {!hasSizes && (
+      {!hasSizes && !hasVariants && (
         <>
           <Row gutter={16}>
             <Col span={8}>
@@ -821,6 +824,16 @@ export function ProductModal({
         </>
       )}
 
+      {!hasSizes && (
+        <Row gutter={16}>
+          <Col span={16}>
+            <Form.Item name="barcode" label="SKU/Barcode">
+              <Input placeholder="Enter SKU or barcode" />
+            </Form.Item>
+          </Col>
+        </Row>
+      )}
+
       {(hasSizes || hasVariants) && (
         <Alert
           message="Product Sizes Enabled"
@@ -830,69 +843,73 @@ export function ProductModal({
         />
       )}
 
-      <Form.Item label="Dimensions">
-        <Input.Group compact>
-          <Form.Item name={['dimensions', 'length']} noStyle>
-            <InputNumber placeholder="Length" className="w-1/4" min={0} />
+      {!hasVariants && (
+        <>
+          <Form.Item label="Dimensions">
+            <Input.Group compact>
+              <Form.Item name={['dimensions', 'length']} noStyle>
+                <InputNumber placeholder="Length" className="w-1/4" min={0} />
+              </Form.Item>
+              <Form.Item name={['dimensions', 'width']} noStyle>
+                <InputNumber placeholder="Width" className="w-1/4" min={0} />
+              </Form.Item>
+              <Form.Item name={['dimensions', 'height']} noStyle>
+                <InputNumber placeholder="Height" className="w-1/4" min={0} />
+              </Form.Item>
+              <Form.Item name={['dimensions', 'unit']} noStyle>
+                <Select placeholder="Unit" className="w-1/4">
+                  <Option value="cm">cm</Option>
+                  <Option value="inch">inch</Option>
+                </Select>
+              </Form.Item>
+            </Input.Group>
           </Form.Item>
-          <Form.Item name={['dimensions', 'width']} noStyle>
-            <InputNumber placeholder="Width" className="w-1/4" min={0} />
-          </Form.Item>
-          <Form.Item name={['dimensions', 'height']} noStyle>
-            <InputNumber placeholder="Height" className="w-1/4" min={0} />
-          </Form.Item>
-          <Form.Item name={['dimensions', 'unit']} noStyle>
-            <Select placeholder="Unit" className="w-1/4">
-              <Option value="cm">cm</Option>
-              <Option value="inch">inch</Option>
-            </Select>
-          </Form.Item>
-        </Input.Group>
-      </Form.Item>
 
-      <Form.Item name="description" label="Description">
-        <TextArea
-          rows={3}
-          placeholder="Enter product description"
-        />
-      </Form.Item>
+          <Form.Item name="description" label="Description">
+            <TextArea
+              rows={3}
+              placeholder="Enter product description"
+            />
+          </Form.Item>
 
-      <Form.Item label="Product Image">
-        <Upload
-          accept="image/*"
-          beforeUpload={handleImageUpload}
-          showUploadList={false}
-          maxCount={1}
-        >
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer">
-            {imagePreview ? (
-              <div className="space-y-2">
-                <img 
-                  src={imagePreview} 
-                  alt="Preview" 
-                  className="w-32 h-32 object-cover mx-auto rounded"
-                />
-                <div>
-                  <Button icon={<Icon name="upload" />} size="small">
-                    Change Image
-                  </Button>
-                </div>
+          <Form.Item label="Product Image">
+            <Upload
+              accept="image/*"
+              beforeUpload={handleImageUpload}
+              showUploadList={false}
+              maxCount={1}
+            >
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer">
+                {imagePreview ? (
+                  <div className="space-y-2">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="w-32 h-32 object-cover mx-auto rounded"
+                    />
+                    <div>
+                      <Button icon={<Icon name="upload" />} size="small">
+                        Change Image
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Icon name="cloud_upload" className="text-4xl text-gray-400" />
+                    <div>
+                      <Text>Click to upload product image</Text>
+                      <br />
+                      <Text type="secondary" className="text-sm">
+                        Supports: JPG, PNG, GIF (Max: 5MB)
+                      </Text>
+                    </div>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="space-y-2">
-                <Icon name="cloud_upload" className="text-4xl text-gray-400" />
-                <div>
-                  <Text>Click to upload product image</Text>
-                  <br />
-                  <Text type="secondary" className="text-sm">
-                    Supports: JPG, PNG, GIF (Max: 5MB)
-                  </Text>
-                </div>
-              </div>
-            )}
-          </div>
-        </Upload>
-      </Form.Item>
+            </Upload>
+          </Form.Item>
+        </>
+      )}
     </Form>
   );
 
@@ -917,12 +934,15 @@ export function ProductModal({
                 <Select
                   placeholder="Search and select material"
                   showSearch
+                  optionFilterProp="label"
                   filterOption={(input, option) =>
-                    option.children.toLowerCase().includes(input.toLowerCase())
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                   }
                 >
-                  {state.rawMaterials?.map(material => (
-                    <Option key={material.id} value={material.id}>
+                  {rawMaterialsList?.map(material => (
+                    <Option key={material.id} value={material.id} 
+                    label={`${material.name} ${material.category}`}
+                    >
                       <div>
                         <Text strong>{material.name}</Text>
                         <br />
@@ -1058,16 +1078,20 @@ export function ProductModal({
                 label="Selected Add-on"
                 rules={[{ required: true, message: 'Please select an add-on' }]}
               >
+
                 <Select
                   placeholder="Select add-on material"
                   showSearch
+                  optionFilterProp="label"
                   filterOption={(input, option) =>
-                    option.children.toLowerCase().includes(input.toLowerCase())
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                   }
                 >
-                  {state.rawMaterials?.map(material => (
-                    <Option key={material.id} value={material.id}>
-                      {material.name} (LKR {material.unitPrice.toFixed(2)}/{material.unit})
+                  {rawMaterialsList?.map(material => (
+                    <Option key={material.id} value={material.id}
+                     label= {`${material.name} (LKR ${material.unitPrice.toFixed(2)}/${material.unit})`}>
+                    
+                    {material.name} (LKR {material.unitPrice.toFixed(2)}/{material.unit})
                     </Option>
                   ))}
                 </Select>
@@ -1273,7 +1297,7 @@ export function ProductModal({
   const renderVariants = () => (
     <VariantManagementPanel
       variants={variants}
-      rawMaterials={state.rawMaterials}
+      rawMaterials={rawMaterialsList}
       onAddVariant={handleAddVariant}
       onUpdateVariant={handleUpdateVariant}
       onRemoveVariant={handleRemoveVariant}

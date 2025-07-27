@@ -226,11 +226,11 @@ export function VariantManagementPanel({
                       <Input placeholder="e.g., Blue, Oak Wood, etc." />
                     </Form.Item>
                   </Col>
-                  <Col span={12}>
+                  {/* <Col span={12}>
                     <Form.Item name="sku" label="SKU/Barcode">
                       <Input placeholder="Enter SKU or leave blank for auto-generation" />
                     </Form.Item>
-                  </Col>
+                  </Col> */}
                 </Row>
 
                 <Row gutter={16}>
@@ -255,11 +255,11 @@ export function VariantManagementPanel({
                       />
                     </Form.Item>
                   </Col>
-                  <Col span={8}>
+                  {/* <Col span={8}>
                     <Form.Item name="color" label="Color">
                       <Input placeholder="e.g., Blue, Red, etc." />
                     </Form.Item>
-                  </Col>
+                  </Col> */}
                 </Row>
 
                 <Row gutter={16}>
@@ -268,7 +268,7 @@ export function VariantManagementPanel({
                       <Input placeholder="e.g., Oak Wood, Metal, etc." />
                     </Form.Item>
                   </Col>
-                  <Col span={12}>
+                  {/* <Col span={12}>
                     <div className="flex items-center space-x-2 mt-8">
                       <Switch
                         checked={variantHasSizes}
@@ -276,7 +276,7 @@ export function VariantManagementPanel({
                       />
                       <Text>This variant has different sizes</Text>
                     </div>
-                  </Col>
+                  </Col> */}
                 </Row>
 
                 <Form.Item name="description" label="Description">

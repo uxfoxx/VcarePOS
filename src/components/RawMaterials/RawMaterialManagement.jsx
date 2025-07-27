@@ -18,13 +18,10 @@ import {
   Col,
   Tooltip
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
-import { SearchInput } from '../common/SearchInput';
 import { ActionButton } from '../common/ActionButton';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { DetailModal } from '../common/DetailModal';
-import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { fetchRawMaterials, addRawMaterials, updateRawMaterials, deleteRawMaterials } from '../../features/rawMaterials/rawMaterialsSlice';
 
@@ -33,7 +30,6 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 export function RawMaterialManagement() {
-  const { state, dispatch: dispatchPOS } = usePOS();
   const dispatch2 = useDispatch();
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);

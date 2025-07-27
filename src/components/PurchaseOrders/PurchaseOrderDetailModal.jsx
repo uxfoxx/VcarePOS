@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createRoot } from 'react-dom/client';
 import { 
   Modal, 
   Typography, 
@@ -143,8 +144,7 @@ export function PurchaseOrderDetailModal({
       document.body.appendChild(tempDiv);
       
       // Render the GRN PDF in the temporary div
-      const ReactDOM = await import('react-dom/client');
-      const root = ReactDOM.createRoot(tempDiv);
+      const root = createRoot(tempDiv);
       root.render(
         <GoodsReceiveNotePDF 
           order={order} 
@@ -351,7 +351,7 @@ export function PurchaseOrderDetailModal({
             icon={<Icon name="download" />}
             className="bg-blue-600"
           >
-            Download PDF
+            Purchase Order
           </Button>
         ]}
       >

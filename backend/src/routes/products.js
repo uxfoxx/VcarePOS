@@ -100,7 +100,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/products:
+ * /products:
  *   get:
  *     summary: Get all products
  *     tags: [Products]
@@ -139,7 +139,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/products/{id}:
+ * /products/{id}:
  *   get:
  *     summary: Get a product by ID
  *     tags: [Products]
@@ -219,7 +219,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/products/{id}/stock:
+ * /products/{id}/stock:
  *   put:
  *     summary: Update product stock
  *     tags: [Products]
@@ -340,6 +340,47 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
           price: parseFloat(addon.price)
         }));
       
+      // Get variants for products with has_variants=true
+      const variants = product.has_variants ? productsResult.rows
+        .filter(variant => variant.parent_product_id === product.id)
+        .map(variant => {
+          const variantSizes = sizesResult.rows
+            .filter(size => size.product_id === variant.id)
+            .map(size => ({
+              id: size.id,
+              name: size.name,
+              price: parseFloat(size.price),
+              stock: size.stock,
+              dimensions: size.dimensions,
+              weight: parseFloat(size.weight)
+            }));
+          
+          const variantMaterials = materialsResult.rows
+            .filter(material => material.product_id === variant.id)
+            .map(material => ({
+              rawMaterialId: material.raw_material_id,
+              quantity: parseFloat(material.quantity),
+              name: material.name,
+              unit: material.unit,
+              unitPrice: parseFloat(material.unit_price)
+            }));
+            
+          return {
+            id: variant.id,
+            name: variant.name,
+            description: variant.description,
+            price: parseFloat(variant.price),
+            stock: variant.stock,
+            sku: variant.barcode,
+            image: variant.image,
+            color: variant.color,
+            material: variant.material,
+            hasSizes: variant.has_sizes,
+            sizes: variantSizes,
+            rawMaterials: variantMaterials
+          };
+        }) : [];
+      
       return {
         id: product.id,
         name: product.name,
@@ -364,6 +405,7 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
         sizes,
         rawMaterials,
         addons,
+        variants,
         createdAt: product.created_at,
         updatedAt: product.updated_at
       };
@@ -458,7 +500,10 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
           })),
           rawMaterials: variantMaterialsResult.rows.map(material => ({
             rawMaterialId: material.raw_material_id,
-            quantity: parseFloat(material.quantity)
+            quantity: parseFloat(material.quantity),
+            name: material.name,
+            unit: material.unit,
+            unitPrice: parseFloat(material.unit_price)
           }))
         });
       }

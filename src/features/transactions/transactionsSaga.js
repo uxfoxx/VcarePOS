@@ -1,4 +1,4 @@
-import { takeLatest, call, put } from "redux-saga/effects";
+import { takeLatest, call, put, all } from "redux-saga/effects";
 import {
   fetchTransactions,
   fetchTransactionById,
@@ -13,6 +13,8 @@ import {
   failed
 } from "./transactionsSlice";
 import { transactionsApi } from "../../api/apiClient";
+import { fetchProducts } from "../products/productsSlice";
+import { fetchRawMaterials } from "../rawMaterials/rawMaterialsSlice";
 
 function* fetchTransactionsSaga() {
   try {
@@ -36,6 +38,11 @@ function* createTransactionSaga(action) {
   try {
     const data = yield call(transactionsApi.create, action.payload);
     yield put(createTransactionSucceeded(data));
+    // refresh products and raw materials after creating a transaction
+    yield all([
+      put(fetchProducts()),
+      put(fetchRawMaterials())
+    ]);
   } catch (error) {
     yield put(failed(error.message));
   }

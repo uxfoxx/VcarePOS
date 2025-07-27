@@ -14,7 +14,7 @@ import {
 } from "./rawMaterialsSlice";
 import { rawMaterialsApi } from "../../api/apiClient";
 
-function* fetchRawMaterialsSaga(action) {
+function* fetchRawMaterialsSaga(_action) {
   try {
     const data = yield call(rawMaterialsApi.getAll);
     yield put(fetchRawMaterialsSucceeded(data));

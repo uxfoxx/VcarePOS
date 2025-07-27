@@ -19,7 +19,6 @@ import {
   Tooltip,
   Checkbox
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
 import { SearchInput } from '../common/SearchInput';
@@ -31,6 +30,8 @@ import { EnhancedTable } from '../common/EnhancedTable';
 import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { fetchProducts, deleteProducts, updateProduct, addProduct } from '../../features/products/productsSlice';
+import { fetchRawMaterials} from '../../features/rawMaterials/rawMaterialsSlice';
+import { fetchCategories } from '../../features/categories/categoriesSlice';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -48,7 +49,10 @@ export function ProductManagement() {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const {productsList, error} = useSelector(state => state.products);
 
-  useEffect(() => { dispatch(fetchProducts()); }, [dispatch]);
+  useEffect(() => { dispatch(fetchProducts());
+    dispatch(fetchRawMaterials());
+    dispatch(fetchCategories());
+   }, [dispatch]);
 
   const filteredProducts = productsList.filter(product =>
     (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||

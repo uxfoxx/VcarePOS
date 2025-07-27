@@ -26,7 +26,6 @@ const rootReducer = combineReducers({
   purchaseOrders: purchaseOrdersReducer,
   vendors: vendorsReducer,
   cart: cartReducer,
-  categories: categoriesReducer,
 });
 
 export default rootReducer;

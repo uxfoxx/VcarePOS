@@ -164,14 +164,14 @@ export function ProductCard({
           className="bg-[#0E72BD] hover:bg-blue-700 font-semibold"
         >
           {product.stock === 0 
-            ? 'Out of Stock' 
-            : product.hasVariants
-              ? 'Select Variant'
-              : product.hasSizes 
-                ? 'Select Size' 
-                : product.isCustom
-                  ? 'Add to Cart'
-                  : 'Add with Addons'
+            ? 'Out of Stock' : 'Add to Cart'
+            // : product.hasVariants
+            //   ? 'Select Variant'
+            //   : product.hasSizes 
+            //     ? 'Select Size' 
+            //     : product.isCustom
+            //       ? 'Add to Cart'
+            //       : 'Add with Addons'
           }
         </Button>
       </div>

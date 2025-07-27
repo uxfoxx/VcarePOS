@@ -89,7 +89,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/transactions:
+ * /transactions:
  *   get:
  *     summary: Get all transactions
  *     tags: [Transactions]
@@ -128,7 +128,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/transactions/{id}:
+ * /transactions/{id}:
  *   get:
  *     summary: Get a transaction by ID
  *     tags: [Transactions]
@@ -154,7 +154,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/transactions/{id}/status:
+ * /transactions/{id}/status:
  *   put:
  *     summary: Update transaction status
  *     tags: [Transactions]
@@ -198,7 +198,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/transactions/{id}/refund:
+ * /transactions/{id}/refund:
  *   post:
  *     summary: Process a refund for a transaction
  *     tags: [Transactions]

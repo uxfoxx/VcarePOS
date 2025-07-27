@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { pool } = require('../utils/db');
+const { logger } = require('../utils/logger');
 
 /**
  * Middleware to authenticate JWT token
@@ -10,6 +11,11 @@ const authenticate = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      logger.warn('Authentication failed: No token provided', {
+        path: req.path,
+        method: req.method,
+        ip: req.ip
+      });
       return res.status(401).json({ message: 'No token provided, authorization denied' });
     }
     
@@ -21,11 +27,31 @@ const authenticate = async (req, res, next) => {
     // Add user to request
     req.user = decoded;
     
+    // Log successful authentication at debug level
+    logger.debug('Authentication successful', {
+      userId: decoded.id,
+      path: req.path,
+      method: req.method
+    });
+    
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
+      logger.warn('Authentication failed: Token expired', {
+        path: req.path,
+        method: req.method,
+        ip: req.ip,
+        error: error.message
+      });
       return res.status(401).json({ message: 'Token expired' });
     }
+    
+    logger.warn('Authentication failed: Invalid token', {
+      path: req.path,
+      method: req.method,
+      ip: req.ip,
+      error: error.message
+    });
     return res.status(401).json({ message: 'Invalid token' });
   }
 };
@@ -122,6 +148,18 @@ const logAction = async (req, res, next) => {
           ip_address: req.ip
         };
         
+        // Log to our Winston logger
+        logger.info(`User Action: ${auditEntry.action} on ${auditEntry.module}`, {
+          userId: auditEntry.user_id,
+          userName: auditEntry.user_name,
+          action: auditEntry.action,
+          module: auditEntry.module,
+          description: auditEntry.description,
+          ip: auditEntry.ip_address,
+          method: req.method,
+          path: req.path
+        });
+        
         try {
           const client = await pool.connect();
           await client.query(
@@ -140,7 +178,13 @@ const logAction = async (req, res, next) => {
           );
           client.release();
         } catch (error) {
-          console.error('Error logging action:', error);
+          logger.error('Error logging action to database', {
+            error: error.message,
+            stack: error.stack,
+            userId: auditEntry.user_id,
+            action: auditEntry.action,
+            module: auditEntry.module
+          });
         }
       }
     }

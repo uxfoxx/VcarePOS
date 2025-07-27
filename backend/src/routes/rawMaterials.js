@@ -72,7 +72,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/raw-materials:
+ * /raw-materials:
  *   get:
  *     summary: Get all raw materials
  *     tags: [RawMaterials]
@@ -111,7 +111,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/raw-materials/{id}:
+ * /raw-materials/{id}:
  *   get:
  *     summary: Get a raw material by ID
  *     tags: [RawMaterials]
@@ -193,7 +193,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/raw-materials/{id}/stock:
+ * /raw-materials/{id}/stock:
  *   put:
  *     summary: Update raw material stock
  *     tags: [RawMaterials]

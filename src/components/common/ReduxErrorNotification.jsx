@@ -74,10 +74,16 @@ const errorSelectors = [
 
 export default function ReduxErrorNotification() {
   const dispatch = useDispatch();
+  
   // Get all errors
   const errors = errorSelectors.map(({ selector }) => useSelector(selector));
   const prevErrors = useRef(errors);
-
+  
+  // Get session expiration message
+  const sessionExpiredMessage = useSelector(state => state.auth.sessionExpiredMessage);
+  const prevSessionExpiredMessage = useRef(sessionExpiredMessage);
+  
+  // Handle regular errors
   useEffect(() => {
     errors.forEach((err, idx) => {
       if (
@@ -100,6 +106,27 @@ export default function ReduxErrorNotification() {
     });
     prevErrors.current = errors;
   }, [errors, dispatch]);
+  
+  // Handle session expiration separately
+  useEffect(() => {
+    if (
+      sessionExpiredMessage && 
+      sessionExpiredMessage !== prevSessionExpiredMessage.current &&
+      typeof sessionExpiredMessage === 'string' &&
+      sessionExpiredMessage.trim() !== ''
+    ) {
+      notification.warning({
+        message: 'Session Expired',
+        description: sessionExpiredMessage,
+        duration: 5,
+        placement: 'top',
+      });
+      
+      // Don't automatically clear this message as it's important for the user to see
+      // It will be cleared when they attempt to log in again
+    }
+    prevSessionExpiredMessage.current = sessionExpiredMessage;
+  }, [sessionExpiredMessage]);
 
   return null; // This component does not render anything
 }

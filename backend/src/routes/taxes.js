@@ -50,7 +50,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/taxes:
+ * /taxes:
  *   get:
  *     summary: Get all taxes
  *     tags: [Taxes]
@@ -89,7 +89,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/taxes/{id}:
+ * /taxes/{id}:
  *   get:
  *     summary: Get a tax by ID
  *     tags: [Taxes]

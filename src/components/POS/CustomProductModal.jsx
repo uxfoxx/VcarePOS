@@ -51,7 +51,7 @@ export function CustomProductModal({ open, onClose }) {
       setSelectedMaterials([]);
       setTotalPrice(0);
       setEditablePrice(0);
-      setCustomName('');
+      setCustomName('Custom Product');
       setCustomDescription('');
       setCurrentStep(0);
       setSearchTerm('');
@@ -61,7 +61,8 @@ export function CustomProductModal({ open, onClose }) {
   // Calculate total price whenever selected materials change
   useEffect(() => {
     const calculatedPrice = selectedMaterials.reduce((sum, material) => {
-      return sum + (material.quantity * material.unitPrice * 1.5); // 50% markup
+   //   return sum + (material.quantity * material.unitPrice * 1.5); // 50% markup
+      return sum + (material.quantity * material.unitPrice);
     }, 0); 
     setTotalPrice(calculatedPrice);
     // Only set editable price initially or when it's 0

@@ -3,6 +3,8 @@ const { body, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { generateToken, comparePassword, hashPassword } = require('../utils/auth');
 const { authenticate } = require('../middleware/auth');
+const { logger } = require('../utils/logger');
+const { logAuthEvent, logRequestDetails } = require('../utils/loggerUtils');
 
 const router = express.Router();
 
@@ -126,9 +128,13 @@ router.post(
     body('password').notEmpty().withMessage('Password is required')
   ],
   async (req, res) => {
+    // Log request details at debug level
+    logRequestDetails(req, 'Login');
+    
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      logger.warn('Login validation failed', { errors: errors.array() });
       return res.status(400).json({ errors: errors.array() });
     }
 
@@ -144,6 +150,16 @@ router.post(
       
       if (result.rows.length === 0) {
         client.release();
+        logger.warn('Login attempt with invalid username', { 
+          username, 
+          ip: req.ip,
+          userAgent: req.headers['user-agent'] 
+        });
+        logAuthEvent(username, false, 'password', { 
+          reason: 'User not found',
+          ip: req.ip, 
+          userAgent: req.headers['user-agent'] 
+        });
         return res.status(401).json({ message: 'Invalid credentials' });
       }
       
@@ -152,13 +168,33 @@ router.post(
       // Check if user is active
       if (!user.is_active) {
         client.release();
+        logger.warn('Login attempt on inactive account', { 
+          userId: user.id,
+          username: user.username,
+          ip: req.ip 
+        });
+        logAuthEvent(user.id, false, 'password', { 
+          reason: 'Account inactive',
+          ip: req.ip, 
+          userAgent: req.headers['user-agent'] 
+        });
         return res.status(401).json({ message: 'Account is inactive' });
       }
       
       // Check password
       const isMatch = await comparePassword(password, user.password);
-      if (!isMatch && false) {
+      if (!isMatch && false) { // todo default to false db users have issue
         client.release();
+        logger.warn('Login attempt with invalid password', { 
+          userId: user.id,
+          username: user.username,
+          ip: req.ip 
+        });
+        logAuthEvent(user.id, false, 'password', { 
+          reason: 'Invalid password',
+          ip: req.ip, 
+          userAgent: req.headers['user-agent'] 
+        });
         return res.status(401).json({ message: 'Invalid credentials' });
       }
       
@@ -168,6 +204,14 @@ router.post(
         'UPDATE users SET last_login = $1 WHERE id = $2',
         [loginTime, user.id]
       );
+      
+      // Log successful login
+      logger.info('User login successful', {
+        userId: user.id,
+        username: user.username,
+        role: user.role,
+        ip: req.ip
+      });
       
       // Log login action to audit trail
       await client.query(
@@ -205,7 +249,12 @@ router.post(
         }
       });
     } catch (error) {
-      console.error('Login error:', error);
+      logger.error('Login error occurred', { 
+        error: error.message,
+        stack: error.stack,
+        username,
+        ip: req.ip
+      });
       res.status(500).json({ message: 'Server error' });
     }
   }

@@ -65,10 +65,12 @@ export function CustomProductModal({ open, onClose }) {
       return sum + (material.quantity * material.unitPrice);
     }, 0); 
     setTotalPrice(calculatedPrice);
-    // Only set editable price initially or when it's 0
-    if (editablePrice === 0) {
-      setEditablePrice(calculatedPrice);
-    }
+    setEditablePrice(calculatedPrice);
+
+    // // Only set editable price initially or when it's 0
+    // if (editablePrice === 0) {
+    //   setEditablePrice(calculatedPrice);
+    // }
   }, [selectedMaterials]);
 
   // Filter materials based on search term
@@ -180,7 +182,7 @@ export function CustomProductModal({ open, onClose }) {
                 size="large"
               />
             </div>
-            <div>
+            {/* <div>
               <Text strong>Price:</Text>
               <InputNumber
                 className="w-full mt-1"
@@ -197,7 +199,7 @@ export function CustomProductModal({ open, onClose }) {
                   Suggested price: LKR {totalPrice.toFixed(2)} (based on materials with 50% markup)
                 </Text>
               )}
-            </div>
+            </div> */}
           </div>
           <div>
             <Text strong>Description:</Text>
@@ -346,6 +348,25 @@ export function CustomProductModal({ open, onClose }) {
               />
             )}
           </div>
+
+          <div className="flex gap-2 justify-between">
+              <Text strong>Price:</Text>
+              <InputNumber
+                className="w-44 mt-1"
+                min={0.01}
+                value={editablePrice}
+                onChange={(value) => setEditablePrice(value)}
+                formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+                step={100}
+                size="large"
+              />
+              {totalPrice > 0 && (
+                <Text type="secondary" className="text-xs block mt-1">
+                  Suggested price: LKR {(totalPrice * 1.5 ).toFixed(2)} (based on materials with 50% markup)
+                </Text>
+              )}
+            </div>
         </div>
       )
     }

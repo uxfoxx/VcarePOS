@@ -65,7 +65,7 @@ export function ProductAddonsModal({ open, onClose, product }) {
     
     const calculatedTotal = (basePrice + addonsTotalPrice) * quantity;
     setTotalPrice(calculatedTotal);
-    setEditablePrice(calculatedTotal);
+    setEditablePrice(basePrice * quantity);
     
     // Only set editable price initially or when it's 0
     // if (editablePrice === 0) {
@@ -207,7 +207,6 @@ export function ProductAddonsModal({ open, onClose, product }) {
                     key={material.id}
                     size="small"
                     className={`cursor-pointer transition-all ${isSelected ? 'border-blue-500 bg-blue-50' : 'hover:border-blue-300'}`}
-                    onClick={() => handleAddonChange(material.id, !isSelected)}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
@@ -332,7 +331,7 @@ export function ProductAddonsModal({ open, onClose, product }) {
             
             <div className="flex justify-between">
               <Text strong>Total:</Text>
-              <Text strong className="text-blue-600 text-lg">LKR {editablePrice.toFixed(2)}</Text>
+              <Text strong className="text-blue-600 text-lg">LKR {totalPrice.toFixed(2)}</Text>
             </div>
           </div>
         </div>

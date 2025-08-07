@@ -88,9 +88,10 @@ function AppContent() {
   const [collapsed, setCollapsed] = useState(true);
 
   // If not authenticated, show login page
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
+  // TEMPORARY: Comment out authentication check to bypass login
+  // if (!isAuthenticated) {
+  //   return <LoginPage />;
+  // }
 
   const renderContent = () => {
     const contentMap = {

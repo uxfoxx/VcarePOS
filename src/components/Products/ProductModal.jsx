@@ -25,7 +25,7 @@ import {
 } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
-import { VariantManagementPanel } from './VariantManagementPanel';
+import { ColorEditor } from './ColorEditor';
 import { EnhancedStepper } from '../common/EnhancedStepper';
 
 const { Title, Text } = Typography;
@@ -49,14 +49,92 @@ export function ProductModal({
   const [selectedMaterials, setSelectedMaterials] = useState([]);
   const [selectedAddons, setSelectedAddons] = useState([]);
   const [colors, setColors] = useState([]);
-  const [hasAddons, setHasAddons] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [productData, setProductData] = useState({});
   const [materialSearchTerm, setMaterialSearchTerm] = useState('');
   const [activeColorId, setActiveColorId] = useState(null);
-  const {rawMaterialsList, error} = useSelector(state => state.rawMaterials);
-  const {categoriesList } = useSelector(state => state.categories);
+  const { rawMaterialsList } = useSelector(state => state.rawMaterials);
+  const { categoriesList } = useSelector(state => state.categories);
+
+  // Color management functions
+  const handleAddColor = () => {
+    const newColor = {
+      id: `COLOR-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      name: '',
+      colorCode: '#000000',
+      image: '',
+      sizes: [],
+      rawMaterials: []
+    };
+    setColors([...colors, newColor]);
+    setActiveColorId(newColor.id);
+  };
+
+  const handleRemoveColor = (colorId) => {
+    setColors(colors.filter(c => c.id !== colorId));
+    if (activeColorId === colorId) {
+      setActiveColorId(null);
+    }
+  };
+
+  const handleUpdateColor = (colorId, updates) => {
+    setColors(colors.map(color => 
+      color.id === colorId ? { ...color, ...updates } : color
+    ));
+  };
+
+  const handleAddSizeToColor = (colorId, sizeData) => {
+    setColors(colors.map(color => {
+      if (color.id === colorId) {
+        const newSize = {
+          id: `SIZE-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          ...sizeData
+        };
+        return {
+          ...color,
+          sizes: [...color.sizes, newSize]
+        };
+      }
+      return color;
+    }));
+  };
+
+  const handleRemoveSizeFromColor = (colorId, sizeId) => {
+    setColors(colors.map(color => {
+      if (color.id === colorId) {
+        return {
+          ...color,
+          sizes: color.sizes.filter(size => size.id !== sizeId)
+        };
+      }
+      return color;
+    }));
+  };
+
+  const handleAddMaterialToColor = (colorId, materialData) => {
+    setColors(colors.map(color => {
+      if (color.id === colorId) {
+        return {
+          ...color,
+          rawMaterials: [...color.rawMaterials, materialData]
+        };
+      }
+      return color;
+    }));
+  };
+
+  const handleRemoveMaterialFromColor = (colorId, materialId) => {
+    setColors(colors.map(color => {
+      if (color.id === colorId) {
+        return {
+          ...color,
+          rawMaterials: color.rawMaterials.filter(m => m.rawMaterialId !== materialId)
+        };
+      }
+      return color;
+    }));
+  };
   const renderColorsAndSizes = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -178,7 +256,6 @@ export function ProductModal({
       
       productForm.setFieldsValue(formData);
       setProductData(formData);
-      setHasAddons(editingProduct.hasAddons || false);
       
       if (editingProduct.colors && editingProduct.colors.length > 0) {
         setColors(editingProduct.colors);
@@ -195,22 +272,7 @@ export function ProductModal({
       }
       
       setSelectedMaterials([]);
-      
-      // Set addons if any
-      if (editingProduct.addons) {
-        setSelectedAddons(editingProduct.addons.map(addon => {
-          const material = rawMaterialsList?.find(m => m.id === addon.id);
-          return {
-            id: addon.id,
-            name: material?.name || addon.name,
-            quantity: addon.quantity || 1,
-            price: addon.price || 0,
-            unit: material?.unit || 'unit'
-          };
-        }));
-      } else {
-        setSelectedAddons([]);
-      }
+      setSelectedAddons([]);
       
       setImagePreview(editingProduct.image);
       setCurrentStep(0);
@@ -232,7 +294,6 @@ export function ProductModal({
       setSelectedMaterials([]);
       setSelectedAddons([]);
       setColors([]);
-      setHasAddons(false);
       setImageFile(null);
       setImagePreview(null);
       setCurrentStep(0);
@@ -255,15 +316,6 @@ export function ProductModal({
         content: renderColorsAndSizes
       }
     ];
-    
-    if (hasAddons) {
-      baseSteps.push({
-        title: 'Add-ons',
-        description: 'Optional extras',
-        icon: 'add_circle',
-        content: renderAddons
-      });
-    }
     
     return baseSteps;
   };
@@ -342,112 +394,6 @@ export function ProductModal({
     message.success('Add-on removed');
   };
 
-  const handleAddSize = (values) => {
-    const existingSize = sizes.find(s => s.name === values.name);
-    if (existingSize) {
-      message.error('Size name already exists');
-      return;
-    }
-
-    const newSize = {
-      id: `SIZE-${Date.now()}`,
-      name: values.name,
-      price: values.price,
-      stock: values.stock,
-      dimensions: values.dimensions || {},
-      weight: values.weight || 0
-    };
-
-    setSizes([...sizes, newSize]);
-    sizesForm.resetFields();
-    message.success('Size added successfully');
-  };
-
-  const handleRemoveSize = (sizeId) => {
-    setSizes(sizes.filter(s => s.id !== sizeId));
-    message.success('Size removed');
-  };
-
-  const handleAddVariant = (variantData) => {
-    const newVariant = {
-      id: `VARIANT-${Date.now()}`,
-      ...variantData,
-      sizes: variantData.hasSizes ? [] : null,
-      rawMaterials: []
-    };
-    
-    setVariants([...variants, newVariant]);
-    message.success('Variant added successfully');
-  };
-  
-  const handleUpdateVariant = (variantId, updatedData) => {
-    setVariants(variants.map(variant => 
-      variant.id === variantId ? { ...variant, ...updatedData } : variant
-    ));
-    message.success('Variant updated successfully');
-  };
-  
-  const handleRemoveVariant = (variantId) => {
-    setVariants(variants.filter(variant => variant.id !== variantId));
-    message.success('Variant removed');
-  };
-  
-  const handleAddVariantSize = (variantId, sizeData) => {
-    setVariants(variants.map(variant => {
-      if (variant.id === variantId) {
-        const sizes = variant.sizes || [];
-        return {
-          ...variant,
-          sizes: [...sizes, {
-            id: `SIZE-${Date.now()}`,
-            ...sizeData
-          }]
-        };
-      }
-      return variant;
-    }));
-    message.success('Size added to variant');
-  };
-  
-  const handleRemoveVariantSize = (variantId, sizeId) => {
-    setVariants(variants.map(variant => {
-      if (variant.id === variantId && variant.sizes) {
-        return {
-          ...variant,
-          sizes: variant.sizes.filter(size => size.id !== sizeId)
-        };
-      }
-      return variant;
-    }));
-    message.success('Size removed from variant');
-  };
-  
-  const handleAddVariantMaterial = (variantId, materialData) => {
-    setVariants(variants.map(variant => {
-      if (variant.id === variantId) {
-        return {
-          ...variant,
-          rawMaterials: [...(variant.rawMaterials || []), materialData]
-        };
-      }
-      return variant;
-    }));
-    message.success('Material added to variant');
-  };
-  
-  const handleRemoveVariantMaterial = (variantId, materialId) => {
-    setVariants(variants.map(variant => {
-      if (variant.id === variantId) {
-        return {
-          ...variant,
-          rawMaterials: (variant.rawMaterials || []).filter(m => m.rawMaterialId !== materialId)
-        };
-      }
-      return variant;
-    }));
-    message.success('Material removed from variant');
-  };
-
   const handleFormChange = (changedValues, allValues) => {
     setProductData(prev => ({ ...prev, ...allValues }));
   };
@@ -493,6 +439,7 @@ export function ProductModal({
   };
 
   const handleSubmit = async () => {
+  const handleSubmit = async () => {
     try {
       setLoading(true);
       setStepError('');
@@ -500,10 +447,7 @@ export function ProductModal({
       const currentFormValues = productForm.getFieldsValue();
       const finalProductData = { ...productData, ...currentFormValues };
       
-      const requiredFields = ['name', 'category'];
-      if (!hasSizes) {
-        requiredFields.push('price', 'stock');
-      }
+      const requiredFields = ['name', 'category', 'price', 'stock'];
       
       const missingFields = [];
       requiredFields.forEach(field => {
@@ -519,24 +463,12 @@ export function ProductModal({
         const fieldLabels = {
           'name': 'Product Name',
           'category': 'Category', 
-          'price': 'Price',
-          'stock': 'Stock'
+          'price': 'Base Price',
+          'stock': 'Base Stock'
         };
         const missingLabels = missingFields.map(field => fieldLabels[field] || field);
         setStepError(`Please fill in required fields: ${missingLabels.join(', ')}`);
         setCurrentStep(0);
-        return;
-      }
-
-      if (hasSizes && sizes.length === 0) {
-        setStepError('Please add at least one size for this product');
-        setCurrentStep(steps.length - 1);
-        return;
-      }
-      
-      if (hasVariants && variants.length === 0) {
-        setStepError('Please add at least one variant for this product');
-        setCurrentStep(steps.length - 1);
         return;
       }
 
@@ -546,13 +478,14 @@ export function ProductModal({
         category: finalProductData.category,
         description: finalProductData.description || '',
         image: imagePreview || finalProductData.image || '',
-        hasSizes: hasSizes,
-        hasVariants: hasVariants,
-        hasAddons: hasAddons,
         
-        // For products with sizes, calculate total stock from all sizes
-        price: !hasSizes ? (Number(finalProductData.price) || 0) : (sizes.length > 0 ? Math.min(...sizes.map(s => s.price)) : 0),
-        stock: hasSizes ? sizes.reduce((sum, size) => sum + size.stock, 0) : (Number(finalProductData.stock) || 0),
+        // Calculate total stock from all color-size combinations, fallback to base values
+        price: colors.length > 0 ? 
+          Math.min(...colors.flatMap(c => c.sizes?.map(s => s.price) || [finalProductData.price])) : 
+          (Number(finalProductData.price) || 0),
+        stock: colors.length > 0 ? 
+          colors.reduce((sum, c) => sum + (c.sizes?.reduce((sSum, s) => sSum + s.stock, 0) || 0), 0) : 
+          (Number(finalProductData.stock) || 0),
         barcode: finalProductData.barcode || '',
         dimensions: finalProductData.dimensions ? {
           length: Number(finalProductData.dimensions.length) || 0,
@@ -563,18 +496,9 @@ export function ProductModal({
         weight: Number(finalProductData.weight) || 0,
         color: finalProductData.color || '',
         material: finalProductData.material || '',
-        rawMaterials: selectedMaterials.map(m => ({
-          rawMaterialId: m.rawMaterialId,
-          quantity: m.quantity
-          
-        })),
-        
-        sizes: hasSizes ? sizes : [],
-        
-        addons: hasAddons ? selectedAddons : []
+        colors: colors,
+        addons: selectedAddons
       };
-
-      if (hasVariants) productSubmissionData.variants = variants;
 
       await onSubmit(productSubmissionData);
       handleClose();
@@ -595,13 +519,9 @@ export function ProductModal({
     addonsForm.resetFields();
     setSelectedMaterials([]);
     setSelectedAddons([]);
-    setSizes([]);
-    setHasSizes(false);
-    setHasVariants(false);
-    setHasAddons(false);
-    setImageFile(null);
-    setImagePreview(null);
-    setProductData({});
+    setColors([]);
+    setActiveColorId(null);
+    setActiveColorId(null);
     onClose();
   };
 
@@ -673,54 +593,6 @@ export function ProductModal({
     },
   ];
 
-  const sizeColumns = [
-    {
-      title: 'Size Name',
-      dataIndex: 'name',
-      key: 'name',
-      render: (text) => <Text strong>{text}</Text>,
-    },
-    {
-      title: 'Price',
-      dataIndex: 'price',
-      key: 'price',
-      render: (price) => `LKR ${(price || 0).toFixed(2)}`,
-    },
-    {
-      title: 'Stock',
-      dataIndex: 'stock',
-      key: 'stock',
-    },
-    {
-      title: 'Dimensions',
-      key: 'dimensions',
-      render: (record) => {
-        if (record.dimensions && record.dimensions.length) {
-          return `${record.dimensions.length}×${record.dimensions.width}×${record.dimensions.height} ${record.dimensions.unit}`;
-        }
-        return '-';
-      },
-    },
-    {
-      title: 'Weight',
-      dataIndex: 'weight',
-      key: 'weight',
-      render: (weight) => weight ? `${weight} kg` : '-',
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (record) => (
-        <Popconfirm
-          title="Remove this size?"
-          onConfirm={() => handleRemoveSize(record.id)}
-        >
-          <Button type="text" danger icon={<Icon name="delete" />} size="small" />
-        </Popconfirm>
-      ),
-    },
-  ];
-
   // Filter raw materials for addons
   const filteredRawMaterials = rawMaterialsList.filter(material => 
     material.name.toLowerCase().includes(materialSearchTerm.toLowerCase()) ||
@@ -766,210 +638,130 @@ export function ProductModal({
       </Row>
 
       <Row gutter={16}>
-        <Col span={12}>
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <Text strong>Product Variants</Text>
-                <br />
-                <Text type="secondary" className="text-sm">
-                  Enable if this product has multiple variants (e.g., colors, materials)
-                </Text>
-              </div>
-              <Switch
-                checked={hasVariants}
-                onChange={setHasVariants}
-                checkedChildren="Yes"
-                unCheckedChildren="No"
-              />
-            </div>
-          </div>
+        <Col span={8}>
+          <Form.Item
+            name="price"
+            label="Base Price (LKR)"
+            rules={[
+              { required: true, message: 'Please enter base price' },
+              { type: 'number', min: 0.01, message: 'Price must be greater than 0' }
+            ]}
+          >
+            <InputNumber
+              min={0.01}
+              step={100}
+              placeholder="0.00"
+              className="w-full"
+              formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+            />
+          </Form.Item>
         </Col>
-        <Col span={12}>
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <Text strong>Product Add-ons</Text>
-                <br />
-                <Text type="secondary" className="text-sm">
-                  Enable if this product has optional add-ons
-                </Text>
-              </div>
-              <Switch
-                checked={hasAddons}
-                onChange={setHasAddons}
-                checkedChildren="Yes"
-                unCheckedChildren="No"
-              />
-            </div>
-          </div>
+        <Col span={8}>
+          <Form.Item
+            name="stock"
+            label="Base Stock"
+            rules={[
+              { required: true, message: 'Please enter base stock' },
+              { type: 'number', min: 0, message: 'Stock cannot be negative' }
+            ]}
+          >
+            <InputNumber
+              min={0}
+              placeholder="0"
+              className="w-full"
+              step={1}
+            />
+          </Form.Item>
+        </Col>
+        <Col span={8}>
+          <Form.Item name="weight" label="Weight (kg)">
+            <InputNumber
+              min={0}
+              step={0.1}
+              placeholder="0.0"
+              className="w-full"
+            />
+          </Form.Item>
         </Col>
       </Row>
 
-      {hasVariants && (
-        <Alert
-          message="Product Variants Enabled"
-          description="Since this product has variants, you'll be able to define different variants with their own properties, sizes, and raw materials in the Variants tab."
-          type="info"
-          showIcon
-        />
-      )}
-    
-        
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item
-                name="price"
-                label="Price (LKR)"
-                rules={hasSizes ? [] : [
-                  { required: true, message: 'Please enter price' },
-                  { type: 'number', min: 0.01, message: 'Price must be greater than 0' }
-                ]}
-              >
-                <InputNumber
-                  min={0.01}
-                  step={100}
-                  placeholder="0.00"
-                  className="w-full"
-                  formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value.replace(/LKR\s?|(,*)/g, '')}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                name="stock"
-                label="Stock"
-                rules={hasSizes ? [] : [
-                  { required: true, message: 'Please enter stock' },
-                  { type: 'number', min: 0, message: 'Stock cannot be negative' }
-                ]}
-              >
-                <InputNumber
-                  min={0}
-                  placeholder="0"
-                  className="w-full"
-                  step={1}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="weight" label="Weight (kg)">
-                <InputNumber
-                  min={0}
-                  step={0.1}
-                  placeholder="0.0"
-                  className="w-full"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={16}>
-              <Form.Item name="barcode" label="SKU/Barcode">
-                <Input placeholder="Enter SKU or barcode" />
-              </Form.Item>
-            </Col>
-            
-          </Row>
-      {!hasSizes && !hasVariants && (
-        <Row gutter={16}>
-          <Col span={8}>
-              <Form.Item name="color" label="Color">
-                <Input placeholder="Enter color" />
-              </Form.Item>
-            </Col>
-            </Row>
-       
-      )}
-
-      {!hasSizes && (
-        <Row gutter={16}>
-          <Col span={16}>
-            <Form.Item name="barcode" label="SKU/Barcode">
-              <Input placeholder="Enter SKU or barcode" />
-            </Form.Item>
-          </Col>
-        </Row>
-      )}
-
-      {(hasSizes || hasVariants) && (
-        <Alert
-          message="Product Sizes Enabled"
-          description="Since this product has sizes, the price and stock will be set for each size individually. The fields below represent the base values for reference."
-          type="info"
-          showIcon
-        />
-      )}
-
-      {!hasVariants && (
-        <>
-          <Form.Item label="Dimensions">
-            <Input.Group compact>
-              <Form.Item name={['dimensions', 'length']} noStyle>
-                <InputNumber placeholder="Length" className="w-1/4" min={0} />
-              </Form.Item>
-              <Form.Item name={['dimensions', 'width']} noStyle>
-                <InputNumber placeholder="Width" className="w-1/4" min={0} />
-              </Form.Item>
-              <Form.Item name={['dimensions', 'height']} noStyle>
-                <InputNumber placeholder="Height" className="w-1/4" min={0} />
-              </Form.Item>
-              <Form.Item name={['dimensions', 'unit']} noStyle>
-                <Select placeholder="Unit" className="w-1/4">
-                  <Option value="cm">cm</Option>
-                  <Option value="inch">inch</Option>
-                </Select>
-              </Form.Item>
-            </Input.Group>
+      <Row gutter={16}>
+        <Col span={12}>
+          <Form.Item name="barcode" label="SKU/Barcode">
+            <Input placeholder="Enter SKU or barcode" />
           </Form.Item>
-
-          <Form.Item name="description" label="Description">
-            <TextArea
-              rows={3}
-              placeholder="Enter product description"
-            />
+        </Col>
+        <Col span={12}>
+          <Form.Item name="color" label="Default Color">
+            <Input placeholder="Enter default color" />
           </Form.Item>
+        </Col>
+      </Row>
 
-          <Form.Item label="Product Image">
-            <Upload
-              accept="image/*"
-              beforeUpload={handleImageUpload}
-              showUploadList={false}
-              maxCount={1}
-            >
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer">
-                {imagePreview ? (
-                  <div className="space-y-2">
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
-                      className="w-32 h-32 object-cover mx-auto rounded"
-                    />
-                    <div>
-                      <Button icon={<Icon name="upload" />} size="small">
-                        Change Image
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Icon name="cloud_upload" className="text-4xl text-gray-400" />
-                    <div>
-                      <Text>Click to upload product image</Text>
-                      <br />
-                      <Text type="secondary" className="text-sm">
-                        Supports: JPG, PNG, GIF (Max: 5MB)
-                      </Text>
-                    </div>
-                  </div>
-                )}
+      <Form.Item label="Dimensions">
+        <Input.Group compact>
+          <Form.Item name={['dimensions', 'length']} noStyle>
+            <InputNumber placeholder="Length" className="w-1/4" min={0} />
+          </Form.Item>
+          <Form.Item name={['dimensions', 'width']} noStyle>
+            <InputNumber placeholder="Width" className="w-1/4" min={0} />
+          </Form.Item>
+          <Form.Item name={['dimensions', 'height']} noStyle>
+            <InputNumber placeholder="Height" className="w-1/4" min={0} />
+          </Form.Item>
+          <Form.Item name={['dimensions', 'unit']} noStyle>
+            <Select placeholder="Unit" className="w-1/4">
+              <Option value="cm">cm</Option>
+              <Option value="inch">inch</Option>
+            </Select>
+          </Form.Item>
+        </Input.Group>
+      </Form.Item>
+
+      <Form.Item name="description" label="Description">
+        <TextArea
+          rows={3}
+          placeholder="Enter product description"
+        />
+      </Form.Item>
+
+      <Form.Item label="Product Image">
+        <Upload
+          accept="image/*"
+          beforeUpload={handleImageUpload}
+          showUploadList={false}
+          maxCount={1}
+        >
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer">
+            {imagePreview ? (
+              <div className="space-y-2">
+                <img 
+                  src={imagePreview} 
+                  alt="Preview" 
+                  className="w-32 h-32 object-cover mx-auto rounded"
+                />
+                <div>
+                  <Button icon={<Icon name="upload" />} size="small">
+                    Change Image
+                  </Button>
+                </div>
               </div>
-            </Upload>
-          </Form.Item>
-        </>
-      )}
+            ) : (
+              <div className="space-y-2">
+                <Icon name="cloud_upload" className="text-4xl text-gray-400" />
+                <div>
+                  <Text>Click to upload product image</Text>
+                  <br />
+                  <Text type="secondary" className="text-sm">
+                    Supports: JPG, PNG, GIF (Max: 5MB)
+                  </Text>
+                </div>
+              </div>
+            )}
+          </div>
+        </Upload>
+      </Form.Item>
     </Form>
   );
 
@@ -1219,153 +1011,6 @@ export function ProductModal({
         </div>
       )}
     </div>
-  );
-
-  const renderSizes = () => (
-    <div className="space-y-6">
-      <div>
-        <Title level={5}>Product Sizes</Title>
-        <Text type="secondary">
-          Create different sizes of this product with unique prices and specifications
-        </Text>
-      </div>
-
-      {hasSizes ? (
-        <>
-          <Card size="small">
-            <Form form={sizesForm} onFinish={handleAddSize} layout="vertical">
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item
-                    name="name"
-                    label="Size Name"
-                    rules={[{ required: true, message: 'Please enter size name' }]}
-                  >
-                    <Input placeholder="e.g., Small, Medium, Large" />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item
-                    name="price"
-                    label="Price (LKR)"
-                    rules={[{ required: true, message: 'Please enter price' }]}
-                  >
-                    <InputNumber
-                      min={0.01}
-                      step={100}
-                      placeholder="0.00"
-                      className="w-full"
-                      formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                      parser={value => value.replace(/LKR\s?|(,*)/g, '')}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item
-                    name="stock"
-                    label="Stock"
-                    rules={[{ required: true, message: 'Please enter stock' }]}
-                  >
-                    <InputNumber
-                      min={0}
-                      placeholder="0"
-                      className="w-full"
-                      step={1}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="weight" label="Weight (kg)">
-                    <InputNumber
-                      min={0}
-                      step={0.1}
-                      placeholder="0.0"
-                      className="w-full"
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item label="Dimensions">
-                    <Input.Group compact>
-                      <Form.Item name={['dimensions', 'length']} noStyle>
-                        <InputNumber placeholder="L" className="w-1/4" min={0} />
-                      </Form.Item>
-                      <Form.Item name={['dimensions', 'width']} noStyle>
-                        <InputNumber placeholder="W" className="w-1/4" min={0} />
-                      </Form.Item>
-                      <Form.Item name={['dimensions', 'height']} noStyle>
-                        <InputNumber placeholder="H" className="w-1/4" min={0} />
-                      </Form.Item>
-                      <Form.Item name={['dimensions', 'unit']} noStyle initialValue="cm">
-                        <Select className="w-1/4">
-                          <Option value="cm">cm</Option>
-                          <Option value="inch">inch</Option>
-                        </Select>
-                      </Form.Item>
-                    </Input.Group>
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item>
-                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
-                  Add Size
-                </Button>
-              </Form.Item>
-            </Form>
-          </Card>
-
-          {sizes.length > 0 ? (
-            <div>
-              <Title level={5}>Product Sizes ({sizes.length})</Title>
-              <Table
-                columns={sizeColumns}
-                dataSource={sizes}
-                rowKey="id"
-                pagination={false}
-                size="small"
-              />
-            </div>
-          ) : (
-            <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <Icon name="straighten" className="text-4xl text-gray-300 mb-2" />
-              <Text type="secondary">No sizes added yet</Text>
-              <br />
-              <Text type="secondary" className="text-sm">
-                Add sizes to create different options for this product
-              </Text>
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <Icon name="info" className="text-4xl text-gray-300 mb-4" />
-          <Title level={4} type="secondary">Product Sizes Disabled</Title>
-          <Text type="secondary">
-            This product is set as a single product without size variations.
-            <br />
-            Go back to Product Details to enable sizes if needed.
-          </Text>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderVariants = () => (
-    <VariantManagementPanel
-      variants={variants}
-      rawMaterials={rawMaterialsList}
-      onAddVariant={handleAddVariant}
-      onUpdateVariant={handleUpdateVariant}
-      onRemoveVariant={handleRemoveVariant}
-      onAddVariantSize={handleAddVariantSize}
-      onRemoveVariantSize={handleRemoveVariantSize}
-      onAddVariantMaterial={handleAddVariantMaterial}
-      onRemoveVariantMaterial={handleRemoveVariantMaterial}
-    />
   );
 
   const steps = getSteps();

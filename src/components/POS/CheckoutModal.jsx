@@ -190,36 +190,8 @@ export function CheckoutModal({
         }
       };
 
-      // // Update product stock
-      // cartItems.forEach(item => {
-      //   // Skip update for custom products
-      //   if (!item.product.id.toString().startsWith('CUSTOM')) {
-      //     // dispatch(updateProductStock({
-      //     //   id: item.product.id,
-      //     //   quantity: item.quantity,
-      //     //   selectedSize: item.selectedSize,
-      //     //   operation: 'subtract'
-      //     // }));
-      //   }
-        
-      //   // Update raw material stock for addons if any
-      //   if (item.product.addons) {
-      //     item.product.addons.forEach(addon => {
-      //       dispatch(updateStock({
-      //         id: addon.id,
-      //         quantity: addon.quantity * item.quantity,
-      //         operation: 'subtract'
-      //       }));
-      //     });
-      //   }
-      // });
 
-      // Update coupon usage if applied
-      // if (appliedCoupon) {
-      //   dispatch(updateCoupon({...appliedCoupon,usedCount: (appliedCoupon.usedCount || 0) + 1}));
-      // }
       dispatch(createTransaction(transaction));
-      // dispatch(createTransaction(transaction));
       dispatch(clearCart());
       
       message.success('Order completed successfully!');

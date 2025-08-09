@@ -371,13 +371,14 @@ export function ProductManagement() {
       </Card>
 
       <ProductModal
-        open={showModal}
-        onClose={() => {
+        visible={showModal}
+        onCancel={() => {
           setShowModal(false);
           setEditingProduct(null);
         }}
-        onSubmit={handleSubmit}
-        editingProduct={editingProduct}
+        product={editingProduct}
+        categories={categoriesList}
+        rawMaterials={rawMaterialsList}
       />
 
       {/* Product Details Sheet Modal */}

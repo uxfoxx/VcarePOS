@@ -9,13 +9,12 @@ const cartSlice = createSlice({
   initialState,
   reducers: {
     addToCart(state, action) {
-      const { product, quantity = 1, selectedColor, selectedColorId, selectedSize, selectedSizeId, addons } = action.payload;
+      const { product, quantity = 1, selectedSize, selectedVariant, addons } = action.payload;
       const existingIndex = state.cart.findIndex(
         item =>
           item.product.id === product.id &&
-          item.selectedColorId === selectedColorId &&
           item.selectedSize === selectedSize &&
-          item.selectedSizeId === selectedSizeId
+          item.selectedVariant === selectedVariant
       );
       if (existingIndex !== -1) {
         state.cart[existingIndex].quantity += quantity;
@@ -23,34 +22,30 @@ const cartSlice = createSlice({
         state.cart.push({
           product,
           quantity,
-          selectedColor,
-          selectedColorId,
           selectedSize,
-          selectedSizeId,
+          selectedVariant,
           addons: addons || [],
         });
       }
     },
     removeFromCart(state, action) {
-      const { productId, selectedColorId, selectedSize, selectedSizeId } = action.payload;
+      const { productId, selectedSize, selectedVariant } = action.payload;
       state.cart = state.cart.filter(
         item =>
           !(
             item.product.id === productId &&
-            item.selectedColorId === selectedColorId &&
             item.selectedSize === selectedSize &&
-            item.selectedSizeId === selectedSizeId
+            item.selectedVariant === selectedVariant
           )
       );
     },
     updateQuantity(state, action) {
-      const { productId, selectedColorId, selectedSize, selectedSizeId, quantity } = action.payload;
+      const { productId, selectedSize, selectedVariant, quantity } = action.payload;
       const item = state.cart.find(
         item =>
           item.product.id === productId &&
-          item.selectedColorId === selectedColorId &&
           item.selectedSize === selectedSize &&
-          item.selectedSizeId === selectedSizeId
+          item.selectedVariant === selectedVariant
       );
       if (item) {
         item.quantity = quantity;

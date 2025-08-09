@@ -24,7 +24,7 @@ import { Icon } from '../common/Icon';
 import { SearchInput } from '../common/SearchInput';
 import { ProductDetailsSheet } from '../Invoices/ProductDetailsSheet';
 import { CategoryManagement } from './CategoryManagement';
-import ProductModal from './ProductModal';
+import { ProductModal } from './ProductModal';
 import { DetailModal } from '../common/DetailModal';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { EmptyState } from '../common/EmptyState';
@@ -48,8 +48,6 @@ export function ProductManagement() {
   const [activeTab, setActiveTab] = useState('products');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const {productsList, error} = useSelector(state => state.products);
-  const {categoriesList = []} = useSelector(state => state.categories || {});
-  const {rawMaterialsList = []} = useSelector(state => state.rawMaterials || {});
 
   useEffect(() => { dispatch(fetchProducts());
     dispatch(fetchRawMaterials());
@@ -373,14 +371,13 @@ export function ProductManagement() {
       </Card>
 
       <ProductModal
-        visible={showModal}
-        onCancel={() => {
+        open={showModal}
+        onClose={() => {
           setShowModal(false);
           setEditingProduct(null);
         }}
-        product={editingProduct}
-        categories={categoriesList}
-        rawMaterials={rawMaterialsList}
+        onSubmit={handleSubmit}
+        editingProduct={editingProduct}
       />
 
       {/* Product Details Sheet Modal */}

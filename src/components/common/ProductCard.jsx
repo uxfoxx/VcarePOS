@@ -111,12 +111,6 @@ export function ProductCard({
 
         {showDetails && !product.isCustom && (
           <div className="space-y-1">
-            {product.dimensions && (
-              <Text type="secondary" className="text-xs block">
-                <Icon name="straighten" size="text-xs" className="mr-1" />
-                {product.dimensions.length}×{product.dimensions.width}×{product.dimensions.height} {product.dimensions.unit}
-              </Text>
-            )}
             {product.material && (
               <Text type="secondary" className="text-xs block">
                 <Icon name="texture" size="text-xs" className="mr-1" />

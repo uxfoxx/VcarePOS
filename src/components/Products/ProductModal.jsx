@@ -67,12 +67,9 @@ export function ProductModal({
         name: editingProduct.name || '',
         category: editingProduct.category || '',
         price: editingProduct.price || 0,
-        stock: editingProduct.stock || 0,
         barcode: editingProduct.barcode || '',
         description: editingProduct.description || '',
-        weight: editingProduct.weight || 0,
         color: editingProduct.color || '',
-        dimensions: editingProduct.dimensions || {}
       };
       
       productForm.setFieldsValue(formData);
@@ -134,12 +131,9 @@ export function ProductModal({
         name: '',
         category: '',
         price: 0,
-        stock: 0,
         barcode: '',
         description: '',
-        weight: 0,
         color: '',
-        dimensions: {}
       };
       
       productForm.resetFields();
@@ -474,13 +468,6 @@ export function ProductModal({
           total + (color.sizes || []).reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
         ),
         barcode: finalProductData.barcode || '',
-        dimensions: finalProductData.dimensions ? {
-          length: Number(finalProductData.dimensions.length) || 0,
-          width: Number(finalProductData.dimensions.width) || 0,
-          height: Number(finalProductData.dimensions.height) || 0,
-          unit: finalProductData.dimensions.unit || 'cm'
-        } : {},
-        weight: Number(finalProductData.weight) || 0,
         color: finalProductData.color || '',
         material: finalProductData.material || '',
         
@@ -701,7 +688,7 @@ export function ProductModal({
       </Row>
 
       <Row gutter={16}>
-        <Col span={8}>
+        <Col span={24}>
           <Form.Item
             name="price"
             label="Price (LKR)"
@@ -720,32 +707,6 @@ export function ProductModal({
             />
           </Form.Item>
         </Col>
-        <Col span={8}>
-          <Form.Item
-            name="stock"
-            label="Stock"
-            rules={[
-              { type: 'number', min: 0, message: 'Stock cannot be negative' }
-            ]}
-          >
-            <InputNumber
-              min={0}
-              placeholder="0"
-              className="w-full"
-              step={1}
-            />
-          </Form.Item>
-        </Col>
-        <Col span={8}>
-          <Form.Item name="weight" label="Weight (kg)">
-            <InputNumber
-              min={0}
-              step={0.1}
-              placeholder="0.0"
-              className="w-full"
-            />
-          </Form.Item>
-        </Col>
       </Row>
 
       <Row gutter={16}>
@@ -755,26 +716,6 @@ export function ProductModal({
           </Form.Item>
         </Col>
       </Row>
-
-      <Form.Item label="Dimensions">
-        <Input.Group compact>
-          <Form.Item name={['dimensions', 'length']} noStyle>
-            <InputNumber placeholder="Length" className="w-1/4" min={0} />
-          </Form.Item>
-          <Form.Item name={['dimensions', 'width']} noStyle>
-            <InputNumber placeholder="Width" className="w-1/4" min={0} />
-          </Form.Item>
-          <Form.Item name={['dimensions', 'height']} noStyle>
-            <InputNumber placeholder="Height" className="w-1/4" min={0} />
-          </Form.Item>
-          <Form.Item name={['dimensions', 'unit']} noStyle>
-            <Select placeholder="Unit" className="w-1/4">
-              <Option value="cm">cm</Option>
-              <Option value="inch">inch</Option>
-            </Select>
-          </Form.Item>
-        </Input.Group>
-      </Form.Item>
 
       <Form.Item name="description" label="Description">
         <TextArea

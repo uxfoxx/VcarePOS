@@ -107,6 +107,67 @@ export function ColorManagementPanel({
     materialForm.resetFields();
   };
 
+  const handleAddSizeMaterial = (colorId, sizeId, values) => {
+    const material = rawMaterials.find(m => m.id === values.materialId);
+    if (!material) {
+      message.error('Material not found');
+      return;
+    }
+    
+    const materialData = {
+      rawMaterialId: values.materialId,
+      quantity: values.quantity
+    };
+    
+    // Update the colors state to add material to specific size
+    setColors(colors.map(color => {
+      if (color.id === colorId) {
+        return {
+          ...color,
+          sizes: color.sizes.map(size => {
+            if (size.id === sizeId) {
+              const existingMaterial = size.rawMaterials?.find(m => m.rawMaterialId === values.materialId);
+              if (existingMaterial) {
+                message.error('Material already added to this size');
+                return size;
+              }
+              return {
+                ...size,
+                rawMaterials: [...(size.rawMaterials || []), materialData]
+              };
+            }
+            return size;
+          })
+        };
+      }
+      return color;
+    }));
+    
+    message.success('Material added to size');
+  };
+
+  const handleRemoveSizeMaterial = (colorId, sizeId, materialId) => {
+    setColors(colors.map(color => {
+      if (color.id === colorId) {
+        return {
+          ...color,
+          sizes: color.sizes.map(size => {
+            if (size.id === sizeId) {
+              return {
+                ...size,
+                rawMaterials: (size.rawMaterials || []).filter(m => m.rawMaterialId !== materialId)
+              };
+            }
+            return size;
+          })
+        };
+      }
+      return color;
+    }));
+    
+    message.success('Material removed from size');
+  };
+
   const getActiveColor = () => {
     return colors.find(c => c.id === activeColorId);
   };
@@ -154,6 +215,12 @@ export function ColorManagementPanel({
       key: 'stock'
     },
     {
+      title: 'Weight (kg)',
+      dataIndex: 'weight',
+      key: 'weight',
+      render: (weight) => weight ? `${weight} kg` : '-'
+    },
+    {
       title: 'Dimensions',
       key: 'dimensions',
       render: (record) => {
@@ -164,10 +231,13 @@ export function ColorManagementPanel({
       }
     },
     {
-      title: 'Weight',
-      dataIndex: 'weight',
-      key: 'weight',
-      render: (weight) => weight ? `${weight} kg` : '-'
+      title: 'Raw Materials',
+      key: 'rawMaterials',
+      render: (record) => (
+        <Tag color="orange">
+          {record.rawMaterials?.length || 0} material{(record.rawMaterials?.length || 0) !== 1 ? 's' : ''}
+        </Tag>
+      )
     },
     {
       title: 'Actions',
@@ -355,7 +425,7 @@ export function ColorManagementPanel({
                               {color.sizes?.length || 0} Size{(color.sizes?.length || 0) !== 1 ? 's' : ''}
                             </Tag>
                             <Tag color="orange">
-                              {color.rawMaterials?.length || 0} Material{(color.rawMaterials?.length || 0) !== 1 ? 's' : ''}
+                              {color.sizes?.reduce((total, size) => total + (size.rawMaterials?.length || 0), 0) || 0} Material{(color.sizes?.reduce((total, size) => total + (size.rawMaterials?.length || 0), 0) || 0) !== 1 ? 's' : ''}
                             </Tag>
                           </div>
                         }
@@ -548,88 +618,133 @@ export function ColorManagementPanel({
                   tab={
                     <span>
                       <Icon name="category" className="mr-2" />
-                      Raw Materials ({activeColor.rawMaterials?.length || 0})
+                      Size Raw Materials
                     </span>
                   } 
                   key="2"
                 >
                   <div className="space-y-4">
-                    <Card size="small" title="Add Raw Material">
-                      <Form
-                        form={materialForm}
-                        layout="vertical"
-                        onFinish={handleAddMaterial}
-                      >
-                        <Row gutter={16}>
-                          <Col span={12}>
-                            <Form.Item
-                              name="materialId"
-                              label="Raw Material"
-                              rules={[{ required: true, message: 'Please select a material' }]}
-                            >
-                              <Select
-                                placeholder="Search and select material"
-                                showSearch
-                                filterOption={(input, option) =>
-                                  option.children.toLowerCase().includes(input.toLowerCase())
-                                }
+                    <Alert
+                      message="Raw Materials are now managed per size"
+                      description="Select a size from the Sizes tab to manage its raw materials. Each size can have different raw material requirements."
+                      type="info"
+                      showIcon
+                    />
+                    
+                    {activeColor.sizes && activeColor.sizes.length > 0 ? (
+                      <div className="space-y-4">
+                        {activeColor.sizes.map(size => (
+                          <Card key={size.id} size="small" title={`Raw Materials for ${size.name}`}>
+                            <div className="space-y-4">
+                              <Form
+                                layout="vertical"
+                                onFinish={(values) => handleAddSizeMaterial(activeColor.id, size.id, values)}
                               >
-                                {rawMaterials?.map(material => (
-                                  <Option key={material.id} value={material.id}>
-                                    <div>
-                                      <Text strong>{material.name}</Text>
-                                      <br />
-                                      <Text type="secondary" className="text-xs">
-                                        {material.category} • LKR {material.unitPrice}/{material.unit} • Stock: {material.stockQuantity}
-                                      </Text>
-                                    </div>
-                                  </Option>
-                                ))}
-                              </Select>
-                            </Form.Item>
-                          </Col>
-                          <Col span={8}>
-                            <Form.Item
-                              name="quantity"
-                              label="Quantity Required"
-                              rules={[{ required: true, message: 'Please enter quantity' }]}
-                            >
-                              <InputNumber
-                                min={0.01}
-                                step={0.01}
-                                placeholder="0.00"
-                                className="w-full"
-                              />
-                            </Form.Item>
-                          </Col>
-                          <Col span={4}>
-                            <Form.Item label=" ">
-                              <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
-                                Add
-                              </Button>
-                            </Form.Item>
-                          </Col>
-                        </Row>
-                      </Form>
-                    </Card>
-
-                    <div>
-                      <Title level={5}>Raw Materials for {activeColor.name}</Title>
-                      {activeColor.rawMaterials && activeColor.rawMaterials.length > 0 ? (
-                        <Table
-                          columns={materialColumns}
-                          dataSource={activeColor.rawMaterials}
-                          rowKey="rawMaterialId"
-                          pagination={false}
-                          size="small"
-                        />
-                      ) : (
-                        <Empty
-                          description="No raw materials added yet"
-                          image={Empty.PRESENTED_IMAGE_SIMPLE}
-                        />
-                      )}
-                    </div>
+                                <Row gutter={16}>
+                                  <Col span={12}>
+                                    <Form.Item
+                                      name="materialId"
+                                      label="Raw Material"
+                                      rules={[{ required: true, message: 'Please select a material' }]}
+                                    >
+                                      <Select
+                                        placeholder="Search and select material"
+                                        showSearch
+                                        filterOption={(input, option) =>
+                                          option.children.toLowerCase().includes(input.toLowerCase())
+                                        }
+                                      >
+                                        {rawMaterials?.map(material => (
+                                          <Option key={material.id} value={material.id}>
+                                            <div>
+                                              <Text strong>{material.name}</Text>
+                                              <br />
+                                              <Text type="secondary" className="text-xs">
+                                                {material.category} • LKR {material.unitPrice}/{material.unit} • Stock: {material.stockQuantity}
+                                              </Text>
+                                            </div>
+                                          </Option>
+                                        ))}
+                                      </Select>
+                                    </Form.Item>
+                                  </Col>
+                                  <Col span={8}>
+                                    <Form.Item
+                                      name="quantity"
+                                      label="Quantity Required"
+                                      rules={[{ required: true, message: 'Please enter quantity' }]}
+                                    >
+                                      <InputNumber
+                                        min={0.01}
+                                        step={0.01}
+                                        placeholder="0.00"
+                                        className="w-full"
+                                      />
+                                    </Form.Item>
+                                  </Col>
+                                  <Col span={4}>
+                                    <Form.Item label=" ">
+                                      <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
+                                        Add
+                                      </Button>
+                                    </Form.Item>
+                                  </Col>
+                                </Row>
+                              </Form>
+                              
+                              {size.rawMaterials && size.rawMaterials.length > 0 ? (
+                                <Table
+                                  columns={[
+                                    {
+                                      title: 'Material',
+                                      key: 'material',
+                                      render: (record) => {
+                                        const material = rawMaterials.find(m => m.id === record.rawMaterialId);
+                                        return material ? material.name : 'Unknown Material';
+                                      }
+                                    },
+                                    {
+                                      title: 'Quantity',
+                                      key: 'quantity',
+                                      render: (record) => {
+                                        const material = rawMaterials.find(m => m.id === record.rawMaterialId);
+                                        return `${record.quantity} ${material ? material.unit : 'units'}`;
+                                      }
+                                    },
+                                    {
+                                      title: 'Actions',
+                                      key: 'actions',
+                                      render: (record) => (
+                                        <Popconfirm
+                                          title="Remove this material?"
+                                          onConfirm={() => handleRemoveSizeMaterial(activeColor.id, size.id, record.rawMaterialId)}
+                                        >
+                                          <Button type="text" danger icon={<Icon name="delete" />} size="small" />
+                                        </Popconfirm>
+                                      )
+                                    }
+                                  ]}
+                                  dataSource={size.rawMaterials}
+                                  rowKey="rawMaterialId"
+                                  pagination={false}
+                                  size="small"
+                                />
+                              ) : (
+                                <Empty
+                                  description="No raw materials added for this size"
+                                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                />
+                              )}
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <Empty
+                        description="Please add sizes first to manage their raw materials"
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      />
+                    )}
                   </div>
                 </Tabs.TabPane>
               </Tabs>

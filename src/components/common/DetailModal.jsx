@@ -74,11 +74,6 @@ export function DetailModal({
         <Descriptions.Item label="Color">
           {data.color || 'N/A'}
         </Descriptions.Item>
-        {data.dimensions && data.dimensions.length && (
-          <Descriptions.Item label="Dimensions">
-            {data.dimensions.length}×{data.dimensions.width}×{data.dimensions.height} {data.dimensions.unit}
-          </Descriptions.Item>
-        )}
         {data.rawMaterials && data.rawMaterials.length > 0 && (
           <Descriptions.Item label="Raw Materials" span={2}>
             <div className="space-y-1">

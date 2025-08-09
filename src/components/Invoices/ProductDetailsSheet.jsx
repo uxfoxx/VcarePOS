@@ -301,20 +301,6 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                   Physical Specifications
                 </Title>
                 <div className="space-y-3">
-                  {product.dimensions && (
-                    <div className="flex justify-between border-b pb-2">
-                      <Text strong>Dimensions:</Text>
-                      <Text>
-                        {product.dimensions.length} × {product.dimensions.width} × {product.dimensions.height} {product.dimensions.unit}
-                      </Text>
-                    </div>
-                  )}
-                  {product.weight && (
-                    <div className="flex justify-between border-b pb-2">
-                      <Text strong>Weight:</Text>
-                      <Text>{product.weight} kg</Text>
-                    </div>
-                  )}
                   {product.material && (
                     <div className="flex justify-between border-b pb-2">
                       <Text strong>Material:</Text>
@@ -327,6 +313,10 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                       <Text>{product.color}</Text>
                     </div>
                   )}
+                  <div className="flex justify-between">
+                    <Text strong>Available Sizes:</Text>
+                    <Text>{product.colors?.reduce((total, color) => total + (color.sizes?.length || 0), 0) || 0}</Text>
+                  </div>
                 </div>
               </div>
 

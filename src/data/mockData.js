@@ -222,8 +222,6 @@ export const mockProducts = [
     barcode: 'TE01MZ',
     image: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Premium oak dining table with elegant design',
-    dimensions: { length: 200, width: 100, height: 75, unit: 'cm' },
-    weight: 55.0,
     material: 'Oak Wood',
     color: 'Natural Oak',
     hasSizes: true,
@@ -253,12 +251,6 @@ export const mockProducts = [
         weight: 55.0
       }
     ],
-    rawMaterials: [
-      { rawMaterialId: '1', quantity: 25 },
-      { rawMaterialId: '4', quantity: 50 },
-      { rawMaterialId: '7', quantity: 1.5 },
-      { rawMaterialId: '8', quantity: 1 }
-    ]
   },
   // Product with size variants
   {
@@ -270,8 +262,6 @@ export const mockProducts = [
     barcode: 'CE01Q2',
     image: 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Ergonomic executive chair with premium upholstery',
-    dimensions: { length: 65, width: 65, height: 120, unit: 'cm' },
-    weight: 18.5,
     material: 'Leather',
     color: 'Black',
     hasSizes: true,
@@ -301,12 +291,6 @@ export const mockProducts = [
         weight: 22.0
       }
     ],
-    rawMaterials: [
-      { rawMaterialId: '6', quantity: 3 },
-      { rawMaterialId: '5', quantity: 2 },
-      { rawMaterialId: '10', quantity: 5 },
-      { rawMaterialId: '4', quantity: 25 }
-    ]
   },
   // Single product without sizes
   {
@@ -318,18 +302,10 @@ export const mockProducts = [
     barcode: 'TF03U6',
     image: 'https://images.pexels.com/photos/1395967/pexels-photo-1395967.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Handcrafted pine farmhouse dining table',
-    dimensions: { length: 180, width: 90, height: 75, unit: 'cm' },
-    weight: 45.0,
     material: 'Pine Wood',
     color: 'Natural Pine',
     hasSizes: false,
     sizes: [],
-    rawMaterials: [
-      { rawMaterialId: '2', quantity: 25 },
-      { rawMaterialId: '4', quantity: 50 },
-      { rawMaterialId: '7', quantity: 2 },
-      { rawMaterialId: '8', quantity: 1 }
-    ]
   },
   {
     id: '4',
@@ -340,16 +316,10 @@ export const mockProducts = [
     barcode: 'T404V7',
     image: 'https://images.pexels.com/photos/1571468/pexels-photo-1571468.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Elegant glass side table with chrome legs',
-    dimensions: { length: 50, width: 50, height: 55, unit: 'cm' },
-    weight: 12.0,
     material: 'Glass & Chrome',
     color: 'Clear',
     hasSizes: false,
     sizes: [],
-    rawMaterials: [
-      { rawMaterialId: '9', quantity: 4 },
-      { rawMaterialId: '4', quantity: 10 }
-    ]
   },
   {
     id: '5',
@@ -360,8 +330,6 @@ export const mockProducts = [
     barcode: 'TS05W8',
     image: 'https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Adjustable height standing desk for office',
-    dimensions: { length: 140, width: 70, height: 75, unit: 'cm' },
-    weight: 35.0,
     material: 'Oak Wood & Metal',
     color: 'Oak Finish',
     hasSizes: true,
@@ -383,12 +351,6 @@ export const mockProducts = [
         weight: 35.0
       }
     ],
-    rawMaterials: [
-      { rawMaterialId: '1', quantity: 15 },
-      { rawMaterialId: '9', quantity: 4 },
-      { rawMaterialId: '4', quantity: 30 },
-      { rawMaterialId: '8', quantity: 1 }
-    ]
   },
   // Additional products
   {
@@ -400,18 +362,10 @@ export const mockProducts = [
     barcode: 'TC06X9',
     image: 'https://images.pexels.com/photos/2082090/pexels-photo-2082090.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Sleek modern coffee table with storage',
-    dimensions: { length: 120, width: 60, height: 45, unit: 'cm' },
-    weight: 25.0,
     material: 'Walnut & Metal',
     color: 'Dark Walnut',
     hasSizes: false,
     sizes: [],
-    rawMaterials: [
-      { rawMaterialId: '1', quantity: 10 },
-      { rawMaterialId: '4', quantity: 20 },
-      { rawMaterialId: '7', quantity: 1 },
-      { rawMaterialId: '8', quantity: 0.5 }
-    ]
   },
   {
     id: '7',
@@ -422,18 +376,10 @@ export const mockProducts = [
     barcode: 'CD07Y1',
     image: 'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Set of elegant dining chairs with comfortable padding',
-    dimensions: { length: 45, width: 45, height: 90, unit: 'cm' },
-    weight: 8.0,
     material: 'Oak Wood & Fabric',
     color: 'Beige',
     hasSizes: false,
     sizes: [],
-    rawMaterials: [
-      { rawMaterialId: '1', quantity: 5 },
-      { rawMaterialId: '4', quantity: 15 },
-      { rawMaterialId: '5', quantity: 1 },
-      { rawMaterialId: '11', quantity: 2 }
-    ]
   },
   {
     id: '8',
@@ -444,8 +390,6 @@ export const mockProducts = [
     barcode: 'SB08Z2',
     image: 'https://images.pexels.com/photos/696407/pexels-photo-696407.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Spacious bookshelf with adjustable shelves',
-    dimensions: { length: 80, width: 30, height: 180, unit: 'cm' },
-    weight: 40.0,
     material: 'Oak Wood',
     color: 'Natural Oak',
     hasSizes: true,
@@ -475,12 +419,6 @@ export const mockProducts = [
         weight: 50.0
       }
     ],
-    rawMaterials: [
-      { rawMaterialId: '1', quantity: 20 },
-      { rawMaterialId: '4', quantity: 40 },
-      { rawMaterialId: '7', quantity: 1.5 },
-      { rawMaterialId: '8', quantity: 1 }
-    ]
   },
   {
     id: '9',
@@ -491,8 +429,6 @@ export const mockProducts = [
     barcode: 'FS09A3',
     image: 'https://images.pexels.com/photos/276583/pexels-photo-276583.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Luxurious leather sofa with premium comfort',
-    dimensions: { length: 220, width: 90, height: 85, unit: 'cm' },
-    weight: 85.0,
     material: 'Leather & Hardwood',
     color: 'Brown',
     hasSizes: true,
@@ -522,12 +458,6 @@ export const mockProducts = [
         weight: 120.0
       }
     ],
-    rawMaterials: [
-      { rawMaterialId: '6', quantity: 15 },
-      { rawMaterialId: '5', quantity: 8 },
-      { rawMaterialId: '4', quantity: 60 },
-      { rawMaterialId: '13', quantity: 10 }
-    ]
   },
   {
     id: '10',
@@ -538,8 +468,6 @@ export const mockProducts = [
     barcode: 'BQ10B4',
     image: 'https://images.pexels.com/photos/1743229/pexels-photo-1743229.jpeg?auto=compress&cs=tinysrgb&w=300',
     description: 'Elegant queen-sized bed frame with headboard',
-    dimensions: { length: 210, width: 160, height: 120, unit: 'cm' },
-    weight: 65.0,
     material: 'Maple Wood',
     color: 'Walnut Finish',
     hasSizes: true,
@@ -577,12 +505,6 @@ export const mockProducts = [
         weight: 75.0
       }
     ],
-    rawMaterials: [
-      { rawMaterialId: '13', quantity: 30 },
-      { rawMaterialId: '4', quantity: 80 },
-      { rawMaterialId: '7', quantity: 2 },
-      { rawMaterialId: '8', quantity: 1.5 }
-    ]
   }
 ];
 

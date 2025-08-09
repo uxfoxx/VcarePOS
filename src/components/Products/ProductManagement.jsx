@@ -48,6 +48,8 @@ export function ProductManagement() {
   const [activeTab, setActiveTab] = useState('products');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const {productsList, error} = useSelector(state => state.products);
+  const {categoriesList = []} = useSelector(state => state.categories || {});
+  const {rawMaterialsList = []} = useSelector(state => state.rawMaterials || {});
 
   useEffect(() => { dispatch(fetchProducts());
     dispatch(fetchRawMaterials());

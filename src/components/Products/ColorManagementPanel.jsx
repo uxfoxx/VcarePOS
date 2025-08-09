@@ -220,6 +220,7 @@ export function ColorManagementPanel({
                         showText 
                         format="hex"
                         className="w-full"
+                       getValueFromEvent={(color) => color.toHexString()}
                       />
                     </Form.Item>
                   </Col>

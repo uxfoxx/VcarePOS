@@ -71,16 +71,12 @@ const PRODUCT_HEADERS = [
   { key: 'description', label: 'Description', type: 'text' },
   { key: 'material', label: 'Material', type: 'text' },
   { key: 'color', label: 'Color', type: 'text' },
-  { key: 'weight', label: 'Weight (kg)', type: 'number' },
-  { key: 'dimensions.length', label: 'Length', type: 'number' },
-  { key: 'dimensions.width', label: 'Width', type: 'number' },
-  { key: 'dimensions.height', label: 'Height', type: 'number' },
-  { key: 'dimensions.unit', label: 'Dimension Unit', type: 'text' },
   { key: 'hasVariations', label: 'Has Variations', type: 'boolean' },
   { key: 'isVariation', label: 'Is Variation', type: 'boolean' },
   { key: 'variationName', label: 'Variation Name', type: 'text' },
   { key: 'parentProductName', label: 'Parent Product', type: 'text' },
-  { key: 'rawMaterials', label: 'Raw Materials', type: 'array' }
+  { key: 'totalSizes', label: 'Total Sizes', type: 'number' },
+  { key: 'totalColors', label: 'Total Colors', type: 'number' }
 ];
 
 // Raw Material export headers

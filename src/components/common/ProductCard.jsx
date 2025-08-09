@@ -111,14 +111,9 @@ export function ProductCard({
           <Text type="secondary" className="text-sm block mb-1">
             SKU: {product.barcode || 'N/A'}
           </Text>
-          {product.hasVariants && (
+          {product.hasColors && (
             <Text type="secondary" className="text-xs block mb-1">
-              Multiple variants available
-            </Text>
-          )}
-          {product.hasSizes && (
-            <Text type="secondary" className="text-xs block mb-1">
-              Multiple sizes available
+              {product.colors?.length || 0} color{(product.colors?.length || 0) !== 1 ? 's' : ''} available
             </Text>
           )}
           <div className="flex items-center justify-between">

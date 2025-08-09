@@ -83,8 +83,19 @@ export function useReduxNotifications() {
     }
 
     cartItems.forEach(cartItem => {
-      if (cartItem?.product && Array.isArray(cartItem.product.rawMaterials)) {
-        cartItem.product.rawMaterials.forEach(requiredMaterial => {
+      // For the new color-based system, we need to check raw materials for the selected color
+      let requiredMaterials = [];
+      
+      if (cartItem?.selectedColorId && cartItem?.product?.colors) {
+        const selectedColor = cartItem.product.colors.find(color => color.id === cartItem.selectedColorId);
+        requiredMaterials = selectedColor?.rawMaterials || [];
+      } else if (cartItem?.product && Array.isArray(cartItem.product.rawMaterials)) {
+        // Fallback for products without colors (legacy support)
+        requiredMaterials = cartItem.product.rawMaterials;
+      }
+      
+      if (requiredMaterials.length > 0) {
+        requiredMaterials.forEach(requiredMaterial => {
           const material = rawMaterials.find(m => m.id === requiredMaterial.rawMaterialId);
           if (material) {
             const totalRequired = requiredMaterial.quantity * cartItem.quantity;
@@ -94,6 +105,7 @@ export function useReduxNotifications() {
                 unavailableMaterials.push({
                   materialName: material.name,
                   productName: cartItem.product.name,
+                  colorName: cartItem.selectedColor || 'Default',
                   required: totalRequired,
                   available: material.stockQuantity,
                   unit: material.unit
@@ -102,6 +114,7 @@ export function useReduxNotifications() {
                 lowMaterials.push({
                   materialName: material.name,
                   productName: cartItem.product.name,
+                  colorName: cartItem.selectedColor || 'Default',
                   required: totalRequired,
                   available: material.stockQuantity,
                   unit: material.unit

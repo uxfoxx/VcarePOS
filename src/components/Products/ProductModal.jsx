@@ -48,18 +48,118 @@ export function ProductModal({
   const [stepError, setStepError] = useState('');
   const [selectedMaterials, setSelectedMaterials] = useState([]);
   const [selectedAddons, setSelectedAddons] = useState([]);
-  const [sizes, setSizes] = useState([]);
-  const [hasSizes, setHasSizes] = useState(false);
+  const [colors, setColors] = useState([]);
   const [hasAddons, setHasAddons] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [hasVariants, setHasVariants] = useState(false);
-  const [variants, setVariants] = useState([]);
   const [productData, setProductData] = useState({});
   const [materialSearchTerm, setMaterialSearchTerm] = useState('');
+  const [activeColorId, setActiveColorId] = useState(null);
   const {rawMaterialsList, error} = useSelector(state => state.rawMaterials);
   const {categoriesList } = useSelector(state => state.categories);
+  const renderColorsAndSizes = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <Title level={5}>Product Colors & Sizes</Title>
+          <Text type="secondary">
+            Define color variations for this product. Each color can have its own sizes and raw materials.
+          </Text>
+        </div>
+        <ActionButton.Primary 
+          icon="add"
+          onClick={handleAddColor}
+        >
+          Add Color
+        </ActionButton.Primary>
+      </div>
 
+      {colors.length === 0 ? (
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <Icon name="palette" className="text-4xl text-gray-300 mb-4" />
+          <Title level={4} type="secondary">No Colors Added</Title>
+          <Text type="secondary" className="block mb-4">
+            Add color variations to define different options for this product
+          </Text>
+          <ActionButton.Primary 
+            icon="add"
+            onClick={handleAddColor}
+          >
+            Add First Color
+          </ActionButton.Primary>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Color List */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {colors.map(color => (
+              <Card
+                key={color.id}
+                size="small"
+                className={`cursor-pointer transition-all ${activeColorId === color.id ? 'border-blue-500 shadow-md' : 'hover:border-blue-300'}`}
+                onClick={() => setActiveColorId(color.id)}
+                title={
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div 
+                        className="w-4 h-4 rounded border"
+                        style={{ backgroundColor: color.colorCode || '#000000' }}
+                      />
+                      <Text strong>{color.name || 'Unnamed Color'}</Text>
+                    </div>
+                    <ActionButton.Text
+                      icon="delete"
+                      danger
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveColor(color.id);
+                      }}
+                    />
+                  </div>
+                }
+              >
+                <div className="space-y-2">
+                  <div>
+                    <Text type="secondary" className="text-xs">Sizes:</Text>
+                    <Text className="block">{color.sizes.length} size(s)</Text>
+                  </div>
+                  <div>
+                    <Text type="secondary" className="text-xs">Materials:</Text>
+                    <Text className="block">{color.rawMaterials.length} material(s)</Text>
+                  </div>
+                  {color.image && (
+                    <div className="mt-2">
+                      <img 
+                        src={color.image} 
+                        alt={color.name} 
+                        className="w-full h-20 object-cover rounded"
+                      />
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {/* Color Details Editor */}
+          {activeColorId && (
+            <Card title={`Edit Color: ${colors.find(c => c.id === activeColorId)?.name || 'Unnamed'}`}>
+              <ColorEditor
+                color={colors.find(c => c.id === activeColorId)}
+                onUpdate={(updates) => handleUpdateColor(activeColorId, updates)}
+                onAddSize={(sizeData) => handleAddSizeToColor(activeColorId, sizeData)}
+                onRemoveSize={(sizeId) => handleRemoveSizeFromColor(activeColorId, sizeId)}
+                onAddMaterial={(materialData) => handleAddMaterialToColor(activeColorId, materialData)}
+                onRemoveMaterial={(materialId) => handleRemoveMaterialFromColor(activeColorId, materialId)}
+                rawMaterials={rawMaterialsList}
+              />
+            </Card>
+          )}
+        </div>
+      )}
+    </div>
+  );
 
   // Initialize form data when editing
   useEffect(() => {
@@ -78,39 +178,23 @@ export function ProductModal({
       
       productForm.setFieldsValue(formData);
       setProductData(formData);
-      setHasSizes(editingProduct.hasSizes || false);
       setHasAddons(editingProduct.hasAddons || false);
-      setHasVariants(editingProduct.hasVariants || false);
       
-      if (editingProduct.hasSizes && editingProduct.sizes) {
-        setSizes(editingProduct.sizes);
+      if (editingProduct.colors && editingProduct.colors.length > 0) {
+        setColors(editingProduct.colors);
       } else {
-        setSizes([]);
+        // Create a default color from existing product data
+        setColors([{
+          id: `COLOR-${editingProduct.id}-DEFAULT`,
+          name: editingProduct.color || 'Default',
+          colorCode: '#000000',
+          image: editingProduct.image || '',
+          sizes: editingProduct.sizes || [],
+          rawMaterials: editingProduct.rawMaterials || []
+        }]);
       }
       
-      const enrichedMaterials = (editingProduct.rawMaterials || []).map(rawMat => {
-        const fullMaterial = rawMaterialsList?.find(m => m.id === rawMat.rawMaterialId);
-        if (fullMaterial) {
-          return {
-            rawMaterialId: rawMat.rawMaterialId,
-            name: fullMaterial.name,
-            unit: fullMaterial.unit,
-            quantity: rawMat.quantity,
-            unitPrice: fullMaterial.unitPrice || 0,
-            totalCost: (fullMaterial.unitPrice || 0) * rawMat.quantity
-          };
-        }
-        return {
-          rawMaterialId: rawMat.rawMaterialId,
-          name: 'Unknown Material',
-          unit: 'unit',
-          quantity: rawMat.quantity || 0,
-          unitPrice: 0,
-          totalCost: 0
-        };
-      });
-      
-      setSelectedMaterials(enrichedMaterials);
+      setSelectedMaterials([]);
       
       // Set addons if any
       if (editingProduct.addons) {
@@ -126,13 +210,6 @@ export function ProductModal({
         }));
       } else {
         setSelectedAddons([]);
-      }
-      
-      // Set variants if any
-      if (editingProduct.hasVariants && editingProduct.variants) {
-        setVariants(editingProduct.variants);
-      } else {
-        setVariants([]);
       }
       
       setImagePreview(editingProduct.image);
@@ -154,14 +231,12 @@ export function ProductModal({
       setProductData(initialData);
       setSelectedMaterials([]);
       setSelectedAddons([]);
-      setSizes([]);
-      setVariants([]);
-      setHasSizes(false);
+      setColors([]);
       setHasAddons(false);
-      setHasVariants(false);
       setImageFile(null);
       setImagePreview(null);
       setCurrentStep(0);
+      setActiveColorId(null);
     }
   }, [editingProduct, open, productForm, rawMaterialsList]);
 
@@ -172,40 +247,21 @@ export function ProductModal({
         description: 'Basic information',
         icon: 'inventory_2',
         content: renderProductDetails
+      },
+      {
+        title: 'Colors & Sizes',
+        description: 'Color variations and sizes',
+        icon: 'palette',
+        content: renderColorsAndSizes
       }
     ];
-    if (!hasVariants) {
-       baseSteps.push({
-        title: 'Raw Materials',
-        description: 'Materials used',
-        icon: 'category',
-        content: renderRawMaterials
-      });
-    }
+    
     if (hasAddons) {
       baseSteps.push({
         title: 'Add-ons',
         description: 'Optional extras',
         icon: 'add_circle',
         content: renderAddons
-      });
-    }
-    
-    if (hasSizes) {
-      baseSteps.push({
-        title: 'Sizes',
-        description: 'Size variations',
-        icon: 'aspect_ratio',
-        content: renderSizes
-      });
-    }
-    
-    if (hasVariants) {
-      baseSteps.push({
-        title: 'Variants',
-        description: 'Product variants',
-        icon: 'style',
-        content: renderVariants
       });
     }
     

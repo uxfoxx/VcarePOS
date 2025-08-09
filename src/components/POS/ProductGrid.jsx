@@ -55,8 +55,6 @@ export function ProductGrid({ collapsed }) {
   // Filter products
   const filteredProducts = Array.isArray(products) ? products
     .filter(product => {
-      // Skip variants as they'll be shown through their parent product
-      if (product.isVariant) return false;
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (product.barcode && product.barcode.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;

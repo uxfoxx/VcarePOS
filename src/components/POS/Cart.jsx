@@ -296,9 +296,9 @@ export function Cart() {
                                   Size: {item.selectedSize}
                                 </Text>
                               )}
-                              {item.selectedVariant && (
+                              {item.selectedColor && (
                                 <Text type="secondary" className="text-xs block">
-                                  Variant: {item.selectedVariant}
+                                  Color: {item.selectedColor}
                                 </Text>
                               )}
                               {item.product.isCustom && (
@@ -308,7 +308,12 @@ export function Cart() {
                           </div>
                           <Popconfirm
                             title="Remove item?"
-                            onConfirm={() => dispatch(removeFromCart({ productId: item.product.id, selectedSize: item.selectedSize }))}
+                            onConfirm={() => dispatch(removeFromCart({ 
+                              productId: item.product.id, 
+                              selectedColorId: item.selectedColorId,
+                              selectedSize: item.selectedSize,
+                              selectedSizeId: item.selectedSizeId
+                            }))}
                           >
                             <ActionButton.Text 
                               icon="close"
@@ -325,7 +330,13 @@ export function Cart() {
                               min={1} 
                               max={100}
                               value={item.quantity}
-                              onChange={(value) => handleQuantityChange(item.product.id, item.selectedSize, value || 1)}
+                              onChange={(value) => handleQuantityChange(
+                                item.product.id, 
+                                item.selectedColorId,
+                                item.selectedSize, 
+                                item.selectedSizeId,
+                                value || 1
+                              )}
                               size="small"
                               className="w-16"
                             />

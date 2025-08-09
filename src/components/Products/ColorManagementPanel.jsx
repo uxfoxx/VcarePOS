@@ -51,7 +51,7 @@ export function ColorManagementPanel({
   const handleAddColor = (values) => {
     const newColor = {
       name: values.name,
-      colorCode: values.colorCode || '#000000',
+      colorCode: '#000000',
       image: imagePreview || ''
     };
     
@@ -282,16 +282,6 @@ export function ColorManagementPanel({
                       rules={[{ required: true, message: 'Please enter color name' }]}
                     >
                       <Input placeholder="e.g., Natural Oak, Walnut, White" />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item name="colorCode" label="Color Code (Optional)">
-                      <ColorPicker 
-                        showText 
-                        format="hex"
-                        className="w-full"
-                       getValueFromEvent={(color) => color.toHexString()}
-                      />
                     </Form.Item>
                   </Col>
                 </Row>

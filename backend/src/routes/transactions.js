@@ -639,22 +639,24 @@ router.post(
           ]);
         }
         
-        // Update raw material stock for product
-        const rawMaterialsResult = await client.query(`
-          SELECT prm.raw_material_id, prm.quantity
-          FROM product_raw_materials prm
-          WHERE prm.product_id = $1
-        `, [item.product.id]);
-        
-        for (const material of rawMaterialsResult.rows) {
-          await client.query(`
-            UPDATE raw_materials
-            SET stock_quantity = GREATEST(0, stock_quantity - $1)
-            WHERE id = $2
-          `, [
-            parseFloat(material.quantity) * item.quantity,
-            material.raw_material_id
-          ]);
+        // Update raw material stock for the selected color
+        if (item.selectedColorId) {
+          const rawMaterialsResult = await client.query(`
+            SELECT prm.raw_material_id, prm.quantity
+            FROM product_raw_materials prm
+            WHERE prm.product_color_id = $1
+          `, [item.selectedColorId]);
+          
+          for (const material of rawMaterialsResult.rows) {
+            await client.query(`
+              UPDATE raw_materials
+              SET stock_quantity = GREATEST(0, stock_quantity - $1)
+              WHERE id = $2
+            `, [
+              parseFloat(material.quantity) * item.quantity,
+              material.raw_material_id
+            ]);
+          }
         }
         
         // Update raw material stock for addons
@@ -865,36 +867,37 @@ router.post(
         for (const item of refundItems) {
           await client.query(`
             INSERT INTO refund_items (
-              refund_id, product_id, product_name, refund_quantity, refund_amount
-            ) VALUES ($1, $2, $3, $4, $5)
+              selected_color_id, addons
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
           `, [
             refundId,
             item.product.id,
             item.product.name,
-            item.refundQuantity,
+            item.selectedColorId,
             item.refundAmount
           ]);
           
           // Restore product stock
-          if (item.selectedSize) {
-            // Restore size stock
+          if (item.selectedColorId && item.selectedSize) {
+            // Update specific color/size stock
             await client.query(`
-              UPDATE product_sizes
+              UPDATE product_sizes 
               SET stock = stock + $1
-              WHERE product_id = $2 AND name = $3
+              WHERE product_color_id = $2 AND name = $3
             `, [
               item.refundQuantity,
-              item.product.id,
+              item.selectedColorId,
               item.selectedSize
             ]);
             
-            // Update total product stock (sum of all sizes)
+            // Update total product stock (sum of all sizes across all colors)
             await client.query(`
               UPDATE products
               SET stock = (
-                SELECT COALESCE(SUM(stock), 0)
-                FROM product_sizes
-                WHERE product_id = $1
+                SELECT COALESCE(SUM(ps.stock), 0)
+                FROM product_sizes ps
+                JOIN product_colors pc ON ps.product_color_id = pc.id
+                WHERE pc.product_id = $1
               )
               WHERE id = $1
             `, [item.product.id]);
@@ -920,22 +923,24 @@ router.post(
           if (item.selected_size) {
             // Restore size stock
             await client.query(`
-              UPDATE product_sizes
+              UPDATE product_sizes 
               SET stock = stock + $1
-              WHERE product_id = $2 AND name = $3
+              WHERE product_color_id = $2 AND name = $3
             `, [
               item.quantity,
-              item.product_id,
+              item.selected_color_id,
               item.selected_size
             ]);
             
-            // Update total product stock (sum of all sizes)
+            // Update total product stock (sum of all sizes across all colors)
             await client.query(`
               UPDATE products
               SET stock = (
-                SELECT COALESCE(SUM(stock), 0)
-                FROM product_sizes
-                WHERE product_id = $1
+                SELECT COALESCE(SUM(ps.stock), 0)
+                FROM product_sizes ps
+                JOIN product_colors pc ON ps.product_color_id = pc.id
+                WHERE pc.product_id = $1
+                WHERE pc.product_id = $1
               )
               WHERE id = $1
             `, [item.product_id]);

@@ -23,6 +23,7 @@ import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { EmptyState } from '../common/EmptyState';
 import { CustomProductModal } from './CustomProductModal';
 import { ProductAddonsModal } from './ProductAddonsModal';
+import { ColorAndSizeSelectionModal } from './ColorAndSizeSelectionModal';
 import { addToCart } from '../../features/cart/cartSlice';
 
 const { Option } = Select;

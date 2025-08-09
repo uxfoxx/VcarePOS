@@ -24,7 +24,7 @@ import { Icon } from '../common/Icon';
 import { SearchInput } from '../common/SearchInput';
 import { ProductDetailsSheet } from '../Invoices/ProductDetailsSheet';
 import { CategoryManagement } from './CategoryManagement';
-import { ProductModal } from './ProductModal';
+import ProductModal from './ProductModal';
 import { DetailModal } from '../common/DetailModal';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { EmptyState } from '../common/EmptyState';

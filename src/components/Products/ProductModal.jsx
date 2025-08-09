@@ -25,7 +25,7 @@ import {
 } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
-import { VariantManagementPanel } from './VariantManagementPanel';
+import { ColorManagementPanel } from './ColorManagementPanel';
 import { EnhancedStepper } from '../common/EnhancedStepper';
 
 const { Title, Text } = Typography;
@@ -53,8 +53,7 @@ export function ProductModal({
   const [hasAddons, setHasAddons] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [hasVariants, setHasVariants] = useState(false);
-  const [variants, setVariants] = useState([]);
+  const [colors, setColors] = useState([]);
   const [productData, setProductData] = useState({});
   const [materialSearchTerm, setMaterialSearchTerm] = useState('');
   const {rawMaterialsList, error} = useSelector(state => state.rawMaterials);
@@ -80,12 +79,12 @@ export function ProductModal({
       setProductData(formData);
       setHasSizes(editingProduct.hasSizes || false);
       setHasAddons(editingProduct.hasAddons || false);
-      setHasVariants(editingProduct.hasVariants || false);
       
-      if (editingProduct.hasSizes && editingProduct.sizes) {
-        setSizes(editingProduct.sizes);
+      // Set colors from editing product
+      if (editingProduct.colors) {
+        setColors(editingProduct.colors);
       } else {
-        setSizes([]);
+        setColors([]);
       }
       
       const enrichedMaterials = (editingProduct.rawMaterials || []).map(rawMat => {
@@ -112,7 +111,7 @@ export function ProductModal({
       
       setSelectedMaterials(enrichedMaterials);
       
-      // Set addons if any
+      // Set addons if any (always available now)
       if (editingProduct.addons) {
         setSelectedAddons(editingProduct.addons.map(addon => {
           const material = rawMaterialsList?.find(m => m.id === addon.id);
@@ -126,13 +125,6 @@ export function ProductModal({
         }));
       } else {
         setSelectedAddons([]);
-      }
-      
-      // Set variants if any
-      if (editingProduct.hasVariants && editingProduct.variants) {
-        setVariants(editingProduct.variants);
-      } else {
-        setVariants([]);
       }
       
       setImagePreview(editingProduct.image);
@@ -154,11 +146,9 @@ export function ProductModal({
       setProductData(initialData);
       setSelectedMaterials([]);
       setSelectedAddons([]);
-      setSizes([]);
-      setVariants([]);
+      setColors([]);
       setHasSizes(false);
       setHasAddons(false);
-      setHasVariants(false);
       setImageFile(null);
       setImagePreview(null);
       setCurrentStep(0);
@@ -174,38 +164,20 @@ export function ProductModal({
         content: renderProductDetails
       }
     ];
-    if (!hasVariants) {
-       baseSteps.push({
-        title: 'Raw Materials',
-        description: 'Materials used',
-        icon: 'category',
-        content: renderRawMaterials
-      });
-    }
+    
+    baseSteps.push({
+      title: 'Colors & Variations',
+      description: 'Color variations',
+      icon: 'palette',
+      content: renderColors
+    });
+    
     if (hasAddons) {
       baseSteps.push({
         title: 'Add-ons',
         description: 'Optional extras',
         icon: 'add_circle',
         content: renderAddons
-      });
-    }
-    
-    if (hasSizes) {
-      baseSteps.push({
-        title: 'Sizes',
-        description: 'Size variations',
-        icon: 'aspect_ratio',
-        content: renderSizes
-      });
-    }
-    
-    if (hasVariants) {
-      baseSteps.push({
-        title: 'Variants',
-        description: 'Product variants',
-        icon: 'style',
-        content: renderVariants
       });
     }
     
@@ -312,84 +284,85 @@ export function ProductModal({
     message.success('Size removed');
   };
 
-  const handleAddVariant = (variantData) => {
-    const newVariant = {
-      id: `VARIANT-${Date.now()}`,
-      ...variantData,
-      sizes: variantData.hasSizes ? [] : null,
+  const handleAddColor = (colorData) => {
+    const newColor = {
+      id: `COLOR-${Date.now()}`,
+      name: colorData.name,
+      colorCode: colorData.colorCode,
+      image: colorData.image,
+      sizes: [],
       rawMaterials: []
     };
     
-    setVariants([...variants, newVariant]);
-    message.success('Variant added successfully');
+    setColors([...colors, newColor]);
+    message.success('Color added successfully');
   };
-  
-  const handleUpdateVariant = (variantId, updatedData) => {
-    setVariants(variants.map(variant => 
-      variant.id === variantId ? { ...variant, ...updatedData } : variant
+
+  const handleUpdateColor = (colorId, updatedData) => {
+    setColors(colors.map(color => 
+      color.id === colorId ? { ...color, ...updatedData } : color
     ));
-    message.success('Variant updated successfully');
+    message.success('Color updated successfully');
   };
-  
-  const handleRemoveVariant = (variantId) => {
-    setVariants(variants.filter(variant => variant.id !== variantId));
-    message.success('Variant removed');
+
+  const handleRemoveColor = (colorId) => {
+    setColors(colors.filter(color => color.id !== colorId));
+    message.success('Color removed successfully');
   };
-  
-  const handleAddVariantSize = (variantId, sizeData) => {
-    setVariants(variants.map(variant => {
-      if (variant.id === variantId) {
-        const sizes = variant.sizes || [];
+
+  const handleAddColorSize = (colorId, sizeData) => {
+    setColors(colors.map(color => {
+      if (color.id === colorId) {
         return {
-          ...variant,
-          sizes: [...sizes, {
+          ...color,
+          sizes: [...(color.sizes || []), {
             id: `SIZE-${Date.now()}`,
             ...sizeData
           }]
         };
       }
-      return variant;
+      return color;
     }));
-    message.success('Size added to variant');
+    message.success('Size added to color');
   };
-  
-  const handleRemoveVariantSize = (variantId, sizeId) => {
-    setVariants(variants.map(variant => {
-      if (variant.id === variantId && variant.sizes) {
+
+  const handleRemoveColorSize = (colorId, sizeId) => {
+    setColors(colors.map(color => {
+      if (color.id === colorId) {
         return {
-          ...variant,
-          sizes: variant.sizes.filter(size => size.id !== sizeId)
+          ...color,
+          sizes: (color.sizes || []).filter(size => size.id !== sizeId)
         };
       }
-      return variant;
+      return color;
     }));
-    message.success('Size removed from variant');
+    message.success('Size removed from color');
   };
-  
-  const handleAddVariantMaterial = (variantId, materialData) => {
-    setVariants(variants.map(variant => {
-      if (variant.id === variantId) {
+
+  const handleAddColorMaterial = (colorId, materialData) => {
+    setColors(colors.map(color => {
+      if (color.id === colorId) {
         return {
-          ...variant,
-          rawMaterials: [...(variant.rawMaterials || []), materialData]
+          ...color,
+          rawMaterials: [...(color.rawMaterials || []), materialData]
         };
       }
-      return variant;
+      return color;
     }));
-    message.success('Material added to variant');
+    message.success('Material added to color');
   };
-  
-  const handleRemoveVariantMaterial = (variantId, materialId) => {
-    setVariants(variants.map(variant => {
-      if (variant.id === variantId) {
+
+  const handleRemoveColorMaterial = (colorId, materialId) => {
+    setColors(colors.map(color => {
+      if (color.id === colorId) {
         return {
-          ...variant,
-          rawMaterials: (variant.rawMaterials || []).filter(m => m.rawMaterialId !== materialId)
+          ...color,
+          rawMaterials: (color.rawMaterials || []).filter(m => m.rawMaterialId !== materialId)
         };
       }
-      return variant;
+      return color;
     }));
-    message.success('Material removed from variant');
+    message.success('Material removed from color');
   };
 
   const handleFormChange = (changedValues, allValues) => {
@@ -472,15 +445,17 @@ export function ProductModal({
         return;
       }
 
-      if (hasSizes && sizes.length === 0) {
-        setStepError('Please add at least one size for this product');
-        setCurrentStep(steps.length - 1);
+      if (colors.length === 0) {
+        setStepError('Please add at least one color for this product');
+        setCurrentStep(1); // Colors step
         return;
       }
       
-      if (hasVariants && variants.length === 0) {
-        setStepError('Please add at least one variant for this product');
-        setCurrentStep(steps.length - 1);
+      // Validate that each color has at least one size
+      const colorsWithoutSizes = colors.filter(color => !color.sizes || color.sizes.length === 0);
+      if (colorsWithoutSizes.length > 0) {
+        setStepError(`Please add at least one size for color(s): ${colorsWithoutSizes.map(c => c.name).join(', ')}`);
+        setCurrentStep(1); // Colors step
         return;
       }
 
@@ -490,13 +465,14 @@ export function ProductModal({
         category: finalProductData.category,
         description: finalProductData.description || '',
         image: imagePreview || finalProductData.image || '',
-        hasSizes: hasSizes,
-        hasVariants: hasVariants,
         hasAddons: hasAddons,
         
-        // For products with sizes, calculate total stock from all sizes
-        price: !hasSizes ? (Number(finalProductData.price) || 0) : (sizes.length > 0 ? Math.min(...sizes.map(s => s.price)) : 0),
-        stock: hasSizes ? sizes.reduce((sum, size) => sum + size.stock, 0) : (Number(finalProductData.stock) || 0),
+        // Fixed price for the product
+        price: Number(finalProductData.price) || 0,
+        // Calculate total stock from all color sizes
+        stock: colors.reduce((total, color) => 
+          total + (color.sizes || []).reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
+        ),
         barcode: finalProductData.barcode || '',
         dimensions: finalProductData.dimensions ? {
           length: Number(finalProductData.dimensions.length) || 0,
@@ -507,18 +483,12 @@ export function ProductModal({
         weight: Number(finalProductData.weight) || 0,
         color: finalProductData.color || '',
         material: finalProductData.material || '',
-        rawMaterials: selectedMaterials.map(m => ({
-          rawMaterialId: m.rawMaterialId,
-          quantity: m.quantity
-          
-        })),
         
-        sizes: hasSizes ? sizes : [],
+        // New color-based structure
+        colors: colors,
         
         addons: hasAddons ? selectedAddons : []
       };
-
-      if (hasVariants) productSubmissionData.variants = variants;
 
       await onSubmit(productSubmissionData);
       handleClose();
@@ -540,8 +510,7 @@ export function ProductModal({
     setSelectedMaterials([]);
     setSelectedAddons([]);
     setSizes([]);
-    setHasSizes(false);
-    setHasVariants(false);
+    setColors([]);
     setHasAddons(false);
     setImageFile(null);
     setImagePreview(null);
@@ -714,25 +683,6 @@ export function ProductModal({
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <Text strong>Product Variants</Text>
-                <br />
-                <Text type="secondary" className="text-sm">
-                  Enable if this product has multiple variants (e.g., colors, materials)
-                </Text>
-              </div>
-              <Switch
-                checked={hasVariants}
-                onChange={setHasVariants}
-                checkedChildren="Yes"
-                unCheckedChildren="No"
-              />
-            </div>
-          </div>
-        </Col>
-        <Col span={12}>
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
                 <Text strong>Product Add-ons</Text>
                 <br />
                 <Text type="secondary" className="text-sm">
@@ -750,171 +700,149 @@ export function ProductModal({
         </Col>
       </Row>
 
-      {hasVariants && (
-        <Alert
-          message="Product Variants Enabled"
-          description="Since this product has variants, you'll be able to define different variants with their own properties, sizes, and raw materials in the Variants tab."
-          type="info"
-          showIcon
-        />
-      )}
-    
-        
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item
-                name="price"
-                label="Price (LKR)"
-                rules={hasSizes ? [] : [
-                  { required: true, message: 'Please enter price' },
-                  { type: 'number', min: 0.01, message: 'Price must be greater than 0' }
-                ]}
-              >
-                <InputNumber
-                  min={0.01}
-                  step={100}
-                  placeholder="0.00"
-                  className="w-full"
-                  formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value.replace(/LKR\s?|(,*)/g, '')}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                name="stock"
-                label="Stock"
-                rules={hasSizes ? [] : [
-                  { required: true, message: 'Please enter stock' },
-                  { type: 'number', min: 0, message: 'Stock cannot be negative' }
-                ]}
-              >
-                <InputNumber
-                  min={0}
-                  placeholder="0"
-                  className="w-full"
-                  step={1}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="weight" label="Weight (kg)">
-                <InputNumber
-                  min={0}
-                  step={0.1}
-                  placeholder="0.0"
-                  className="w-full"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={16}>
-              <Form.Item name="barcode" label="SKU/Barcode">
-                <Input placeholder="Enter SKU or barcode" />
-              </Form.Item>
-            </Col>
-            
-          </Row>
-      {!hasSizes && !hasVariants && (
-        <Row gutter={16}>
-          <Col span={8}>
-              <Form.Item name="color" label="Color">
-                <Input placeholder="Enter color" />
-              </Form.Item>
-            </Col>
-            </Row>
-       
-      )}
-
-      {!hasSizes && (
-        <Row gutter={16}>
-          <Col span={16}>
-            <Form.Item name="barcode" label="SKU/Barcode">
-              <Input placeholder="Enter SKU or barcode" />
-            </Form.Item>
-          </Col>
-        </Row>
-      )}
-
-      {(hasSizes || hasVariants) && (
-        <Alert
-          message="Product Sizes Enabled"
-          description="Since this product has sizes, the price and stock will be set for each size individually. The fields below represent the base values for reference."
-          type="info"
-          showIcon
-        />
-      )}
-
-      {!hasVariants && (
-        <>
-          <Form.Item label="Dimensions">
-            <Input.Group compact>
-              <Form.Item name={['dimensions', 'length']} noStyle>
-                <InputNumber placeholder="Length" className="w-1/4" min={0} />
-              </Form.Item>
-              <Form.Item name={['dimensions', 'width']} noStyle>
-                <InputNumber placeholder="Width" className="w-1/4" min={0} />
-              </Form.Item>
-              <Form.Item name={['dimensions', 'height']} noStyle>
-                <InputNumber placeholder="Height" className="w-1/4" min={0} />
-              </Form.Item>
-              <Form.Item name={['dimensions', 'unit']} noStyle>
-                <Select placeholder="Unit" className="w-1/4">
-                  <Option value="cm">cm</Option>
-                  <Option value="inch">inch</Option>
-                </Select>
-              </Form.Item>
-            </Input.Group>
-          </Form.Item>
-
-          <Form.Item name="description" label="Description">
-            <TextArea
-              rows={3}
-              placeholder="Enter product description"
+      <Row gutter={16}>
+        <Col span={8}>
+          <Form.Item
+            name="price"
+            label="Price (LKR)"
+            rules={[
+              { required: true, message: 'Please enter price' },
+              { type: 'number', min: 0.01, message: 'Price must be greater than 0' }
+            ]}
+          >
+            <InputNumber
+              min={0.01}
+              step={100}
+              placeholder="0.00"
+              className="w-full"
+              formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={value => value.replace(/LKR\s?|(,*)/g, '')}
             />
           </Form.Item>
-
-          <Form.Item label="Product Image">
-            <Upload
-              accept="image/*"
-              beforeUpload={handleImageUpload}
-              showUploadList={false}
-              maxCount={1}
-            >
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer">
-                {imagePreview ? (
-                  <div className="space-y-2">
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
-                      className="w-32 h-32 object-cover mx-auto rounded"
-                    />
-                    <div>
-                      <Button icon={<Icon name="upload" />} size="small">
-                        Change Image
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Icon name="cloud_upload" className="text-4xl text-gray-400" />
-                    <div>
-                      <Text>Click to upload product image</Text>
-                      <br />
-                      <Text type="secondary" className="text-sm">
-                        Supports: JPG, PNG, GIF (Max: 5MB)
-                      </Text>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </Upload>
+        </Col>
+        <Col span={8}>
+          <Form.Item
+            name="stock"
+            label="Stock"
+            rules={[
+              { type: 'number', min: 0, message: 'Stock cannot be negative' }
+            ]}
+          >
+            <InputNumber
+              min={0}
+              placeholder="0"
+              className="w-full"
+              step={1}
+            />
           </Form.Item>
-        </>
-      )}
+        </Col>
+        <Col span={8}>
+          <Form.Item name="weight" label="Weight (kg)">
+            <InputNumber
+              min={0}
+              step={0.1}
+              placeholder="0.0"
+              className="w-full"
+            />
+          </Form.Item>
+        </Col>
+      </Row>
+
+      <Row gutter={16}>
+        <Col span={16}>
+          <Form.Item name="barcode" label="SKU/Barcode">
+            <Input placeholder="Enter SKU or barcode" />
+          </Form.Item>
+        </Col>
+      </Row>
+
+      <Form.Item label="Dimensions">
+        <Input.Group compact>
+          <Form.Item name={['dimensions', 'length']} noStyle>
+            <InputNumber placeholder="Length" className="w-1/4" min={0} />
+          </Form.Item>
+          <Form.Item name={['dimensions', 'width']} noStyle>
+            <InputNumber placeholder="Width" className="w-1/4" min={0} />
+          </Form.Item>
+          <Form.Item name={['dimensions', 'height']} noStyle>
+            <InputNumber placeholder="Height" className="w-1/4" min={0} />
+          </Form.Item>
+          <Form.Item name={['dimensions', 'unit']} noStyle>
+            <Select placeholder="Unit" className="w-1/4">
+              <Option value="cm">cm</Option>
+              <Option value="inch">inch</Option>
+            </Select>
+          </Form.Item>
+        </Input.Group>
+      </Form.Item>
+
+      <Form.Item name="description" label="Description">
+        <TextArea
+          rows={3}
+          placeholder="Enter product description"
+        />
+      </Form.Item>
+
+      <Form.Item label="Product Image">
+        <Upload
+          accept="image/*"
+          beforeUpload={handleImageUpload}
+          showUploadList={false}
+          maxCount={1}
+        >
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer">
+            {imagePreview ? (
+              <div className="space-y-2">
+                <img 
+                  src={imagePreview} 
+                  alt="Preview" 
+                  className="w-32 h-32 object-cover mx-auto rounded"
+                />
+                <div>
+                  <Button icon={<Icon name="upload" />} size="small">
+                    Change Image
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Icon name="cloud_upload" className="text-4xl text-gray-400" />
+                <div>
+                  <Text>Click to upload product image</Text>
+                  <br />
+                  <Text type="secondary" className="text-sm">
+                    Supports: JPG, PNG, GIF (Max: 5MB)
+                  </Text>
+                </div>
+              </div>
+            )}
+          </div>
+        </Upload>
+      </Form.Item>
     </Form>
+  );
+
+  const renderColors = () => (
+    <div className="space-y-6">
+      <div>
+        <Title level={5}>Product Colors</Title>
+        <Text type="secondary">
+          Define color variations for this product. Each color can have its own sizes and raw materials.
+        </Text>
+      </div>
+
+      <ColorManagementPanel
+        colors={colors}
+        rawMaterials={rawMaterialsList}
+        onAddColor={handleAddColor}
+        onUpdateColor={handleUpdateColor}
+        onRemoveColor={handleRemoveColor}
+        onAddColorSize={handleAddColorSize}
+        onRemoveColorSize={handleRemoveColorSize}
+        onAddColorMaterial={handleAddColorMaterial}
+        onRemoveColorMaterial={handleRemoveColorMaterial}
+      />
+    </div>
   );
 
   const renderRawMaterials = () => (
@@ -1296,20 +1224,6 @@ export function ProductModal({
         </div>
       )}
     </div>
-  );
-
-  const renderVariants = () => (
-    <VariantManagementPanel
-      variants={variants}
-      rawMaterials={rawMaterialsList}
-      onAddVariant={handleAddVariant}
-      onUpdateVariant={handleUpdateVariant}
-      onRemoveVariant={handleRemoveVariant}
-      onAddVariantSize={handleAddVariantSize}
-      onRemoveVariantSize={handleRemoveVariantSize}
-      onAddVariantMaterial={handleAddVariantMaterial}
-      onRemoveVariantMaterial={handleRemoveVariantMaterial}
-    />
   );
 
   const steps = getSteps();

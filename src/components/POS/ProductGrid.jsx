@@ -39,6 +39,7 @@ export function ProductGrid({ collapsed }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedSize, setSelectedSize] = useState(null);
+  const [showColorSizeModal, setShowColorSizeModal] = useState(false);
   const [showVariantModal, setShowVariantModal] = useState(false);
   const [showCustomProductModal, setShowCustomProductModal] = useState(false);
   const [showAddonsModal, setShowAddonsModal] = useState(false);
@@ -64,7 +65,11 @@ export function ProductGrid({ collapsed }) {
     }) : [];
 
   const handleAddToCart = (product) => {
-    if (product.hasVariants || product.hasSizes) {
+    if (product.colors && product.colors.length > 0) {
+      // Show color and size selection modal
+      setSelectedProduct(product);
+      setShowColorSizeModal(true);
+    } else if (product.hasVariants || product.hasSizes) {
       setSelectedProduct(product);
       setShowVariantModal(true);
     } else if (product.isCustom) {
@@ -73,6 +78,26 @@ export function ProductGrid({ collapsed }) {
       setSelectedProduct(product);
       setShowAddonsModal(true);
     }
+  };
+
+  const handleColorAndSizeSelected = (selectedColor, selectedSize) => {
+    // Close color/size modal
+    setShowColorSizeModal(false);
+    
+    // Create product with selected color and size
+    const productWithColorAndSize = {
+      ...selectedProduct,
+      selectedColorId: selectedColor.id,
+      selectedColor: selectedColor,
+      selectedSize: selectedSize.name,
+      selectedSizeData: selectedSize,
+      // Use the raw materials from the selected color
+      rawMaterials: selectedColor.rawMaterials || []
+    };
+    
+    // Show addons modal for the selected color/size combination
+    setSelectedProduct(productWithColorAndSize);
+    setShowAddonsModal(true);
   };
 
   const handleVariantSelected = (variant, size = null) => {
@@ -93,7 +118,13 @@ export function ProductGrid({ collapsed }) {
   };
 
   const handleAddToCartWithAddons = (productWithAddons, quantity = 1) => {
-    dispatch(addToCart({ product: productWithAddons, quantity }));
+    dispatch(addToCart({ 
+      product: productWithAddons, 
+      quantity,
+      selectedColorId: productWithAddons.selectedColorId,
+      selectedSize: productWithAddons.selectedSize,
+      addons: productWithAddons.addons
+    }));
   };
 
   const handleSizeChange = (sizeName) => {
@@ -205,13 +236,14 @@ export function ProductGrid({ collapsed }) {
                   <ProductCard
                     product={{
                       ...product,
-                      price: product.price // Price is already in LKR
+                      price: product.price, // Fixed price for all variations
+                      hasColors: product.colors && product.colors.length > 0
                     }}
                     onAddToCart={handleAddToCart}
                     hasVariants={product.hasVariants}
                     onClick={() => handleAddToCart(product)}
                     showDetails={true}
-                    showPriceRange={product.hasSizes && product.sizes?.length > 1}
+                    showPriceRange={false} // Price is now fixed
                   />
                 </Col>
               ))}
@@ -448,6 +480,14 @@ export function ProductGrid({ collapsed }) {
           </div>
         )}
       </Modal>
+
+      {/* Color and Size Selection Modal */}
+      <ColorAndSizeSelectionModal
+        open={showColorSizeModal}
+        onClose={() => setShowColorSizeModal(false)}
+        product={selectedProduct}
+        onColorAndSizeSelected={handleColorAndSizeSelected}
+      />
 
       {/* Custom Product Modal */}
       <CustomProductModal

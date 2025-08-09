@@ -24,17 +24,7 @@ export function ProductCard({
   };
 
   const renderPrice = () => {
-    if (showPriceRange && product.hasSizes && product.sizes && product.sizes.length > 1) {
-      const prices = product.sizes.map(s => s.price || 0);
-      const minPrice = Math.min(...prices);
-      const maxPrice = Math.max(...prices);
-      
-      if (minPrice === maxPrice) {
-        return `LKR ${minPrice.toFixed(2)}`;
-      }
-      return `LKR ${minPrice.toFixed(2)} - LKR ${maxPrice.toFixed(2)}`;
-    }
-    
+    // Price is now fixed for all variations
     return `LKR ${(product.price || 0).toFixed(2) || '0.00'}`;
   };
 
@@ -62,17 +52,10 @@ export function ProductCard({
               {product.category}
             </Tag>
           </div>
-          {product.hasSizes && (
+          {product.hasColors && (
             <div className="absolute bottom-2 right-2">
               <Tag color="purple" size="small">
-                {product.sizes?.length || 0} Sizes
-              </Tag>
-            </div>
-          )}
-          {product.hasVariants && (
-            <div className="absolute bottom-2 right-2">
-              <Tag color="blue" size="small">
-                Multiple Variants
+                {product.colors?.length || 0} Color{(product.colors?.length || 0) !== 1 ? 's' : ''}
               </Tag>
             </div>
           )}
@@ -111,14 +94,9 @@ export function ProductCard({
           <Text type="secondary" className="text-sm block mb-1">
             SKU: {product.barcode || 'N/A'}
           </Text>
-          {product.hasVariants && (
+          {product.hasColors && (
             <Text type="secondary" className="text-xs block mb-1">
-              Multiple variants available
-            </Text>
-          )}
-          {product.hasSizes && (
-            <Text type="secondary" className="text-xs block mb-1">
-              Multiple sizes available
+              {product.colors?.length || 0} color variations available
             </Text>
           )}
           <div className="flex items-center justify-between">
@@ -164,14 +142,10 @@ export function ProductCard({
           className="bg-[#0E72BD] hover:bg-blue-700 font-semibold"
         >
           {product.stock === 0 
-            ? 'Out of Stock' : 'Add to Cart'
-            // : product.hasVariants
-            //   ? 'Select Variant'
-            //   : product.hasSizes 
-            //     ? 'Select Size' 
-            //     : product.isCustom
-            //       ? 'Add to Cart'
-            //       : 'Add with Addons'
+            ? 'Out of Stock' 
+            : product.hasColors
+              ? 'Select Color & Size'
+              : 'Add to Cart'
           }
         </Button>
       </div>

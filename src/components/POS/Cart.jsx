@@ -140,9 +140,26 @@ export function Cart() {
 
   const handleQuantityChange = (productId, selectedSize, newQuantity) => {
     if (newQuantity <= 0) {
-      dispatch(removeFromCart({ productId, selectedSize }));
+      // Find the cart item to get the selectedColorId
+      const cartItem = cart.find(item => 
+        item.product.id === productId && item.selectedSize === selectedSize
+      );
+      dispatch(removeFromCart({ 
+        productId, 
+        selectedColorId: cartItem?.selectedColorId,
+        selectedSize 
+      }));
     } else {
-      dispatch(updateQuantity({ productId, selectedSize, quantity: newQuantity }));
+      // Find the cart item to get the selectedColorId
+      const cartItem = cart.find(item => 
+        item.product.id === productId && item.selectedSize === selectedSize
+      );
+      dispatch(updateQuantity({ 
+        productId, 
+        selectedColorId: cartItem?.selectedColorId,
+        selectedSize, 
+        quantity: newQuantity 
+      }));
     }
   };
 
@@ -296,9 +313,9 @@ export function Cart() {
                                   Size: {item.selectedSize}
                                 </Text>
                               )}
-                              {item.selectedVariant && (
+                              {item.selectedColor && (
                                 <Text type="secondary" className="text-xs block">
-                                  Variant: {item.selectedVariant}
+                                  Color: {item.selectedColor.name}
                                 </Text>
                               )}
                               {item.product.isCustom && (
@@ -308,7 +325,11 @@ export function Cart() {
                           </div>
                           <Popconfirm
                             title="Remove item?"
-                            onConfirm={() => dispatch(removeFromCart({ productId: item.product.id, selectedSize: item.selectedSize }))}
+                            onConfirm={() => dispatch(removeFromCart({ 
+                              productId: item.product.id, 
+                              selectedColorId: item.selectedColorId,
+                              selectedSize: item.selectedSize 
+                            }))}
                           >
                             <ActionButton.Text 
                               icon="close"

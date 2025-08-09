@@ -187,7 +187,12 @@ export function CheckoutModal({
         appliedTaxes: {
           itemTaxes: itemTaxes || [],
           fullBillTaxes: fullBillTaxes || []
-        }
+        },
+        // Include color selection in transaction items
+        items: cartItems.map(item => ({
+          ...item,
+          selectedColorId: item.selectedColorId
+        }))
       };
 
       // // Update product stock
@@ -321,9 +326,9 @@ export function CheckoutModal({
                           Size: {item.selectedSize}
                         </Text>
                       )}
-                      {item.selectedVariant && (
+                      {item.selectedColor && (
                         <Text type="secondary" className="text-xs block">
-                          Variant: {item.selectedVariant}
+                          Color: {item.selectedColor.name}
                         </Text>
                       )}
                       {item.product.isCustom && (

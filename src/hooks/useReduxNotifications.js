@@ -83,8 +83,17 @@ export function useReduxNotifications() {
     }
 
     cartItems.forEach(cartItem => {
-      if (cartItem?.product && Array.isArray(cartItem.product.rawMaterials)) {
-        cartItem.product.rawMaterials.forEach(requiredMaterial => {
+      // Get raw materials from the selected color if available, otherwise from product
+      let requiredMaterials = [];
+      
+      if (cartItem?.selectedColor && Array.isArray(cartItem.selectedColor.rawMaterials)) {
+        requiredMaterials = cartItem.selectedColor.rawMaterials;
+      } else if (cartItem?.product && Array.isArray(cartItem.product.rawMaterials)) {
+        requiredMaterials = cartItem.product.rawMaterials;
+      }
+      
+      if (requiredMaterials.length > 0) {
+        requiredMaterials.forEach(requiredMaterial => {
           const material = rawMaterials.find(m => m.id === requiredMaterial.rawMaterialId);
           if (material) {
             const totalRequired = requiredMaterial.quantity * cartItem.quantity;

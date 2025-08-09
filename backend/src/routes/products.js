@@ -299,11 +299,12 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
       SELECT * FROM product_sizes
     `);
     
-    // Get all product raw materials (now linked to colors)
+    // Get all product raw materials (now linked to sizes)
     const materialsResult = await client.query(`
-      SELECT prm.*, rm.name, rm.unit, rm.unit_price 
+      SELECT prm.*, rm.name, rm.unit, rm.unit_price, ps.id as size_id
       FROM product_raw_materials prm
       JOIN raw_materials rm ON prm.raw_material_id = rm.id
+      JOIN product_sizes ps ON prm.product_size_id = ps.id
     `);
     
     // Get all product addons
@@ -322,32 +323,34 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
           // Get sizes for this color
           const colorSizes = sizesResult.rows
             .filter(size => size.product_color_id === color.id)
-            .map(size => ({
-              id: size.id,
-              name: size.name,
-              stock: size.stock,
-              dimensions: size.dimensions,
-              weight: parseFloat(size.weight || 0)
-            }));
-          
-          // Get raw materials for this color
-          const colorMaterials = materialsResult.rows
-            .filter(material => material.product_color_id === color.id)
-            .map(material => ({
-              rawMaterialId: material.raw_material_id,
-              quantity: parseFloat(material.quantity),
-              name: material.name,
-              unit: material.unit,
-              unitPrice: parseFloat(material.unit_price)
-            }));
+            .map(size => {
+              // Get raw materials for this size
+              const sizeMaterials = materialsResult.rows
+                .filter(material => material.size_id === size.id)
+                .map(material => ({
+                  rawMaterialId: material.raw_material_id,
+                  quantity: parseFloat(material.quantity),
+                  name: material.name,
+                  unit: material.unit,
+                  unitPrice: parseFloat(material.unit_price)
+                }));
+              
+              return {
+                id: size.id,
+                name: size.name,
+                stock: size.stock,
+                dimensions: size.dimensions,
+                weight: parseFloat(size.weight || 0),
+                rawMaterials: sizeMaterials
+              };
+            });
           
           return {
             id: color.id,
             name: color.name,
             colorCode: color.color_code,
             image: color.image,
-            sizes: colorSizes,
-            rawMaterials: colorMaterials
+            sizes: colorSizes
           };
         });
       
@@ -374,10 +377,8 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
         stock: totalStock, // Use calculated total stock
         barcode: product.barcode,
         image: product.image,
-        weight: product.weight ? parseFloat(product.weight) : null,
         color: product.color,
         material: product.material,
-        dimensions: product.dimensions,
         hasAddons: product.has_addons,
         isCustom: product.is_custom,
         colors,
@@ -424,18 +425,19 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
     
     // Get all sizes for this product's colors
     const sizesResult = await client.query(`
-      SELECT ps.*, pc.id as color_id 
+      SELECT ps.*, pc.id as color_id, pc.product_id
       FROM product_sizes ps
       JOIN product_colors pc ON ps.product_color_id = pc.id
       WHERE pc.product_id = $1
     `, [id]);
     
-    // Get all raw materials for this product's colors
+    // Get all raw materials for this product's sizes
     const materialsResult = await client.query(`
-      SELECT prm.*, rm.name, rm.unit, rm.unit_price 
+      SELECT prm.*, rm.name, rm.unit, rm.unit_price, ps.id as size_id
       FROM product_raw_materials prm
       JOIN raw_materials rm ON prm.raw_material_id = rm.id
-      JOIN product_colors pc ON prm.product_color_id = pc.id
+      JOIN product_sizes ps ON prm.product_size_id = ps.id
+      JOIN product_colors pc ON ps.product_color_id = pc.id
       WHERE pc.product_id = $1
     `, [id]);
     
@@ -450,31 +452,34 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
     const colors = colorsResult.rows.map(color => {
       const colorSizes = sizesResult.rows
         .filter(size => size.color_id === color.id)
-        .map(size => ({
-          id: size.id,
-          name: size.name,
-          stock: size.stock,
-          dimensions: size.dimensions,
-          weight: parseFloat(size.weight || 0)
-        }));
-      
-      const colorMaterials = materialsResult.rows
-        .filter(material => material.product_color_id === color.id)
-        .map(material => ({
-          rawMaterialId: material.raw_material_id,
-          quantity: parseFloat(material.quantity),
-          name: material.name,
-          unit: material.unit,
-          unitPrice: parseFloat(material.unit_price)
-        }));
+        .map(size => {
+          // Get raw materials for this size
+          const sizeMaterials = materialsResult.rows
+            .filter(material => material.size_id === size.id)
+            .map(material => ({
+              rawMaterialId: material.raw_material_id,
+              quantity: parseFloat(material.quantity),
+              name: material.name,
+              unit: material.unit,
+              unitPrice: parseFloat(material.unit_price)
+            }));
+          
+          return {
+            id: size.id,
+            name: size.name,
+            stock: size.stock,
+            dimensions: size.dimensions,
+            weight: parseFloat(size.weight || 0),
+            rawMaterials: sizeMaterials
+          };
+        });
       
       return {
         id: color.id,
         name: color.name,
         colorCode: color.color_code,
         image: color.image,
-        sizes: colorSizes,
-        rawMaterials: colorMaterials
+        sizes: colorSizes
       };
     });
     
@@ -493,10 +498,8 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
       stock: totalStock,
       barcode: product.barcode,
       image: product.image,
-      weight: product.weight ? parseFloat(product.weight) : null,
       color: product.color,
       material: product.material,
-      dimensions: product.dimensions,
       hasAddons: product.has_addons,
       isCustom: product.is_custom,
       colors,
@@ -550,10 +553,8 @@ router.post(
         price,
         barcode,
         image,
-        weight,
         color,
         material,
-        dimensions,
         hasAddons,
         isCustom,
         colors,
@@ -567,12 +568,12 @@ router.post(
       const productResult = await client.query(`
         INSERT INTO products (
           id, name, description, category, price, stock, barcode, image, 
-          weight, color, material, dimensions, has_addons, is_custom
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          color, material, has_addons, is_custom
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `, [
         productId, name, description, category, price, 0, barcode, image,
-        weight, color, material, JSON.stringify(dimensions), hasAddons, isCustom
+        color, material, hasAddons, isCustom
       ]);
       
       const product = productResult.rows[0];
@@ -600,10 +601,11 @@ router.post(
           // Insert sizes for this color
           if (color.sizes && color.sizes.length > 0) {
             for (const size of color.sizes) {
-              await client.query(`
+              const sizeResult = await client.query(`
                 INSERT INTO product_sizes (
                   id, product_color_id, name, stock, weight, dimensions
                 ) VALUES ($1, $2, $3, $4, $5, $6)
+                RETURNING *
               `, [
                 size.id || `SIZE-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
                 insertedColor.id,
@@ -613,22 +615,23 @@ router.post(
                 JSON.stringify(size.dimensions)
               ]);
               
+              const insertedSize = sizeResult.rows[0];
               totalStock += size.stock || 0;
-            }
-          }
-          
-          // Insert raw materials for this color
-          if (color.rawMaterials && color.rawMaterials.length > 0) {
-            for (const material of color.rawMaterials) {
-              await client.query(`
-                INSERT INTO product_raw_materials (
-                  product_color_id, raw_material_id, quantity
-                ) VALUES ($1, $2, $3)
-              `, [
-                insertedColor.id,
-                material.rawMaterialId,
-                material.quantity
-              ]);
+              
+              // Insert raw materials for this size
+              if (size.rawMaterials && size.rawMaterials.length > 0) {
+                for (const material of size.rawMaterials) {
+                  await client.query(`
+                    INSERT INTO product_raw_materials (
+                      product_size_id, raw_material_id, quantity
+                    ) VALUES ($1, $2, $3)
+                  `, [
+                    insertedSize.id,
+                    material.rawMaterialId,
+                    material.quantity
+                  ]);
+                }
+              }
             }
           }
         }
@@ -668,10 +671,8 @@ router.post(
         stock: totalStock,
         barcode: product.barcode,
         image: product.image,
-        weight: product.weight ? parseFloat(product.weight) : null,
         color: product.color,
         material: product.material,
-        dimensions: product.dimensions,
         hasAddons: product.has_addons,
         isCustom: product.is_custom,
         colors,
@@ -736,10 +737,8 @@ router.put(
         price,
         barcode,
         image,
-        weight,
         color,
         material,
-        dimensions,
         hasAddons,
         isCustom,
         colors,
@@ -755,18 +754,16 @@ router.put(
           price = $4,
           barcode = $5,
           image = $6,
-          weight = $7,
-          color = $8,
-          material = $9,
-          dimensions = $10,
-          has_addons = $11,
-          is_custom = $12,
+          color = $7,
+          material = $8,
+          has_addons = $9,
+          is_custom = $10,
           updated_at = CURRENT_TIMESTAMP
-        WHERE id = $13
+        WHERE id = $11
         RETURNING *
       `, [
         name, description, category, price, barcode, image,
-        weight, color, material, JSON.stringify(dimensions), hasAddons, isCustom,
+        color, material, hasAddons, isCustom,
         id
       ]);
       
@@ -799,10 +796,11 @@ router.put(
           // Insert sizes for this color
           if (color.sizes && color.sizes.length > 0) {
             for (const size of color.sizes) {
-              await client.query(`
+              const sizeResult = await client.query(`
                 INSERT INTO product_sizes (
                   id, product_color_id, name, stock, weight, dimensions
                 ) VALUES ($1, $2, $3, $4, $5, $6)
+                RETURNING *
               `, [
                 size.id || `SIZE-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
                 insertedColor.id,
@@ -812,22 +810,23 @@ router.put(
                 JSON.stringify(size.dimensions)
               ]);
               
+              const insertedSize = sizeResult.rows[0];
               totalStock += size.stock || 0;
-            }
-          }
-          
-          // Insert raw materials for this color
-          if (color.rawMaterials && color.rawMaterials.length > 0) {
-            for (const material of color.rawMaterials) {
-              await client.query(`
-                INSERT INTO product_raw_materials (
-                  product_color_id, raw_material_id, quantity
-                ) VALUES ($1, $2, $3)
-              `, [
-                insertedColor.id,
-                material.rawMaterialId,
-                material.quantity
-              ]);
+              
+              // Insert raw materials for this size
+              if (size.rawMaterials && size.rawMaterials.length > 0) {
+                for (const material of size.rawMaterials) {
+                  await client.query(`
+                    INSERT INTO product_raw_materials (
+                      product_size_id, raw_material_id, quantity
+                    ) VALUES ($1, $2, $3)
+                  `, [
+                    insertedSize.id,
+                    material.rawMaterialId,
+                    material.quantity
+                  ]);
+                }
+              }
             }
           }
         }
@@ -874,10 +873,8 @@ router.put(
         stock: totalStock,
         barcode: product.barcode,
         image: product.image,
-        weight: product.weight ? parseFloat(product.weight) : null,
         color: product.color,
         material: product.material,
-        dimensions: product.dimensions,
         hasAddons: product.has_addons,
         isCustom: product.is_custom,
         colors,
@@ -981,7 +978,7 @@ router.put(
       
       // Update specific color/size stock
       const sizeResult = await client.query(`
-        SELECT ps.* FROM product_sizes ps
+        SELECT ps.*, pc.product_id FROM product_sizes ps
         JOIN product_colors pc ON ps.product_color_id = pc.id
         WHERE pc.id = $1 AND ps.name = $2
       `, [selectedColorId, selectedSize]);

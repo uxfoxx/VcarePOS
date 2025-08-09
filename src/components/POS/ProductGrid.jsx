@@ -74,7 +74,7 @@ export function ProductGrid({ collapsed }) {
     }
   };
 
-  const handleColorAndSizeSelected = (selectedColor, selectedSize) => {
+  const handleColorAndSizeSelected = (selectedColor, selectedSize, selectedSizeData) => {
     // Close color/size modal
     setShowColorSizeModal(false);
     
@@ -85,8 +85,9 @@ export function ProductGrid({ collapsed }) {
       selectedColor: selectedColor,
       selectedSize: selectedSize.name,
       selectedSizeData: selectedSize,
+      selectedSizeData: selectedSizeData,
       // Use the raw materials from the selected color
-      rawMaterials: selectedColor.rawMaterials || []
+      rawMaterials: selectedSizeData?.rawMaterials || []
     };
     
     // Show addons modal for the selected color/size combination

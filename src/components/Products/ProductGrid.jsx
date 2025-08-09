@@ -395,24 +395,6 @@ export function ProductGrid({ collapsed }) {
                           <Text strong>{selectedProduct.category}</Text>
                         </div>
                       </Col>
-                      {selectedProduct.dimensions && (
-                        <Col span={12}>
-                          <div className="mb-2">
-                            <Text type="secondary">Dimensions:</Text>
-                            <br />
-                            <Text strong>
-                              {selectedProduct.dimensions.length}×{selectedProduct.dimensions.width}×{selectedProduct.dimensions.height} {selectedProduct.dimensions.unit}
-                            </Text>
-                          </div>
-                        </Col>
-                      )}
-                      <Col span={12}>
-                        <div className="mb-2">
-                          <Text type="secondary">Weight:</Text>
-                          <br />
-                          <Text strong>{selectedProduct.weight} kg</Text>
-                        </div>
-                      </Col>
                     </Row>
                   </div>
                 )}

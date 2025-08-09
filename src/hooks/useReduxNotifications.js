@@ -83,12 +83,20 @@ export function useReduxNotifications() {
     }
 
     cartItems.forEach(cartItem => {
-      // Get raw materials from the selected color if available, otherwise from product
+      // Get raw materials from the selected size
       let requiredMaterials = [];
       
-      if (cartItem?.selectedColor && Array.isArray(cartItem.selectedColor.rawMaterials)) {
-        requiredMaterials = cartItem.selectedColor.rawMaterials;
+      // Find the selected size data which contains raw materials
+      if (cartItem?.selectedColorId && cartItem?.selectedSize && cartItem?.product?.colors) {
+        const selectedColor = cartItem.product.colors.find(color => color.id === cartItem.selectedColorId);
+        if (selectedColor && selectedColor.sizes) {
+          const selectedSizeData = selectedColor.sizes.find(size => size.name === cartItem.selectedSize);
+          if (selectedSizeData && Array.isArray(selectedSizeData.rawMaterials)) {
+            requiredMaterials = selectedSizeData.rawMaterials;
+          }
+        }
       } else if (cartItem?.product && Array.isArray(cartItem.product.rawMaterials)) {
+        // Fallback for products without color/size structure
         requiredMaterials = cartItem.product.rawMaterials;
       }
       

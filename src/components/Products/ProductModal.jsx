@@ -3,7 +3,7 @@ import { Modal, Form, Input, Select, Button, Steps, Row, Col, InputNumber, Uploa
 import { PlusOutlined, DeleteOutlined, UploadOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { addProduct, updateProduct } from '../../features/products/productsSlice';
-import ColorEditor from './ColorEditor';
+import { ColorEditor } from './ColorEditor';
 
 const { Step } = Steps;
 const { Option } = Select;

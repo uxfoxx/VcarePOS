@@ -53,8 +53,8 @@ export function ProductModal({
   const [hasAddons, setHasAddons] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [colors, setColors] = useState([]);
   const [productData, setProductData] = useState({});
+  const [colors, setColors] = useState([]);
   const [materialSearchTerm, setMaterialSearchTerm] = useState('');
   const {rawMaterialsList, error} = useSelector(state => state.rawMaterials);
   const {categoriesList } = useSelector(state => state.categories);

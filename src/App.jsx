@@ -13,6 +13,27 @@ import { getCurrentUser } from './features/auth/authSlice';
 import { checkStockLevels } from './features/notifications/notificationsSlice';
 import { useReduxNotifications } from './hooks/useReduxNotifications';
 
+// Helper function to safely get branding values from localStorage
+const getBrandingValue = (key, defaultValue = null) => {
+  try {
+    const branding = localStorage.getItem('vcare_branding');
+    if (!branding) return defaultValue;
+    
+    const brandingData = JSON.parse(branding);
+    const value = brandingData[key];
+    
+    // If the value is an object (like Ant Design Color object), extract the hex string
+    if (value && typeof value === 'object' && value.metaColor) {
+      return value.metaColor.originalInput || defaultValue;
+    }
+    
+    return value || defaultValue;
+  } catch (error) {
+    console.warn('Error parsing branding data:', error);
+    return defaultValue;
+  }
+};
+
 // Lazy load heavy components
 const ProductGrid = lazy(() => import('./components/POS/ProductGrid').then(module => ({ default: module.ProductGrid })));
 const Cart = lazy(() => import('./components/POS/Cart').then(module => ({ default: module.Cart })));
@@ -323,128 +344,94 @@ function App() {
     <ConfigProvider
       theme={{
         algorithm: localStorage.getItem('vcare_branding') && 
-          JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+          getBrandingValue('darkModeSupport') ? 
           theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
-          colorPrimary: localStorage.getItem('vcare_branding') ? 
-            JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-            '#0E72BD',
-          colorPrimaryText: localStorage.getItem('vcare_branding') ? 
-            JSON.parse(localStorage.getItem('vcare_branding')).primaryTextColor || '#ffffff' : 
-            '#ffffff',
+          colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+          colorPrimaryText: getBrandingValue('primaryTextColor', '#ffffff'),
           borderRadius: 8,
           colorBgContainer: localStorage.getItem('vcare_branding') && 
-            JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+            getBrandingValue('darkModeSupport') ? 
             '#141414' : '#ffffff',
           colorBgLayout: localStorage.getItem('vcare_branding') && 
-            JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+            getBrandingValue('darkModeSupport') ? 
             '#000000' : '#f8fafc',
-          fontFamily: localStorage.getItem('vcare_branding') ? 
-            `"${JSON.parse(localStorage.getItem('vcare_branding')).fontFamily || 'Inter'}", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif` : 
-            '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: `"${getBrandingValue('fontFamily', 'Inter')}", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
           fontSize: 14,
           lineHeight: 1.5,
           colorText: localStorage.getItem('vcare_branding') && 
-            JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+            getBrandingValue('darkModeSupport') ? 
             '#ffffff' : '#1f2937',
           colorTextSecondary: localStorage.getItem('vcare_branding') && 
-            JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+            getBrandingValue('darkModeSupport') ? 
             '#a3a3a3' : '#6b7280',
           boxShadow: localStorage.getItem('vcare_branding') && 
-            JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+            getBrandingValue('darkModeSupport') ? 
             '0 1px 3px rgba(0, 0, 0, 0.3)' : '0 1px 3px rgba(0, 0, 0, 0.1)',
           boxShadowSecondary: localStorage.getItem('vcare_branding') && 
-            JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+            getBrandingValue('darkModeSupport') ? 
             '0 4px 6px rgba(0, 0, 0, 0.3)' : '0 4px 6px rgba(0, 0, 0, 0.1)',
-          colorSuccess: localStorage.getItem('vcare_branding') ? 
-            JSON.parse(localStorage.getItem('vcare_branding')).secondaryColor || '#52c41a' : 
-            '#52c41a',
-          colorSuccessText: localStorage.getItem('vcare_branding') ? 
-            JSON.parse(localStorage.getItem('vcare_branding')).secondaryTextColor || '#ffffff' : 
-            '#ffffff',
-          colorWarning: localStorage.getItem('vcare_branding') ? 
-            JSON.parse(localStorage.getItem('vcare_branding')).accentColor || '#fa8c16' : 
-            '#fa8c16',
-          colorWarningText: localStorage.getItem('vcare_branding') ? 
-            JSON.parse(localStorage.getItem('vcare_branding')).accentTextColor || '#ffffff' : 
-            '#ffffff',
+          colorSuccess: getBrandingValue('secondaryColor', '#52c41a'),
+          colorSuccessText: getBrandingValue('secondaryTextColor', '#ffffff'),
+          colorWarning: getBrandingValue('accentColor', '#fa8c16'),
+          colorWarningText: getBrandingValue('accentTextColor', '#ffffff'),
         },
         components: {
           Layout: {
             headerBg: localStorage.getItem('vcare_branding') && 
-              JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+              getBrandingValue('darkModeSupport') ? 
               '#141414' : '#ffffff',
             siderBg: localStorage.getItem('vcare_branding') && 
-              JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+              getBrandingValue('darkModeSupport') ? 
               '#141414' : '#ffffff',
             bodyBg: localStorage.getItem('vcare_branding') && 
-              JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+              getBrandingValue('darkModeSupport') ? 
               '#000000' : '#f8fafc',
             headerHeight: 64,
             footerBg: localStorage.getItem('vcare_branding') && 
-              JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+              getBrandingValue('darkModeSupport') ? 
               '#141414' : '#ffffff',
           },
           Card: {
             borderRadiusLG: 12,
             boxShadowTertiary: localStorage.getItem('vcare_branding') && 
-              JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+              getBrandingValue('darkModeSupport') ? 
               '0 1px 3px rgba(0, 0, 0, 0.3)' : '0 1px 3px rgba(0, 0, 0, 0.1)',
             colorBgContainer: localStorage.getItem('vcare_branding') && 
-              JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+              getBrandingValue('darkModeSupport') ? 
               '#141414' : '#ffffff',
           },
           Button: {
             borderRadius: 8,
             controlHeight: 40,
             fontWeight: 500,
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
-             colorPrimaryActive: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}CC` : 
-               '#0E72BDCC',
-             colorPrimaryTextHover: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryTextColor || '#ffffff' : 
-               '#ffffff',
-             colorPrimaryTextActive: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryTextColor || '#ffffff' : 
-               '#ffffff',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+             colorPrimaryActive: `${getBrandingValue('primaryColor', '#0E72BD')}CC`,
+             colorPrimaryTextHover: getBrandingValue('primaryTextColor', '#ffffff'),
+             colorPrimaryTextActive: getBrandingValue('primaryTextColor', '#ffffff'),
           },
           Input: {
             borderRadius: 8,
             controlHeight: 40,
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
           },
           Select: {
             borderRadius: 8,
             controlHeight: 40,
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
           },
           Table: {
             borderRadiusLG: 12,
-            headerBg: localStorage.getItem('vcare_branding') ? 
-              `rgba(${parseInt(JSON.parse(localStorage.getItem('vcare_branding')).primaryColor?.slice(1, 3) || '0E', 16)}, 
-              ${parseInt(JSON.parse(localStorage.getItem('vcare_branding')).primaryColor?.slice(3, 5) || '72', 16)}, 
-              ${parseInt(JSON.parse(localStorage.getItem('vcare_branding')).primaryColor?.slice(5, 7) || 'BD', 16)}, 0.04)` : 
-              'rgba(14, 114, 189, 0.04)',
+            headerBg: (() => {
+              const primaryColor = getBrandingValue('primaryColor', '#0E72BD');
+              const r = parseInt(primaryColor.slice(1, 3), 16);
+              const g = parseInt(primaryColor.slice(3, 5), 16);
+              const b = parseInt(primaryColor.slice(5, 7), 16);
+              return `rgba(${r}, ${g}, ${b}, 0.04)`;
+            })(),
           },
           Modal: {
             borderRadiusLG: 16,
@@ -453,146 +440,73 @@ function App() {
             itemBorderRadius: 8,
             itemMarginInline: 4,
             itemMarginBlock: 2,
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
-             colorItemBgSelected: localStorage.getItem('vcare_branding') ? 
-               `rgba(${parseInt(JSON.parse(localStorage.getItem('vcare_branding')).primaryColor?.slice(1, 3) || '0E', 16)}, 
-               ${parseInt(JSON.parse(localStorage.getItem('vcare_branding')).primaryColor?.slice(3, 5) || '72', 16)}, 
-               ${parseInt(JSON.parse(localStorage.getItem('vcare_branding')).primaryColor?.slice(5, 7) || 'BD', 16)}, 0.1)` : 
-               'rgba(14, 114, 189, 0.1)',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+             colorItemBgSelected: (() => {
+               const primaryColor = getBrandingValue('primaryColor', '#0E72BD');
+               const r = parseInt(primaryColor.slice(1, 3), 16);
+               const g = parseInt(primaryColor.slice(3, 5), 16);
+               const b = parseInt(primaryColor.slice(5, 7), 16);
+               return `rgba(${r}, ${g}, ${b}, 0.1)`;
+             })(),
           },
            Checkbox: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryBorder: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
            },
            Radio: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
            },
            Switch: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
            },
            Slider: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryBorder: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
            },
            Tabs: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryActive: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}CC` : 
-               '#0E72BDCC',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryActive: `${getBrandingValue('primaryColor', '#0E72BD')}CC`,
            },
            Tag: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryBg: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}19` : 
-               '#0E72BD19',
-             colorPrimaryBorderHover: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryBg: `${getBrandingValue('primaryColor', '#0E72BD')}19`,
+             colorPrimaryBorderHover: getBrandingValue('primaryColor', '#0E72BD'),
            },
            Progress: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryBg: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}19` : 
-               '#0E72BD19',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryBg: `${getBrandingValue('primaryColor', '#0E72BD')}19`,
            },
            Pagination: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
-             colorPrimaryBorder: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
            },
            DatePicker: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
-             colorPrimaryBorder: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
            },
            TimePicker: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
-             colorPrimaryBorder: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
            },
           Tooltip: {
-            colorBgDefault: localStorage.getItem('vcare_branding') ? 
-              JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-              '#0E72BD',
+            colorBgDefault: getBrandingValue('primaryColor', '#0E72BD'),
             colorTextLightSolid: '#ffffff',
           },
           Notification: {
-            colorBgSuccess: localStorage.getItem('vcare_branding') ? 
-              JSON.parse(localStorage.getItem('vcare_branding')).secondaryColor || '#52c41a' : 
-              '#52c41a',
-            colorBgInfo: localStorage.getItem('vcare_branding') ? 
-              JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-              '#0E72BD',
-            colorBgWarning: localStorage.getItem('vcare_branding') ? 
-              JSON.parse(localStorage.getItem('vcare_branding')).accentColor || '#fa8c16' : 
-              '#fa8c16',
+            colorBgSuccess: getBrandingValue('secondaryColor', '#52c41a'),
+            colorBgInfo: getBrandingValue('primaryColor', '#0E72BD'),
+            colorBgWarning: getBrandingValue('accentColor', '#fa8c16'),
           },
           Message: {
-            colorBgSuccess: localStorage.getItem('vcare_branding') ? 
-              JSON.parse(localStorage.getItem('vcare_branding')).secondaryColor || '#52c41a' : 
-              '#52c41a',
-            colorBgInfo: localStorage.getItem('vcare_branding') ? 
-              JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-              '#0E72BD',
-            colorBgWarning: localStorage.getItem('vcare_branding') ? 
-              JSON.parse(localStorage.getItem('vcare_branding')).accentColor || '#fa8c16' : 
-              '#fa8c16',
+            colorBgSuccess: getBrandingValue('secondaryColor', '#52c41a'),
+            colorBgInfo: getBrandingValue('primaryColor', '#0E72BD'),
+            colorBgWarning: getBrandingValue('accentColor', '#fa8c16'),
           },
         },
       }}

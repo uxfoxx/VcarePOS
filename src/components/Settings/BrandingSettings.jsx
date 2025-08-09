@@ -429,31 +429,44 @@ export function BrandingSettings() {
         setLogoPreview(parsedBranding.logoPreview);
       }
       
+      // Helper function to extract hex color from object or string
+      const extractHexColor = (colorValue, fallback) => {
+        if (!colorValue) return fallback;
+        if (typeof colorValue === 'string') return colorValue;
+        if (typeof colorValue === 'object') {
+          if (colorValue.metaColor && colorValue.metaColor.originalInput) {
+            return colorValue.metaColor.originalInput;
+          }
+          if (colorValue.hex) return colorValue.hex;
+        }
+        return fallback;
+      };
+      
       if (parsedBranding.primaryColor) {
-        setPrimaryColor(parsedBranding.primaryColor);
+        const primaryColorHex = extractHexColor(parsedBranding.primaryColor, '#0E72BD');
+        setPrimaryColor(primaryColorHex);
+        // Set RGB values for the primary color
+        document.documentElement.style.setProperty('--primary-color-rgb', `${parseInt(primaryColorHex.slice(1, 3), 16)}, ${parseInt(primaryColorHex.slice(3, 5), 16)}, ${parseInt(primaryColorHex.slice(5, 7), 16)}`);
       }
       
       if (parsedBranding.primaryTextColor) {
-        setPrimaryTextColor(parsedBranding.primaryTextColor);
+        setPrimaryTextColor(extractHexColor(parsedBranding.primaryTextColor, '#ffffff'));
       }
 
-      // Set RGB values for the primary color
-      document.documentElement.style.setProperty('--primary-color-rgb', `${parseInt(parsedBranding.primaryColor?.slice(1, 3) || '0E', 16)}, ${parseInt(parsedBranding.primaryColor?.slice(3, 5) || '72', 16)}, ${parseInt(parsedBranding.primaryColor?.slice(5, 7) || 'BD', 16)}`);
-      
       if (parsedBranding.secondaryColor) {
-        setSecondaryColor(parsedBranding.secondaryColor);
+        setSecondaryColor(extractHexColor(parsedBranding.secondaryColor, '#52c41a'));
       }
 
       if (parsedBranding.secondaryTextColor) {
-        setSecondaryTextColor(parsedBranding.secondaryTextColor);
+        setSecondaryTextColor(extractHexColor(parsedBranding.secondaryTextColor, '#ffffff'));
       }
       
       if (parsedBranding.accentColor) {
-        setAccentColor(parsedBranding.accentColor);
+        setAccentColor(extractHexColor(parsedBranding.accentColor, '#fa8c16'));
       }
 
       if (parsedBranding.accentTextColor) {
-        setAccentTextColor(parsedBranding.accentTextColor);
+        setAccentTextColor(extractHexColor(parsedBranding.accentTextColor, '#ffffff'));
       }
       
       if (parsedBranding.fontFamily) {
@@ -464,8 +477,10 @@ export function BrandingSettings() {
         setDarkModeSupport(parsedBranding.darkModeSupport);
       }
     }
-    // Set default RGB values if no saved branding
-    else document.documentElement.style.setProperty('--primary-color-rgb', '14, 114, 189');
+    else {
+      // Set default RGB values if no saved branding
+      document.documentElement.style.setProperty('--primary-color-rgb', '14, 114, 189');
+    }
   }, [form]);
   
   const tabItems = [

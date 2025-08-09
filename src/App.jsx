@@ -23,10 +23,20 @@ const getBrandingValue = (key, defaultValue = null) => {
     const value = brandingData[key];
     
     // If the value is an object (like Ant Design Color object), extract the hex string
-    if (value && typeof value === 'object' && value.metaColor) {
-      return value.metaColor.originalInput || defaultValue;
+    if (value && typeof value === 'object') {
+      // Handle Ant Design ColorPicker objects
+      if (value.metaColor && value.metaColor.originalInput) {
+        return value.metaColor.originalInput;
+      }
+      // Handle other color objects that might have a hex property
+      if (value.hex) {
+        return value.hex;
+      }
+      // If it's an object but we can't extract a color, return default
+      return defaultValue;
     }
     
+    // If it's already a string, return it
     return value || defaultValue;
   } catch (error) {
     console.warn('Error parsing branding data:', error);

@@ -370,7 +370,7 @@ const ProductModal = ({ visible, onCancel, product = null, categories = [], rawM
                 {activeColorId && (
                   <ColorEditor
                     color={colors.find(c => c.id === activeColorId)}
-                    onUpdateColor={(updatedColor) => handleUpdateColor(activeColorId, updatedColor)}
+                    onUpdate={(updatedColor) => handleUpdateColor(activeColorId, updatedColor)}
                     onAddSize={() => handleAddSizeToColor(activeColorId)}
                     onRemoveSize={(sizeId) => handleRemoveSizeFromColor(activeColorId, sizeId)}
                     onAddMaterial={() => handleAddMaterialToColor(activeColorId)}

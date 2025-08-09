@@ -158,18 +158,6 @@ export function ProductManagement() {
       width: 120,
       sorter: (a, b) => (a.price || 0) - (b.price || 0),
       render: (price, record) => {
-        if (record.hasSizes && record.sizes?.length > 0) {
-          const minPrice = Math.min(...record.sizes.map(s => s.price));
-          const maxPrice = Math.max(...record.sizes.map(s => s.price));
-          return (
-            <Text strong>
-              {minPrice === maxPrice 
-                ? `LKR ${minPrice.toFixed(2)}`
-                : `LKR ${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}`
-              }
-            </Text>
-          );
-        }
         return <Text strong>LKR {(price || 0).toFixed(2)}</Text>;
       },
     },
@@ -180,14 +168,6 @@ export function ProductManagement() {
       width: 120,
       sorter: (a, b) => (a.stock || 0) - (b.stock || 0),
       render: (stock, record) => {
-        if (record.hasSizes && record.sizes?.length > 0) {
-          const totalStock = record.sizes.reduce((sum, size) => sum + size.stock, 0);
-          return (
-            <Tag color={totalStock > 10 ? 'green' : totalStock > 0 ? 'orange' : 'red'}>
-              {totalStock} units
-            </Tag>
-          );
-        }
         return (
           <Tag color={stock > 10 ? 'green' : stock > 0 ? 'orange' : 'red'}>
             {stock} units
@@ -200,9 +180,7 @@ export function ProductManagement() {
         { text: 'Out of Stock', value: 'out-of-stock' },
       ],
       onFilter: (value, record) => {
-        const stock = record.hasSizes 
-          ? record.sizes.reduce((sum, size) => sum + size.stock, 0)
-          : record.stock;
+        const stock = record.stock;
           
         if (value === 'in-stock') return stock > 10;
         if (value === 'low-stock') return stock > 0 && stock <= 10;
@@ -218,20 +196,20 @@ export function ProductManagement() {
         if (record.isCustom) {
           return <Tag color="gold">Custom</Tag>;
         }
-        return record.hasSizes ? (
-          <Tag color="purple">Has Sizes</Tag>
+        return record.colors && record.colors.length > 0 ? (
+          <Tag color="purple">Has Colors</Tag>
         ) : (
           <Tag color="default">Single</Tag>
         );
       },
       filters: [
-        { text: 'Has Sizes', value: 'sizes' },
+        { text: 'Has Colors', value: 'colors' },
         { text: 'Single Product', value: 'single' },
         { text: 'Custom Product', value: 'custom' },
       ],
       onFilter: (value, record) => {
-        if (value === 'sizes') return record.hasSizes;
-        if (value === 'single') return !record.hasSizes && !record.isCustom;
+        if (value === 'colors') return record.colors && record.colors.length > 0;
+        if (value === 'single') return (!record.colors || record.colors.length === 0) && !record.isCustom;
         if (value === 'custom') return record.isCustom;
         return true;
       },

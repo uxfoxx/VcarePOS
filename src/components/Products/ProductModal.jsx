@@ -411,17 +411,14 @@ export function ProductModal({
       const currentFormValues = productForm.getFieldsValue();
       const finalProductData = { ...productData, ...currentFormValues };
       
-      const requiredFields = ['name', 'category'];
-      if (!hasSizes) {
-        requiredFields.push('price', 'stock');
-      }
+      const requiredFields = ['name', 'category', 'price'];
       
       const missingFields = [];
       requiredFields.forEach(field => {
         const value = finalProductData[field];
         if (value === undefined || value === null || value === '') {
           missingFields.push(field);
-        } else if ((field === 'price' || field === 'stock') && Number(value) < 0) {
+        } else if (field === 'price' && Number(value) < 0) {
           missingFields.push(field);
         }
       });
@@ -429,9 +426,8 @@ export function ProductModal({
       if (missingFields.length > 0) {
         const fieldLabels = {
           'name': 'Product Name',
-          'category': 'Category', 
+          'category': 'Category',
           'price': 'Price',
-          'stock': 'Stock'
         };
         const missingLabels = missingFields.map(field => fieldLabels[field] || field);
         setStepError(`Please fill in required fields: ${missingLabels.join(', ')}`);

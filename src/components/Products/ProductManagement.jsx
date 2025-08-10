@@ -60,6 +60,11 @@ export function ProductManagement() {
     (product.barcode || '').includes(searchTerm)
   );
 
+  // Calculate stock alerts
+  const outOfStockProducts = productsList.filter(p => p.stock === 0);
+  const lowStockProducts = productsList.filter(p => p.stock > 0 && p.stock <= 10);
+  const almostOutOfStockProducts = productsList.filter(p => p.stock > 10 && p.stock <= 20);
+
   const handleSubmit = async (productData) => {
     try {
       setLoading(true);
@@ -315,6 +320,204 @@ export function ProductManagement() {
     </div>
   );
 
+  const renderStockAlertsTab = () => {
+    const stockAlertColumns = [
+      {
+        title: 'Product',
+        dataIndex: 'name',
+        key: 'name',
+        fixed: 'left',
+        width: 300,
+        render: (text, record) => (
+          <div className="flex items-center space-x-3">
+            <Image
+              src={record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=100'}
+              alt={record.name}
+              width={50}
+              height={50}
+              className="object-cover rounded"
+              preview={false}
+              style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+            />
+            <div>
+              <Text strong>{record.name}</Text>
+              <br />
+              <Text type="secondary" className="text-xs">SKU: {record.barcode}</Text>
+            </div>
+          </div>
+        ),
+      },
+      {
+        title: 'Category',
+        dataIndex: 'category',
+        key: 'category',
+        width: 120,
+        render: (category) => (
+          <Tag color="blue">
+            {category}
+          </Tag>
+        ),
+      },
+      {
+        title: 'Current Stock',
+        dataIndex: 'stock',
+        key: 'stock',
+        width: 120,
+        sorter: (a, b) => (a.stock || 0) - (b.stock || 0),
+        render: (stock, record) => {
+          let color = 'green';
+          let status = 'In Stock';
+          
+          if (stock === 0) {
+            color = 'red';
+            status = 'Out of Stock';
+          } else if (stock <= 10) {
+            color = 'orange';
+            status = 'Low Stock';
+          } else if (stock <= 20) {
+            color = 'yellow';
+            status = 'Almost Low';
+          }
+          
+          return (
+            <div>
+              <Text strong className={`text-${color === 'red' ? 'red' : color === 'orange' ? 'orange' : color === 'yellow' ? 'yellow' : 'green'}-600`}>
+                {stock} units
+              </Text>
+              <br />
+              <Tag color={color} size="small">
+                {status}
+              </Tag>
+            </div>
+          );
+        },
+      },
+      {
+        title: 'Price',
+        dataIndex: 'price',
+        key: 'price',
+        width: 120,
+        sorter: (a, b) => (a.price || 0) - (b.price || 0),
+        render: (price, record) => {
+          return <Text strong>LKR {(price || 0).toFixed(2)}</Text>;
+        },
+      },
+      {
+        title: 'Total Value',
+        key: 'totalValue',
+        width: 120,
+        render: (record) => (
+          <Text strong className="text-blue-600">
+            LKR {((record.price || 0) * (record.stock || 0)).toFixed(2)}
+          </Text>
+        ),
+        sorter: (a, b) => ((a.price || 0) * (a.stock || 0)) - ((b.price || 0) * (b.stock || 0)),
+      },
+      {
+        title: 'Actions',
+        key: 'actions',
+        fixed: 'right',
+        width: 100,
+        render: (record) => (
+          <Space>
+            <Tooltip title="Edit">
+              <ActionButton.Text
+                icon="edit"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEdit(record);
+                }}
+                className="text-blue-600"
+              />
+            </Tooltip>
+            <Tooltip title="Print Details">
+              <ActionButton.Text
+                icon="print"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePrintProductDetails(record);
+                }}
+                className="text-gray-600"
+              />
+            </Tooltip>
+          </Space>
+        ),
+      },
+    ];
+
+    const stockAlertData = [
+      ...outOfStockProducts.map(p => ({ ...p, alertType: 'out-of-stock' })),
+      ...lowStockProducts.map(p => ({ ...p, alertType: 'low-stock' })),
+      ...almostOutOfStockProducts.map(p => ({ ...p, alertType: 'almost-low' }))
+    ];
+
+    return (
+      <div className="space-y-4">
+        {/* Stock Alert Statistics */}
+        <Row gutter={16} className="mb-6">
+          <Col span={8}>
+            <Card size="small" className="text-center border-red-200 bg-red-50">
+              <div className="text-2xl font-bold text-red-600">{outOfStockProducts.length}</div>
+              <div className="text-sm text-red-500">Out of Stock</div>
+            </Card>
+          </Col>
+          <Col span={8}>
+            <Card size="small" className="text-center border-orange-200 bg-orange-50">
+              <div className="text-2xl font-bold text-orange-600">{lowStockProducts.length}</div>
+              <div className="text-sm text-orange-500">Low Stock (≤10)</div>
+            </Card>
+          </Col>
+          <Col span={8}>
+            <Card size="small" className="text-center border-yellow-200 bg-yellow-50">
+              <div className="text-2xl font-bold text-yellow-600">{almostOutOfStockProducts.length}</div>
+              <div className="text-sm text-yellow-500">Almost Low (≤20)</div>
+            </Card>
+          </Col>
+        </Row>
+
+        {stockAlertData.length === 0 ? (
+          <Card>
+            <EmptyState
+              icon="check_circle"
+              title="All Products Well Stocked"
+              description="No stock alerts at this time. All products have adequate inventory levels."
+            />
+          </Card>
+        ) : (
+          <EnhancedTable
+            title="Product Stock Alerts"
+            icon="warning"
+            subtitle={`${stockAlertData.length} products need attention`}
+            columns={stockAlertColumns}
+            dataSource={stockAlertData}
+            rowKey="id"
+            onRow={(record) => ({
+              onClick: () => handleRowClick(record),
+              className: `cursor-pointer hover:bg-blue-50 ${
+                record.alertType === 'out-of-stock' ? 'bg-red-50' : 
+                record.alertType === 'low-stock' ? 'bg-orange-50' : 
+                'bg-yellow-50'
+              }`
+            })}
+            searchFields={['name', 'category', 'barcode']}
+            searchPlaceholder="Search products with stock issues..."
+            showSearch={true}
+            extra={
+              <ActionButton.Primary 
+                icon="add"
+                onClick={() => setShowModal(true)}
+              >
+                Add Product
+              </ActionButton.Primary>
+            }
+            emptyDescription="No stock alerts"
+            emptyImage={<Icon name="check_circle" className="text-6xl text-green-300" />}
+          />
+        )}
+      </div>
+    );
+  };
+
   const tabItems = [
     {
       key: 'products',
@@ -325,6 +528,21 @@ export function ProductManagement() {
         </span>
       ),
       children: renderProductsTab()
+    },
+    {
+      key: 'stock-alerts',
+      label: (
+        <span className="flex items-center space-x-2">
+          <Icon name="warning" />
+          <span>Stock Alerts</span>
+          {(outOfStockProducts.length + lowStockProducts.length) > 0 && (
+            <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 ml-1">
+              {outOfStockProducts.length + lowStockProducts.length}
+            </span>
+          )}
+        </span>
+      ),
+      children: renderStockAlertsTab()
     },
     {
       key: 'categories',

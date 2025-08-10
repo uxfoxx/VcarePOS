@@ -16,13 +16,15 @@ import {
   message,
   Row,
   Col,
-  Tooltip
+  Tooltip,
+  Tabs
 } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { DetailModal } from '../common/DetailModal';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
+import { EmptyState } from '../common/EmptyState';
 import { fetchRawMaterials, addRawMaterials, updateRawMaterials, deleteRawMaterials } from '../../features/rawMaterials/rawMaterialsSlice';
 
 const { Title, Text } = Typography;
@@ -119,25 +121,6 @@ export function RawMaterialManagement() {
     setShowDetailModal(true);
   };
 
-  const renderStockAlertsTab = () => {
-    const stockAlertColumns = [
-      {
-        title: 'Material',
-        dataIndex: 'name',
-        key: 'name',
-        fixed: 'left',
-        width: 200,
-        render: (text, record) => (
-          <div>
-            <Text strong>{text}</Text>
-            <br />
-            <Text type="secondary" className="text-xs">{record.category}</Text>
-          </div>
-        ),
-        sorter: (a, b) => a.name.localeCompare(b.name),
-      },
-      {
-        title: 'Current Stock',
   const columns = [
     {
       title: 'Material',

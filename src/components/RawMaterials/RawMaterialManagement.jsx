@@ -288,7 +288,10 @@ export function RawMaterialManagement() {
     </div>
   );
 
-  const renderStockAlertsTab = () => {
+  // The renderStockAlertsTab function is declared again below in the tabItems array.
+  // This duplicate declaration is causing the "Identifier 'renderStockAlertsTab' has already been declared" error.
+  // Removing this duplicate declaration will resolve the syntax error.
+  /* const renderStockAlertsTab = () => {
     const stockAlertColumns = [
       {
         title: 'Material',
@@ -470,7 +473,7 @@ export function RawMaterialManagement() {
         )}
       </div>
     );
-  };
+  }; */
 
   const tabItems = [
     {

@@ -49,9 +49,7 @@ export function ColorAndSizeSelectionModal({
   const handleAddToCart = () => {
     if (!selectedColor || !selectedSize) return;
     
-    // Pass the complete size data including raw materials
-    const selectedSizeData = selectedColor.sizes.find(size => size.name === selectedSize.name);
-    onColorAndSizeSelected(selectedColor, selectedSize, selectedSizeData);
+    onColorAndSizeSelected(selectedColor, selectedSize);
   };
 
   const getAvailableSizes = () => {

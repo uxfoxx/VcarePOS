@@ -85,9 +85,8 @@ export function ProductGrid({ collapsed }) {
       selectedColor: selectedColor,
       selectedSize: selectedSize.name,
       selectedSizeData: selectedSize,
-      selectedSizeData: selectedSizeData,
       // Use the raw materials from the selected color
-      rawMaterials: selectedSizeData?.rawMaterials || []
+      rawMaterials: selectedSize?.rawMaterials || []
     };
     
     // Show addons modal for the selected color/size combination
@@ -199,14 +198,13 @@ export function ProductGrid({ collapsed }) {
                   <ProductCard
                     product={{
                       ...product,
-                      price: product.price, // Fixed price for all variations
+                      price: product.price,
                       hasColors: product.colors && product.colors.length > 0
                     }}
                     onAddToCart={handleAddToCart}
-                    hasVariants={product.hasVariants}
                     onClick={() => handleAddToCart(product)}
                     showDetails={true}
-                    showPriceRange={false} // Price is now fixed
+                    showPriceRange={false}
                   />
                 </Col>
               ))}

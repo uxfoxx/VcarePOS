@@ -59,6 +59,35 @@ export function ProductModal({
   const {rawMaterialsList, error} = useSelector(state => state.rawMaterials);
   const {categoriesList } = useSelector(state => state.categories);
 
+  // Generate SKU based on category
+  const generateSKU = () => {
+    const currentValues = productForm.getFieldsValue();
+    const category = currentValues.category;
+    
+    if (!category) {
+      message.warning('Please select a category first');
+      return;
+    }
+    
+    // Get category initials
+    const categoryInitials = category
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase())
+      .join('');
+    
+    // Generate unique number (timestamp-based)
+    const uniqueNumber = Date.now().toString().slice(-6);
+    
+    // Create SKU
+    const generatedSKU = `${categoryInitials}${uniqueNumber}`;
+    
+    // Set the SKU in the form
+    productForm.setFieldsValue({ barcode: generatedSKU });
+    setProductData(prev => ({ ...prev, barcode: generatedSKU }));
+    
+    message.success('SKU generated successfully');
+  };
+
 
   // Initialize form data when editing
   useEffect(() => {
@@ -708,7 +737,20 @@ export function ProductModal({
       <Row gutter={16}>
         <Col span={16}>
           <Form.Item name="barcode" label="SKU/Barcode">
-            <Input placeholder="Enter SKU or barcode" />
+            <Input 
+              placeholder="Enter SKU or barcode" 
+              addonAfter={
+                <Button 
+                  type="text" 
+                  size="small"
+                  onClick={generateSKU}
+                  icon={<Icon name="auto_awesome" />}
+                  className="text-blue-600"
+                >
+                  Generate
+                </Button>
+              }
+            />
           </Form.Item>
         </Col>
       </Row>

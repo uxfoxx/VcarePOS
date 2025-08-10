@@ -429,42 +429,13 @@ export function ColorManagementPanel({
                 </Form.Item>
               </Col>
               <Col span={8}>
-                <Form.Item name="weight" label="Weight (kg)">
-                  <InputNumber
-                    min={0}
-                    step={0.1}
-                    placeholder="0.0"
-                    className="w-full"
-                  />
+                <Form.Item label=" ">
+                  <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
+                    Add Size
+                  </Button>
                 </Form.Item>
               </Col>
             </Row>
-
-            <Form.Item label="Dimensions">
-              <Input.Group compact>
-                <Form.Item name={['dimensions', 'length']} noStyle>
-                  <InputNumber placeholder="Length" className="w-1/4" min={0} />
-                </Form.Item>
-                <Form.Item name={['dimensions', 'width']} noStyle>
-                  <InputNumber placeholder="Width" className="w-1/4" min={0} />
-                </Form.Item>
-                <Form.Item name={['dimensions', 'height']} noStyle>
-                  <InputNumber placeholder="Height" className="w-1/4" min={0} />
-                </Form.Item>
-                <Form.Item name={['dimensions', 'unit']} noStyle initialValue="cm">
-                  <Select className="w-1/4">
-                    <Option value="cm">cm</Option>
-                    <Option value="inch">inch</Option>
-                  </Select>
-                </Form.Item>
-              </Input.Group>
-            </Form.Item>
-
-            <Form.Item>
-              <Button type="primary" htmlType="submit" icon={<Icon name="add" />}>
-                Add Size
-              </Button>
-            </Form.Item>
           </Form>
         </Card>
 
@@ -497,16 +468,6 @@ export function ColorManagementPanel({
                             <Text type="secondary" className="text-sm">
                               Stock: {size.stock || 0} units
                             </Text>
-                            {size.weight && (
-                              <Text type="secondary" className="text-sm">
-                                Weight: {size.weight} kg
-                              </Text>
-                            )}
-                            {size.dimensions && size.dimensions.length && (
-                              <Text type="secondary" className="text-sm">
-                                {size.dimensions.length}×{size.dimensions.width}×{size.dimensions.height} {size.dimensions.unit}
-                              </Text>
-                            )}
                           </div>
                         </div>
                       </div>
@@ -551,20 +512,10 @@ export function ColorManagementPanel({
                           <br />
                           <Text strong>{size.stock || 0} units</Text>
                         </Col>
-                        <Col span={6}>
-                          <Text type="secondary">Weight:</Text>
+                        <Col span={18}>
+                          <Text type="secondary">Size Details:</Text>
                           <br />
-                          <Text strong>{size.weight ? `${size.weight} kg` : 'Not specified'}</Text>
-                        </Col>
-                        <Col span={12}>
-                          <Text type="secondary">Dimensions:</Text>
-                          <br />
-                          <Text strong>
-                            {size.dimensions && size.dimensions.length 
-                              ? `${size.dimensions.length}×${size.dimensions.width}×${size.dimensions.height} ${size.dimensions.unit}`
-                              : 'Not specified'
-                            }
-                          </Text>
+                          <Text strong>{size.name} - {size.stock || 0} units in stock</Text>
                         </Col>
                       </Row>
                     </div>
@@ -584,17 +535,6 @@ export function ColorManagementPanel({
                           onFinish={(values) => handleAddMaterialToSize(activeColorId, size.id, values)}
                         >
                           <Row gutter={16}>
-                            <Col span={24} className="mb-2">
-                              <Input.Search
-                                placeholder="Search materials..."
-                                onChange={(e) => setMaterialSearchTerm(e.target.value)}
-                                className="w-full"
-                                allowClear
-                              />
-                            </Col>
-                          </Row>
-                          
-                          <Row gutter={16}>
                             <Col span={14}>
                               <Form.Item
                                 name="materialId"
@@ -609,7 +549,7 @@ export function ColorManagementPanel({
                                     (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                                   }
                                 >
-                                  {filteredRawMaterials?.map(material => (
+                                  {rawMaterials?.map(material => (
                                     <Option 
                                       key={material.id} 
                                       value={material.id} 

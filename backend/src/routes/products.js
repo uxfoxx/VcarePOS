@@ -63,8 +63,6 @@ const router = express.Router();
  *           type: boolean
  *         isVariant:
  *           type: boolean
- *         isCustom:
- *           type: boolean
  *         parentProductId:
  *           type: string
  *           example: PROD-654321
@@ -300,11 +298,19 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
     `);
     
     // Get all product raw materials (now linked to sizes)
+    // const materialsResult = await client.query(`
+    //   SELECT prm.*, rm.name, rm.unit, rm.unit_price, ps.id as size_id
+    //   FROM product_raw_materials prm
+    //   JOIN raw_materials rm ON prm.raw_material_id = rm.id
+    //   JOIN product_sizes ps ON prm.product_size_id = ps.id
+    // `);
+
+        // Get all product raw materials (now linked to sizes)
     const materialsResult = await client.query(`
-      SELECT prm.*, rm.name, rm.unit, rm.unit_price, ps.id as size_id
+      SELECT prm.*, rm.name, rm.unit, rm.unit_price
       FROM product_raw_materials prm
       JOIN raw_materials rm ON prm.raw_material_id = rm.id
-      JOIN product_sizes ps ON prm.product_size_id = ps.id
+      
     `);
     
     // Get all product addons
@@ -380,7 +386,6 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
         color: product.color,
         material: product.material,
         hasAddons: product.has_addons,
-        isCustom: product.is_custom,
         colors,
         addons,
         createdAt: product.created_at,
@@ -500,8 +505,7 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
       image: product.image,
       color: product.color,
       material: product.material,
-      hasAddons: product.has_addons,
-      isCustom: product.is_custom,
+       hasAddons: product.has_addons,
       colors,
       addons: addonsResult.rows.map(addon => ({
         id: addon.raw_material_id,
@@ -556,7 +560,6 @@ router.post(
         color,
         material,
         hasAddons,
-        isCustom,
         colors,
         addons
       } = req.body;
@@ -568,12 +571,12 @@ router.post(
       const productResult = await client.query(`
         INSERT INTO products (
           id, name, description, category, price, stock, barcode, image, 
-          color, material, has_addons, is_custom
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          color, material, has_addons
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING *
       `, [
         productId, name, description, category, price, 0, barcode, image,
-        color, material, hasAddons, isCustom
+        color, material, hasAddons
       ]);
       
       const product = productResult.rows[0];
@@ -674,7 +677,6 @@ router.post(
         color: product.color,
         material: product.material,
         hasAddons: product.has_addons,
-        isCustom: product.is_custom,
         colors,
         addons,
         createdAt: product.created_at,
@@ -740,7 +742,6 @@ router.put(
         color,
         material,
         hasAddons,
-        isCustom,
         colors,
         addons
       } = req.body;
@@ -757,13 +758,12 @@ router.put(
           color = $7,
           material = $8,
           has_addons = $9,
-          is_custom = $10,
           updated_at = CURRENT_TIMESTAMP
-        WHERE id = $11
+        WHERE id = $10
         RETURNING *
       `, [
         name, description, category, price, barcode, image,
-        color, material, hasAddons, isCustom,
+        color, material, hasAddons,
         id
       ]);
       
@@ -876,7 +876,6 @@ router.put(
         color: product.color,
         material: product.material,
         hasAddons: product.has_addons,
-        isCustom: product.is_custom,
         colors,
         addons,
         createdAt: product.created_at,

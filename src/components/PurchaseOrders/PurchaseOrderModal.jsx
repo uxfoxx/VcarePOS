@@ -484,8 +484,9 @@ export function PurchaseOrderModal({
                       <Select
                         placeholder={`Select ${itemType === 'product' ? 'product' : 'raw material'}`}
                         showSearch
+                        optionFilterProp="children"
                         filterOption={(input, option) =>
-                          option.children.toLowerCase().includes(input.toLowerCase())
+                          (option?.children?.toString() ?? "").toLowerCase().includes(input.toLowerCase())
                         }
                       >
                         {itemType === 'product' ? (

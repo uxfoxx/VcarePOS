@@ -18,12 +18,14 @@ import {
   Card,
   Select
 } from 'antd';
+import { useDispatch } from 'react-redux';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { GoodsReceiveNotePDF } from './GoodsReceiveNotePDF';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { fetchUsers } from '../../features/users/usersSlice';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -41,6 +43,7 @@ export function GoodsReceiveNote({
   const [receivedItems, setReceivedItems] = useState([]);
   const [showPdf, setShowPdf] = useState(false);
   const [grnNumber, setGrnNumber] = useState('');
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (open && order) {
@@ -63,9 +66,13 @@ export function GoodsReceiveNote({
         checkedBy: undefined,
         notes: '',
         receivedDate: new Date().toISOString().split('T')[0]
-      });
+      });     
     }
   }, [open, order, form]);
+
+  useEffect(() => {
+      dispatch(fetchUsers());
+  },[dispatch]);
 
   const handleItemCheck = (itemId, type, checked) => {
     setReceivedItems(prevItems => 

@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS product_sizes_new (
   id VARCHAR(50) PRIMARY KEY,
   product_color_id VARCHAR(50) NOT NULL,
   name VARCHAR(50) NOT NULL,
-  price DECIMAL(10, 2) NOT NULL,
+  price DECIMAL(10, 2),
   stock INTEGER NOT NULL DEFAULT 0,
   weight DECIMAL(10, 2),
   dimensions JSONB,
@@ -206,15 +206,15 @@ BEGIN
   END IF;
 END $$;
 
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'products' AND column_name = 'has_addons'
-  ) THEN
-    ALTER TABLE products DROP COLUMN has_addons;
-  END IF;
-END $$;
+-- DO $$
+-- BEGIN
+--   IF EXISTS (
+--     SELECT 1 FROM information_schema.columns
+--     WHERE table_name = 'products' AND column_name = 'has_addons'
+--   ) THEN
+--     ALTER TABLE products DROP COLUMN has_addons;
+--   END IF;
+-- END $$;
 
 DO $$
 BEGIN

@@ -230,7 +230,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                 <div style={{ 
                   fontWeight: 'bold', 
                   fontSize: '9px', 
-                  lineHeight: '1.1',
+                  lineHeight: '2',
                   overflow: 'hidden',
                   display: '-webkit-box',
                   WebkitLineClamp: 2,

@@ -19,8 +19,8 @@ export default defineConfig({
   build: {
     target: 'es2020',
     outDir: 'dist',
-    sourcemap: false,
-    minify: 'esbuild',
+    sourcemap: true,
+    minify: false,
     rollupOptions: {
       external: (_id) => {
         // Don't externalize any dependencies - keep them bundled

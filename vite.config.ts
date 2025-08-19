@@ -6,7 +6,6 @@ import path from 'path';
 export default defineConfig({
   plugins: [
     react({
-      // Include .tsx files and ensure JSX runtime is available
       include: "**/*.{jsx,tsx}",
       jsxRuntime: 'automatic'
     })
@@ -14,9 +13,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      // Force all imports of react and react-dom to the single copy in node_modules
-      react: path.resolve(__dirname, 'node_modules/react'),
-      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
     },
   },
   build: {
@@ -24,39 +20,6 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
     minify: false,
-    rollupOptions: {
-      external: (_id) => {
-        // Don't externalize any dependencies - keep them bundled
-        return false;
-      },
-      output: {
-        // Put all assets in the assets directory for consistency
-        assetFileNames: 'assets/[name]-[hash].[ext]',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js',
-        // Simplified manualChunks to avoid aggressive/fragile chunking
-        manualChunks: (id) => {
-          // All third-party libraries go into vendor chunks
-          if (id.includes('node_modules')) {
-            // Keep React and AntD-related code together to ensure predictable init order
-            if (id.includes('react') || id.includes('react-dom') || id.includes('antd') || id.includes('@ant-design')) {
-              return 'vendor.react';
-            }
-            // All other node_modules into a generic vendor chunk
-            return 'vendor';
-          }
-
-          // Keep shared app-level common components together
-          if (id.includes('/src/components/common/') || id.includes('/common/')) {
-            return 'common-components';
-          }
-
-          // Let Rollup/Vite decide for everything else
-          return undefined;
-        },
-      },
-    },
-    chunkSizeWarningLimit: 1200, // Increased due to React+Antd being bundled together
   },
   server: {
     port: 3001,
@@ -78,14 +41,10 @@ export default defineConfig({
       '@reduxjs/toolkit',
       'react-redux',
       'antd',
-      'dayjs',
-      // ensure these sync-store helpers are pre-bundled to avoid runtime lookup issues
-      'use-sync-external-store',
-      'use-sync-external-store/shim',
-      'use-sync-external-store-with-selector'
+      'dayjs'
     ],
     exclude: ['lucide-react'],
-    force: true, // Force re-optimization
+    force: true,
   },
   esbuild: {
     logOverride: { 'this-is-undefined-in-esm': 'silent' }

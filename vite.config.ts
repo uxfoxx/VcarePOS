@@ -14,6 +14,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // Force all imports of react and react-dom to the single copy in node_modules
+      react: path.resolve(__dirname, 'node_modules/react'),
+      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
     },
   },
   build: {
@@ -75,7 +78,11 @@ export default defineConfig({
       '@reduxjs/toolkit',
       'react-redux',
       'antd',
-      'dayjs'
+      'dayjs',
+      // ensure these sync-store helpers are pre-bundled to avoid runtime lookup issues
+      'use-sync-external-store',
+      'use-sync-external-store/shim',
+      'use-sync-external-store-with-selector'
     ],
     exclude: ['lucide-react'],
     force: true, // Force re-optimization

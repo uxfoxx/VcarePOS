@@ -523,7 +523,6 @@ export function PurchaseOrderModal({
                       name="unitPrice"
                       label="Unit Price"
                       rules={[{ required: true, message: 'Required' }]}
-                      initialValue={0}
                     >
                       <InputNumber
                         min={0}

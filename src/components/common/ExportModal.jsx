@@ -224,7 +224,7 @@ export function ExportModal({
             <InputNumber 
               placeholder="0.00" 
               className="w-full"
-              prefix="$"
+              prefix="LKR"
               min={0}
               step={0.01}
             />
@@ -235,7 +235,7 @@ export function ExportModal({
             <InputNumber 
               placeholder="No limit" 
               className="w-full"
-              prefix="$"
+              prefix="LKR"
               min={0}
               step={0.01}
             />

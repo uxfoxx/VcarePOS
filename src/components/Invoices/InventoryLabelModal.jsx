@@ -1,19 +1,57 @@
 import React, { useState } from 'react';
-import { Modal, Typography, Space, Button } from 'antd';
+import { Modal, Typography, Space } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export function InventoryLabelModal({ open, onClose, transaction }) {
   const [loading, setLoading] = useState(false);
-  
+
   if (!transaction) return null;
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    const element = document.getElementById('inventory-labels-content');
+    if (!element) {
+      console.error('Inventory labels content element not found');
+      return;
+    }
+
+    // Create a temporary container in the document body
+    const printContainer = document.createElement('div');
+    printContainer.id = 'print-container';
+    printContainer.style.position = 'absolute';
+    printContainer.style.top = '0';
+    printContainer.style.left = '0';
+    printContainer.style.width = '210mm';
+    printContainer.style.height = 'auto';
+    printContainer.style.padding = '5mm';
+    printContainer.style.backgroundColor = '#ffffff';
+
+    // Clone the content and append to the temporary container
+    const clonedContent = element.cloneNode(true);
+    printContainer.appendChild(clonedContent);
+    document.body.appendChild(printContainer);
+
+    // Force reflow to ensure content is rendered
+    clonedContent.style.display = 'none';
+    clonedContent.offsetHeight; // Trigger reflow
+    clonedContent.style.display = 'block';
+
+    // Wait briefly to ensure rendering
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    try {
+      // Trigger print
+      window.print();
+    } catch (error) {
+      console.error('Error during print:', error);
+    } finally {
+      // Clean up: remove the temporary container
+      document.body.removeChild(printContainer);
+    }
   };
 
   const handleView = async () => {
@@ -33,7 +71,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
         allowTaint: true,
         backgroundColor: '#ffffff',
         width: element.scrollWidth,
-        height: element.scrollHeight
+        height: element.scrollHeight,
       });
 
       // Calculate PDF dimensions for label sheets (A4 with multiple labels)
@@ -88,7 +126,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
         allowTaint: true,
         backgroundColor: '#ffffff',
         width: element.scrollWidth,
-        height: element.scrollHeight
+        height: element.scrollHeight,
       });
 
       // Calculate PDF dimensions for label sheets (A4 with multiple labels)
@@ -137,15 +175,14 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
       'O': '0001011', 'P': '0010001', 'Q': '0100001', 'R': '0001001',
       'S': '0010001', 'T': '0001001', 'U': '0100001', 'V': '0110001',
       'W': '0001101', 'X': '0010011', 'Y': '0001011', 'Z': '0010001',
-      '-': '0010001'
+      '-': '0010001',
     };
-    
+
     let pattern = '101'; // Start pattern
     for (let char of code.toUpperCase()) {
       pattern += patterns[char] || '0001001';
     }
     pattern += '101'; // End pattern
-    
     return pattern;
   };
 
@@ -158,16 +195,16 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
           width: '0.8px',
           height: '20px',
           backgroundColor: bit === '1' ? '#000' : '#fff',
-          display: 'inline-block'
+          display: 'inline-block',
         }}
       />
     ));
-    
+
     return (
       <div className="flex justify-center items-center bg-white">
         <div style={{ fontSize: 0, lineHeight: 0 }}>
           {bars}
-        </div>
+          </div>
       </div>
     );
   };
@@ -175,25 +212,27 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
   const renderInventoryLabels = () => (
     <div id="inventory-labels-content" className="bg-white" style={{ fontFamily: 'Arial, sans-serif', padding: '5mm' }}>
       {/* Grid layout: 4 columns x 6 rows = 24 labels per A4 page */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(4, 1fr)', 
-        gap: '2mm',
-        width: '200mm', // A4 width minus margins
-        minHeight: '287mm' // A4 height minus margins
-      }}>
-        {transaction.items.map((item, itemIndex) => 
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '2mm',
+          width: '200mm', // A4 width minus margins
+          minHeight: '287mm',// A4 height minus margins
+        }}
+      >
+        {transaction.items.map((item, itemIndex) =>
           Array.from({ length: item.quantity }, (_, qtyIndex) => (
-            <div 
-              key={`${itemIndex}-${qtyIndex}`} 
+            <div
+              key={`${itemIndex}-${qtyIndex}`}
               className="inventory-label border border-gray-800 bg-white flex flex-col"
-              style={{ 
-                width: '48mm', 
+              style={{
+                width: '48mm',
                 height: '45mm',
                 padding: '2mm',
                 pageBreakInside: 'avoid',
                 fontSize: '8px',
-                lineHeight: '1.2'
+                lineHeight: '1.2',
               }}
             >
               
@@ -201,45 +240,53 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
               <div className="flex items-center justify-between mb-1 pb-1 border-b border-gray-400">
                 <div>
                   <span style={{ fontWeight: 'bold', fontSize: '9px' }}>
-                    {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
-                      ? JSON.parse(localStorage.getItem('vcare_branding')).businessName.substring(0, 15) 
-                      : "VCare Furniture"}
+                    {localStorage.getItem('vcare_branding') &&
+                    JSON.parse(localStorage.getItem('vcare_branding')).businessName
+                      ? JSON.parse(localStorage.getItem('vcare_branding')).businessName.substring(0, 15)
+                      : 'VCare Furniture'}
                   </span>
                 </div>
-                <div style={{ 
-                  width: '12px', 
-                  height: '12px', 
-                  backgroundColor: localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).primaryColor 
-                    ? JSON.parse(localStorage.getItem('vcare_branding')).primaryColor 
-                    : '#2563eb', 
-                  borderRadius: '2px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
+                <div
+                  style={{
+                    width: '12px',
+                    height: '12px',
+                    backgroundColor:
+                      localStorage.getItem('vcare_branding') &&
+                      JSON.parse(localStorage.getItem('vcare_branding')).primaryColor
+                        ? JSON.parse(localStorage.getItem('vcare_branding')).primaryColor
+                        : '#2563eb',
+                    borderRadius: '2px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
                   <span style={{ color: 'white', fontWeight: 'bold', fontSize: '6px' }}>
-                    {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
-                      ? JSON.parse(localStorage.getItem('vcare_branding')).businessName.substring(0, 2).toUpperCase() 
-                      : "VC"}
+                    {localStorage.getItem('vcare_branding') &&
+                    JSON.parse(localStorage.getItem('vcare_branding')).businessName
+                      ? JSON.parse(localStorage.getItem('vcare_branding')).businessName.substring(0, 2).toUpperCase()
+                      : 'VC'}
                   </span>
                 </div>
               </div>
-
+              
               {/* Product Name */}
               <div className="mb-2 text-center flex-1">
-                <div style={{ 
-                  fontWeight: 'bold', 
-                  fontSize: '9px', 
-                  lineHeight: '1.1',
-                  overflow: 'hidden',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical'
-                }}>
+                <div
+                  style={{
+                    fontWeight: 'bold',
+                    fontSize: '9px',
+                    lineHeight: '2',
+                    overflow: 'hidden',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                  }}
+                >
                   {item.product.name}
                 </div>
               </div>
-
+              
               {/* SKU */}
               <div className="mb-2 text-center">
                 <div style={{ fontSize: '6px', color: '#666', marginBottom: '1px' }}>SKU:</div>
@@ -247,7 +294,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                   {item.product.barcode || 'N/A'}
                 </div>
               </div>
-
+              
               {/* Barcode */}
               <div className="mt-auto">
                 <div style={{ maxWidth: '100%', overflow: 'hidden' }}>
@@ -259,7 +306,6 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                   </span>
                 </div>
               </div>
-
             </div>
           ))
         )}
@@ -268,58 +314,93 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
   );
 
   return (
-    <Modal
-      title={
-        <Space>
-          <Icon name="label" className="text-blue-600" />
-          <span>Inventory Labels</span>
-        </Space>
-      }
-      open={open}
-      onCancel={onClose}
-      width={1000}
-      footer={[
-        <ActionButton key="close" onClick={onClose}>
-          Close
-        </ActionButton>,
-        <ActionButton 
+    <>
+      <style>
+        {`
+          @media print {
+            body * {
+              visibility: hidden;
+            }
+            #print-container,
+            #print-container * {
+              visibility: visible;
+            }
+            #print-container {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 210mm;
+              height: auto;
+              margin: 0;
+              padding: 5mm;
+              box-sizing: border-box;
+              background-color: #ffffff;
+            }
+            #print-container .inventory-label {
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
+            .ant-modal,
+            .ant-modal-content,
+            .ant-modal-header,
+            .ant-modal-footer {
+              display: none !important;
+            }
+          `}
+      </style>
+      <Modal
+        title={
+          <Space>
+            <Icon name="label" className="text-blue-600" />
+            <span>Inventory Labels</span>
+          </Space>
+        }
+        open={open}
+        onCancel={onClose}
+        width={1000}
+        footer={[
+          <ActionButton key="close" onClick={onClose}>
+            Close
+          </ActionButton>,
+          <ActionButton 
           key="view" 
           icon="visibility" 
-          onClick={handleView}
+          onClick={handleView} 
           loading={loading}
-        >
-          View PDF
-        </ActionButton>,
-        <ActionButton 
+          >
+            View PDF
+          </ActionButton>,
+          <ActionButton 
           key="download" 
           icon="download" 
-          onClick={handleDownload}
+          onClick={handleDownload} 
           loading={loading}
-        >
-          Download PDF
-        </ActionButton>,
-        <ActionButton.Primary 
+          >
+            Download PDF
+          </ActionButton>,
+          <ActionButton.Primary 
           key="print" 
           icon="print" 
           onClick={handlePrint}
-        >
-          Print Labels
-        </ActionButton.Primary>
-      ]}
-      className="inventory-labels-modal"
-      destroyOnClose
-    >
-      <div className="max-h-[70vh] overflow-y-auto">
-        <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-          <Text className="text-sm">
-            <Icon name="info" className="mr-2 text-blue-600" />
-            <strong>Inventory Labels:</strong> Optimized for A4 printing with 24 labels per page (4×6 grid). 
-            Each item will have {transaction?.items?.reduce((sum, item) => sum + item.quantity, 0)} labels generated 
-            (one for each quantity ordered). Perfect size for sticking to inventory items.
-          </Text>
+          >
+            Print Labels
+          </ActionButton.Primary>
+        ]}
+        className="inventory-labels-modal"
+        destroyOnClose
+      >
+        <div className="max-h-[70vh] overflow-y-auto">
+          <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+            <Text className="text-sm">
+              <Icon name="info" className="mr-2 text-blue-600" />
+              <strong>Inventory Labels:</strong> Optimized for A4 printing with 24 labels per page (4×6 grid). 
+              Each item will have {transaction?.items?.reduce((sum, item) => sum + item.quantity, 0)} labels generated 
+              (one for each quantity ordered). Perfect size for sticking to inventory items.
+            </Text>
+          </div>
+          {renderInventoryLabels()}
         </div>
-        {renderInventoryLabels()}
-      </div>
-    </Modal>
+      </Modal>
+    </>
   );
 }

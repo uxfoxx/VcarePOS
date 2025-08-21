@@ -64,13 +64,15 @@ export function Cart() {
     );
   }
 
-  // Check raw material availability whenever cart changes
+  // Check raw material availability and reset coupon when cart is cleared
   useEffect(() => {
     if (cart && cart.length > 0) {
       const warnings = checkRawMaterialAvailability(cart);
       setMaterialWarnings(warnings);
     } else {
       setMaterialWarnings({ unavailableMaterials: [], lowMaterials: [] });
+      setAppliedCoupon(null); // Reset applied coupon when cart is empty
+      setCouponCode(''); // Reset coupon code input when cart is empty
     }
   }, [cart, checkRawMaterialAvailability]);
 
@@ -187,7 +189,7 @@ export function Cart() {
 
       setAppliedCoupon(coupon);
       message.success(`Coupon applied! ${coupon.discountPercent}% discount`);
-      setCouponCode('');
+      setCouponCode(''); // Clear the coupon code input
     } else {
       message.error('Invalid or expired coupon code');
     }
@@ -195,7 +197,26 @@ export function Cart() {
 
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null);
+    setCouponCode(''); // Clear the coupon code input when removing coupon
     message.info('Coupon removed');
+  };
+
+  const handleCheckoutSuccess = () => {
+    // Clear cart, coupon code, and applied coupon after successful checkout
+    dispatch(clearCart());
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setShowCheckoutModal(false);
+    message.success('Checkout completed successfully');
+  };
+
+  const handleCloseCheckoutModal = () => {
+    setShowCheckoutModal(false);
+    setCouponCode(''); // Clear coupon code input when closing checkout modal
+    // Clear applied coupon only if cart is empty
+    if (cart.length === 0) {
+      setAppliedCoupon(null);
+    }
   };
 
   const handleProceedToCheckout = () => {
@@ -448,7 +469,7 @@ export function Cart() {
                   <div className="space-y-2">
                     <div className="flex space-x-1">
                       <Input 
-                        placeholder="Coupon code"
+                        placeholder="Enter coupon code"
                         value={couponCode}
                         onChange={(e) => setCouponCode(e.target.value)}
                         size="middle"
@@ -508,7 +529,8 @@ export function Cart() {
 
       <CheckoutModal
         open={showCheckoutModal}
-        onClose={() => setShowCheckoutModal(false)}
+        onClose={handleCloseCheckoutModal}
+        onSubmit={handleCheckoutSuccess}
         cartItems={cart}
         orderTotal={total}
         appliedCoupon={appliedCoupon}

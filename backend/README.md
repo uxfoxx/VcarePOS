@@ -39,7 +39,7 @@ This is the backend API for the VCare POS System, built with Node.js, Express, a
 
 5. Access the API documentation at:
    ```
-   http://localhost:3000/api-docs
+   http://localhost:3000/api/docs
    ```
 
 ## Logging System

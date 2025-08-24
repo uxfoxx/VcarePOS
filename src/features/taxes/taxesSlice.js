@@ -26,6 +26,14 @@ const taxesSlice = createSlice({
       state.loading = true;
       state.error = null;
     },
+    bulkUpdateStatus(state) {
+      state.loading = true;
+      state.error = null;
+    },
+    bulkDeleteTaxes(state) {
+      state.loading = true;
+      state.error = null;
+    },
     fetchTaxesSucceeded(state, action) {
       state.loading = false;
       state.taxesList = action.payload;
@@ -45,6 +53,22 @@ const taxesSlice = createSlice({
       state.loading = false;
       state.taxesList = state.taxesList.filter(t => t.id !== action.payload.id);
     },
+    bulkUpdateStatusSucceeded(state, action) {
+      state.loading = false;
+      // Update the taxes in the list with the returned updated taxes
+      action.payload.updatedTaxes.forEach(updatedTax => {
+        const idx = state.taxesList.findIndex(t => t.id === updatedTax.id);
+        if (idx !== -1) {
+          state.taxesList[idx] = updatedTax;
+        }
+      });
+    },
+    bulkDeleteTaxesSucceeded(state, action) {
+      state.loading = false;
+      // Remove deleted taxes from the list
+      const deletedIds = action.payload.deletedIds;
+      state.taxesList = state.taxesList.filter(t => !deletedIds.includes(t.id));
+    },
     failed(state, action) {
       state.loading = false;
       state.error = action.payload;
@@ -57,10 +81,14 @@ export const {
   addTax,
   updateTax,
   deleteTax,
+  bulkUpdateStatus,
+  bulkDeleteTaxes,
   fetchTaxesSucceeded,
   addTaxSucceeded,
   updateTaxSucceeded,
   deleteTaxSucceeded,
+  bulkUpdateStatusSucceeded,
+  bulkDeleteTaxesSucceeded,
   failed,
 } = taxesSlice.actions;
 

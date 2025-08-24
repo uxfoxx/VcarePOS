@@ -338,6 +338,21 @@ export const taxesApi = {
     return apiRequest(`/taxes/${id}`, {
       method: 'DELETE'
     });
+  },
+
+  // Bulk operations
+  bulkUpdateStatus: async (action, taxIds) => {
+    return apiRequest('/taxes/bulk-status', {
+      method: 'PATCH',
+      body: JSON.stringify({ action, taxIds })
+    });
+  },
+
+  bulkDelete: async (taxIds) => {
+    return apiRequest('/taxes/bulk', {
+      method: 'DELETE',
+      body: JSON.stringify({ taxIds })
+    });
   }
 };
 

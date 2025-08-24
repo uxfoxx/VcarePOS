@@ -111,7 +111,7 @@ const { logSystemMetrics } = require('./utils/loggerUtils');
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
   logger.info(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-  logger.info(`API Documentation available at http://localhost:${PORT}/api-docs`);
+  logger.info(`API Documentation available at http://localhost:${PORT}/api/docs`);
   
   // Log initial system metrics
   logSystemMetrics(true);

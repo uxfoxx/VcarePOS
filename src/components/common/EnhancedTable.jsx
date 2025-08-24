@@ -94,8 +94,6 @@ export function EnhancedTable({
     return {};
   });
   const [configForm] = Form.useForm();
-  const [tempVisibleColumns, setTempVisibleColumns] = useState([]);
-  const [tempFixedColumns, setTempFixedColumns] = useState({});
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   // Enhanced columns with visibility, fixed settings, and working filters/sorters
@@ -104,7 +102,7 @@ export function EnhancedTable({
       .filter(col => visibleColumns.includes(col.key))
       .map(col => ({
         ...col,
-        fixed: fixedColumns[col.key] || false,
+        fixed: fixedColumns[col.key] || undefined,
         sorter: col.sorter !== false ? (
           col.sorter || ((a, b) => {
             const aVal = col.dataIndex ? a[col.dataIndex] : '';
@@ -157,7 +155,7 @@ export function EnhancedTable({
           ),
           onFilter: col.onFilter || ((value, record) => {
             const dataIndex = col.dataIndex;
-            if (!dataIndex) return true;
+            if (!dataIndex) return false; // previously returned true; return false to avoid matching everything
             
             let fieldValue;
             if (Array.isArray(dataIndex)) {
@@ -218,17 +216,6 @@ export function EnhancedTable({
     }
   };
 
-  const handleColumnVisibilityChange = (columnKeys) => {
-    setTempVisibleColumns(columnKeys);
-    configForm.setFieldsValue({ visibleColumns: columnKeys });
-  };
-
-  const handleColumnFixedChange = (columnKey, fixed) => {
-    const newFixedColumns = { ...tempFixedColumns, [columnKey]: fixed };
-    setTempFixedColumns(newFixedColumns);
-    configForm.setFieldsValue({ fixedColumns: newFixedColumns });
-  };
-
   const resetColumns = () => {
     const defaultVisible = safeInitialColumns.map(col => col.key);
     const defaultFixed = {};
@@ -240,8 +227,6 @@ export function EnhancedTable({
       }
     });
     
-    setTempVisibleColumns(defaultVisible);
-    setTempFixedColumns(defaultFixed);
     configForm.setFieldsValue({
       visibleColumns: defaultVisible,
       fixedColumns: defaultFixed
@@ -263,16 +248,12 @@ export function EnhancedTable({
       setFixedColumns(values.fixedColumns || {});
       setShowConfigModal(false);
       message.success('Table configuration updated successfully');
-    } catch (error) {
+    } catch {
       message.error('Failed to update table configuration');
     }
   };
 
   const openConfigModal = () => {
-    // Initialize temp state with current values
-    setTempVisibleColumns([...visibleColumns]);
-    setTempFixedColumns({ ...fixedColumns });
-    
     configForm.setFieldsValue({
       visibleColumns: [...visibleColumns],
       fixedColumns: { ...fixedColumns }
@@ -281,9 +262,7 @@ export function EnhancedTable({
   };
 
   const handleConfigCancel = () => {
-    // Reset temp state
-    setTempVisibleColumns([]);
-    setTempFixedColumns({});
+    // Reset form state
     configForm.resetFields();
     setShowConfigModal(false);
   };
@@ -292,7 +271,7 @@ export function EnhancedTable({
     ...rowSelection,
     selectedRowKeys,
     onChange: handleRowSelectionChange,
-  } : null;
+  } : undefined; // return undefined instead of null
 
   if (loading) {
     return (
@@ -350,7 +329,6 @@ export function EnhancedTable({
                   <ActionButton 
                     danger
                     icon="delete"
-                    disabled
                   >
                     Delete Selected ({selectedRowKeys.length})
                   </ActionButton>
@@ -438,17 +416,10 @@ export function EnhancedTable({
                 Select which columns to display in the table
               </Text>
               <Form.Item name="visibleColumns">
-                <Checkbox.Group 
-                  className="w-full"
-                  value={tempVisibleColumns}
-                  onChange={handleColumnVisibilityChange}
-                >
+                <Checkbox.Group className="w-full">
                   <div className="grid grid-cols-2 gap-2">
                     {safeInitialColumns.map(col => (
-                      <Checkbox 
-                        key={col.key} 
-                        value={col.key}
-                      >
+                      <Checkbox key={col.key} value={col.key}>
                         {col.title}
                       </Checkbox>
                     ))}
@@ -469,16 +440,13 @@ export function EnhancedTable({
                 {safeInitialColumns.map(col => (
                   <div key={col.key} className="flex items-center justify-between p-2 border rounded">
                     <Text>{col.title}</Text>
-                    <Select
-                      value={tempFixedColumns[col.key] || 'none'}
-                      onChange={value => handleColumnFixedChange(col.key, value === 'none' ? false : value)}
-                      className="w-32"
-                      size="small"
-                    >
-                      <Option value="none">Not Fixed</Option>
-                      <Option value="left">Fix Left</Option>
-                      <Option value="right">Fix Right</Option>
-                    </Select>
+                    <Form.Item name={[ 'fixedColumns', col.key ]} initialValue={fixedColumns[col.key] || 'none'} style={{ margin: 0 }}>
+                      <Select className="w-32" size="small">
+                        <Option value="none">Not Fixed</Option>
+                        <Option value="left">Fix Left</Option>
+                        <Option value="right">Fix Right</Option>
+                      </Select>
+                    </Form.Item>
                   </div>
                 ))}
               </div>

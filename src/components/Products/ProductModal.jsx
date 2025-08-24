@@ -87,7 +87,7 @@ export function ProductModal({
     
     message.success('SKU generated successfully');
   };
-
+  
 
   // Initialize form data when editing
   useEffect(() => {
@@ -208,14 +208,51 @@ export function ProductModal({
   };
 
   const handleImageUpload = (file) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target.result);
-      setProductData(prev => ({ ...prev, image: e.target.result }));
+    // Define validation constraints
+    const maxSizeMB = 5; // Maximum file size in MB
+    const maxSizeBytes = maxSizeMB * 1024 * 1024; // Convert to bytes
+    const maxDimensions = { width: 2000, height: 2000 }; // Maximum image dimensions
+
+    // Validate file size
+    if (file.size > maxSizeBytes) {
+      message.error(`Image size exceeds ${maxSizeMB}MB. Please upload a smaller image.`);
+      return false; // Prevent further processing
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      message.error('Invalid file type. Please upload a JPG, PNG, or GIF image.');
+      return false; // Prevent further processing
+    }
+
+    // Validate image dimensions
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl); // Clean up
+      if (img.width > maxDimensions.width || img.height > maxDimensions.height) {
+        message.error(
+          `Image dimensions exceed ${maxDimensions.width}x${maxDimensions.height} pixels. Please upload a smaller image.`
+        );
+        return;
+      }
+
+      // If all validations pass, process the image
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target.result);
+        setProductData((prev) => ({ ...prev, image: e.target.result }));
+      };
+      reader.readAsDataURL(file);
     };
-    reader.readAsDataURL(file);
-    setImageFile(file);
-    return false;
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl); // Clean up
+      message.error('Failed to process image. Please try another file.');
+    };
+    img.src = objectUrl;
+
+    return false; // Prevent default upload behavior
   };
 
   const handleAddMaterial = (values) => {
@@ -790,7 +827,7 @@ export function ProductModal({
                   <Text>Click to upload product image</Text>
                   <br />
                   <Text type="secondary" className="text-sm">
-                    Supports: JPG, PNG, GIF (Max: 5MB)
+                    Supports: JPG, PNG, GIF (Max: 5MB, 2000x2000 pixels)
                   </Text>
                 </div>
               </div>

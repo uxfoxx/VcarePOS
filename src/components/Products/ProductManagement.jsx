@@ -219,25 +219,25 @@ export function ProductManagement() {
         return true;
       },
     },
-    {
-      title: 'Dimensions',
-      key: 'dimensions',
-      width: 150,
-      render: (record) => {
-        // Show dimensions from first available size
-        if (record.colors && record.colors.length > 0) {
-          const firstSize = record.colors[0]?.sizes?.[0];
-          if (firstSize && firstSize.dimensions && firstSize.dimensions.length) {
-            return (
-              <Text className="text-sm">
-                {firstSize.dimensions.length}×{firstSize.dimensions.width}×{firstSize.dimensions.height} {firstSize.dimensions.unit}
-              </Text>
-            );
-          }
-        }
-        return <Text type="secondary">-</Text>;
-      },
-    },
+    // {
+    //   title: 'Dimensions',
+    //   key: 'dimensions',
+    //   width: 150,
+    //   render: (record) => {
+    //     // Show dimensions from first available size
+    //     if (record.colors && record.colors.length > 0) {
+    //       const firstSize = record.colors[0]?.sizes?.[0];
+    //       if (firstSize && firstSize.dimensions && firstSize.dimensions.length) {
+    //         return (
+    //           <Text className="text-sm">
+    //             {firstSize.dimensions.length}×{firstSize.dimensions.width}×{firstSize.dimensions.height} {firstSize.dimensions.unit}
+    //           </Text>
+    //         );
+    //       }
+    //     }
+    //     return <Text type="secondary">-</Text>;
+    //   },
+    // },
     {
       title: 'Actions',
       key: 'actions',

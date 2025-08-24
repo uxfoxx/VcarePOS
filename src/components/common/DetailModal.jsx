@@ -65,14 +65,16 @@ export function DetailModal({
         <Descriptions.Item label="Category">
           <Tag color="blue">{data.category}</Tag>
         </Descriptions.Item>
-        <Descriptions.Item label="Weight">
+        {/* <Descriptions.Item label="Weight">
           {data.weight ? `${data.weight} kg` : 'N/A'}
-        </Descriptions.Item>
+        </Descriptions.Item> */}
         <Descriptions.Item label="Material">
           {data.material || 'N/A'}
         </Descriptions.Item>
         <Descriptions.Item label="Color">
-          {data.color || 'N/A'}
+          {data.colors?.map((colorData) => {
+            return <Tag key={colorData.id} color="blue">{colorData.name}</Tag>;
+          }) || "N/A"}
         </Descriptions.Item>
         {data.rawMaterials && data.rawMaterials.length > 0 && (
           <Descriptions.Item label="Raw Materials" span={2}>

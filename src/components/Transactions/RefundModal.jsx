@@ -36,7 +36,7 @@ export function RefundModal({
   const [refundAmounts, setRefundAmounts] = useState({});
 
   if (!transaction) return null;
-
+  
   const handleSubmit = async (values) => {
     try {
       setLoading(true);
@@ -340,6 +340,8 @@ export function RefundModal({
           <Select>
             <Option value="original">Original Payment Method</Option>
             <Option value="cash">Cash</Option>
+            <Option value="card">Card</Option>
+            <Option value="digital">Digital</Option>
             <Option value="store-credit">Store Credit</Option>
             <Option value="bank-transfer">Bank Transfer</Option>
           </Select>

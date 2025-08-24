@@ -95,6 +95,11 @@ export function EnhancedTable({
   });
   const [configForm] = Form.useForm();
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  // Track pagination state so pageSize / current persist when user changes them
+  const [paginationState, setPaginationState] = useState({
+    current: 1,
+    pageSize: defaultPageSize || 10
+  });
 
   // Enhanced columns with visibility, fixed settings, and working filters/sorters
   const enhancedColumns = useMemo(() => {
@@ -191,9 +196,15 @@ export function EnhancedTable({
     });
   }, [dataSource, searchTerm, searchFields]);
 
-  const handleTableChange = (pagination, filters, sorter) => {
-    setFilters(filters);
-    setSorter(sorter);
+  const handleTableChange = (paginationParam, filtersParam, sorterParam) => {
+    setFilters(filtersParam);
+    setSorter(sorterParam);
+
+    // Persist pagination changes (page number and page size)
+    setPaginationState(prev => ({
+      current: paginationParam?.current ?? prev.current,
+      pageSize: paginationParam?.pageSize ?? prev.pageSize
+    }));
   };
 
   const handleRowSelectionChange = (selectedKeys) => {
@@ -358,7 +369,8 @@ export function EnhancedTable({
           scroll={scroll}
           rowSelection={enhancedRowSelection}
           pagination={{
-            pageSize: defaultPageSize,
+            current: paginationState.current,
+            pageSize: paginationState.pageSize,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,

@@ -167,4 +167,62 @@ describe('EnhancedTable', () => {
     // Now the visible row should be Banana (second item)
     expect(await screen.findByText('Banana')).toBeInTheDocument();
   });
+
+  test('page size change updates rows per page (e2e-like)', async () => {
+    // create 30 rows so page size changes are observable
+    const many = Array.from({ length: 30 }).map((_, i) => ({ id: String(i + 1), name: `Item ${i + 1}`, price: i + 1 }));
+
+    const { container } = render(<EnhancedTable columns={columns} dataSource={many} defaultPageSize={10} />);
+
+    // Initially should render 10 rows
+    await waitFor(() => {
+      const rows = container.querySelectorAll('.ant-table-body table tbody tr');
+      expect(rows.length).toBe(10);
+    });
+
+    // Open Page Size combobox and select 20
+    const pageSizeCombobox = screen.getByRole('combobox', { name: /Page Size/i });
+    expect(pageSizeCombobox).toBeTruthy();
+    // Open the dropdown
+    fireEvent.mouseDown(pageSizeCombobox);
+
+    // Select option '20'
+    const option20 = await screen.findByText('20');
+    fireEvent.click(option20);
+
+    // Now the table should render 20 rows on the first page
+    await waitFor(() => {
+      const rows = container.querySelectorAll('.ant-table-body table tbody tr');
+      expect(rows.length).toBe(20);
+    });
+  });
+
+  test('pageSize persists after sorting interaction', async () => {
+    const many = Array.from({ length: 30 }).map((_, i) => ({ id: String(i + 1), name: `Item ${i + 1}`, price: i + 1 }));
+
+    const { container } = render(<EnhancedTable columns={columns} dataSource={many} defaultPageSize={10} />);
+
+    // set page size to 20 first
+    const pageSizeCombobox = screen.getByRole('combobox', { name: /Page Size/i });
+    fireEvent.mouseDown(pageSizeCombobox);
+    const option20 = await screen.findByText('20');
+    fireEvent.click(option20);
+
+    // Confirm 20 rows
+    await waitFor(() => {
+      const rows = container.querySelectorAll('.ant-table-body table tbody tr');
+      expect(rows.length).toBe(20);
+    });
+
+    // Trigger a sort (click Price header sorter)
+    const priceHeader = screen.getByRole('columnheader', { name: 'Price' });
+    const sorter = priceHeader.querySelector('.ant-table-column-sorter');
+    if (sorter) fireEvent.click(sorter);
+
+    // Page size should remain 20 after sorting
+    await waitFor(() => {
+      const rows = container.querySelectorAll('.ant-table-body table tbody tr');
+      expect(rows.length).toBe(20);
+    });
+  });
 });

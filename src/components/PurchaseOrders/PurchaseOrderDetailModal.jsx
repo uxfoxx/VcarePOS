@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { 
   Modal, 
@@ -8,17 +8,14 @@ import {
   Tag, 
   Space, 
   Button, 
-  Divider, 
   Timeline,
   Steps,
-  Dropdown,
-  Menu,
   message
 } from 'antd';
 import { Icon } from '../common/Icon';
-import { ActionButton } from '../common/ActionButton';
 import { PurchaseOrderPDF } from './PurchaseOrderPDF';
 import { GoodsReceiveNote } from './GoodsReceiveNote';
+import { GoodsReceiveNotePDF } from './GoodsReceiveNotePDF';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -38,13 +35,13 @@ export function PurchaseOrderDetailModal({
   const [lastGRNData, setLastGRNData] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
 
-  if (!order) return null;
-
-  const handleStatusChange = (newStatus) => {
-    onStatusChange(order.id, newStatus);
-  };
+  // Early return for invalid props
+  if (!order || !order.id) {
+    return null;
+  }
 
   const handleDownloadPdf = async () => {
+    if (pdfLoading) return; // Prevent multiple simultaneous downloads
     setPdfLoading(true);
     setShowPdf(true);
     
@@ -54,7 +51,8 @@ export function PurchaseOrderDetailModal({
         const element = document.getElementById('purchase-order-pdf');
         if (!element) {
           message.error('PDF element not found');
-          setLoading(false);
+          setPdfLoading(false);
+          setShowPdf(false);
           return;
         }
   
@@ -95,7 +93,10 @@ export function PurchaseOrderDetailModal({
         pdf.save(filename);
         message.success('Purchase order PDF downloaded successfully');
       } catch (error) {
-        console.error('Error generating PDF:', error);
+        // Log error for debugging while providing user-friendly message
+        if (import.meta.env.DEV) {
+          console.error('Error generating PDF:', error);
+        }
         message.error('Failed to generate PDF: ' + error.message);
       } finally {
         setPdfLoading(false);
@@ -128,27 +129,62 @@ export function PurchaseOrderDetailModal({
   };
 
   const handleDownloadGRN = async () => {
-    if (!lastGRNData) {
+    if (loading) return; // Prevent multiple simultaneous downloads
+    
+    // Check if we have GRN data from current session
+    let grnData = lastGRNData;
+    
+    // If no GRN data available, generate it from the completed order
+    if (!grnData && (order.status === 'completed' || order.status === 'received')) {
+      // Ensure order has required data
+      if (!order.items || !Array.isArray(order.items) || order.items.length === 0) {
+        message.error('Cannot generate GRN: Order has no items');
+        return;
+      }
+      
+      grnData = {
+        id: `GRN-${order.id.replace('PO-', '')}-${new Date().getTime().toString().slice(-6)}`,
+        purchaseOrderId: order.id,
+        vendorName: order.vendorName || 'Unknown Vendor',
+        vendorId: order.vendorId,
+        receivedDate: order.updatedAt ? new Date(order.updatedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        receivedBy: order.createdBy || 'Unknown', // Use order creator as default
+        checkedBy: order.createdBy || 'Unknown', // Use order creator as default
+        notes: `Auto-generated GRN for completed order ${order.id}`,
+        items: order.items.map(item => ({
+          ...item,
+          received: true,
+          receivedQuantity: item.quantity || 0, // Assume full quantity received for completed orders
+          notes: ''
+        })),
+        timestamp: order.updatedAt ? new Date(order.updatedAt) : new Date()
+      };
+    }
+    
+    if (!grnData) {
       message.error('No GRN data available. Please complete the order first.');
       return;
     }
 
     setLoading(true);
     
+    let tempDiv = null;
+    let root = null;
+    
     try {
       // Create a temporary div for the GRN PDF
-      const tempDiv = document.createElement('div');
+      tempDiv = document.createElement('div');
       tempDiv.style.position = 'absolute';
       tempDiv.style.left = '-9999px';
       tempDiv.id = 'temp-grn-pdf';
       document.body.appendChild(tempDiv);
       
       // Render the GRN PDF in the temporary div
-      const root = createRoot(tempDiv);
+      root = createRoot(tempDiv);
       root.render(
         <GoodsReceiveNotePDF 
           order={order} 
-          grnData={lastGRNData}
+          grnData={grnData}
           id="temp-grn-pdf-content" 
         />
       );
@@ -195,16 +231,30 @@ export function PurchaseOrderDetailModal({
       }
       
       // Download the PDF
-      const filename = `goods-receive-note-${lastGRNData.id}.pdf`;
+      const filename = `goods-receive-note-${grnData.id}.pdf`;
       pdf.save(filename);
       message.success('Goods Receive Note PDF downloaded successfully');
       
-      // Clean up
-      document.body.removeChild(tempDiv);
     } catch (error) {
-      console.error('Error generating GRN PDF:', error);
-      message.error('Failed to generate GRN PDF');
+      // Log error for debugging while providing user-friendly message
+      if (import.meta.env.DEV) {
+        console.error('Error generating GRN PDF:', error);
+      }
+      message.error('Failed to generate GRN PDF: ' + (error.message || 'Unknown error'));
     } finally {
+      // Clean up DOM elements and React root
+      try {
+        if (root) {
+          root.unmount();
+        }
+        if (tempDiv && document.body.contains(tempDiv)) {
+          document.body.removeChild(tempDiv);
+        }
+      } catch (cleanupError) {
+        if (import.meta.env.DEV) {
+          console.error('Error during cleanup:', cleanupError);
+        }
+      }
       setLoading(false);
     }
   };
@@ -217,11 +267,6 @@ export function PurchaseOrderDetailModal({
     };
     return statusMap[status] || 0;
   };
-
-  const statusItems = [
-    { key: 'pending', label: 'Pending Approval' },
-    { key: 'completed', label: 'Completed' }
-  ];
 
   const itemColumns = [
     {
@@ -274,26 +319,6 @@ export function PurchaseOrderDetailModal({
       render: (total) => <Text strong>LKR {total.toFixed(2)}</Text>
     }
   ];
-
-  const statusMenuItems = statusItems
-    .filter(item => {
-      // Filter out statuses based on current status
-      const currentStep = getStatusStep(order.status);
-      const itemStep = getStatusStep(item.key);
-
-      // If completed, don't show any options
-      if (order.status === 'completed') {
-        return false;
-      }
-      
-      // Allow moving to completed
-      return item.key === 'completed';
-    })
-    .map(item => ({
-      key: item.key,
-      label: item.label,
-      onClick: () => handleStatusChange(item.key)
-    }));
 
   return (
     <>

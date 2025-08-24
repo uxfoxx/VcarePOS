@@ -2,6 +2,7 @@ const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { authenticate, hasPermission, logAction } = require('../middleware/auth');
+const { handleRouteError, asyncHandler, logDatabaseOperation } = require('../utils/loggerUtils');
 
 const router = express.Router();
 
@@ -395,8 +396,7 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
     
     res.json(products);
   } catch (error) {
-    console.error('Error fetching products:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Products - Fetch All');
   }
 });
 
@@ -519,8 +519,7 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
     
     res.json(formattedProduct);
   } catch (error) {
-    console.error('Error fetching product:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Products - Fetch By ID');
   }
 });
 
@@ -684,8 +683,7 @@ router.post(
       });
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('Error creating product:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Products - Create');
     } finally {
       client.release();
     }
@@ -883,8 +881,7 @@ router.put(
       });
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('Error updating product:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Products - Update');
     } finally {
       client.release();
     }
@@ -927,8 +924,7 @@ router.delete(
       
       res.json({ message: 'Product deleted successfully' });
     } catch (error) {
-      console.error('Error deleting product:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Products - Delete');
     }
   }
 );
@@ -1054,8 +1050,7 @@ router.put(
         colors
       });
     } catch (error) {
-      console.error('Error updating product stock:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Products - Update Stock');
     }
   }
 );

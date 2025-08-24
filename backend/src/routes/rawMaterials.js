@@ -2,6 +2,7 @@ const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { authenticate, hasPermission } = require('../middleware/auth');
+const { handleRouteError } = require('../utils/loggerUtils');
 
 const router = express.Router();
 
@@ -303,8 +304,7 @@ router.get('/', authenticate, hasPermission('raw-materials', 'view'), async (req
       updatedAt: material.updated_at
     })));
   } catch (error) {
-    console.error('Error fetching raw materials:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'RawMaterials - Fetching raw materials:');
   }
 });
 
@@ -341,8 +341,7 @@ router.get('/:id', authenticate, hasPermission('raw-materials', 'view'), async (
       updatedAt: material.updated_at
     });
   } catch (error) {
-    console.error('Error fetching raw material:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'RawMaterials - Fetching raw material:');
   }
 });
 
@@ -422,8 +421,7 @@ router.post(
         updatedAt: material.updated_at
       });
     } catch (error) {
-      console.error('Error creating raw material:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'RawMaterials - Creating raw material:');
     }
   }
 );
@@ -515,8 +513,7 @@ router.put(
         updatedAt: material.updated_at
       });
     } catch (error) {
-      console.error('Error updating raw material:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'RawMaterials - Updating raw material:');
     }
   }
 );
@@ -583,8 +580,7 @@ router.delete(
       
       res.json({ message: 'Raw material deleted successfully' });
     } catch (error) {
-      console.error('Error deleting raw material:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'RawMaterials - Deleting raw material:');
     }
   }
 );
@@ -657,8 +653,7 @@ router.put(
         unit: updatedMaterial.unit
       });
     } catch (error) {
-      console.error('Error updating raw material stock:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'RawMaterials - Updating raw material stock:');
     }
   }
 );

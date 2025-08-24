@@ -2,6 +2,7 @@ const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { authenticate, hasPermission } = require('../middleware/auth');
+const { handleRouteError } = require('../utils/loggerUtils');
 
 const router = express.Router();
 
@@ -188,8 +189,7 @@ router.get('/', authenticate, hasPermission('purchase-orders', 'view'), async (r
       createdAt: vendor.created_at
     })));
   } catch (error) {
-    console.error('Error fetching vendors:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Vendors - Fetching vendors:');
   }
 });
 
@@ -223,8 +223,7 @@ router.get('/:id', authenticate, hasPermission('purchase-orders', 'view'), async
       createdAt: vendor.created_at
     });
   } catch (error) {
-    console.error('Error fetching vendor:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Vendors - Fetching vendor:');
   }
 });
 
@@ -294,8 +293,7 @@ router.post(
         createdAt: vendor.created_at
       });
     } catch (error) {
-      console.error('Error creating vendor:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Vendors - Creating vendor:');
     }
   }
 );
@@ -377,8 +375,7 @@ router.put(
         createdAt: vendor.created_at
       });
     } catch (error) {
-      console.error('Error updating vendor:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Vendors - Updating vendor:');
     }
   }
 );
@@ -432,8 +429,7 @@ router.delete(
       
       res.json({ message: 'Vendor deleted successfully' });
     } catch (error) {
-      console.error('Error deleting vendor:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Vendors - Deleting vendor:');
     }
   }
 );

@@ -2,6 +2,7 @@ const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { authenticate, hasPermission } = require('../middleware/auth');
+const { handleRouteError } = require('../utils/loggerUtils');
 
 const router = express.Router();
 
@@ -258,8 +259,7 @@ router.get('/', authenticate, hasPermission('coupons', 'view'), async (req, res)
       createdAt: coupon.created_at
     })));
   } catch (error) {
-    console.error('Error fetching coupons:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Coupons - Fetching coupons:');
   }
 });
 
@@ -300,8 +300,7 @@ router.get('/:id', authenticate, hasPermission('coupons', 'view'), async (req, r
       createdAt: coupon.created_at
     });
   } catch (error) {
-    console.error('Error fetching coupon:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Coupons - Fetching coupon:');
   }
 });
 
@@ -405,8 +404,7 @@ router.post(
         createdAt: coupon.created_at
       });
     } catch (error) {
-      console.error('Error creating coupon:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Coupons - Creating coupon:');
     }
   }
 );
@@ -525,8 +523,7 @@ router.put(
         createdAt: coupon.created_at
       });
     } catch (error) {
-      console.error('Error updating coupon:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Coupons - Updating coupon:');
     }
   }
 );
@@ -567,8 +564,7 @@ router.delete(
       
       res.json({ message: 'Coupon deleted successfully' });
     } catch (error) {
-      console.error('Error deleting coupon:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Coupons - Deleting coupon:');
     }
   }
 );
@@ -676,8 +672,7 @@ router.get(
         message: 'Coupon is valid'
       });
     } catch (error) {
-      console.error('Error validating coupon:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Coupons - Validating coupon:');
     }
   }
 );

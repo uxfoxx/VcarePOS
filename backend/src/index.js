@@ -20,6 +20,7 @@ const systemRoutes = require('./routes/system');
 // Import middleware
 const { logAction } = require('./middleware/auth');
 const { errorHandler, notFound } = require('./middleware/errorMiddleware');
+const { timeoutMiddleware } = require('./middleware/timeoutMiddleware');
 const { logger, requestLogger } = require('./utils/logger');
 
 // Import and configure Swagger
@@ -46,6 +47,7 @@ app.use(express.json({
     req.rawBody = buf.toString();
   }
 }));
+app.use(timeoutMiddleware(60000)); // 60 second timeout for all requests
 app.use(requestLogger); // Add request logging before other middleware
 app.use(logAction);
 

@@ -1,4 +1,4 @@
-const { logger } = require('../utils/logger');
+const { logger, logErrorWithContext } = require('../utils/logger');
 
 /**
  * Global error handler for Express
@@ -6,18 +6,8 @@ const { logger } = require('../utils/logger');
 const errorHandler = (err, req, res, next) => {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   
-  // Create a shorter error identifier
-  const errorId = `err_${Date.now().toString(36)}`;
-  
-  // Log error with essential information only
-  logger.error(`Error [${errorId}]: ${err.message}`, {
-    id: errorId,
-    url: req.originalUrl,
-    method: req.method,
-    code: statusCode,
-    userId: req.user?.id,
-    stack: err.stack
-  });
+  // Log error with full context for debugging
+  const errorId = logErrorWithContext(err, req, 'Global Error Handler');
   
   res.status(statusCode).json({
     error: true,

@@ -236,6 +236,67 @@ const createTimer = () => {
   };
 };
 
+/**
+ * Enhanced error handler for routes
+ * @param {Error} error - The error object
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {string} context - Context about where the error occurred
+ * @param {number} statusCode - HTTP status code to return (default: 500)
+ */
+const handleRouteError = (error, req, res, context = 'Route', statusCode = 500) => {
+  // Generate error ID
+  const errorId = `err_${Date.now().toString(36)}`;
+  
+  // Log the error with full context
+  const errorDetails = {
+    id: errorId,
+    requestFailure: true,
+    reqId: req.requestId,
+    context,
+    error: error.message,
+    stack: error.stack,
+    method: req.method,
+    url: req.originalUrl,
+    ip: req.ip,
+    userAgent: req.get ? req.get('User-Agent') : undefined,
+    user: req.user ? { 
+      id: req.user.id, 
+      role: req.user.role,
+      email: req.user.email 
+    } : null,
+    requestBody: maskSensitiveData(req.body),
+    queryParams: maskSensitiveData(req.query),
+    routeParams: req.params,
+    timestamp: new Date().toISOString()
+  };
+
+  logger.error(`${context} Error [${errorId}]: ${error.message}`, errorDetails);
+  
+  // Send error response
+  res.status(statusCode).json({
+    error: true,
+    message: process.env.NODE_ENV === 'production' ? 'Server error' : error.message,
+    errorId,
+    stack: process.env.NODE_ENV === 'production' ? undefined : error.stack
+  });
+  
+  return errorId;
+};
+
+/**
+ * Create an async error wrapper for route handlers
+ * @param {Function} fn - Async route handler function
+ * @param {string} context - Context for error logging
+ */
+const asyncHandler = (fn, context = 'Route') => {
+  return (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch((error) => {
+      handleRouteError(error, req, res, context);
+    });
+  };
+};
+
 module.exports = {
   logRequestDetails,
   logDatabaseOperation,
@@ -243,6 +304,8 @@ module.exports = {
   logSystemMetrics,
   logError,
   createTimer,
+  handleRouteError,
+  asyncHandler,
   dbLogger,
   authLogger,
   apiLogger,

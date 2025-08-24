@@ -1,6 +1,7 @@
 const express = require('express');
 const { pool } = require('../utils/db');
 const { authenticate, hasPermission } = require('../middleware/auth');
+const { handleRouteError } = require('../utils/loggerUtils');
 
 const router = express.Router();
 
@@ -169,8 +170,7 @@ router.get('/', authenticate, hasPermission('audit-trail', 'view'), async (req, 
       timestamp: entry.timestamp
     })));
   } catch (error) {
-    console.error('Error fetching audit trail:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Audit - Fetching audit trail:');
   }
 });
 
@@ -208,8 +208,7 @@ router.get('/:id', authenticate, hasPermission('audit-trail', 'view'), async (re
       timestamp: entry.timestamp
     });
   } catch (error) {
-    console.error('Error fetching audit entry:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Audit - Fetching audit entry:');
   }
 });
 
@@ -241,8 +240,7 @@ router.get('/user/:userId', authenticate, hasPermission('audit-trail', 'view'), 
       timestamp: entry.timestamp
     })));
   } catch (error) {
-    console.error('Error fetching user audit trail:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Audit - Fetching user audit trail:');
   }
 });
 
@@ -274,8 +272,7 @@ router.get('/module/:module', authenticate, hasPermission('audit-trail', 'view')
       timestamp: entry.timestamp
     })));
   } catch (error) {
-    console.error('Error fetching module audit trail:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Audit - Fetching module audit trail:');
   }
 });
 

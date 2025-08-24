@@ -2,6 +2,7 @@ const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { authenticate, hasPermission } = require('../middleware/auth');
+const { handleRouteError } = require('../utils/loggerUtils');
 
 const router = express.Router();
 
@@ -189,8 +190,7 @@ router.get('/', authenticate, hasPermission('tax', 'view'), async (req, res) => 
       createdAt: tax.created_at
     })));
   } catch (error) {
-    console.error('Error fetching taxes:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Taxes - Fetching taxes:');
   }
 });
 
@@ -224,8 +224,7 @@ router.get('/:id', authenticate, hasPermission('tax', 'view'), async (req, res) 
       createdAt: tax.created_at
     });
   } catch (error) {
-    console.error('Error fetching tax:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Taxes - Fetching tax:');
   }
 });
 
@@ -297,8 +296,7 @@ router.post(
         createdAt: tax.created_at
       });
     } catch (error) {
-      console.error('Error creating tax:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Taxes - Creating tax:');
     }
   }
 );
@@ -382,8 +380,7 @@ router.put(
         createdAt: tax.created_at
       });
     } catch (error) {
-      console.error('Error updating tax:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Taxes - Updating tax:');
     }
   }
 );
@@ -424,8 +421,7 @@ router.delete(
       
       res.json({ message: 'Tax deleted successfully' });
     } catch (error) {
-      console.error('Error deleting tax:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Taxes - Deleting tax:');
     }
   }
 );

@@ -2,6 +2,7 @@ const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { authenticate, hasPermission } = require('../middleware/auth');
+const { handleRouteError } = require('../utils/loggerUtils');
 
 const router = express.Router();
 
@@ -411,8 +412,7 @@ router.get('/', authenticate, hasPermission('purchase-orders', 'view'), async (r
     
     res.json(purchaseOrders);
   } catch (error) {
-    console.error('Error fetching purchase orders:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'PurchaseOrders - Fetching purchase orders:');
   }
 });
 
@@ -555,8 +555,7 @@ router.get('/:id', authenticate, hasPermission('purchase-orders', 'view'), async
     
     res.json(formattedOrder);
   } catch (error) {
-    console.error('Error fetching purchase order:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'PurchaseOrders - Fetching purchase order:');
   }
 });
 
@@ -706,8 +705,7 @@ router.post(
       });
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('Error creating purchase order:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'PurchaseOrders - Creating purchase order:');
     } finally {
       client.release();
     }
@@ -916,8 +914,7 @@ router.put(
       });
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('Error updating purchase order:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'PurchaseOrders - Updating purchase order:');
     } finally {
       client.release();
     }
@@ -970,8 +967,7 @@ router.delete(
       
       res.json({ message: 'Purchase order deleted successfully' });
     } catch (error) {
-      console.error('Error deleting purchase order:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'PurchaseOrders - Deleting purchase order:');
     }
   }
 );
@@ -1054,8 +1050,7 @@ router.put(
         timeline
       });
     } catch (error) {
-      console.error('Error updating purchase order status:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'PurchaseOrders - Updating purchase order status:');
     }
   }
 );
@@ -1232,8 +1227,7 @@ router.post(
       res.status(201).json(formattedGrn);
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('Error creating goods receive note:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'PurchaseOrders - Creating goods receive note:');
     } finally {
       client.release();
     }

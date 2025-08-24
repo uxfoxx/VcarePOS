@@ -2,6 +2,7 @@ const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { authenticate, hasPermission } = require('../middleware/auth');
+const { handleRouteError } = require('../utils/loggerUtils');
 
 const router = express.Router();
 
@@ -366,8 +367,7 @@ router.get('/', authenticate, hasPermission('transactions', 'view'), async (req,
     
     res.json(transactions);
   } catch (error) {
-    console.error('Error fetching transactions:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Transactions - Fetching transactions:');
   }
 });
 
@@ -494,8 +494,7 @@ router.get('/:id', authenticate, hasPermission('transactions', 'view'), async (r
     
     res.json(formattedTransaction);
   } catch (error) {
-    console.error('Error fetching transaction:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Transactions - Fetching transaction:');
   }
 });
 
@@ -713,8 +712,7 @@ router.post(
       });
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('Error creating transaction:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Transactions - Creating transaction:');
     } finally {
       client.release();
     }
@@ -773,8 +771,7 @@ router.put(
         status: transaction.status
       });
     } catch (error) {
-      console.error('Error updating transaction status:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Transactions - Updating transaction status:');
     }
   }
 );
@@ -985,8 +982,7 @@ router.post(
       });
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('Error processing refund:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Transactions - Processing refund:');
     } finally {
       client.release();
     }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Alert, Tag, Space, Typography, Divider } from 'antd';
 import { Icon } from './Icon';
 import { ActionButton } from './ActionButton';
@@ -14,6 +14,8 @@ export function StockAlert({
   onDismiss,
   className = ''
 }) {
+  const [showAllProducts, setShowAllProducts] = useState(false);
+
   const getAlertType = () => {
     switch (type) {
       case 'error': return 'error';
@@ -33,6 +35,10 @@ export function StockAlert({
   const totalItems = materials.length + products.length;
 
   if (totalItems === 0) return null;
+
+  const toggleShowAllProducts = () => {
+    setShowAllProducts(!showAllProducts);
+  };
 
   return (
     <Alert
@@ -88,14 +94,29 @@ export function StockAlert({
               {materials.length > 0 && <Divider className="my-2" />}
               <Text strong className="block mb-2">Products ({products.length}):</Text>
               <div className="flex flex-wrap gap-1">
-                {products.slice(0, 5).map(product => (
+                {(showAllProducts ? products : products.slice(0, 5)).map(product => (
                   <Tag key={product.id} color="orange" className="mb-1">
                     {product.name} ({product.stock} units left)
                   </Tag>
                 ))}
-                {products.length > 5 && (
-                  <Tag className="mb-1">
+                {products.length > 5 && !showAllProducts && (
+                  <Tag 
+                    role="button"
+                    aria-label={`Show ${products.length - 5} more products`}
+                    className="mb-1 cursor-pointer hover:bg-gray-100"
+                    onClick={toggleShowAllProducts}
+                  >
                     +{products.length - 5} more
+                  </Tag>
+                )}
+                {products.length > 5 && showAllProducts && (
+                  <Tag 
+                    role="button"
+                    aria-label="Show less products"
+                    className="mb-1 cursor-pointer hover:bg-gray-100"
+                    onClick={toggleShowAllProducts}
+                  >
+                    Show less
                   </Tag>
                 )}
               </div>

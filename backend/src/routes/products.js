@@ -299,19 +299,11 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
     `);
     
     // Get all product raw materials (now linked to sizes)
-    // const materialsResult = await client.query(`
-    //   SELECT prm.*, rm.name, rm.unit, rm.unit_price, ps.id as size_id
-    //   FROM product_raw_materials prm
-    //   JOIN raw_materials rm ON prm.raw_material_id = rm.id
-    //   JOIN product_sizes ps ON prm.product_size_id = ps.id
-    // `);
-
-        // Get all product raw materials (now linked to sizes)
     const materialsResult = await client.query(`
-      SELECT prm.*, rm.name, rm.unit, rm.unit_price
+      SELECT prm.*, rm.name, rm.unit, rm.unit_price, ps.id as size_id
       FROM product_raw_materials prm
       JOIN raw_materials rm ON prm.raw_material_id = rm.id
-      
+      JOIN product_sizes ps ON prm.product_size_id = ps.id
     `);
     
     // Get all product addons

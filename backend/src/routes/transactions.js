@@ -588,8 +588,8 @@ router.post(
           INSERT INTO transaction_items (
             transaction_id, product_id, product_name, product_price,
             product_barcode, product_category, quantity, selected_size,
-            selected_variant, addons
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            selected_variant, addons, selected_color_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         `, [
           transactionId,
           item.product.id,
@@ -600,29 +600,36 @@ router.post(
           item.quantity,
           item.selectedSize,
           item.selectedVariant,
-          JSON.stringify(item.product.addons || null)
+          JSON.stringify(item.product.addons || null),
+          item.selectedColorId
         ]);
         
         // Update product stock
-        if (item.selectedSize) {
-          // Update size stock
+        if (item.selectedSize && item.selectedColorId) {
+          // Update specific size stock using the correct relationship chain
           await client.query(`
             UPDATE product_sizes
             SET stock = stock - $1
-            WHERE product_id = $2 AND name = $3
+            WHERE id = (
+              SELECT ps.id 
+              FROM product_sizes ps
+              JOIN product_colors pc ON ps.product_color_id = pc.id
+              WHERE pc.id = $2 AND ps.name = $3
+            )
           `, [
             item.quantity,
-            item.product.id,
+            item.selectedColorId,
             item.selectedSize
           ]);
           
-          // Update total product stock (sum of all sizes)
+          // Update total product stock (sum of all sizes across all colors)
           await client.query(`
             UPDATE products
             SET stock = (
-              SELECT COALESCE(SUM(stock), 0)
-              FROM product_sizes
-              WHERE product_id = $1
+              SELECT COALESCE(SUM(ps.stock), 0)
+              FROM product_sizes ps
+              JOIN product_colors pc ON ps.product_color_id = pc.id
+              WHERE pc.product_id = $1
             )
             WHERE id = $1
           `, [item.product.id]);
@@ -638,13 +645,15 @@ router.post(
           ]);
         }
         
-        // Update raw material stock for the selected color
-        if (item.selectedColorId) {
+        // Update raw material stock for the selected size (new relationship structure)
+        if (item.selectedColorId && item.selectedSize) {
           const rawMaterialsResult = await client.query(`
             SELECT prm.raw_material_id, prm.quantity
             FROM product_raw_materials prm
-            WHERE prm.product_color_id = $1
-          `, [item.selectedColorId]);
+            JOIN product_sizes ps ON prm.product_size_id = ps.id
+            JOIN product_colors pc ON ps.product_color_id = pc.id
+            WHERE pc.id = $1 AND ps.name = $2
+          `, [item.selectedColorId, item.selectedSize]);
           
           for (const material of rawMaterialsResult.rows) {
             await client.query(`
@@ -864,23 +873,28 @@ router.post(
         for (const item of refundItems) {
           await client.query(`
             INSERT INTO refund_items (
-              selected_color_id, addons
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+              refund_id, product_id, product_name, refund_quantity, refund_amount
+            ) VALUES ($1, $2, $3, $4, $5)
           `, [
             refundId,
             item.product.id,
             item.product.name,
-            item.selectedColorId,
+            item.refundQuantity,
             item.refundAmount
           ]);
           
           // Restore product stock
           if (item.selectedColorId && item.selectedSize) {
-            // Update specific color/size stock
+            // Update specific size stock using correct relationship chain
             await client.query(`
               UPDATE product_sizes 
               SET stock = stock + $1
-              WHERE product_color_id = $2 AND name = $3
+              WHERE id = (
+                SELECT ps.id 
+                FROM product_sizes ps
+                JOIN product_colors pc ON ps.product_color_id = pc.id
+                WHERE pc.id = $2 AND ps.name = $3
+              )
             `, [
               item.refundQuantity,
               item.selectedColorId,
@@ -917,12 +931,17 @@ router.post(
         `, [id]);
         
         for (const item of itemsResult.rows) {
-          if (item.selected_size) {
-            // Restore size stock
+          if (item.selected_size && item.selected_color_id) {
+            // Restore size stock using correct relationship chain
             await client.query(`
               UPDATE product_sizes 
               SET stock = stock + $1
-              WHERE product_color_id = $2 AND name = $3
+              WHERE id = (
+                SELECT ps.id 
+                FROM product_sizes ps
+                JOIN product_colors pc ON ps.product_color_id = pc.id
+                WHERE pc.id = $2 AND ps.name = $3
+              )
             `, [
               item.quantity,
               item.selected_color_id,
@@ -936,7 +955,6 @@ router.post(
                 SELECT COALESCE(SUM(ps.stock), 0)
                 FROM product_sizes ps
                 JOIN product_colors pc ON ps.product_color_id = pc.id
-                WHERE pc.product_id = $1
                 WHERE pc.product_id = $1
               )
               WHERE id = $1

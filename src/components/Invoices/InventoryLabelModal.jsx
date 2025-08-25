@@ -13,7 +13,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
 
   if (!transaction) return null;
 
-  // Pre-calculate branding data for print compatibility
+  // Extract branding data from localStorage with error handling
   const getBrandingData = () => {
     try {
       const brandingData = localStorage.getItem('vcare_branding');
@@ -24,10 +24,12 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
     }
   };
   
+  // Pre-calculate branding values at component level for consistent access
   const brandingData = getBrandingData();
   const businessName = brandingData.businessName || 'VCare Furniture';
   const primaryColor = brandingData.primaryColor || '#2563eb';
   const businessInitials = businessName.substring(0, 2).toUpperCase();
+  const businessNameShort = businessName.substring(0, 15);
 
   const handlePrint = async () => {
     const element = document.getElementById('inventory-labels-content');
@@ -251,7 +253,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
               }}>
                 <div>
                   <span style={{ fontWeight: 'bold', fontSize: '9px' }}>
-                    {businessName.substring(0, 15)}
+                    {businessNameShort}
                   </span>
                 </div>
                 <div
@@ -265,7 +267,12 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                     justifyContent: 'center',
                   }}
                 >
-                  <span style={{ color: 'white', fontWeight: 'bold', fontSize: '6px' }}>
+                  <span style={{ 
+                    color: 'white', 
+                    fontWeight: 'bold', 
+                    fontSize: '6px',
+                    lineHeight: '1'
+                  }}>
                     {businessInitials}
                   </span>
                 </div>
@@ -343,10 +350,16 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
               padding: 5mm;
               box-sizing: border-box;
               background-color: #ffffff;
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
             }
             #print-container .inventory-label {
               page-break-inside: avoid;
               break-inside: avoid;
+            }
+            #print-container * {
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
             }
             .ant-modal,
             .ant-modal-content,

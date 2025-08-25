@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Modal, Typography, Space } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
@@ -12,45 +12,111 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
 
   if (!transaction) return null;
 
+  // Safe function to get branding data from localStorage
+  const getBrandingData = () => {
+    try {
+      const brandingData = localStorage.getItem('vcare_branding');
+      return brandingData ? JSON.parse(brandingData) : {};
+    } catch (error) {
+      console.warn('Failed to parse branding data from localStorage:', error);
+      return {};
+    }
+  };
+
   const handlePrint = async () => {
     const element = document.getElementById('inventory-labels-content');
     if (!element) {
-      console.error('Inventory labels content element not found');
+      console.warn('Inventory labels content element not found');
       return;
     }
 
-    // Create a temporary container in the document body
-    const printContainer = document.createElement('div');
-    printContainer.id = 'print-container';
-    printContainer.style.position = 'absolute';
-    printContainer.style.top = '0';
-    printContainer.style.left = '0';
-    printContainer.style.width = '210mm';
-    printContainer.style.height = 'auto';
-    printContainer.style.padding = '5mm';
-    printContainer.style.backgroundColor = '#ffffff';
-
-    // Clone the content and append to the temporary container
-    const clonedContent = element.cloneNode(true);
-    printContainer.appendChild(clonedContent);
-    document.body.appendChild(printContainer);
-
-    // Force reflow to ensure content is rendered
-    clonedContent.style.display = 'none';
-    clonedContent.offsetHeight; // Trigger reflow
-    clonedContent.style.display = 'block';
-
-    // Wait briefly to ensure rendering
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
+    let printContainer = null;
     try {
+      // Create a temporary container in the document body
+      printContainer = document.createElement('div');
+      printContainer.id = 'print-container';
+      printContainer.style.position = 'absolute';
+      printContainer.style.top = '0';
+      printContainer.style.left = '0';
+      printContainer.style.width = '210mm';
+      printContainer.style.height = 'auto';
+      printContainer.style.padding = '5mm';
+      printContainer.style.backgroundColor = '#ffffff';
+
+      // Clone the content and append to the temporary container
+      const clonedContent = element.cloneNode(true);
+      printContainer.appendChild(clonedContent);
+      document.body.appendChild(printContainer);
+
+      // Force reflow to ensure content is rendered
+      clonedContent.style.display = 'none';
+      clonedContent.offsetHeight; // Trigger reflow
+      clonedContent.style.display = 'block';
+
+      // Wait briefly to ensure rendering
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // Trigger print
       window.print();
     } catch (error) {
-      console.error('Error during print:', error);
+      console.warn('Error during print:', error);
     } finally {
       // Clean up: remove the temporary container
-      document.body.removeChild(printContainer);
+      if (printContainer && document.body.contains(printContainer)) {
+        document.body.removeChild(printContainer);
+      }
+    }
+  };
+
+  // Consolidated PDF generation function to eliminate code duplication
+  const generatePDF = async (element, action = 'view') => {
+    try {
+      // Create canvas from the element
+      const canvas = await html2canvas(element, {
+        scale: 3, // Higher scale for better barcode quality
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: element.scrollWidth,
+        height: element.scrollHeight,
+      });
+
+      // Calculate PDF dimensions for label sheets (A4 with multiple labels)
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      // Create PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Add additional pages if needed
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      if (action === 'download') {
+        // Download the PDF
+        const filename = `inventory-labels-${transaction.id}.pdf`;
+        pdf.save(filename);
+      } else {
+        // Open PDF in new tab
+        const pdfBlob = pdf.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, '_blank');
+      }
+    } catch (error) {
+      console.warn('Error generating PDF:', error);
+      // Fallback to print
+      handlePrint();
     }
   };
 
@@ -58,109 +124,26 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
     setLoading(true);
     const element = document.getElementById('inventory-labels-content');
     if (!element) {
-      console.error('Inventory labels content element not found');
+      console.warn('Inventory labels content element not found');
       setLoading(false);
       return;
     }
 
-    try {
-      // Create canvas from the element
-      const canvas = await html2canvas(element, {
-        scale: 3, // Higher scale for better barcode quality
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: element.scrollWidth,
-        height: element.scrollHeight,
-      });
-
-      // Calculate PDF dimensions for label sheets (A4 with multiple labels)
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-
-      // Create PDF
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      let position = 0;
-
-      // Add first page
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      // Add additional pages if needed
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      // Open PDF in new tab
-      const pdfBlob = pdf.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      window.open(pdfUrl, '_blank');
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      // Fallback to print
-      handlePrint();
-    } finally {
-      setLoading(false);
-    }
+    await generatePDF(element, 'view');
+    setLoading(false);
   };
 
   const handleDownload = async () => {
     setLoading(true);
     const element = document.getElementById('inventory-labels-content');
     if (!element) {
-      console.error('Inventory labels content element not found');
+      console.warn('Inventory labels content element not found');
       setLoading(false);
       return;
     }
 
-    try {
-      // Create canvas from the element
-      const canvas = await html2canvas(element, {
-        scale: 3, // Higher scale for better barcode quality
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: element.scrollWidth,
-        height: element.scrollHeight,
-      });
-
-      // Calculate PDF dimensions for label sheets (A4 with multiple labels)
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-
-      // Create PDF
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      let position = 0;
-
-      // Add first page
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      // Add additional pages if needed
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      // Download the PDF
-      const filename = `inventory-labels-${transaction.id}.pdf`;
-      pdf.save(filename);
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      // Fallback to print
-      handlePrint();
-    } finally {
-      setLoading(false);
-    }
+    await generatePDF(element, 'download');
+    setLoading(false);
   };
 
   // Generate a simple barcode pattern (in real app, use proper barcode library)
@@ -240,21 +223,22 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
               <div className="flex items-center justify-between mb-1 pb-1 border-b border-gray-400">
                 <div>
                   <span style={{ fontWeight: 'bold', fontSize: '9px' }}>
-                    {localStorage.getItem('vcare_branding') &&
-                    JSON.parse(localStorage.getItem('vcare_branding')).businessName
-                      ? JSON.parse(localStorage.getItem('vcare_branding')).businessName.substring(0, 15)
-                      : 'VCare Furniture'}
+                    {(() => {
+                      const branding = getBrandingData();
+                      return branding.businessName 
+                        ? branding.businessName.substring(0, 15)
+                        : 'VCare Furniture';
+                    })()}
                   </span>
                 </div>
                 <div
                   style={{
                     width: '12px',
                     height: '12px',
-                    backgroundColor:
-                      localStorage.getItem('vcare_branding') &&
-                      JSON.parse(localStorage.getItem('vcare_branding')).primaryColor
-                        ? JSON.parse(localStorage.getItem('vcare_branding')).primaryColor
-                        : '#2563eb',
+                    backgroundColor: (() => {
+                      const branding = getBrandingData();
+                      return branding.primaryColor || '#2563eb';
+                    })(),
                     borderRadius: '2px',
                     display: 'flex',
                     alignItems: 'center',
@@ -262,10 +246,12 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                   }}
                 >
                   <span style={{ color: 'white', fontWeight: 'bold', fontSize: '6px' }}>
-                    {localStorage.getItem('vcare_branding') &&
-                    JSON.parse(localStorage.getItem('vcare_branding')).businessName
-                      ? JSON.parse(localStorage.getItem('vcare_branding')).businessName.substring(0, 2).toUpperCase()
-                      : 'VC'}
+                    {(() => {
+                      const branding = getBrandingData();
+                      return branding.businessName 
+                        ? branding.businessName.substring(0, 2).toUpperCase()
+                        : 'VC';
+                    })()}
                   </span>
                 </div>
               </div>
@@ -383,7 +369,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
           icon="print" 
           onClick={handlePrint}
           >
-            Print Labels
+            Print Labels 
           </ActionButton.Primary>
         ]}
         className="inventory-labels-modal"

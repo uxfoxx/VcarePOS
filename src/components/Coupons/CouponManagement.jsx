@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
-  Card, 
   Button, 
   Input, 
   Space, 
@@ -27,14 +26,12 @@ import {
   fetchCoupons
 } from '../../features/coupons/couponsSlice';
 import { Icon } from '../common/Icon';
-import { SearchInput } from '../common/SearchInput';
 import { ActionButton } from '../common/ActionButton';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { DetailModal } from '../common/DetailModal';
-import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 const { RangePicker } = DatePicker;
@@ -44,13 +41,14 @@ export function CouponManagement() {
   const coupons = useSelector(state => state.coupons.couponsList) || [];
   const loading = useSelector(state => state.coupons.loading);
   const categories = useSelector(state => state.categories.categoriesList) || [];
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState(null);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [form] = Form.useForm();
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [discountType, setDiscountType] = useState('percentage');
 
   useEffect(() => {
     dispatch(fetchCoupons());
@@ -83,22 +81,22 @@ export function CouponManagement() {
 
       if (editingCoupon) {
         dispatch(updateCoupon(couponData));
-        message.success('Coupon update requested');
       } else {
         dispatch(addCoupon(couponData));
-        message.success('Coupon creation requested');
       }
 
       setShowModal(false);
       setEditingCoupon(null);
+      setDiscountType('percentage');
       form.resetFields();
-    } catch (error) {
+    } catch {
       message.error('Please fill in all required fields');
     }
   };
 
   const handleEdit = (coupon) => {
     setEditingCoupon(coupon);
+    setDiscountType(coupon.discountType || 'percentage');
     form.setFieldsValue({
       ...coupon,
       dateRange: coupon.validFrom && coupon.validTo ? [
@@ -111,21 +109,18 @@ export function CouponManagement() {
 
   const handleDelete = (couponId) => {
     dispatch(deleteCoupon({ id: couponId }));
-    message.success('Coupon delete requested');
   };
 
   const handleBulkDelete = (couponIds) => {
     couponIds.forEach(id => {
       dispatch(deleteCoupon({ id }));
     });
-    message.success(`${couponIds.length} coupon delete requests sent`);
     setSelectedRowKeys([]);
   };
 
   const handleToggleStatus = (coupon) => {
     const updatedCoupon = { ...coupon, isActive: !coupon.isActive };
     dispatch(updateCoupon(updatedCoupon));
-    message.success(`Coupon ${updatedCoupon.isActive ? 'activate' : 'deactivate'} requested`);
   };
 
   const handleRowClick = (coupon) => {
@@ -315,6 +310,7 @@ export function CouponManagement() {
         rowKey="id"
         rowSelection={{
           type: 'checkbox',
+          selectedRowKeys,
           onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys)
         }}
         onDelete={handleBulkDelete}
@@ -342,6 +338,7 @@ export function CouponManagement() {
         onCancel={() => {
           setShowModal(false);
           setEditingCoupon(null);
+          setDiscountType('percentage');
           form.resetFields();
         }}
         footer={null}
@@ -382,7 +379,7 @@ export function CouponManagement() {
                 rules={[{ required: true, message: 'Please select discount type' }]}
                 initialValue="percentage"
               >
-                <Select>
+                <Select onChange={setDiscountType}>
                   <Option value="percentage">Percentage</Option>
                   <Option value="fixed">Fixed Amount</Option>
                 </Select>
@@ -391,33 +388,55 @@ export function CouponManagement() {
           </Row>
 
           <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item
-                name="discountPercent"
-                label="Discount Percentage (%)"
-                rules={[{ required: true, message: 'Please enter discount percentage' }]}
-              >
-                <InputNumber
-                  min={0}
-                  max={100}
-                  step={1}
-                  placeholder="0"
-                  className="w-full"
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="maxDiscount" label="Maximum Discount (LKR)">
-                <InputNumber
-                  min={0}
-                  step={100}
-                  placeholder="0.00"
-                  className="w-full"
-                  formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value.replace(/LKR\s?|(,*)/g, '')}
-                />
-              </Form.Item>
-            </Col>
+            {discountType === 'percentage' && (
+              <Col span={8}>
+                <Form.Item
+                  name="discountPercent"
+                  label="Discount Percentage (%)"
+                  rules={[{ required: true, message: 'Please enter discount percentage' }]}
+                >
+                  <InputNumber
+                    min={0}
+                    max={100}
+                    step={1}
+                    placeholder="0"
+                    className="w-full"
+                  />
+                </Form.Item>
+              </Col>
+            )}
+            {discountType === 'fixed' && (
+              <Col span={8}>
+                <Form.Item
+                  name="discountAmount"
+                  label="Discount Amount (LKR)"
+                  rules={[{ required: true, message: 'Please enter discount amount' }]}
+                >
+                  <InputNumber
+                    min={0}
+                    step={10}
+                    placeholder="0.00"
+                    className="w-full"
+                    formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+                  />
+                </Form.Item>
+              </Col>
+            )}
+            {discountType === 'percentage' && (
+              <Col span={8}>
+                <Form.Item name="maxDiscount" label="Maximum Discount (LKR)">
+                  <InputNumber
+                    min={0}
+                    step={100}
+                    placeholder="0.00"
+                    className="w-full"
+                    formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+                  />
+                </Form.Item>
+              </Col>
+            )}
             <Col span={8}>
               <Form.Item name="minimumAmount" label="Minimum Order Amount (LKR)">
                 <InputNumber

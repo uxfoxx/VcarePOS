@@ -159,8 +159,6 @@ export function CheckoutModal({
     
     try {
       // Use the persistent customer data state instead of form data
-      console.log('Customer Data:', customerData);
-      console.log('Payment Method:', paymentMethod);
       const salesperson = users.find(u => u.id === selectedSalesperson);
       
       const transaction = {

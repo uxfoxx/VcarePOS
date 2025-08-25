@@ -4,6 +4,7 @@ import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import JsBarcode from 'jsbarcode';
 
 const { Text } = Typography;
 
@@ -12,7 +13,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
 
   if (!transaction) return null;
 
-  // Safe function to get branding data from localStorage
+  // Pre-calculate branding data for print compatibility
   const getBrandingData = () => {
     try {
       const brandingData = localStorage.getItem('vcare_branding');
@@ -22,6 +23,11 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
       return {};
     }
   };
+  
+  const brandingData = getBrandingData();
+  const businessName = brandingData.businessName || 'VCare Furniture';
+  const primaryColor = brandingData.primaryColor || '#2563eb';
+  const businessInitials = businessName.substring(0, 2).toUpperCase();
 
   const handlePrint = async () => {
     const element = document.getElementById('inventory-labels-content');
@@ -146,54 +152,64 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
     setLoading(false);
   };
 
-  // Generate a simple barcode pattern (in real app, use proper barcode library)
-  const generateBarcodePattern = (code) => {
-    const patterns = {
-      '0': '0001101', '1': '0011001', '2': '0010011', '3': '0111101',
-      '4': '0100011', '5': '0110001', '6': '0101111', '7': '0111011',
-      '8': '0110111', '9': '0001011', 'A': '0100001', 'B': '0110001',
-      'C': '0001001', 'D': '0101001', 'E': '0011001', 'F': '0111001',
-      'G': '0001101', 'H': '0010001', 'I': '0001001', 'J': '0010001',
-      'K': '0100001', 'L': '0110001', 'M': '0001101', 'N': '0010011',
-      'O': '0001011', 'P': '0010001', 'Q': '0100001', 'R': '0001001',
-      'S': '0010001', 'T': '0001001', 'U': '0100001', 'V': '0110001',
-      'W': '0001101', 'X': '0010011', 'Y': '0001011', 'Z': '0010001',
-      '-': '0010001',
-    };
-
-    let pattern = '101'; // Start pattern
-    for (let char of code.toUpperCase()) {
-      pattern += patterns[char] || '0001001';
-    }
-    pattern += '101'; // End pattern
-    return pattern;
-  };
-
+  // Generate professional barcode using JsBarcode
   const renderBarcode = (code) => {
-    const pattern = generateBarcodePattern(code);
-    const bars = pattern.split('').map((bit, index) => (
-      <div
-        key={index}
-        style={{
-          width: '0.8px',
-          height: '20px',
-          backgroundColor: bit === '1' ? '#000' : '#fff',
-          display: 'inline-block',
-        }}
-      />
-    ));
-
-    return (
-      <div className="flex justify-center items-center bg-white">
-        <div style={{ fontSize: 0, lineHeight: 0 }}>
-          {bars}
-          </div>
-      </div>
-    );
+    try {
+      const canvas = document.createElement('canvas');
+      JsBarcode(canvas, code || 'NOCODE', {
+        format: "CODE128",
+        width: 1,
+        height: 20,
+        displayValue: false,
+        background: "#ffffff",
+        lineColor: "#000000",
+        margin: 0
+      });
+      
+      return (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          backgroundColor: '#ffffff',
+          padding: '2px 0'
+        }}>
+          <img 
+            src={canvas.toDataURL('image/png')} 
+            alt={`Barcode ${code}`}
+            style={{ 
+              maxWidth: '100%', 
+              height: '20px',
+              display: 'block'
+            }}
+          />
+        </div>
+      );
+    } catch (error) {
+      console.warn('Error generating barcode:', error);
+      // Fallback to text display
+      return (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          backgroundColor: '#ffffff',
+          padding: '2px 0',
+          fontSize: '8px',
+          fontFamily: 'monospace'
+        }}>
+          {code || 'NOCODE'}
+        </div>
+      );
+    }
   };
 
   const renderInventoryLabels = () => (
-    <div id="inventory-labels-content" className="bg-white" style={{ fontFamily: 'Arial, sans-serif', padding: '5mm' }}>
+    <div id="inventory-labels-content" style={{ 
+      fontFamily: 'Arial, sans-serif', 
+      padding: '5mm',
+      backgroundColor: '#ffffff'
+    }}>
       {/* Grid layout: 4 columns x 6 rows = 24 labels per A4 page */}
       <div
         style={{
@@ -208,7 +224,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
           Array.from({ length: item.quantity }, (_, qtyIndex) => (
             <div
               key={`${itemIndex}-${qtyIndex}`}
-              className="inventory-label border border-gray-800 bg-white flex flex-col"
+              className="inventory-label"
               style={{
                 width: '48mm',
                 height: '45mm',
@@ -216,29 +232,33 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                 pageBreakInside: 'avoid',
                 fontSize: '8px',
                 lineHeight: '1.2',
+                border: '1px solid #374151',
+                backgroundColor: '#ffffff',
+                display: 'flex',
+                flexDirection: 'column',
+                boxSizing: 'border-box'
               }}
             >
               
               {/* Company Header with Logo */}
-              <div className="flex items-center justify-between mb-1 pb-1 border-b border-gray-400">
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '2px',
+                paddingBottom: '2px',
+                borderBottom: '1px solid #9ca3af'
+              }}>
                 <div>
                   <span style={{ fontWeight: 'bold', fontSize: '9px' }}>
-                    {(() => {
-                      const branding = getBrandingData();
-                      return branding.businessName 
-                        ? branding.businessName.substring(0, 15)
-                        : 'VCare Furniture';
-                    })()}
+                    {businessName.substring(0, 15)}
                   </span>
                 </div>
                 <div
                   style={{
                     width: '12px',
                     height: '12px',
-                    backgroundColor: (() => {
-                      const branding = getBrandingData();
-                      return branding.primaryColor || '#2563eb';
-                    })(),
+                    backgroundColor: primaryColor,
                     borderRadius: '2px',
                     display: 'flex',
                     alignItems: 'center',
@@ -246,23 +266,22 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                   }}
                 >
                   <span style={{ color: 'white', fontWeight: 'bold', fontSize: '6px' }}>
-                    {(() => {
-                      const branding = getBrandingData();
-                      return branding.businessName 
-                        ? branding.businessName.substring(0, 2).toUpperCase()
-                        : 'VC';
-                    })()}
+                    {businessInitials}
                   </span>
                 </div>
               </div>
               
               {/* Product Name */}
-              <div className="mb-2 text-center flex-1">
+              <div style={{
+                marginBottom: '4px',
+                textAlign: 'center',
+                flex: '1'
+              }}>
                 <div
                   style={{
                     fontWeight: 'bold',
                     fontSize: '9px',
-                    lineHeight: '2',
+                    lineHeight: '1.2',
                     overflow: 'hidden',
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
@@ -274,7 +293,10 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
               </div>
               
               {/* SKU */}
-              <div className="mb-2 text-center">
+              <div style={{
+                marginBottom: '4px',
+                textAlign: 'center'
+              }}>
                 <div style={{ fontSize: '6px', color: '#666', marginBottom: '1px' }}>SKU:</div>
                 <div style={{ fontWeight: 'bold', fontFamily: 'monospace', fontSize: '8px' }}>
                   {item.product.barcode || 'N/A'}
@@ -282,11 +304,11 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
               </div>
               
               {/* Barcode */}
-              <div className="mt-auto">
+              <div style={{ marginTop: 'auto' }}>
                 <div style={{ maxWidth: '100%', overflow: 'hidden' }}>
                   {renderBarcode(item.product.barcode || 'NOBARCODE')}
                 </div>
-                <div className="text-center" style={{ marginTop: '1px' }}>
+                <div style={{ textAlign: 'center', marginTop: '1px' }}>
                   <span style={{ fontFamily: 'monospace', fontSize: '6px' }}>
                     {item.product.barcode || 'N/A'}
                   </span>

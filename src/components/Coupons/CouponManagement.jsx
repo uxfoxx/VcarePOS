@@ -410,7 +410,18 @@ export function CouponManagement() {
                 <Form.Item
                   name="discountAmount"
                   label="Discount Amount (LKR)"
-                  rules={[{ required: true, message: 'Please enter discount amount' }]}
+                  rules={[
+                    { required: true, message: 'Please enter discount amount' },
+                    {
+                      validator: (_, value) => {
+                        const minimumAmount = form.getFieldValue('minimumAmount');
+                        if (value && minimumAmount && minimumAmount <= value) {
+                          return Promise.reject(new Error('Discount amount must be less than minimum order amount'));
+                        }
+                        return Promise.resolve();
+                      }
+                    }
+                  ]}
                 >
                   <InputNumber
                     min={0}
@@ -419,6 +430,10 @@ export function CouponManagement() {
                     className="w-full"
                     formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                     parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+                    onChange={() => {
+                      // Trigger validation on minimum amount field when discount amount changes
+                      form.validateFields(['minimumAmount']);
+                    }}
                   />
                 </Form.Item>
               </Col>
@@ -438,7 +453,21 @@ export function CouponManagement() {
               </Col>
             )}
             <Col span={8}>
-              <Form.Item name="minimumAmount" label="Minimum Order Amount (LKR)">
+              <Form.Item 
+                name="minimumAmount" 
+                label="Minimum Order Amount (LKR)"
+                rules={discountType === 'fixed' ? [
+                  {
+                    validator: (_, value) => {
+                      const discountAmount = form.getFieldValue('discountAmount');
+                      if (discountAmount && value && value <= discountAmount) {
+                        return Promise.reject(new Error('Minimum amount must be greater than discount amount'));
+                      }
+                      return Promise.resolve();
+                    }
+                  }
+                ] : []}
+              >
                 <InputNumber
                   min={0}
                   step={100}
@@ -446,6 +475,12 @@ export function CouponManagement() {
                   className="w-full"
                   formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                   parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+                  onChange={() => {
+                    // Trigger validation on discount amount field when minimum amount changes
+                    if (discountType === 'fixed') {
+                      form.validateFields(['discountAmount']);
+                    }
+                  }}
                 />
               </Form.Item>
             </Col>

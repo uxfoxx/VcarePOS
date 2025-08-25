@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
+  fetchVendors, 
+} from '../../features/vendors/vendorsSlice';
+import { 
   Modal, 
   Form, 
   Input, 
@@ -20,6 +23,7 @@ import {
   Tag,
   Alert
 } from 'antd';
+import { useSelector, useDispatch } from 'react-redux';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import dayjs from 'dayjs';
@@ -37,19 +41,23 @@ export function PurchaseOrderModal({
   products = [],
   rawMaterials = []
 }) {
+  const dispatch = useDispatch();
+  const vendors = useSelector(state => state.vendors.vendorsList) || [];
+  const vendorsLoading = useSelector(state => state.vendors.loading) || false;
+  const vendorsError = useSelector(state => state.vendors.error) || null;
   const [form] = Form.useForm();
   const [itemsForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
   const [activeTab, setActiveTab] = useState('1');
   const [itemType, setItemType] = useState('product');
-  const [vendors, setVendors] = useState([
-    { id: 'V001', name: 'Premium Wood Co.', email: 'orders@premiumwood.com', phone: '123-456-7890', address: '123 Wood Lane, Timber City' },
-    { id: 'V002', name: 'MetalWorks Inc.', email: 'sales@metalworks.com', phone: '234-567-8901', address: '456 Steel Ave, Metal Town' },
-    { id: 'V003', name: 'Luxury Fabrics Inc.', email: 'orders@luxuryfabrics.com', phone: '345-678-9012', address: '789 Textile Blvd, Fabric City' },
-    { id: 'V004', name: 'FastenRight Co.', email: 'support@fastenright.com', phone: '456-789-0123', address: '101 Screw Drive, Fastener Village' },
-    { id: 'V005', name: 'Crystal Glass Co.', email: 'orders@crystalglass.com', phone: '567-890-1234', address: '202 Clear View, Glass City' }
-  ]);
+
+  // Fetch vendors when modal opens
+  useEffect(() => {
+    if (open) {
+      dispatch(fetchVendors());
+    }
+  }, [open, dispatch]);
 
   // Initialize form data when editing
   useEffect(() => {
@@ -88,7 +96,7 @@ export function PurchaseOrderModal({
         vendorPhone: vendor.phone,
         vendorAddress: vendor.address
       });
-    }
+    } 
   };
 
   const handleAddItem = (values) => {
@@ -284,6 +292,15 @@ export function PurchaseOrderModal({
       footer={null}
       destroyOnClose
     >
+      {vendorsError && (
+        <Alert
+          message="Error Loading Vendors"
+          description={vendorsError}
+          type="error"
+          showIcon
+          className="mb-4"
+        />
+      )}
       <Tabs activeKey={activeTab} onChange={setActiveTab}>
         <TabPane 
           tab={
@@ -304,6 +321,7 @@ export function PurchaseOrderModal({
                 <Form.Item
                   name="vendorId"
                   label="Select Vendor"
+                  rules={[{ required: true, message: 'Please select a vendor' }]}
                 >
                   <Select 
                     placeholder="Select a vendor" 
@@ -313,6 +331,8 @@ export function PurchaseOrderModal({
                     filterOption={(input, option) =>
                       option.children.toLowerCase().includes(input.toLowerCase())
                     }
+                    loading={vendorsLoading}
+                    disabled={vendorsLoading}
                   >
                     {vendors.map(vendor => (
                       <Option key={vendor.id} value={vendor.id}>{vendor.name}</Option>
@@ -439,6 +459,7 @@ export function PurchaseOrderModal({
               type="primary" 
               onClick={() => setActiveTab('2')}
               className="bg-blue-600"
+              disabled={vendorsLoading}
             >
               Next: Add Items
               <Icon name="arrow_forward" className="ml-2" />

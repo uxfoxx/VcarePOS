@@ -154,6 +154,21 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
     setLoading(false);
   };
 
+  // Utility function to truncate text to fit within 2 lines
+  const truncateText = (text, maxLength = 30) => {
+    if (!text) return '';
+    
+    // Split into words and reconstruct to fit approximately 2 lines
+    const words = text.split(' ');
+    if (words.length <= 4) return text; // Short text, no truncation needed
+    
+    // For longer text, try to fit in about 2 lines (roughly 15 chars per line)
+    if (text.length <= maxLength) return text;
+    
+    // Truncate and add ellipsis
+    return text.substring(0, maxLength - 3) + '...';
+  };
+
   // Generate professional barcode using JsBarcode
   const renderBarcode = (code) => {
     try {
@@ -289,13 +304,15 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                     fontWeight: 'bold',
                     fontSize: '9px',
                     lineHeight: '1.2',
-                    overflow: 'hidden',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
+                    height: '21.6px', // Fixed height for exactly 2 lines
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    wordWrap: 'break-word',
+                    textAlign: 'center',
                   }}
                 >
-                  {item.product.name}
+                  {truncateText(item.product.name, 30)}
                 </div>
               </div>
               

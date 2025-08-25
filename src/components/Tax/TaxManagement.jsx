@@ -87,8 +87,8 @@ export function TaxManagement() {
       setEditingTax(null);
       form.resetFields();
       setTaxType('full_bill');
-    } catch (error) {
-      console.error('Error submitting tax:', error);
+    } catch {
+      // Error handling is managed by Redux saga
       message.error('Failed to save tax. Please check all required fields.');
     }
   };
@@ -116,15 +116,10 @@ export function TaxManagement() {
     setSelectedRowKeys([]);
   };
 
-  const handleToggleStatus = async (tax) => {
-    try {
-      const updatedTax = { ...tax, isActive: !tax.isActive };
-      await dispatch(updateTax(updatedTax));
-      message.success(`Tax ${updatedTax.isActive ? 'activated' : 'deactivated'}`);
-    } catch (error) {
-      console.error('Error toggling tax status:', error);
-      message.error('Failed to update tax status. Please try again.');
-    }
+  const handleToggleStatus = (tax) => {
+    const updatedTax = { ...tax, isActive: !tax.isActive };
+    dispatch(updateTax(updatedTax));
+    // Success/error notifications are handled in the saga
   };
 
   const handleRowClick = (tax) => {

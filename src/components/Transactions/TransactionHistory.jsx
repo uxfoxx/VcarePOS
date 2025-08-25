@@ -9,40 +9,28 @@ import {
   Row,
   Col,
   Select,
-  message,
-  Dropdown,
-  Modal,
-  Tooltip,
-  Image
+  Tooltip
 } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
-import { StatusTag } from '../common/StatusTag';
 import { InvoiceModal } from '../Invoices/InvoiceModal';
 import { InventoryLabelModal } from '../Invoices/InventoryLabelModal';
 import { DetailModal } from '../common/DetailModal';
 import { EnhancedTable } from '../common/EnhancedTable';
-import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { RefundModal } from './RefundModal';
 import { 
   fetchTransactions,
-  fetchTransactionById, 
-  updateTransactionStatus, 
-  processRefund,
-  fetchTransactionsSucceeded,
-  processRefundSucceeded,
-  restoreProductStock
+  processRefund
 } from '../../features/transactions/transactionsSlice';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { Option } = Select;
 
 export function TransactionHistory() {
   const dispatch = useDispatch();
   const { logAction } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
   const [filterPeriod, setFilterPeriod] = useState('all');
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -50,10 +38,9 @@ export function TransactionHistory() {
   const [showInventoryLabelsModal, setShowInventoryLabelsModal] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [invoiceType, setInvoiceType] = useState('detailed');
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   // Get transactions data from Redux store
-  const { transactionsList, loading, error } = useSelector(state => state.transactions);
+  const { transactionsList, loading } = useSelector(state => state.transactions);
 
   useEffect(() => {
     // Fetch transactions when component mounts
@@ -66,28 +53,24 @@ export function TransactionHistory() {
   );
 
   const filteredTransactions = sortedTransactions.filter(transaction => {
-    const matchesSearch = transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.cashier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.salesperson?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+    // Note: Search functionality is handled by EnhancedTable component
     if (filterPeriod === 'today') {
       const today = new Date();
       const transactionDate = new Date(transaction.timestamp);
-      return matchesSearch && transactionDate.toDateString() === today.toDateString();
+      return transactionDate.toDateString() === today.toDateString();
     } else if (filterPeriod === 'week') {
       const weekStart = new Date();
       weekStart.setDate(weekStart.getDate() - 7);
       const transactionDate = new Date(transaction.timestamp);
-      return matchesSearch && transactionDate >= weekStart;
+      return transactionDate >= weekStart;
     } else if (filterPeriod === 'month') {
       const monthStart = new Date();
       monthStart.setMonth(monthStart.getMonth() - 1);
       const transactionDate = new Date(transaction.timestamp);
-      return matchesSearch && transactionDate >= monthStart;
+      return transactionDate >= monthStart;
     }
     
-    return matchesSearch;
+    return true; // Show all transactions for 'all' period
   });
 
   const totalRevenue = filteredTransactions.reduce((sum, transaction) => sum + transaction.total, 0);
@@ -140,69 +123,27 @@ export function TransactionHistory() {
     // setSelectedTransaction(null);
   };
 
-  const handleProcessRefund = async (refundData) => {
-    try {
-      // Create the updated transaction with refund information
-      const updatedTransaction = {
-        ...selectedTransaction,
-        refunds: [...(selectedTransaction.refunds || []), refundData],
-        status: refundData.refundType === 'full' ? 'refunded' : 'partially-refunded'
-      };
-
-      // Dispatch the processRefund Redux action
-      dispatch(processRefund({
-        transactionId: selectedTransaction.id,
-        refundData,
-        updatedTransaction
-      }));
-
-      // Restore inventory for refunded items if needed
-      if (refundData.refundItems && refundData.refundItems.length > 0) {
-        refundData.refundItems.forEach(item => {
-          // Use the new Redux action for restoring product stock
-          dispatch(restoreProductStock({
-            productId: item.product.id,
-            quantity: item.refundQuantity
-          }));
-        });
-      }
-
-      // Log the refund action
-      if (logAction) {
-        logAction(
-          'CREATE',
-          'transactions',
-          `Processed ${refundData.refundType} refund for transaction ${selectedTransaction.id}`,
-          {
-            transactionId: selectedTransaction.id,
-            refundId: refundData.id,
-            refundAmount: refundData.refundAmount,
-            refundType: refundData.refundType
-          }
-        );
-      }
-
-      message.success('Refund processed successfully');
-    } catch (error) {
-      message.error('Failed to process refund');
-      throw error;
-    }
-  };
-
-  const handleUpdateStatus = (transactionId, newStatus) => {
-    // Dispatch the updateTransactionStatus Redux action
-    dispatch(updateTransactionStatus({ 
-      transactionId, 
-      status: newStatus 
+  const handleProcessRefund = (refundData) => {
+    // Dispatch the processRefund Redux action with correct parameter structure
+    // Let Redux saga handle all business logic, API calls, and notifications
+    dispatch(processRefund({
+      id: selectedTransaction.id, // Fix: use 'id' instead of 'transactionId'
+      refundData
     }));
-    
-    message.success(`Order status updated to ${newStatus}`);
-    
-    if (selectedTransaction && selectedTransaction.id === transactionId) {
-      setSelectedTransaction({
-        ...selectedTransaction,
-        status: newStatus
-      });
+
+    // Log the refund action (kept in component as it's audit-specific, not business logic)
+    if (logAction) {
+      logAction(
+        'CREATE',
+        'transactions',
+        `Processed ${refundData.refundType} refund for transaction ${selectedTransaction.id}`,
+        {
+          transactionId: selectedTransaction.id,
+          refundId: refundData.id,
+          refundAmount: refundData.refundAmount,
+          refundType: refundData.refundType
+        }
+      );
     }
   };
 
@@ -432,10 +373,6 @@ export function TransactionHistory() {
         columns={columns}
         dataSource={filteredTransactions}
         rowKey="id"
-        rowSelection={{
-          type: 'checkbox',
-          onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys)
-        }}
         onRow={(record) => ({
           onClick: () => handleRowClick(record),
           className: 'cursor-pointer hover:bg-blue-50'

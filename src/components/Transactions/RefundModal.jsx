@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Modal, 
   Form, 
@@ -6,7 +6,6 @@ import {
   Select, 
   Typography, 
   Space, 
-  Divider, 
   List, 
   InputNumber,
   Radio,
@@ -37,7 +36,7 @@ export function RefundModal({
 
   if (!transaction) return null;
   
-  const handleSubmit = async (values) => {
+  const handleSubmit = (values) => {
     try {
       setLoading(true);
       
@@ -81,14 +80,17 @@ export function RefundModal({
         status: 'processed'
       };
 
-      await onRefund(refundData);
-      message.success('Refund processed successfully');
+      // Dispatch the action and let Redux saga handle the async operation
+      onRefund(refundData);
+      
+      // Close modal and reset form
       onClose();
       form.resetFields();
       setRefundType('full');
       setSelectedItems([]);
       setRefundAmounts({});
-    } catch (error) {
+    } catch {
+      // Error handling is managed by Redux saga
       message.error('Failed to process refund');
     } finally {
       setLoading(false);
@@ -245,7 +247,7 @@ export function RefundModal({
             <Title level={5} className="mb-3">Select Items to Refund</Title>
             <List
               dataSource={transaction.items}
-              renderItem={(item, index) => {
+              renderItem={(item) => {
                 const isSelected = selectedItems.includes(item.product.id);
                 const maxQuantity = item.quantity;
                 const refundQuantity = refundAmounts[item.product.id] || maxQuantity;

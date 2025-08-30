@@ -100,6 +100,7 @@ export function ProductModal({
         barcode: editingProduct.barcode || '',
         description: editingProduct.description || '',
         color: editingProduct.color || '',
+        allowPreorder: editingProduct.allowPreorder || false,
       };
       
       productForm.setFieldsValue(formData);
@@ -164,6 +165,7 @@ export function ProductModal({
         barcode: '',
         description: '',
         color: '',
+        allowPreorder: false,
       };
       
       productForm.resetFields();
@@ -535,6 +537,7 @@ export function ProductModal({
         barcode: finalProductData.barcode || '',
         color: finalProductData.color || '',
         material: finalProductData.material || '',
+        allowPreorder: finalProductData.allowPreorder || false,
         
         // New color-based structure
         colors: colors,
@@ -792,6 +795,30 @@ export function ProductModal({
                 </Button>
               }
             />
+          </Form.Item>
+        </Col>
+        <Col span={8}>
+          <Form.Item
+            name="allowPreorder"
+            label="Allow Pre-order"
+            valuePropName="checked"
+            initialValue={false}
+          >
+            <div className="bg-purple-50 p-3 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Text strong>E-commerce Visibility</Text>
+                  <br />
+                  <Text type="secondary" className="text-sm">
+                    Show on website even when out of stock
+                  </Text>
+                </div>
+                <Switch
+                  checkedChildren="Yes"
+                  unCheckedChildren="No"
+                />
+              </div>
+            </div>
           </Form.Item>
         </Col>
       </Row>

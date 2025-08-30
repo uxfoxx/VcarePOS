@@ -551,6 +551,7 @@ router.post(
         color,
         material,
         hasAddons,
+        allowPreorder,
         colors,
         addons
       } = req.body;
@@ -562,12 +563,12 @@ router.post(
       const productResult = await client.query(`
         INSERT INTO products (
           id, name, description, category, price, stock, barcode, image, 
-          color, material, has_addons
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          color, material, has_addons, allow_preorder
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `, [
         productId, name, description, category, price, 0, barcode, image,
-        color, material, hasAddons
+        color, material, hasAddons, allowPreorder
       ]);
       
       const product = productResult.rows[0];
@@ -667,6 +668,7 @@ router.post(
         image: product.image,
         color: product.color,
         material: product.material,
+        allowPreorder: product.allow_preorder,
         hasAddons: product.has_addons,
         colors,
         addons,
@@ -732,6 +734,7 @@ router.put(
         color,
         material,
         hasAddons,
+        allowPreorder,
         colors,
         addons
       } = req.body;
@@ -748,12 +751,13 @@ router.put(
           color = $7,
           material = $8,
           has_addons = $9,
+          allow_preorder = $10,
           updated_at = CURRENT_TIMESTAMP
-        WHERE id = $10
+        WHERE id = $11
         RETURNING *
       `, [
         name, description, category, price, barcode, image,
-        color, material, hasAddons,
+        color, material, hasAddons, allowPreorder,
         id
       ]);
       
@@ -865,6 +869,7 @@ router.put(
         image: product.image,
         color: product.color,
         material: product.material,
+        allowPreorder: product.allow_preorder,
         hasAddons: product.has_addons,
         colors,
         addons,
@@ -1039,6 +1044,7 @@ router.put(
         id: updatedProduct.id,
         name: updatedProduct.name,
         stock: updatedProduct.stock,
+        allowPreorder: updatedProduct.allow_preorder,
         colors
       });
     } catch (error) {

@@ -72,7 +72,7 @@ router.get('/products', async (req, res) => {
     // Get all products with their colors, sizes, and addons
     const productsResult = await client.query(`
       SELECT * FROM products 
-      WHERE stock > 0 
+      WHERE stock > 0 OR allow_preorder = TRUE
       ORDER BY created_at DESC
     `);
     
@@ -147,6 +147,7 @@ router.get('/products', async (req, res) => {
         image: product.image,
         material: product.material,
         hasAddons: product.has_addons,
+        allowPreorder: product.allow_preorder,
         colors,
         addons,
         createdAt: product.created_at

@@ -161,26 +161,6 @@ export function DetailModal({
             <Tag color="orange">{data.appliedCoupon}</Tag>
           </Descriptions.Item>
         )}
-        {data.source === 'ecommerce' && (
-          <>
-            <Descriptions.Item label="Order Source">
-              <Tag color="purple">E-commerce</Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Delivery Area">
-              {data.deliveryArea === 'inside_colombo' ? 'Inside Colombo' : 'Outside Colombo'}
-            </Descriptions.Item>
-            <Descriptions.Item label="Delivery Charge">
-              Rs.{(data.deliveryCharge || 0).toFixed(2)}
-            </Descriptions.Item>
-            {data.receiptUrl && (
-              <Descriptions.Item label="Bank Transfer Receipt" span={2}>
-                <a href={data.receiptUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600">
-                  View Receipt
-                </a>
-              </Descriptions.Item>
-            )}
-          </>
-        )}
       </Descriptions>
 
       {/* Items List */}
@@ -244,12 +224,6 @@ export function DetailModal({
             <div className="flex justify-between text-green-600">
               <Text>Discount:</Text>
               <Text>-LKR {data.discount.toFixed(2)}</Text>
-            </div>
-          )}
-          {data.deliveryCharge > 0 && (
-            <div className="flex justify-between">
-              <Text>Delivery Charge:</Text>
-              <Text>LKR {data.deliveryCharge.toFixed(2)}</Text>
             </div>
           )}
           <Divider className="my-2" />
@@ -388,9 +362,6 @@ export function DetailModal({
         </Descriptions.Item>
         <Descriptions.Item label="Total Orders">
           <Text strong className="text-blue-600">{data.totalOrders || 0}</Text>
-        </Descriptions.Item>
-        <Descriptions.Item label="Total Spent">
-          <Text strong className="text-green-600">Rs.{(data.totalSpent || 0).toFixed(2)}</Text>
         </Descriptions.Item>
         <Descriptions.Item label="Total Spent">
           <Text strong className="text-green-600">Rs.{(data.totalSpent || 0).toFixed(2)}</Text>

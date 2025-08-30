@@ -415,15 +415,6 @@ export function TransactionHistory() {
             <Option value="pos">POS Orders</Option>
             <Option value="ecommerce">E-commerce Orders</Option>
           </Select>
-          <Select
-            value={sourceFilter}
-            onChange={setSourceFilter}
-            className="w-32 ml-2"
-          >
-            <Option value="all">All Orders</Option>
-            <Option value="pos">POS Orders</Option>
-            <Option value="ecommerce">E-commerce Orders</Option>
-          </Select>
         }
         emptyDescription="No orders found"
         emptyImage={<Icon name="receipt_long" className="text-6xl text-gray-300" />}

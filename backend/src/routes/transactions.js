@@ -787,16 +787,6 @@ router.put(
         }
       }
       
-      // Send email notification for e-commerce orders
-      if (transaction.source === 'ecommerce' && transaction.customer_email) {
-        try {
-          await sendOrderStatusUpdateEmail(transaction, status);
-        } catch (emailError) {
-          console.error('Failed to send status update email:', emailError);
-          // Don't fail the status update if email fails
-        }
-      }
-      
       res.json({
         id: transaction.id,
         status: transaction.status

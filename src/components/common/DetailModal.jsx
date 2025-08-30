@@ -394,7 +394,6 @@ export function DetailModal({
                     <Tag color={
                       order.status === 'completed' ? 'green' :
                       order.status === 'pending_payment' ? 'orange' :
-                      order.status === 'pending_payment' ? 'orange' :
                       order.status === 'cancelled' ? 'red' : 'blue'
                     }>
                       {order.status.toUpperCase()}

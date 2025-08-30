@@ -236,9 +236,6 @@ export function TransactionHistory() {
           <Tag color={record.source === 'ecommerce' ? 'purple' : 'blue'} size="small">
             {record.source === 'ecommerce' ? 'E-commerce' : 'POS'}
           </Tag>
-          <Tag color={record.source === 'ecommerce' ? 'purple' : 'blue'} size="small">
-            {record.source === 'ecommerce' ? 'E-commerce' : 'POS'}
-          </Tag>
           {record.items.some(item => item.selectedVariant) && (
             <Tag color="blue" className="ml-1">Has Variants</Tag>
           )}

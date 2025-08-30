@@ -780,7 +780,9 @@ router.put(
       // Send email notification for e-commerce orders
       if (transaction.source === 'ecommerce' && transaction.customer_email) {
         try {
-          await sendOrderStatusUpdateEmail(transaction, status);
+          // TEMPORARILY DISABLED - Email functionality disabled for testing
+          // await sendOrderStatusUpdateEmail(transaction, status);
+          console.log('Status update email disabled - status updated successfully');
         } catch (emailError) {
           console.error('Failed to send status update email:', emailError);
           // Don't fail the status update if email fails

@@ -15,14 +15,16 @@ const EMAIL_CONFIG = {
 // Create transporter
 const transporter = nodemailer.createTransporter(EMAIL_CONFIG);
 
-// Verify transporter configuration
-transporter.verify((error, success) => {
-  if (error) {
-    logger.error('Email service configuration error:', { error: error.message });
-  } else {
-    logger.info('Email service is ready to send messages');
-  }
-});
+// Verify transporter configuration - TEMPORARILY DISABLED
+// transporter.verify((error, success) => {
+//   if (error) {
+//     logger.error('Email service configuration error:', { error: error.message });
+//   } else {
+//     logger.info('Email service is ready to send messages');
+//   }
+// });
+
+console.log('Email service temporarily disabled for testing');
 
 /**
  * Get business branding information
@@ -43,6 +45,11 @@ const getBusinessInfo = () => {
  */
 const sendOrderConfirmationEmail = async (orderData) => {
   try {
+    // TEMPORARILY DISABLED - Email functionality disabled for testing
+    console.log('Email sending disabled - would have sent order confirmation to:', orderData.customer_email);
+    return { success: true, messageId: 'disabled' };
+    
+    /*
     const businessInfo = getBusinessInfo();
     
     const mailOptions = {
@@ -60,6 +67,7 @@ const sendOrderConfirmationEmail = async (orderData) => {
     });
     
     return { success: true, messageId: info.messageId };
+    */
   } catch (error) {
     logger.error('Failed to send order confirmation email', {
       orderId: orderData.id,
@@ -78,6 +86,11 @@ const sendOrderConfirmationEmail = async (orderData) => {
  */
 const sendOrderStatusUpdateEmail = async (orderData, newStatus, statusMessage = '') => {
   try {
+    // TEMPORARILY DISABLED - Email functionality disabled for testing
+    console.log('Email sending disabled - would have sent status update to:', orderData.customer_email, 'Status:', newStatus);
+    return { success: true, messageId: 'disabled' };
+    
+    /*
     const businessInfo = getBusinessInfo();
     
     const mailOptions = {
@@ -96,6 +109,7 @@ const sendOrderStatusUpdateEmail = async (orderData, newStatus, statusMessage = 
     });
     
     return { success: true, messageId: info.messageId };
+    */
   } catch (error) {
     logger.error('Failed to send order status update email', {
       orderId: orderData.id,
@@ -310,6 +324,11 @@ const generateOrderStatusUpdateHTML = (orderData, newStatus, statusMessage, busi
  */
 const sendWelcomeEmail = async (customerData) => {
   try {
+    // TEMPORARILY DISABLED - Email functionality disabled for testing
+    console.log('Email sending disabled - would have sent welcome email to:', customerData.email);
+    return { success: true, messageId: 'disabled' };
+    
+    /*
     const businessInfo = getBusinessInfo();
     
     const mailOptions = {
@@ -360,6 +379,7 @@ const sendWelcomeEmail = async (customerData) => {
     });
     
     return { success: true, messageId: info.messageId };
+    */
   } catch (error) {
     logger.error('Failed to send welcome email', {
       customerEmail: customerData.email,

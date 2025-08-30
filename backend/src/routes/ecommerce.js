@@ -785,13 +785,15 @@ router.post(
       
       // Send order confirmation email
       try {
-        await sendOrderConfirmationEmail({
-          ...transaction,
-          customer: customerData,
-          items: processedItems,
-          deliveryCharge,
-          deliveryArea
-        });
+        // TEMPORARILY DISABLED - Email functionality disabled for testing
+        // await sendOrderConfirmationEmail({
+        //   ...transaction,
+        //   customer: customerData,
+        //   items: processedItems,
+        //   deliveryCharge,
+        //   deliveryArea
+        // });
+        console.log('Order confirmation email disabled - order created successfully');
       } catch (emailError) {
         console.error('Failed to send order confirmation email:', emailError);
         // Don't fail the order if email fails

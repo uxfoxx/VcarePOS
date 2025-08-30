@@ -802,7 +802,7 @@ export function ProductModal({
             name="allowPreorder"
             label="Allow Pre-order"
             valuePropName="checked"
-            valuePropName="checked"
+            
             initialValue={false}
           >
             <div className="bg-purple-50 p-3 rounded-lg">

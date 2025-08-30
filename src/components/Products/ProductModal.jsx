@@ -440,7 +440,13 @@ export function ProductModal({
     if (currentStep === 0) {
       try {
         const values = await productForm.validateFields();
+       
+       // Explicitly get the allowPreorder value to ensure it's captured
+       const allowPreorderValue = productForm.getFieldValue('allowPreorder');
+       
+       // Update productData with all current form values, ensuring allowPreorder is included
         setProductData(prev => ({ ...prev, ...values }));
+       setProductData(prev => ({ ...prev, allowPreorder: allowPreorderValue }));
         setCurrentStep(currentStep + 1);
       } catch (error) {
         if (error.errorFields && error.errorFields.length > 0) {
@@ -453,8 +459,8 @@ export function ProductModal({
               'stock': 'Stock',
               'barcode': 'SKU/Barcode',
               'description': 'Description',
-              'weight': 'Weight',
-              'color': 'Color'
+             'color': 'Color',
+             'allowPreorder': 'Allow Pre-order'
             };
             return fieldLabels[fieldName] || fieldName;
           });

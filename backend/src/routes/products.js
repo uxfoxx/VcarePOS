@@ -284,7 +284,7 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
     const client = await pool.connect();
     
     // Get all products
-    const productsResult = await client.query(`
+    const productsResult = await client.query(` 
       SELECT * FROM products ORDER BY created_at DESC
     `);
     
@@ -377,7 +377,8 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
         barcode: product.barcode,
         image: product.image,
         color: product.color,
-        material: product.material,
+        material: product.material, 
+        allowPreorder: product.allow_preorder,
         hasAddons: product.has_addons,
         colors,
         addons,
@@ -404,7 +405,7 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
     const client = await pool.connect();
     
     // Get product
-    const productResult = await client.query(`
+    const productResult = await client.query(` 
       SELECT * FROM products WHERE id = $1
     `, [id]);
     
@@ -497,6 +498,7 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
       image: product.image,
       color: product.color,
       material: product.material,
+      allowPreorder: product.allow_preorder,
        hasAddons: product.has_addons,
       colors,
       addons: addonsResult.rows.map(addon => ({
@@ -549,7 +551,7 @@ router.post(
         barcode,
         image,
         color,
-        material,
+        material, 
         hasAddons,
         allowPreorder,
         colors,
@@ -562,7 +564,7 @@ router.post(
       // Insert product
       const productResult = await client.query(`
         INSERT INTO products (
-          id, name, description, category, price, stock, barcode, image, 
+          id, name, description, category, price, stock, barcode, image,
           color, material, has_addons, allow_preorder
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
@@ -732,7 +734,7 @@ router.put(
         barcode,
         image,
         color,
-        material,
+        material, 
         hasAddons,
         allowPreorder,
         colors,
@@ -746,12 +748,12 @@ router.put(
           description = $2,
           category = $3,
           price = $4,
-          barcode = $5,
-          image = $6,
-          color = $7,
-          material = $8,
-          has_addons = $9,
-          allow_preorder = $10,
+          barcode = $5, 
+          image = $6, 
+          color = $7, 
+          material = $8, 
+          has_addons = $9, 
+          allow_preorder = $10, 
           updated_at = CURRENT_TIMESTAMP
         WHERE id = $11
         RETURNING *

@@ -69,6 +69,7 @@ const productsSlice = createSlice({
           ...state.productsList[idx],
           stock: action.payload.stock,
           sizes: action.payload.sizes || state.productsList[idx].sizes,
+          allowPreorder: action.payload.allowPreorder,
         };
       }
       if (state.currentProduct && state.currentProduct.id === action.payload.id) {
@@ -76,6 +77,7 @@ const productsSlice = createSlice({
           ...state.currentProduct,
           stock: action.payload.stock,
           sizes: action.payload.sizes || state.currentProduct.sizes,
+          allowPreorder: action.payload.allowPreorder,
         };
       }
     },

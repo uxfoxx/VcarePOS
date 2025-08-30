@@ -100,7 +100,7 @@ export function ProductModal({
         barcode: editingProduct.barcode || '',
         description: editingProduct.description || '',
         color: editingProduct.color || '',
-        allowPreorder: editingProduct.allowPreorder || false,
+        allowPreorder: editingProduct.allowPreorder || false, 
       };
       
       productForm.setFieldsValue(formData);

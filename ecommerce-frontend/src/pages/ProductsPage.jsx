@@ -29,7 +29,7 @@ export function ProductsPage() {
     .filter(product => {
       const categoryMatch = selectedCategory === 'all' || product.category === selectedCategory
       const priceMatch = product.price >= priceRange[0] && product.price <= priceRange[1]
-      return categoryMatch && priceMatch && product.stock > 0
+      return categoryMatch && priceMatch && (product.stock > 0 || product.allowPreorder)
     })
     .sort((a, b) => {
       switch (sortBy) {

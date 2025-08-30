@@ -79,6 +79,8 @@ export function ProductDetailPage() {
   const selectedSizeData = selectedColor?.sizes?.find(size => size.name === selectedSize)
   const currentPrice = selectedSizeData?.price || product.price
   const currentStock = selectedSizeData?.stock || product.stock
+  const isPreorderAvailable = product.allowPreorder && currentStock === 0
+  const isAvailable = currentStock > 0 || isPreorderAvailable
 
   const handleAddToCart = () => {
     dispatch(addToCart({

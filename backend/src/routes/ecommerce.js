@@ -565,7 +565,7 @@ router.post(
         
         const product = productResult.rows[0];
         
-        // Check stock availability - allow if has stock OR pre-order is enabled
+        // Check stock availability with proper pre-order logic
         if (item.selectedColorId && item.selectedSize) {
           const sizeResult = await client.query(`
             SELECT ps.stock FROM product_sizes ps
@@ -577,7 +577,7 @@ router.post(
             throw new Error(`Size ${item.selectedSize} not found for ${product.name}`);
           }
           
-          const sizeStock = sizeResult.rows[0].stock;
+          const sizeStock = sizeResult.rows[0]?.stock || 0;
           if (sizeStock < item.quantity && !product.allow_preorder) {
             throw new Error(`Insufficient stock for ${product.name} - ${item.selectedSize}`);
           }
@@ -720,7 +720,7 @@ router.post(
         ]);
         
         // Update product stock
-        // Only update stock if we have actual inventory (don't deduct for pre-orders)
+        // Only update stock if product doesn't allow pre-orders OR has actual inventory
         if (item.selectedSize && item.selectedColorId) {
           // Get current size stock
           const sizeStockResult = await client.query(`
@@ -731,8 +731,8 @@ router.post(
           
           const currentSizeStock = sizeStockResult.rows[0]?.stock || 0;
           
-          // Only update stock if we have actual inventory to deduct
-          if (currentSizeStock >= item.quantity) {
+          // Only update stock if NOT a pre-order item AND we have actual inventory to deduct
+          if (!product.allow_preorder && currentSizeStock >= item.quantity) {
             // Update specific size stock
             await client.query(`
               UPDATE product_sizes
@@ -779,8 +779,8 @@ router.post(
           }
         } else {
           // For products without color/size variations
-          // Only update stock if we have actual inventory to deduct
-          if (product.stock >= item.quantity) {
+          // Only update stock if NOT a pre-order item AND we have actual inventory to deduct
+          if (!product.allow_preorder && product.stock >= item.quantity) {
             await client.query(`
               UPDATE products
               SET stock = stock - $1

@@ -79,7 +79,8 @@ export function ProductDetailPage() {
   const selectedSizeData = selectedColor?.sizes?.find(size => size.name === selectedSize)
   const currentPrice = selectedSizeData?.price || product.price
   const currentStock = selectedSizeData?.stock || product.stock
-  const isPreorderAvailable = product.allowPreorder && currentStock === 0
+  const hasStock = currentStock > 0
+  const isPreorderAvailable = product.allowPreorder && !hasStock
   const isAvailable = currentStock > 0 || isPreorderAvailable
 
   const handleAddToCart = () => {
@@ -169,8 +170,10 @@ export function ProductDetailPage() {
               <span className="text-3xl font-bold text-gray-900">
                 Rs.{currentPrice.toFixed(2)}
               </span>
-              {currentStock > 0 ? (
+              {hasStock ? (
                 <span className="text-sm text-green-600 font-medium">In Stock</span>
+              ) : isPreorderAvailable ? (
+                <span className="text-sm text-blue-600 font-medium">Available for Pre-order</span>
               ) : (
                 <span className="text-sm text-red-600 font-medium">Out of Stock</span>
               )}
@@ -278,7 +281,7 @@ export function ProductDetailPage() {
                 disabled={!isAvailable}
                 className={`flex-1 flex items-center justify-center space-x-2 py-3 px-6 rounded-lg font-semibold transition-colors ${
                   isAvailable
-                    ? (currentStock > 0 
+                    ? (hasStock 
                         ? 'bg-primary-600 hover:bg-primary-700 text-white'
                         : 'bg-blue-600 hover:bg-blue-700 text-white')
                     : 'bg-gray-200 text-gray-500 cursor-not-allowed'
@@ -286,7 +289,7 @@ export function ProductDetailPage() {
               >
                 <ShoppingCart className="h-5 w-5" />
                 <span>
-                  {currentStock > 0 ? 'Add to Cart' : 
+                  {hasStock ? 'Add to Cart' : 
                    isPreorderAvailable ? 'Pre-order Now' : 'Out of Stock'}
                 </span>
               </button>

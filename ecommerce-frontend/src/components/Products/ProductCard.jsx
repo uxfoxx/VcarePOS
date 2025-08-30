@@ -51,7 +51,8 @@ export function ProductCard({ product }) {
   }
 
   const hasStock = product.stock > 0
-  const isAvailable = hasStock || product.allowPreorder
+  const isPreorderAvailable = product.allowPreorder && !hasStock
+  const isAvailable = hasStock || isPreorderAvailable
 
   return (
     <div className="group relative bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
@@ -65,10 +66,19 @@ export function ProductCard({ product }) {
           />
           
           {/* Stock Badge */}
-          {!hasStock && (
+          {!hasStock && !isPreorderAvailable && (
             <div className="absolute top-2 left-2">
               <span className="bg-red-500 text-white text-xs font-medium px-2 py-1 rounded">
                 Out of Stock
+              </span>
+            </div>
+          )}
+          
+          {/* Pre-order Badge */}
+          {isPreorderAvailable && (
+            <div className="absolute top-2 left-2">
+              <span className="bg-blue-500 text-white text-xs font-medium px-2 py-1 rounded">
+                Pre-order
               </span>
             </div>
           )}
@@ -121,7 +131,9 @@ export function ProductCard({ product }) {
             isAvailable
               ? (hasStock 
                   ? 'bg-primary-600 hover:bg-primary-700 text-white'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white')
+                  : isPreorderAvailable
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-gray-200 text-gray-500 cursor-not-allowed')
               : 'bg-gray-200 text-gray-500 cursor-not-allowed'
           }`}
         >

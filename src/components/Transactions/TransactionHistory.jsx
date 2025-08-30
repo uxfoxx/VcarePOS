@@ -38,6 +38,7 @@ export function TransactionHistory() {
   const [showInventoryLabelsModal, setShowInventoryLabelsModal] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [invoiceType, setInvoiceType] = useState('detailed');
+  const [sourceFilter, setSourceFilter] = useState('all');
 
   // Get transactions data from Redux store
   const { transactionsList, loading } = useSelector(state => state.transactions);
@@ -53,6 +54,10 @@ export function TransactionHistory() {
   );
 
   const filteredTransactions = sortedTransactions.filter(transaction => {
+    // Filter by source
+    if (sourceFilter === 'pos' && transaction.source !== 'pos') return false;
+    if (sourceFilter === 'ecommerce' && transaction.source !== 'ecommerce') return false;
+    
     // Filter by source
     if (sourceFilter === 'pos' && transaction.source !== 'pos') return false;
     if (sourceFilter === 'ecommerce' && transaction.source !== 'ecommerce') return false;
@@ -231,6 +236,9 @@ export function TransactionHistory() {
           <Tag color={record.source === 'ecommerce' ? 'purple' : 'blue'} size="small">
             {record.source === 'ecommerce' ? 'E-commerce' : 'POS'}
           </Tag>
+          <Tag color={record.source === 'ecommerce' ? 'purple' : 'blue'} size="small">
+            {record.source === 'ecommerce' ? 'E-commerce' : 'POS'}
+          </Tag>
           {record.items.some(item => item.selectedVariant) && (
             <Tag color="blue" className="ml-1">Has Variants</Tag>
           )}
@@ -397,6 +405,15 @@ export function TransactionHistory() {
             <Option value="today">Today</Option>
             <Option value="week">This Week</Option>
             <Option value="month">This Month</Option>
+          </Select>
+          <Select
+            value={sourceFilter}
+            onChange={setSourceFilter}
+            className="w-32 ml-2"
+          >
+            <Option value="all">All Orders</Option>
+            <Option value="pos">POS Orders</Option>
+            <Option value="ecommerce">E-commerce Orders</Option>
           </Select>
           <Select
             value={sourceFilter}

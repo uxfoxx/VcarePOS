@@ -4,7 +4,6 @@ const { pool } = require('../utils/db');
 const { authenticate, hasPermission } = require('../middleware/auth');
 const { handleRouteError } = require('../utils/loggerUtils');
 const { sendOrderStatusUpdateEmail } = require('../utils/emailService');
-const { sendOrderStatusUpdateEmail } = require('../utils/emailService');
 
 const router = express.Router();
 

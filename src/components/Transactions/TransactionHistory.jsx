@@ -393,6 +393,7 @@ export function TransactionHistory() {
         searchFields={['id', 'customerName', 'cashier', 'salesperson']}
         searchPlaceholder="Search orders..."
         extra={
+          <>
           <Select
             value={filterPeriod}
             onChange={setFilterPeriod}
@@ -412,6 +413,7 @@ export function TransactionHistory() {
             <Option value="pos">POS Orders</Option>
             <Option value="ecommerce">E-commerce Orders</Option>
           </Select>
+          </>
         }
         emptyDescription="No orders found"
         emptyImage={<Icon name="receipt_long" className="text-6xl text-gray-300" />}

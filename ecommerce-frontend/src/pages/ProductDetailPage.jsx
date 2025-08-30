@@ -275,15 +275,20 @@ export function ProductDetailPage() {
             <div className="flex space-x-4">
               <button
                 onClick={handleAddToCart}
-                disabled={currentStock === 0}
+                disabled={!isAvailable}
                 className={`flex-1 flex items-center justify-center space-x-2 py-3 px-6 rounded-lg font-semibold transition-colors ${
-                  currentStock > 0
-                    ? 'bg-primary-600 hover:bg-primary-700 text-white'
+                  isAvailable
+                    ? (currentStock > 0 
+                        ? 'bg-primary-600 hover:bg-primary-700 text-white'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white')
                     : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                 }`}
               >
                 <ShoppingCart className="h-5 w-5" />
-                <span>{currentStock > 0 ? 'Add to Cart' : 'Out of Stock'}</span>
+                <span>
+                  {currentStock > 0 ? 'Add to Cart' : 
+                   isPreorderAvailable ? 'Pre-order Now' : 'Out of Stock'}
+                </span>
               </button>
               <button className="p-3 border border-gray-300 rounded-lg text-gray-600 hover:text-red-500 hover:border-red-300 transition-colors">
                 <Heart className="h-5 w-5" />

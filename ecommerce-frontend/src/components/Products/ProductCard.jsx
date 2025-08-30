@@ -115,15 +115,20 @@ export function ProductCard({ product }) {
       <div className="p-4 pt-0">
         <button
           onClick={handleAddToCart}
-          disabled={!hasStock}
+          disabled={!isAvailable}
           className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg font-medium transition-colors duration-200 ${
-            hasStock
-              ? 'bg-primary-600 hover:bg-primary-700 text-white'
+            isAvailable
+              ? (hasStock 
+                  ? 'bg-primary-600 hover:bg-primary-700 text-white'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white')
               : 'bg-gray-200 text-gray-500 cursor-not-allowed'
           }`}
         >
           <ShoppingCart className="h-4 w-4" />
-          <span>{hasStock ? 'Add to Cart' : 'Out of Stock'}</span>
+          <span>
+            {hasStock ? 'Add to Cart' : 
+             isPreorderAvailable ? 'Pre-order Now' : 'Out of Stock'}
+          </span>
         </button>
       </div>
     </div>

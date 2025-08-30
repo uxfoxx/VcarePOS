@@ -180,6 +180,46 @@ For more details, see the [Logging Documentation](./docs/LOGGING.md)
 - `PUT /api/vendors/:id` - Update a vendor
 - `DELETE /api/vendors/:id` - Delete a vendor
 
+### System Monitoring
+- `GET /api/system/health` - Basic health check
+- `GET /api/system/metrics` - System metrics (admin only)
+- `GET /api/system/logs` - List available log files (admin only)
+- `GET /api/system/logs/:filename` - View specific log file content (admin only)
+
+## Database Schema
+
+The system uses PostgreSQL with the following main tables:
+
+### Core Tables
+- **users** - System users (POS staff)
+- **customers** - E-commerce customers
+- **categories** - Product categories
+- **products** - Product catalog
+- **product_colors** - Color variations for products
+- **product_sizes** - Size variations for each color
+- **product_raw_materials** - Raw materials required for each size
+- **product_addons** - Optional add-ons for products
+- **raw_materials** - Raw materials inventory
+- **transactions** - All sales transactions (POS and e-commerce)
+- **transaction_items** - Items within each transaction
+- **refunds** - Refund records
+- **refund_items** - Items within each refund
+
+### Configuration Tables
+- **coupons** - Discount coupons
+- **taxes** - Tax rules and rates
+- **vendors** - Supplier information
+- **delivery_zones** - Delivery areas and charges
+
+### Management Tables
+- **purchase_orders** - Purchase orders to vendors
+- **purchase_order_items** - Items within purchase orders
+- **purchase_order_timeline** - Status history for purchase orders
+- **goods_receive_notes** - Goods receiving documentation
+- **goods_receive_note_items** - Items received
+- **order_status_history** - E-commerce order status changes
+- **audit_trail** - System activity logging
+
 ## Default Users
 
 The system comes with three default users:
@@ -198,3 +238,47 @@ The system comes with three default users:
    - Username: cashier1
    - Password: cashier123
    - Limited access to POS and basic functions
+
+## E-commerce Integration
+
+The system now supports e-commerce integration with the following features:
+
+### Database Schema
+- **customers** table for e-commerce user management
+- **Enhanced transactions** table with source tracking (pos/ecommerce)
+- **delivery_zones** table for delivery charge management
+- **order_status_history** table for tracking status changes
+
+### Email Notifications
+The system includes email notifications for e-commerce orders:
+- Order confirmation emails with payment instructions
+- Status update emails when orders are modified in POS
+- Bank transfer details for payment processing
+
+### Configuration
+Add these environment variables to your `.env` file for email functionality:
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+BUSINESS_NAME=VCare Furniture Store
+BUSINESS_EMAIL=orders@vcarefurniture.com
+BUSINESS_PHONE=(555) 123-4567
+BUSINESS_ADDRESS=123 Main Street, City, State 12345
+BUSINESS_WEBSITE=www.vcarefurniture.com
+```
+
+### Delivery Zones
+- **Inside Colombo**: Rs. 300 delivery charge
+- **Outside Colombo**: Rs. 600 delivery charge
+
+### Payment Methods
+- **Cash on Delivery (COD)**: Orders confirmed immediately
+- **Bank Transfer**: Orders pending until receipt uploaded
+
+### Order Sources
+- **POS Orders**: Created through the point of sale interface
+- **E-commerce Orders**: Created through the public API endpoints
+
+Both order types are managed through the same POS interface with clear source identification.

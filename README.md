@@ -1,6 +1,29 @@
 # VcarePOS
 
-VcarePOS is a point of sale system for managing retail operations.
+VcarePOS is a comprehensive point of sale system for managing retail operations with integrated e-commerce platform support.
+
+## Features
+
+### Core POS System
+- Point of Sale interface with product selection and cart management
+- Product management with color variations, sizes, and add-ons
+- Raw materials inventory tracking and management
+- Transaction processing with multiple payment methods
+- Tax management with category-specific and full-bill taxes
+- Coupon system with percentage and fixed amount discounts
+- Purchase order management with vendor integration
+- User management with role-based permissions
+- Comprehensive reporting and analytics
+- Audit trail for all system activities
+
+### E-commerce Integration
+- Separate customer management for online orders
+- Public API endpoints for e-commerce frontend integration
+- Delivery charge calculation (Inside Colombo: Rs.300, Outside Colombo: Rs.600)
+- Bank transfer receipt handling for online payments
+- Email notifications for order confirmations and status updates
+- Order source tracking (POS vs E-commerce)
+- Unified inventory management across both channels
 
 ## Running the Application
 
@@ -98,5 +121,44 @@ Both the frontend and backend use PM2 for process management in production:
 The API documentation is available at:
 - Development: http://localhost:3000/api/docs
 - Production: http://68.183.182.142/api/docs
+
+## E-commerce Integration
+
+The system now supports e-commerce integration with the following capabilities:
+
+### Customer Management
+- Separate customer database for e-commerce users
+- Customer registration and authentication
+- Order history tracking per customer
+- POS staff can view and manage e-commerce customers
+
+### Order Processing
+- Public API endpoints for e-commerce frontend integration
+- Delivery charge calculation based on location
+- Bank transfer receipt handling for online payments
+- Email notifications for order confirmations and status updates
+- Unified inventory management across POS and e-commerce channels
+
+### Delivery Zones
+- **Inside Colombo**: Rs. 300 delivery charge
+- **Outside Colombo**: Rs. 600 delivery charge
+
+### Payment Methods
+- **Cash on Delivery (COD)**: Orders confirmed immediately
+- **Bank Transfer**: Orders pending until receipt uploaded
+
+### Email Notifications
+Configure email settings in `backend/.env`:
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+BUSINESS_NAME=VCare Furniture Store
+BUSINESS_EMAIL=orders@vcarefurniture.com
+BUSINESS_PHONE=(555) 123-4567
+BUSINESS_ADDRESS=123 Main Street, City, State 12345
+BUSINESS_WEBSITE=www.vcarefurniture.com
+```
 
 //

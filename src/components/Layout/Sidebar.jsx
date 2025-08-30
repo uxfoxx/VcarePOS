@@ -73,6 +73,12 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
       module: 'user-management'
     },
     {
+      key: 'customers',
+      icon: <Icon name="person" />,
+      label: 'E-commerce Customers',
+      module: 'user-management'
+    },
+    {
       key: 'audit-trail',
       icon: <Icon name="history" />,
       label: 'Audit Trail',

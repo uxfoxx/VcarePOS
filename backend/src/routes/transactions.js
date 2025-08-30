@@ -3,6 +3,7 @@ const { body, param, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { authenticate, hasPermission } = require('../middleware/auth');
 const { handleRouteError } = require('../utils/loggerUtils');
+const { sendOrderStatusUpdateEmail } = require('../utils/emailService');
 
 const router = express.Router();
 
@@ -774,6 +775,16 @@ router.put(
       client.release();
       
       const transaction = result.rows[0];
+      
+      // Send email notification for e-commerce orders
+      if (transaction.source === 'ecommerce' && transaction.customer_email) {
+        try {
+          await sendOrderStatusUpdateEmail(transaction, status);
+        } catch (emailError) {
+          console.error('Failed to send status update email:', emailError);
+          // Don't fail the status update if email fails
+        }
+      }
       
       res.json({
         id: transaction.id,

@@ -57,6 +57,7 @@ const TaxManagement = lazy(() => import('./components/Tax/TaxManagement').then(m
 const UserManagement = lazy(() => import('./components/Users/UserManagement').then(module => ({ default: module.UserManagement })));
 const AuditTrail = lazy(() => import('./components/AuditTrail/AuditTrail').then(module => ({ default: module.AuditTrail })));
 const PurchaseOrderManagement = lazy(() => import('./components/PurchaseOrders/PurchaseOrderManagement').then(module => ({ default: module.PurchaseOrderManagement })));
+const CustomerManagement = lazy(() => import('./components/Customers/CustomerManagement').then(module => ({ default: module.CustomerManagement })));
 
 // Loading component
 const ComponentLoader = () => (
@@ -194,6 +195,13 @@ function AppContent() {
         <ProtectedRoute module="user-management" action="view">
           <Suspense fallback={<ComponentLoader />}>
             <UserManagement />
+          </Suspense>
+        </ProtectedRoute>
+      ),
+      'customers': (
+        <ProtectedRoute module="user-management" action="view">
+          <Suspense fallback={<ComponentLoader />}>
+            <CustomerManagement />
           </Suspense>
         </ProtectedRoute>
       ),

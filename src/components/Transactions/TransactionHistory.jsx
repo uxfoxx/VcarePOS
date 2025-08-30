@@ -53,6 +53,10 @@ export function TransactionHistory() {
   );
 
   const filteredTransactions = sortedTransactions.filter(transaction => {
+    // Filter by source
+    if (sourceFilter === 'pos' && transaction.source !== 'pos') return false;
+    if (sourceFilter === 'ecommerce' && transaction.source !== 'ecommerce') return false;
+    
     // Note: Search functionality is handled by EnhancedTable component
     if (filterPeriod === 'today') {
       const today = new Date();
@@ -223,6 +227,10 @@ export function TransactionHistory() {
       render: (record) => (
         <div>
           <Text>{record.customerName || 'Walk-in Customer'}</Text>
+          <br />
+          <Tag color={record.source === 'ecommerce' ? 'purple' : 'blue'} size="small">
+            {record.source === 'ecommerce' ? 'E-commerce' : 'POS'}
+          </Tag>
           {record.items.some(item => item.selectedVariant) && (
             <Tag color="blue" className="ml-1">Has Variants</Tag>
           )}
@@ -389,6 +397,15 @@ export function TransactionHistory() {
             <Option value="today">Today</Option>
             <Option value="week">This Week</Option>
             <Option value="month">This Month</Option>
+          </Select>
+          <Select
+            value={sourceFilter}
+            onChange={setSourceFilter}
+            className="w-32 ml-2"
+          >
+            <Option value="all">All Orders</Option>
+            <Option value="pos">POS Orders</Option>
+            <Option value="ecommerce">E-commerce Orders</Option>
           </Select>
         }
         emptyDescription="No orders found"

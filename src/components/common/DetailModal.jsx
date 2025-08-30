@@ -141,6 +141,26 @@ export function DetailModal({
             <Tag color="orange">{data.appliedCoupon}</Tag>
           </Descriptions.Item>
         )}
+        {data.source === 'ecommerce' && (
+          <>
+            <Descriptions.Item label="Order Source">
+              <Tag color="purple">E-commerce</Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Delivery Area">
+              {data.deliveryArea === 'inside_colombo' ? 'Inside Colombo' : 'Outside Colombo'}
+            </Descriptions.Item>
+            <Descriptions.Item label="Delivery Charge">
+              Rs.{(data.deliveryCharge || 0).toFixed(2)}
+            </Descriptions.Item>
+            {data.receiptUrl && (
+              <Descriptions.Item label="Bank Transfer Receipt" span={2}>
+                <a href={data.receiptUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600">
+                  View Receipt
+                </a>
+              </Descriptions.Item>
+            )}
+          </>
+        )}
       </Descriptions>
 
       {/* Items List */}
@@ -194,6 +214,12 @@ export function DetailModal({
             <Text>Tax:</Text>
             <Text>LKR {data.totalTax.toFixed(2)}</Text>
           </div>
+          {data.deliveryCharge > 0 && (
+            <div className="flex justify-between">
+              <Text>Delivery Charge:</Text>
+              <Text>LKR {data.deliveryCharge.toFixed(2)}</Text>
+            </div>
+          )}
           {data.discount > 0 && (
             <div className="flex justify-between text-green-600">
               <Text>Discount:</Text>
@@ -292,6 +318,96 @@ export function DetailModal({
     </div>
   );
 
+  const renderCustomerDetails = () => (
+    <div className="space-y-6">
+      {/* Customer Header */}
+      <div className="flex items-center space-x-4">
+        <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
+          {data.firstName?.[0]}{data.lastName?.[0]}
+        </div>
+        <div>
+          <Title level={3} className="mb-1">
+            {data.firstName} {data.lastName}
+          </Title>
+          <Text type="secondary" className="text-lg">{data.email}</Text>
+        </div>
+      </div>
+
+      {/* Customer Information */}
+      <Descriptions bordered column={2} size="small">
+        <Descriptions.Item label="Email">
+          {data.email}
+        </Descriptions.Item>
+        <Descriptions.Item label="Phone">
+          {data.phone || 'N/A'}
+        </Descriptions.Item>
+        <Descriptions.Item label="City">
+          {data.city || 'N/A'}
+        </Descriptions.Item>
+        <Descriptions.Item label="Postal Code">
+          {data.postalCode || 'N/A'}
+        </Descriptions.Item>
+        <Descriptions.Item label="Status">
+          <Tag color={data.isActive ? 'green' : 'red'}>
+            {data.isActive ? 'Active' : 'Inactive'}
+          </Tag>
+        </Descriptions.Item>
+        <Descriptions.Item label="Email Verified">
+          <Tag color={data.emailVerified ? 'green' : 'orange'}>
+            {data.emailVerified ? 'Verified' : 'Not Verified'}
+          </Tag>
+        </Descriptions.Item>
+        <Descriptions.Item label="Registered">
+          {new Date(data.createdAt).toLocaleDateString()}
+        </Descriptions.Item>
+        <Descriptions.Item label="Total Orders">
+          <Text strong className="text-blue-600">{data.totalOrders || 0}</Text>
+        </Descriptions.Item>
+        <Descriptions.Item label="Total Spent">
+          <Text strong className="text-green-600">Rs.{(data.totalSpent || 0).toFixed(2)}</Text>
+        </Descriptions.Item>
+        <Descriptions.Item label="Address" span={2}>
+          {data.address || 'N/A'}
+        </Descriptions.Item>
+      </Descriptions>
+
+      {/* Recent Orders */}
+      {data.orders && data.orders.length > 0 && (
+        <div>
+          <Title level={5} className="mb-3">Recent Orders</Title>
+          <div className="space-y-3">
+            {data.orders.slice(0, 5).map((order, index) => (
+              <div key={index} className="border rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Text strong>{order.id}</Text>
+                    <br />
+                    <Text type="secondary" className="text-sm">
+                      {new Date(order.timestamp).toLocaleDateString()}
+                    </Text>
+                  </div>
+                  <div className="text-right">
+                    <Text strong className="text-blue-600">
+                      Rs.{order.total.toFixed(2)}
+                    </Text>
+                    <br />
+                    <Tag color={
+                      order.status === 'completed' ? 'green' :
+                      order.status === 'pending_payment' ? 'orange' :
+                      order.status === 'cancelled' ? 'red' : 'blue'
+                    }>
+                      {order.status.toUpperCase()}
+                    </Tag>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   const renderGenericDetails = () => (
     <div className="space-y-4">
       <Descriptions bordered column={2} size="small">
@@ -315,6 +431,8 @@ export function DetailModal({
         return renderTransactionDetails();
       case 'user':
         return renderUserDetails();
+      case 'customer':
+        return renderCustomerDetails();
       default:
         return renderGenericDetails();
     }

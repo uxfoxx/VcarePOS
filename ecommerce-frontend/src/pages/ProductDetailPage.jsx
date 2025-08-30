@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { ArrowLeft, ShoppingCart, Heart, Star, Truck, Shield } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { fetchProducts } from '../features/products/productsSlice'
 import { addToCart } from '../features/cart/cartSlice'
 import { CartSidebar } from '../components/Cart/CartSidebar'
@@ -90,6 +91,19 @@ export function ProductDetailPage() {
       selectedColorId,
       selectedSize,
     }))
+    
+    // Show immediate feedback
+    if (hasStock) {
+      toast.success(`${quantity} × ${product.name} added to cart!`, {
+        icon: '🛒',
+        duration: 2000,
+      })
+    } else if (isPreorderAvailable) {
+      toast.success(`${quantity} × ${product.name} added to cart for pre-order!`, {
+        icon: '📦',
+        duration: 3000,
+      })
+    }
   }
 
   const images = [

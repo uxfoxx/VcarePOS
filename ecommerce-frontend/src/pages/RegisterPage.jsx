@@ -2,12 +2,13 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { Eye, EyeOff } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { registerStart, clearError } from '../features/auth/authSlice'
 
 export function RegisterPage() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { loading, error } = useSelector(state => state.auth)
+  const { loading, error, isAuthenticated } = useSelector(state => state.auth)
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -22,6 +23,18 @@ export function RegisterPage() {
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  // Handle successful registration redirection
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      toast.success('Account created successfully! Welcome to VCare Furniture.')
+      
+      // Small delay to show the success message
+      setTimeout(() => {
+        navigate('/', { replace: true })
+      }, 1500)
+    }
+  }, [isAuthenticated, navigate])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target

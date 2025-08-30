@@ -1,4 +1,5 @@
 import { takeLatest, call, put } from 'redux-saga/effects'
+import toast from 'react-hot-toast'
 import { customersApi } from '../../api/ecommerceApiClient'
 import {
   loginStart,
@@ -19,6 +20,7 @@ function* loginSaga(action) {
     
     yield put(loginSuccess(response))
   } catch (error) {
+    toast.error(error.message || 'Login failed. Please try again.')
     yield put(loginFailure(error.message))
   }
 }
@@ -33,6 +35,7 @@ function* registerSaga(action) {
     
     yield put(registerSuccess({ customer: response }))
   } catch (error) {
+    toast.error(error.message || 'Registration failed. Please try again.')
     yield put(registerFailure(error.message))
   }
 }

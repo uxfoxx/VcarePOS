@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { CreditCard, Truck, MapPin } from 'lucide-react'
+import { CreditCard, Truck, MapPin, CheckCircle, Package, ArrowRight } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { createOrderStart } from '../features/orders/ordersSlice'
 
 export function CheckoutPage() {
@@ -9,7 +10,7 @@ export function CheckoutPage() {
   const navigate = useNavigate()
   const { items } = useSelector(state => state.cart)
   const { customer, isAuthenticated } = useSelector(state => state.auth)
-  const { loading } = useSelector(state => state.orders)
+  const { loading, currentOrder } = useSelector(state => state.orders)
 
   const [formData, setFormData] = useState({
     firstName: customer?.firstName || '',
@@ -23,6 +24,15 @@ export function CheckoutPage() {
     paymentMethod: 'cod',
     notes: ''
   })
+  const [showOrderConfirmation, setShowOrderConfirmation] = useState(false)
+
+  // Handle successful order creation
+  React.useEffect(() => {
+    if (currentOrder && !loading) {
+      toast.success('Order placed successfully!')
+      setShowOrderConfirmation(true)
+    }
+  }, [currentOrder, loading])
 
   const subtotal = items.reduce((total, item) => {
     const itemPrice = item.product.price
@@ -58,9 +68,98 @@ export function CheckoutPage() {
     dispatch(createOrderStart(orderData))
   }
 
+  const handleContinueShopping = () => {
+    setShowOrderConfirmation(false)
+    navigate('/products')
+  }
+
+  const handleViewOrders = () => {
+    setShowOrderConfirmation(false)
+    navigate('/orders')
+  }
+
   if (items.length === 0) {
     navigate('/cart')
     return null
+  }
+
+  // Order Confirmation Modal
+  if (showOrderConfirmation && currentOrder) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+            
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Order Placed Successfully!
+            </h2>
+            
+            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-600">Order ID:</span>
+                <span className="font-mono text-sm font-medium">{currentOrder.orderId}</span>
+              </div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-600">Total Amount:</span>
+                <span className="text-lg font-bold text-primary-600">
+                  Rs.{currentOrder.total.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-600">Payment Method:</span>
+                <span className="text-sm font-medium capitalize">
+                  {formData.paymentMethod.replace('_', ' ')}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Status:</span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  {currentOrder.status === 'confirmed' ? 'Confirmed' : 'Pending Payment'}
+                </span>
+              </div>
+            </div>
+            
+            {formData.paymentMethod === 'bank_transfer' && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h3 className="text-sm font-medium text-blue-900 mb-2">
+                  Payment Instructions
+                </h3>
+                <p className="text-sm text-blue-700">
+                  Please transfer Rs.{currentOrder.total.toFixed(2)} to our bank account. 
+                  Upload your receipt through your account to confirm payment.
+                </p>
+              </div>
+            )}
+            
+            <p className="text-gray-600 mb-8">
+              Thank you for your order! We'll send you an email confirmation shortly.
+              {formData.paymentMethod === 'cod' && ' Your order will be delivered within 3-5 business days.'}
+            </p>
+            
+            <div className="space-y-3">
+              <button
+                onClick={handleViewOrders}
+                className="w-full flex items-center justify-center px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                View My Orders
+              </button>
+              
+              <button
+                onClick={handleContinueShopping}
+                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Continue Shopping
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

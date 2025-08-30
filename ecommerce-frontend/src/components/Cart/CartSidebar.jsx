@@ -2,6 +2,7 @@ import React from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { X, Plus, Minus, ShoppingBag } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { closeCart, removeFromCart, updateQuantity } from '../../features/cart/cartSlice'
 
 export function CartSidebar() {
@@ -17,6 +18,7 @@ export function CartSidebar() {
   const handleUpdateQuantity = (itemId, newQuantity) => {
     if (newQuantity <= 0) {
       dispatch(removeFromCart({ itemId }))
+      toast.success('Item removed from cart')
     } else {
       dispatch(updateQuantity({ itemId, quantity: newQuantity }))
     }

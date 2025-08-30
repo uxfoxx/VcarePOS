@@ -1,4 +1,5 @@
 import { takeLatest, call, put, select } from 'redux-saga/effects'
+import toast from 'react-hot-toast'
 import { ordersApi } from '../../api/ecommerceApiClient'
 import { clearCart } from '../cart/cartSlice'
 import {
@@ -17,7 +18,14 @@ function* createOrderSaga(action) {
     
     yield put(createOrderSuccess(response))
     yield put(clearCart()) // Clear cart after successful order
+    
+    // Show success notification
+    toast.success('Order placed successfully! Check your email for confirmation.', {
+      duration: 5000,
+      icon: '🎉',
+    })
   } catch (error) {
+    toast.error(error.message || 'Failed to place order. Please try again.')
     yield put(createOrderFailure(error.message))
   }
 }
@@ -28,6 +36,7 @@ function* fetchOrdersSaga(action) {
     const orders = yield call(ordersApi.getCustomerOrders, customerId)
     yield put(fetchOrdersSuccess(orders))
   } catch (error) {
+    toast.error('Failed to load orders. Please refresh the page.')
     yield put(fetchOrdersFailure(error.message))
   }
 }

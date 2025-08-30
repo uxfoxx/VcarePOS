@@ -1,19 +1,36 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { Eye, EyeOff } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { loginStart, clearError } from '../features/auth/authSlice'
 
 export function LoginPage() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { loading, error } = useSelector(state => state.auth)
+  const location = useLocation()
+  const { loading, error, isAuthenticated } = useSelector(state => state.auth)
   
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   })
   const [showPassword, setShowPassword] = useState(false)
+
+  // Handle successful login redirection
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      toast.success('Welcome back! Login successful.')
+      
+      // Redirect to the page they were trying to access, or home page
+      const from = location.state?.from?.pathname || '/'
+      
+      // Small delay to show the success message
+      setTimeout(() => {
+        navigate(from, { replace: true })
+      }, 1000)
+    }
+  }, [isAuthenticated, navigate, location.state])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target

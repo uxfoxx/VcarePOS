@@ -18,6 +18,7 @@ const ordersSlice = createSlice({
     createOrderSuccess(state, action) {
       state.loading = false
       state.currentOrder = action.payload
+      state.orders.unshift(action.payload) // Add new order to the beginning of the list
     },
     createOrderFailure(state, action) {
       state.loading = false

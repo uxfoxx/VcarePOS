@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { ShoppingCart, Heart } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { addToCart } from '../../features/cart/cartSlice'
 
 export function ProductCard({ product }) {
@@ -30,6 +31,19 @@ export function ProductCard({ product }) {
       selectedColorId,
       selectedSize,
     }))
+    
+    // Show immediate feedback
+    if (hasStock) {
+      toast.success(`${product.name} added to cart!`, {
+        icon: '🛒',
+        duration: 2000,
+      })
+    } else if (isPreorderAvailable) {
+      toast.success(`${product.name} added to cart for pre-order!`, {
+        icon: '📦',
+        duration: 3000,
+      })
+    }
   }
 
   const getLowestPrice = () => {

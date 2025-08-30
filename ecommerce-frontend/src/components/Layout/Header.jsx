@@ -2,6 +2,7 @@ import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { ShoppingCart, User, Search, Menu, X } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { toggleCart } from '../../features/cart/cartSlice'
 import { logout } from '../../features/auth/authSlice'
 
@@ -17,6 +18,7 @@ export function Header() {
   const handleLogout = () => {
     dispatch(logout())
     localStorage.removeItem('ecommerce_customer')
+    toast.success('Logged out successfully')
     navigate('/')
   }
 

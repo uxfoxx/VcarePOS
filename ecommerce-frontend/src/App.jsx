@@ -1,4 +1,6 @@
 import React from 'react'
+import { useEffect } from 'react'
+import { useDispatch } from 'react-redux'
 import { Routes, Route } from 'react-router-dom'
 import { Header } from './components/Layout/Header'
 import { Footer } from './components/Layout/Footer'
@@ -11,8 +13,25 @@ import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { OrdersPage } from './pages/OrdersPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { loginSuccess } from './features/auth/authSlice'
 
 function App() {
+  const dispatch = useDispatch()
+
+  // Check for existing customer session on app load
+  useEffect(() => {
+    const savedCustomer = localStorage.getItem('ecommerce_customer')
+    if (savedCustomer) {
+      try {
+        const customer = JSON.parse(savedCustomer)
+        dispatch(loginSuccess({ customer }))
+      } catch (error) {
+        console.error('Error parsing saved customer data:', error)
+        localStorage.removeItem('ecommerce_customer')
+      }
+    }
+  }, [dispatch])
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />

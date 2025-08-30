@@ -51,6 +51,7 @@ export function ProductCard({ product }) {
   }
 
   const hasStock = product.stock > 0
+  const isAvailable = hasStock || product.allowPreorder
 
   return (
     <div className="group relative bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300">

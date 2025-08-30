@@ -565,7 +565,7 @@ router.post(
         
         const product = productResult.rows[0];
         
-        // Check stock availability
+        // Check stock availability - allow if has stock OR pre-order is enabled
         if (item.selectedColorId && item.selectedSize) {
           const sizeResult = await client.query(`
             SELECT ps.stock FROM product_sizes ps
@@ -573,10 +573,15 @@ router.post(
             WHERE pc.id = $1 AND ps.name = $2
           `, [item.selectedColorId, item.selectedSize]);
           
-          if (sizeResult.rows.length === 0 || sizeResult.rows[0].stock < item.quantity) {
+          if (sizeResult.rows.length === 0) {
+            throw new Error(`Size ${item.selectedSize} not found for ${product.name}`);
+          }
+          
+          const sizeStock = sizeResult.rows[0].stock;
+          if (sizeStock < item.quantity && !product.allow_preorder) {
             throw new Error(`Insufficient stock for ${product.name} - ${item.selectedSize}`);
           }
-        } else if (product.stock < item.quantity) {
+        } else if (product.stock < item.quantity && !product.allow_preorder) {
           throw new Error(`Insufficient stock for ${product.name}`);
         }
         
@@ -715,11 +720,12 @@ router.post(
         ]);
         
         // Update product stock
+        // Only update stock if product actually has stock (don't go negative for pre-orders)
         if (item.selectedSize && item.selectedColorId) {
           // Update specific size stock
           await client.query(`
             UPDATE product_sizes
-            SET stock = stock - $1
+            SET stock = GREATEST(0, stock - $1)
             WHERE id = (
               SELECT ps.id 
               FROM product_sizes ps
@@ -741,7 +747,9 @@ router.post(
           `, [item.product.id]);
           
           // Update raw material stock for the selected size
-          const rawMaterialsResult = await client.query(`
+          // Only update raw materials if we have actual stock (not pre-orders)
+          if (sizeStock >= item.quantity) {
+            const rawMaterialsResult = await client.query(`
             SELECT prm.raw_material_id, prm.quantity
             FROM product_raw_materials prm
             JOIN product_sizes ps ON prm.product_size_id = ps.id
@@ -749,7 +757,7 @@ router.post(
             WHERE pc.id = $1 AND ps.name = $2
           `, [item.selectedColorId, item.selectedSize]);
           
-          for (const material of rawMaterialsResult.rows) {
+            for (const material of rawMaterialsResult.rows) {
             await client.query(`
               UPDATE raw_materials
               SET stock_quantity = GREATEST(0, stock_quantity - $1)
@@ -758,6 +766,7 @@ router.post(
               parseFloat(material.quantity) * item.quantity,
               material.raw_material_id
             ]);
+            }
           }
         } else {
           // Update regular product stock

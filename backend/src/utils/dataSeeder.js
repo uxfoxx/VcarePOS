@@ -199,7 +199,7 @@ async function seedDatabase() {
       `, [
         'PROD-003',
         'Modern Coffee Table',
-        'Sleek modern coffee table with storage compartment - Available for Pre-order',
+        'Sleek modern coffee table with storage compartment - Coming Soon! Available for Pre-order',
         'Tables',
         349.99,
         0, // Out of stock but pre-order enabled
@@ -276,7 +276,7 @@ async function seedDatabase() {
       `, [
         'PROD-005',
         'Premium Leather Sofa',
-        'Luxurious 3-seater leather sofa with premium comfort - Coming Soon! Available for Pre-order',
+        'Luxurious leather sofa with premium comfort - Coming Soon! Available for Pre-order',
         'Sofas & Seating',
         1299.99,
         0, // Out of stock but pre-order enabled
@@ -287,6 +287,73 @@ async function seedDatabase() {
         false,
         true // PRE-ORDER ENABLED
       ]);
+      
+      // Product 6: Simple Dining Chair (regular product with stock)
+      await client.query(`
+        INSERT INTO products (
+          id, name, description, category, price, stock, barcode, image, 
+          color, material, has_addons, allow_preorder
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      `, [
+        'PROD-006',
+        'Simple Dining Chair',
+        'Comfortable dining chair with modern design',
+        'Chairs',
+        149.99,
+        0, // Will be calculated from sizes
+        'SDC006',
+        'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=400',
+        'Beige',
+        'Oak Wood & Fabric',
+        false,
+        false
+      ]);
+      
+      // Add colors for Simple Dining Chair
+      await client.query(`
+        INSERT INTO product_colors (id, product_id, name, color_code, image) VALUES
+        ('COLOR-006-1', 'PROD-006', 'Beige', '#F5F5DC', 'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=400')
+      `);
+      
+      // Add sizes for Simple Dining Chair
+      await client.query(`
+        INSERT INTO product_sizes (id, product_color_id, name, stock, weight, dimensions) VALUES
+        ('SIZE-006-1-1', 'COLOR-006-1', 'Standard', 12, 8.5, '{"length": 45, "width": 45, "height": 85, "unit": "cm"}')
+      `);
+      
+      // Product 7: Test Pre-order Table (ZERO STOCK + PRE-ORDER for testing)
+      await client.query(`
+        INSERT INTO products (
+          id, name, description, category, price, stock, barcode, image, 
+          color, material, has_addons, allow_preorder
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      `, [
+        'PROD-007',
+        'Designer Glass Table',
+        'Elegant glass dining table with chrome legs - Pre-order now for next month delivery!',
+        'Tables',
+        799.99,
+        0, // Out of stock but pre-order enabled
+        'DGT007',
+        'https://images.pexels.com/photos/1571468/pexels-photo-1571468.jpeg?auto=compress&cs=tinysrgb&w=400',
+        'Clear',
+        'Glass & Chrome',
+        false,
+        true // PRE-ORDER ENABLED
+      ]);
+      
+      // Add colors for Designer Glass Table (pre-order product)
+      await client.query(`
+        INSERT INTO product_colors (id, product_id, name, color_code, image) VALUES
+        ('COLOR-007-1', 'PROD-007', 'Clear', '#FFFFFF', 'https://images.pexels.com/photos/1571468/pexels-photo-1571468.jpeg?auto=compress&cs=tinysrgb&w=400')
+      `);
+      
+      // Add sizes for Designer Glass Table (all zero stock for pre-order testing)
+      await client.query(`
+        INSERT INTO product_sizes (id, product_color_id, name, stock, weight, dimensions) VALUES
+        ('SIZE-007-1-1', 'COLOR-007-1', 'Standard', 0, 35.0, '{"length": 160, "width": 90, "height": 75, "unit": "cm"}'),
+        ('SIZE-007-1-2', 'COLOR-007-1', 'Large', 0, 45.0, '{"length": 200, "width": 100, "height": 75, "unit": "cm"}')
+      `);
       
       // Add colors for Premium Sofa (pre-order product)
       await client.query(`

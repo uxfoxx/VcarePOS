@@ -720,61 +720,73 @@ router.post(
         ]);
         
         // Update product stock
-        // Only update stock if product actually has stock (don't go negative for pre-orders)
+        // Only update stock if we have actual inventory (don't deduct for pre-orders)
         if (item.selectedSize && item.selectedColorId) {
-          // Update specific size stock
-          await client.query(`
-            UPDATE product_sizes
-            SET stock = GREATEST(0, stock - $1)
-            WHERE id = (
-              SELECT ps.id 
-              FROM product_sizes ps
-              JOIN product_colors pc ON ps.product_color_id = pc.id
-              WHERE pc.id = $2 AND ps.name = $3
-            )
-          `, [item.quantity, item.selectedColorId, item.selectedSize]);
-          
-          // Update total product stock
-          await client.query(`
-            UPDATE products
-            SET stock = (
-              SELECT COALESCE(SUM(ps.stock), 0)
-              FROM product_sizes ps
-              JOIN product_colors pc ON ps.product_color_id = pc.id
-              WHERE pc.product_id = $1
-            )
-            WHERE id = $1
-          `, [item.product.id]);
-          
-          // Update raw material stock for the selected size
-          // Only update raw materials if we have actual stock (not pre-orders)
-          if (sizeStock >= item.quantity) {
-            const rawMaterialsResult = await client.query(`
-            SELECT prm.raw_material_id, prm.quantity
-            FROM product_raw_materials prm
-            JOIN product_sizes ps ON prm.product_size_id = ps.id
+          // Get current size stock
+          const sizeStockResult = await client.query(`
+            SELECT ps.stock FROM product_sizes ps
             JOIN product_colors pc ON ps.product_color_id = pc.id
             WHERE pc.id = $1 AND ps.name = $2
           `, [item.selectedColorId, item.selectedSize]);
           
-            for (const material of rawMaterialsResult.rows) {
+          const currentSizeStock = sizeStockResult.rows[0]?.stock || 0;
+          
+          // Only update stock if we have actual inventory to deduct
+          if (currentSizeStock >= item.quantity) {
+            // Update specific size stock
             await client.query(`
-              UPDATE raw_materials
-              SET stock_quantity = GREATEST(0, stock_quantity - $1)
-              WHERE id = $2
-            `, [
-              parseFloat(material.quantity) * item.quantity,
-              material.raw_material_id
-            ]);
+              UPDATE product_sizes
+              SET stock = stock - $1
+              WHERE id = (
+                SELECT ps.id 
+                FROM product_sizes ps
+                JOIN product_colors pc ON ps.product_color_id = pc.id
+                WHERE pc.id = $2 AND ps.name = $3
+              )
+            `, [item.quantity, item.selectedColorId, item.selectedSize]);
+            
+            // Update total product stock
+            await client.query(`
+              UPDATE products
+              SET stock = (
+                SELECT COALESCE(SUM(ps.stock), 0)
+                FROM product_sizes ps
+                JOIN product_colors pc ON ps.product_color_id = pc.id
+                WHERE pc.product_id = $1
+              )
+              WHERE id = $1
+            `, [item.product.id]);
+            
+            // Update raw material stock for the selected size
+            const rawMaterialsResult = await client.query(`
+              SELECT prm.raw_material_id, prm.quantity
+              FROM product_raw_materials prm
+              JOIN product_sizes ps ON prm.product_size_id = ps.id
+              JOIN product_colors pc ON ps.product_color_id = pc.id
+              WHERE pc.id = $1 AND ps.name = $2
+            `, [item.selectedColorId, item.selectedSize]);
+            
+            for (const material of rawMaterialsResult.rows) {
+              await client.query(`
+                UPDATE raw_materials
+                SET stock_quantity = GREATEST(0, stock_quantity - $1)
+                WHERE id = $2
+              `, [
+                parseFloat(material.quantity) * item.quantity,
+                material.raw_material_id
+              ]);
             }
           }
         } else {
-          // Update regular product stock
-          await client.query(`
-            UPDATE products
-            SET stock = GREATEST(0, stock - $1)
-            WHERE id = $2
-          `, [item.quantity, item.product.id]);
+          // For products without color/size variations
+          // Only update stock if we have actual inventory to deduct
+          if (product.stock >= item.quantity) {
+            await client.query(`
+              UPDATE products
+              SET stock = stock - $1
+              WHERE id = $2
+            `, [item.quantity, item.product.id]);
+          }
         }
         
         // Update raw material stock for addons

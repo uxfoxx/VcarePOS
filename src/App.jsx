@@ -1,540 +1,305 @@
-import { useState, useEffect, Suspense, lazy } from 'react';
-import { ConfigProvider, Layout, theme, Spin } from 'antd';
-import { AuthProvider } from './contexts/AuthContext'; 
-import { LoginPage } from './components/Auth/LoginPage';
-import { Header } from './components/Layout/Header';
-import { Sidebar } from './components/Layout/Sidebar';
-import { ProtectedRoute } from './components/Layout/ProtectedRoute';
-import ReduxErrorNotification from './components/common/ReduxErrorNotification';
-import NotificationDisplay from './components/common/NotificationDisplay';
-import { ErrorBoundary } from './components/common/ErrorBoundary';
-import { useSelector, useDispatch } from 'react-redux';
-import { getCurrentUser } from './features/auth/authSlice';
-import { checkStockLevels } from './features/notifications/notificationsSlice';
-import { useReduxNotifications } from './hooks/useReduxNotifications';
+import  { useState, useEffect } from 'react';
+import { 
+  Layout, 
+  Avatar, 
+  Dropdown, 
+  Badge, 
+  Space, 
+  Typography, 
+  Tooltip,
+  List,
+  Empty,
+  Tag
+} from 'antd';
+import { useDispatch } from 'react-redux';
+import { logout as logoutAction } from '../../features/auth/authSlice';
+import { useAuth } from '../../contexts/AuthContext';
+import { useReduxNotifications as useNotifications } from '../../hooks/useReduxNotifications';
+import { ActionButton } from '../common/ActionButton';
+import { Icon } from '../common/Icon';
 
-// Helper function to safely get branding values from localStorage
-const getBrandingValue = (key, defaultValue = null) => {
-  try {
-    const branding = localStorage.getItem('vcare_branding');
-    if (!branding) return defaultValue;
-    
-    const brandingData = JSON.parse(branding);
-    const value = brandingData[key];
-    
-    // If the value is an object (like Ant Design Color object), extract the hex string
-    if (value && typeof value === 'object') {
-      // Handle Ant Design ColorPicker objects
-      if (value.metaColor && value.metaColor.originalInput) {
-        return value.metaColor.originalInput;
-      }
-      // Handle other color objects that might have a hex property
-      if (value.hex) {
-        return value.hex;
-      }
-      // If it's an object but we can't extract a color, return default
-      return defaultValue;
+const { Header: AntHeader } = Layout;
+const { Text, Title } = Typography;
+
+export function Header({ collapsed, onCollapse, activeTab, style, onTabChange }) {
+  const dispatch = useDispatch();
+  const { currentUser } = useAuth();
+  const { notifications, stockAlerts, markAsRead, clearAllNotifications, markAllAsRead, clearStockAlerts } = useNotifications();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [readStockAlerts, setReadStockAlerts] = useState(new Set());
+
+  // Clean up read stock alerts when stock alerts change (e.g., when alerts are resolved)
+  useEffect(() => {
+    const currentAlertIds = new Set(stockAlerts.map(alert => alert.id));
+    setReadStockAlerts(prev => new Set([...prev].filter(id => currentAlertIds.has(id))));
+  }, [stockAlerts]);
+
+  // Handler for logout
+  const handleLogout = () => {
+    dispatch(logoutAction());
+  };
+
+  const userMenuItems = [
+    {
+      key: 'profile',
+      icon: <Icon name="person" />,
+      label: 'Profile Settings',
+    },
+    {
+      key: 'preferences',
+      icon: <Icon name="tune" />,
+      label: 'Preferences',
+    },
+    {
+      type: 'divider',
+    },
+    {
+      key: 'help',
+      icon: <Icon name="help_outline" />,
+      label: 'Help & Support',
+    },
+    {
+      key: 'logout',
+      icon: <Icon name="logout" />,
+      label: 'Sign Out',
+      danger: true,
+      onClick: handleLogout
+    },
+  ];
+
+  // Combine notifications and stock alerts
+  const allNotifications = [
+    ...stockAlerts.map(alert => ({
+      id: alert.id,
+      title: alert.title,
+      message: alert.message,
+      timestamp: alert.timestamp,
+      icon: alert.type === 'critical' ? 'error' : 'warning',
+      type: alert.type === 'critical' ? 'error' : 'warning',
+      read: readStockAlerts.has(alert.id),
+      navigateTo: alert.navigateTo,
+      isStockAlert: true
+    })),
+    ...notifications.map(notif => ({
+      ...notif,
+      isStockAlert: false
+    }))
+  ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  const unreadCount = allNotifications.filter(n => !n.read).length;
+
+  const handleNotificationClick = (notification) => {
+    if (notification.isStockAlert) {
+      setReadStockAlerts(prev => new Set([...prev, notification.id]));
+    } else {
+      markAsRead(notification.id);
     }
     
-    // If it's already a string, return it
-    return value || defaultValue;
-  } catch (error) {
-    console.warn('Error parsing branding data:', error);
-    return defaultValue;
-  }
-};
-
-// Lazy load heavy components
-const ProductGrid = lazy(() => import('./components/POS/ProductGrid').then(module => ({ default: module.ProductGrid })));
-const Cart = lazy(() => import('./components/POS/Cart').then(module => ({ default: module.Cart })));
-const ProductManagement = lazy(() => import('./components/Products/ProductManagement').then(module => ({ default: module.ProductManagement })));
-const RawMaterialManagement = lazy(() => import('./components/RawMaterials/RawMaterialManagement').then(module => ({ default: module.RawMaterialManagement })));
-const TransactionHistory = lazy(() => import('./components/Transactions/TransactionHistory').then(module => ({ default: module.TransactionHistory })));
-const ReportsOverview = lazy(() => import('./components/Reports/ReportsOverview').then(module => ({ default: module.ReportsOverview })));
-const SettingsPanel = lazy(() => import('./components/Settings/SettingsPanel').then(module => ({ default: module.SettingsPanel })));
-const CouponManagement = lazy(() => import('./components/Coupons/CouponManagement').then(module => ({ default: module.CouponManagement })));
-const TaxManagement = lazy(() => import('./components/Tax/TaxManagement').then(module => ({ default: module.TaxManagement })));
-const UserManagement = lazy(() => import('./components/Users/UserManagement').then(module => ({ default: module.UserManagement })));
-const AuditTrail = lazy(() => import('./components/AuditTrail/AuditTrail').then(module => ({ default: module.AuditTrail })));
-const PurchaseOrderManagement = lazy(() => import('./components/PurchaseOrders/PurchaseOrderManagement').then(module => ({ default: module.PurchaseOrderManagement })));
-const CustomerManagement = lazy(() => import('./components/Customers/CustomerManagement').then(module => ({ default: module.CustomerManagement })));
-
-// Loading component
-const ComponentLoader = () => (
-  <div style={{ 
-    display: 'flex', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    height: '300px' 
-  }}>
-    <Spin size="large" tip="Loading..." />
-  </div>
-);
-
-const { Sider, Content } = Layout;
-
-/**
- * Component that periodically checks token validity
- */
-function TokenValidator() {
-  const dispatch = useDispatch();
-  const { isAuthenticated } = useSelector(state => state.auth);
-  
-  useEffect(() => {
-    // Function to validate token
-    const validateToken = () => {
-      const token = localStorage.getItem('vcare_token');
-      if (token && isAuthenticated) {
-        // Check if token is expired
-        try {
-          const tokenData = JSON.parse(atob(token.split('.')[1]));
-          const expiry = tokenData.exp * 1000; // Convert to milliseconds
-          
-          // If token is expired or will expire in 5 minutes, refresh user data
-          if (Date.now() > expiry - 5 * 60 * 1000) {
-            dispatch(getCurrentUser());
-          }
-        } catch (error) {
-          console.error('Error validating token:', error);
-        }
-      }
-    };
-
-    // Check token validity immediately
-    validateToken();
+    // Navigate to relevant page if specified
+    if (notification.navigateTo && onTabChange) {
+      onTabChange(notification.navigateTo);
+    }
     
-    // Then check periodically (every 5 minutes)
-    const interval = setInterval(validateToken, 5 * 60 * 1000);
-    
-    // Cleanup on unmount
-    return () => clearInterval(interval);
-  }, [dispatch, isAuthenticated]);
-  
-  // This component doesn't render anything
-  return null;
-}
+    setShowNotifications(false);
+  };
 
-function AppContent() {
-  const { isAuthenticated } = useSelector(state => state.auth);
-  const [activeTab, setActiveTab] = useState('pos'); 
-  const [collapsed, setCollapsed] = useState(true);
+  const handleClearAll = () => {
+    // Clear regular notifications
+    clearAllNotifications();
+    // Clear stock alerts
+    clearStockAlerts();
+    // Clear local read state for stock alerts
+    setReadStockAlerts(new Set());
+    setShowNotifications(false);
+  };
 
-  // If not authenticated, show login page
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
+  const handleMarkAllRead = () => {
+    // Mark all regular notifications as read
+    markAllAsRead();
+    // Mark all stock alerts as read locally
+    const allStockAlertIds = stockAlerts.map(alert => alert.id);
+    setReadStockAlerts(prev => new Set([...prev, ...allStockAlertIds]));
+  };
 
-  const renderContent = () => {
-    const contentMap = {
-      'pos': (
-        <ProtectedRoute module="pos" action="view">
-          <div className="flex h-full gap-6">
-            <div className="flex-1" data-tour="product-grid">
-              <Suspense fallback={<ComponentLoader />}>
-                <ProductGrid collapsed={collapsed} />
-              </Suspense>
-            </div>
-            <div className="w-96" data-tour="cart">
-              <Suspense fallback={<ComponentLoader />}>
-                <Cart />
-              </Suspense>
-            </div>
-          </div>
-        </ProtectedRoute>
-      ),
-      'products': (
-        <ProtectedRoute module="products" action="view">
-          <Suspense fallback={<ComponentLoader />}>
-            <ProductManagement />
-          </Suspense>
-        </ProtectedRoute>
-      ),
-      'raw-materials': (
-        <ProtectedRoute module="raw-materials" action="view">
-          <Suspense fallback={<ComponentLoader />}>
-            <RawMaterialManagement />
-          </Suspense>
-        </ProtectedRoute>
-      ),
-      'transactions': (
-        <ProtectedRoute module="transactions" action="view">
-          <Suspense fallback={<ComponentLoader />}>
-            <TransactionHistory />
-          </Suspense>
-        </ProtectedRoute>
-      ),
-      'reports': (
-        <ProtectedRoute module="reports" action="view">
-          <Suspense fallback={<ComponentLoader />}>
-            <ReportsOverview />
-          </Suspense>
-        </ProtectedRoute>
-      ),
-      'coupons': (
-        <ProtectedRoute module="coupons" action="view">
-          <Suspense fallback={<ComponentLoader />}>
-            <CouponManagement />
-          </Suspense>
-        </ProtectedRoute>
-      ),
-      'tax': (
-        <ProtectedRoute module="tax" action="view">
-          <Suspense fallback={<ComponentLoader />}>
-            <TaxManagement />
-          </Suspense>
-        </ProtectedRoute>
-      ),
-      'purchase-orders': (
-        <ProtectedRoute module="purchase-orders" action="view">
-          <Suspense fallback={<ComponentLoader />}>
-            <PurchaseOrderManagement />
-          </Suspense>
-        </ProtectedRoute>
-      ),
-      'user-management': (
-        <ProtectedRoute module="user-management" action="view">
-          <Suspense fallback={<ComponentLoader />}>
-            <UserManagement />
-          </Suspense>
-        </ProtectedRoute>
-      ),
-      'customers': (
-        <ProtectedRoute module="user-management" action="view">
-          <Suspense fallback={<ComponentLoader />}>
-            <CustomerManagement />
-          </Suspense>
-        </ProtectedRoute>
-      ),
-      'audit-trail': (
-        <ProtectedRoute module="audit-trail" action="view">
-          <Suspense fallback={<ComponentLoader />}>
-            <AuditTrail />
-          </Suspense>
-        </ProtectedRoute>
-      ),
-      'settings': (
-        <ProtectedRoute module="settings" action="view">
-          <Suspense fallback={<ComponentLoader />}>
-            <SettingsPanel />
-          </Suspense>
-        </ProtectedRoute>
-      ),
-    };
 
-    return contentMap[activeTab] || (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <span className="material-icons text-6xl text-gray-300 mb-4">error_outline</span>
-          <h3 className="text-xl font-semibold text-gray-600">Page not found</h3>
-        </div>
+  const notificationContent = (
+    <div className="w-80 max-h-96 overflow-y-auto">
+      <div className="p-3 border-b flex justify-between items-center">
+        <Title level={5} className="m-0">Notifications</Title>
+        <Space size="small">
+          {allNotifications.length > 0 && unreadCount > 0 && (
+            <ActionButton.Text 
+              size="small" 
+              onClick={handleMarkAllRead}
+            >
+              Mark All Read
+            </ActionButton.Text>
+          )}
+          <ActionButton.Text 
+            size="small" 
+            onClick={handleClearAll}
+            disabled={allNotifications.length === 0}
+          >
+            Clear All
+          </ActionButton.Text>
+        </Space>
       </div>
-    );
-  };
+      
+      {allNotifications.length === 0 ? (
+        <Empty 
+          image={Empty.PRESENTED_IMAGE_SIMPLE} 
+          description="No notifications" 
+          className="py-8"
+        />
+      ) : (
+        <List
+          dataSource={allNotifications}
+          renderItem={item => (
+            <List.Item 
+              className={`cursor-pointer hover:bg-gray-50 transition-colors ${item.read ? 'opacity-70' : ''}`}
+              onClick={() => handleNotificationClick(item)}
+            >
+              <div className="flex items-start p-2 w-full">
+                <div className={`flex-shrink-0 mr-3 mt-1 text-${item.type === 'error' ? 'red' : item.type === 'warning' ? 'orange' : 'blue'}-500`}>
+                  <Icon name={item.icon || 'notifications'} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex justify-between items-start">
+                    <Text strong className={item.read ? 'text-gray-500' : 'text-gray-900'}>
+                      {item.title}
+                    </Text>
+                    {!item.read && <Badge status="processing" color="blue" />}
+                  </div>
+                  <Text type="secondary" className="text-xs block">
+                    {new Date(item.timestamp).toLocaleString()}
+                  </Text>
+                  <Text className={`text-sm block mt-1 ${item.read ? 'text-gray-500' : 'text-gray-700'}`}>
+                    {item.message}
+                  </Text>
+                  {item.navigateTo && (
+                    <Tag color="blue" size="small" className="mt-1">
+                      Click to view
+                    </Tag>
+                  )}
+                </div>
+              </div>
+            </List.Item>
+          )}
+        />
+      )}
+    </div>
+  );
 
-  // Calculate dynamic widths based on collapsed state
-  const siderWidth = collapsed ? 80 : 280;
-  const contentWidth = `calc(100% - ${siderWidth}px)`;
-
-  // Layout styles
-  const layoutStyle = {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-  };
-
-  const siderStyle = {
-    background: '#ffffff',
-    borderRight: '1px solid #e5e7eb',
-    boxShadow: '2px 0 8px rgba(0, 0, 0, 0.06)',
-    position: 'fixed',
-    height: '100vh',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    zIndex: 100,
-    transition: 'all 0.2s',
-  };
-
-  const headerStyle = {
-    background: '#ffffff',
-    borderBottom: '1px solid #e5e7eb',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-    padding: '0 24px',
-    position: 'fixed',
-    width: contentWidth,
-    right: 0,
-    top: 0,
-    zIndex: 50,
-    transition: 'all 0.2s',
-  };
-
-  const contentStyle = {
-    padding: '24px',
-    marginTop: '64px',
-    marginBottom: '64px',
-    marginLeft: `${siderWidth}px`,
-    minHeight: 'calc(100vh - 128px)',
-    overflow: 'auto',
-    transition: 'all 0.2s',
+  const getPageTitle = () => {
+    const titles = {
+      'pos': 'Point of Sale',
+      'products': 'Product Management',
+      'raw-materials': 'Raw Materials',
+      'transactions': 'Orders',
+      'reports': 'Reports & Analytics',
+      'coupons': 'Coupon Management',
+      'tax': 'Tax Management',
+      'user-management': 'User Management',
+      'audit-trail': 'Audit Trail',
+      'settings': 'Settings'
+    };
+    return titles[activeTab] || 'VCare POS';
   };
 
   return (
     <>
-      <TokenValidator />
-      <Layout style={layoutStyle}>
-        <Sider 
-          width={siderWidth} 
-          style={siderStyle}
-          collapsible
-          collapsed={collapsed}
-          onCollapse={setCollapsed}
-          trigger={null}
-        >
-          <Sidebar 
-            activeTab={activeTab} 
-            onTabChange={setActiveTab}
-            collapsed={collapsed}
-            onCollapse={setCollapsed}
-          />
-        </Sider>
-        <Layout>
-          <Header 
-            style={headerStyle}
-            collapsed={collapsed} 
-            onCollapse={setCollapsed}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-          <Content style={contentStyle}>
-            {renderContent()}
-          </Content>
-          {/* <Footer style={footerStyle} /> */}
-        </Layout>
-      </Layout>
+      <AntHeader 
+        style={style}
+        className="flex items-center justify-between"
+      >
+        <div className="flex items-center space-x-6">
+          {/* Expand/Collapse Button */}
+          <Tooltip title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}>
+            <ActionButton.Text
+              icon={collapsed ? 'menu_open' : 'menu'}
+              onClick={() => onCollapse(!collapsed)}
+              className="hover:bg-blue-50 transition-colors"
+              size="large"
+            />
+          </Tooltip>
+
+          <div className="flex items-center space-x-4">
+            <Title level={4} className="m-0 text-gray-900">
+              {getPageTitle()}
+              {activeTab === 'settings' && <span className="text-sm text-gray-500 ml-2">v1.0.0</span>}
+            </Title>
+          </div>
+        </div>
+        
+        <Space size="middle" className="flex items-center">
+          <Tooltip title="WiFi Connected">
+            <Icon name="wifi" className="text-green-500" />
+          </Tooltip>
+          
+          {/* Help Tour Button */}
+          <Tooltip title="Take a Tour">
+            <ActionButton.Text 
+              icon="help_outline"
+              onClick={() => setTourOpen(true)}
+              className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all"
+              data-tour="help"
+            />
+          </Tooltip>
+
+          <Dropdown 
+            open={showNotifications}
+            onOpenChange={setShowNotifications}
+            dropdownRender={() => notificationContent}
+            placement="bottomRight"
+            trigger={['click']}
+          >
+            <Badge count={unreadCount} size="small" offset={[-2, 2]}>
+              <ActionButton.Text 
+                icon="notifications"
+                className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                data-tour="notifications"
+              />
+            </Badge>
+          </Dropdown>
+          
+          <Dropdown 
+            menu={{ items: userMenuItems }} 
+            placement="bottomRight"
+            trigger={['click']}
+          >
+            <div className="flex items-center space-x-3 cursor-pointer" data-tour="user-menu">
+              <Avatar 
+                size={40}
+                style={{ 
+                  background: 'linear-gradient(135deg, #0E72BD, #1890ff)',
+                }}
+              >
+                {currentUser?.firstName?.[0]}{currentUser?.lastName?.[0]}
+              </Avatar>
+              <div className="hidden sm:block text-left">
+                <Text strong className="text-gray-900 block text-sm">
+                  {currentUser?.firstName} {currentUser?.lastName}
+                </Text>
+                <Text type="secondary" className="text-xs capitalize">
+                  {currentUser?.role}
+                </Text>
+              </div>
+            </div>
+          </Dropdown>
+        </Space>
+      </AntHeader>
+
+      {/* Tour Component */}
+      <Tour
+        open={tourOpen}
+        onClose={() => setTourOpen(false)}
+        steps={getTourSteps()}
+        indicatorsRender={(current, total) => (
+          <span className="text-blue-600">
+            {current + 1} / {total}
+          </span>
+        )}
+      />
     </>
   );
 }
-
-function App() {
-  const AppWithNotifications = () => {
-    const dispatch = useDispatch();
-    const { rawMaterialsList } = useSelector(state => state.rawMaterials);
-    const { productsList } = useSelector(state => state.products);
-    const { settings } = useReduxNotifications();
-    
-    // Check for existing token on app load and try to restore session
-    useEffect(() => {
-      const token = localStorage.getItem('vcare_token');
-      if (token) {
-        dispatch(getCurrentUser());
-      }
-    }, [dispatch]);
-    
-    // Check stock levels periodically using Redux
-    useEffect(() => {
-      // Initial check
-      dispatch(checkStockLevels());
-      
-      // Set up interval for periodic checks
-      const interval = setInterval(() => {
-        dispatch(checkStockLevels());
-      }, settings.stockCheckInterval);
-      
-      return () => clearInterval(interval);
-    }, [dispatch, settings.stockCheckInterval]);
-    
-    // Also check stock levels when raw materials or products change
-    useEffect(() => {
-      if (rawMaterialsList.length > 0 || productsList.length > 0) {
-        dispatch(checkStockLevels());
-      }
-    }, [rawMaterialsList, productsList, dispatch]);
-    
-    // Wrap AppContent with ErrorBoundary to catch any rendering errors
-    return (
-      <ErrorBoundary showErrorDetails={import.meta.env.DEV}>
-        <NotificationDisplay />
-        <AppContent />
-      </ErrorBoundary>
-    );
-  };
-
-  return (
-    <ConfigProvider
-      theme={{
-        algorithm: localStorage.getItem('vcare_branding') && 
-          getBrandingValue('darkModeSupport') ? 
-          theme.darkAlgorithm : theme.defaultAlgorithm,
-        token: {
-          colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-          colorPrimaryText: getBrandingValue('primaryTextColor', '#ffffff'),
-          borderRadius: 8,
-          colorBgContainer: localStorage.getItem('vcare_branding') && 
-            getBrandingValue('darkModeSupport') ? 
-            '#141414' : '#ffffff',
-          colorBgLayout: localStorage.getItem('vcare_branding') && 
-            getBrandingValue('darkModeSupport') ? 
-            '#000000' : '#f8fafc',
-          fontFamily: `"${getBrandingValue('fontFamily', 'Inter')}", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
-          fontSize: 14,
-          lineHeight: 1.5,
-          colorText: localStorage.getItem('vcare_branding') && 
-            getBrandingValue('darkModeSupport') ? 
-            '#ffffff' : '#1f2937',
-          colorTextSecondary: localStorage.getItem('vcare_branding') && 
-            getBrandingValue('darkModeSupport') ? 
-            '#a3a3a3' : '#6b7280',
-          boxShadow: localStorage.getItem('vcare_branding') && 
-            getBrandingValue('darkModeSupport') ? 
-            '0 1px 3px rgba(0, 0, 0, 0.3)' : '0 1px 3px rgba(0, 0, 0, 0.1)',
-          boxShadowSecondary: localStorage.getItem('vcare_branding') && 
-            getBrandingValue('darkModeSupport') ? 
-            '0 4px 6px rgba(0, 0, 0, 0.3)' : '0 4px 6px rgba(0, 0, 0, 0.1)',
-          colorSuccess: getBrandingValue('secondaryColor', '#52c41a'),
-          colorSuccessText: getBrandingValue('secondaryTextColor', '#ffffff'),
-          colorWarning: getBrandingValue('accentColor', '#fa8c16'),
-          colorWarningText: getBrandingValue('accentTextColor', '#ffffff'),
-        },
-        components: {
-          Layout: {
-            headerBg: localStorage.getItem('vcare_branding') && 
-              getBrandingValue('darkModeSupport') ? 
-              '#141414' : '#ffffff',
-            siderBg: localStorage.getItem('vcare_branding') && 
-              getBrandingValue('darkModeSupport') ? 
-              '#141414' : '#ffffff',
-            bodyBg: localStorage.getItem('vcare_branding') && 
-              getBrandingValue('darkModeSupport') ? 
-              '#000000' : '#f8fafc',
-            headerHeight: 64,
-            footerBg: localStorage.getItem('vcare_branding') && 
-              getBrandingValue('darkModeSupport') ? 
-              '#141414' : '#ffffff',
-          },
-          Card: {
-            borderRadiusLG: 12,
-            boxShadowTertiary: localStorage.getItem('vcare_branding') && 
-              getBrandingValue('darkModeSupport') ? 
-              '0 1px 3px rgba(0, 0, 0, 0.3)' : '0 1px 3px rgba(0, 0, 0, 0.1)',
-            colorBgContainer: localStorage.getItem('vcare_branding') && 
-              getBrandingValue('darkModeSupport') ? 
-              '#141414' : '#ffffff',
-          },
-          Button: {
-            borderRadius: 8,
-            controlHeight: 40,
-            fontWeight: 500,
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
-             colorPrimaryActive: `${getBrandingValue('primaryColor', '#0E72BD')}CC`,
-             colorPrimaryTextHover: getBrandingValue('primaryTextColor', '#ffffff'),
-             colorPrimaryTextActive: getBrandingValue('primaryTextColor', '#ffffff'),
-          },
-          Input: {
-            borderRadius: 8,
-            controlHeight: 40,
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
-          },
-          Select: {
-            borderRadius: 8,
-            controlHeight: 40,
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
-          },
-          Table: {
-            borderRadiusLG: 12,
-            headerBg: (() => {
-              const primaryColor = getBrandingValue('primaryColor', '#0E72BD');
-              const r = parseInt(primaryColor.slice(1, 3), 16);
-              const g = parseInt(primaryColor.slice(3, 5), 16);
-              const b = parseInt(primaryColor.slice(5, 7), 16);
-              return `rgba(${r}, ${g}, ${b}, 0.04)`;
-            })(),
-          },
-          Modal: {
-            borderRadiusLG: 16,
-          },
-          Menu: {
-            itemBorderRadius: 8,
-            itemMarginInline: 4,
-            itemMarginBlock: 2,
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
-             colorItemBgSelected: (() => {
-               const primaryColor = getBrandingValue('primaryColor', '#0E72BD');
-               const r = parseInt(primaryColor.slice(1, 3), 16);
-               const g = parseInt(primaryColor.slice(3, 5), 16);
-               const b = parseInt(primaryColor.slice(5, 7), 16);
-               return `rgba(${r}, ${g}, ${b}, 0.1)`;
-             })(),
-          },
-           Checkbox: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
-           },
-           Radio: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
-           },
-           Switch: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
-           },
-           Slider: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
-           },
-           Tabs: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryActive: `${getBrandingValue('primaryColor', '#0E72BD')}CC`,
-           },
-           Tag: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryBg: `${getBrandingValue('primaryColor', '#0E72BD')}19`,
-             colorPrimaryBorderHover: getBrandingValue('primaryColor', '#0E72BD'),
-           },
-           Progress: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryBg: `${getBrandingValue('primaryColor', '#0E72BD')}19`,
-           },
-           Pagination: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
-             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
-           },
-           DatePicker: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
-             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
-           },
-           TimePicker: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
-             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
-           },
-          Tooltip: {
-            colorBgDefault: getBrandingValue('primaryColor', '#0E72BD'),
-            colorTextLightSolid: '#ffffff',
-          },
-          Notification: {
-            colorBgSuccess: getBrandingValue('secondaryColor', '#52c41a'),
-            colorBgInfo: getBrandingValue('primaryColor', '#0E72BD'),
-            colorBgWarning: getBrandingValue('accentColor', '#fa8c16'),
-          },
-          Message: {
-            colorBgSuccess: getBrandingValue('secondaryColor', '#52c41a'),
-            colorBgInfo: getBrandingValue('primaryColor', '#0E72BD'),
-            colorBgWarning: getBrandingValue('accentColor', '#fa8c16'),
-          },
-        },
-      }}
-    >
-      <AuthProvider>
-          <ReduxErrorNotification />
-          <AppWithNotifications />
-      </AuthProvider>
-    </ConfigProvider>
-  );
-}
-
-export default App;

@@ -9,8 +9,7 @@ import {
   Tooltip,
   List,
   Empty,
-  Tag,
-  Tour
+  Tag
 } from 'antd';
 import { useDispatch } from 'react-redux';
 import { logout as logoutAction } from '../../features/auth/authSlice';
@@ -27,7 +26,6 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
   const { currentUser } = useAuth();
   const { notifications, stockAlerts, markAsRead, clearAllNotifications, markAllAsRead, clearStockAlerts } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
-  const [tourOpen, setTourOpen] = useState(false);
   const [readStockAlerts, setReadStockAlerts] = useState(new Set());
 
   // Clean up read stock alerts when stock alerts change (e.g., when alerts are resolved)
@@ -123,74 +121,6 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
     setReadStockAlerts(prev => new Set([...prev, ...allStockAlertIds]));
   };
 
-  // Tour steps for different pages
-  const getTourSteps = () => {
-    const commonSteps = [
-      {
-        title: 'Navigation Menu',
-        description: 'Use this sidebar to navigate between different sections of the system.',
-        target: () => document.querySelector('.ant-layout-sider'),
-      },
-      {
-        title: 'Notifications',
-        description: 'Check your notifications here for stock alerts and system updates.',
-        target: () => document.querySelector('[data-tour="notifications"]'),
-      },
-      {
-        title: 'User Menu',
-        description: 'Access your profile settings and logout from here.',
-        target: () => document.querySelector('[data-tour="user-menu"]'),
-      },
-    ];
-
-    const pageSpecificSteps = {
-      'pos': [
-        {
-          title: 'Product Grid',
-          description: 'Browse and select products to add to your cart.',
-          target: () => document.querySelector('[data-tour="product-grid"]'),
-        },
-        {
-          title: 'Shopping Cart',
-          description: 'Review selected items and proceed to checkout.',
-          target: () => document.querySelector('[data-tour="cart"]'),
-        },
-      ],
-      'products': [
-        {
-          title: 'Product Management',
-          description: 'Add, edit, and manage your product inventory here.',
-          target: () => document.querySelector('[data-tour="product-table"]'),
-        },
-        {
-          title: 'Add Product',
-          description: 'Click here to add new products to your inventory.',
-          target: () => document.querySelector('[data-tour="add-product"]'),
-        },
-      ],
-      'transactions': [
-        {
-          title: 'Order History',
-          description: 'View all completed transactions and their details.',
-          target: () => document.querySelector('[data-tour="transaction-table"]'),
-        },
-      ],
-      'reports': [
-        {
-          title: 'Analytics Dashboard',
-          description: 'Monitor your business performance with these key metrics.',
-          target: () => document.querySelector('[data-tour="stats-cards"]'),
-        },
-        {
-          title: 'Export Reports',
-          description: 'Download detailed reports in CSV format.',
-          target: () => document.querySelector('[data-tour="export-reports"]'),
-        },
-      ],
-    };
-
-    return [...commonSteps, ...(pageSpecificSteps[activeTab] || [])];
-  };
 
   const notificationContent = (
     <div className="w-80 max-h-96 overflow-y-auto">
@@ -230,6 +160,58 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
               onClick={() => handleNotificationClick(item)}
             >
               <div className="flex items-start p-2 w-full">
+          </Title>
+        </div>
+      </div>
+      
+      <Space size="middle" className="flex items-center">
+        <Tooltip title="WiFi Connected">
+          <Icon name="wifi" className="text-green-500" />
+        </Tooltip>
+        
+        <Dropdown 
+          open={showNotifications}
+          onOpenChange={setShowNotifications}
+          dropdownRender={() => notificationContent}
+          placement="bottomRight"
+          trigger={['click']}
+        >
+          <Badge count={unreadCount} size="small" offset={[-2, 2]}>
+            <ActionButton.Text 
+              icon="notifications"
+              className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all"
+            />
+          </Badge>
+        </Dropdown>
+        
+        <Dropdown 
+          menu={{ items: userMenuItems }} 
+          placement="bottomRight"
+          trigger={['click']}
+        >
+          <div className="flex items-center space-x-3 cursor-pointer">
+            <Avatar 
+              size={40}
+              style={{ 
+                background: 'linear-gradient(135deg, #0E72BD, #1890ff)',
+              }}
+            >
+              {currentUser?.firstName?.[0]}{currentUser?.lastName?.[0]}
+            </Avatar>
+            <div className="hidden sm:block text-left">
+              <Text strong className="text-gray-900 block text-sm">
+                {currentUser?.firstName} {currentUser?.lastName}
+              </Text>
+              <Text type="secondary" className="text-xs capitalize">
+                {currentUser?.role}
+              </Text>
+            </div>
+          </div>
+        </Dropdown>
+      </Space>
+    </AntHeader>
+  );
+}
                 <div className={`flex-shrink-0 mr-3 mt-1 text-${item.type === 'error' ? 'red' : item.type === 'warning' ? 'orange' : 'blue'}-500`}>
                   <Icon name={item.icon || 'notifications'} />
                 </div>

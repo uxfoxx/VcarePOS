@@ -8,7 +8,7 @@ import { Footer } from './components/Layout/Footer';
 import { ProtectedRoute } from './components/Layout/ProtectedRoute';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { NotificationDisplay } from './components/common/NotificationDisplay';
-import { ReduxErrorNotification } from './components/common/ReduxErrorNotification';
+import  ReduxErrorNotification  from './components/common/ReduxErrorNotification';
 import { getCurrentUser } from './features/auth/authSlice';
 import { checkStockLevels } from './features/notifications/notificationsSlice';
 

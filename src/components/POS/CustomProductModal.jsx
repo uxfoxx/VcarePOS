@@ -9,7 +9,9 @@ import {
   Space,
   Row,
   Col,
-  message
+  message,
+  Alert,      // ← add this
+  Divider
 } from 'antd';
 import { useSelector } from 'react-redux';
 import { Icon } from '../common/Icon';

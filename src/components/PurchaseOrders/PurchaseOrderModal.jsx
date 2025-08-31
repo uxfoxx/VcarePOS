@@ -24,9 +24,7 @@ import {
   Alert
 } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
-  fetchVendors, 
-} from '../../features/vendors/vendorsSlice';
+
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import dayjs from 'dayjs';

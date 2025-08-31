@@ -25,10 +25,10 @@ import { ExportModal } from '../common/ExportModal';
 import { ProductDetailsSheet } from '../Invoices/ProductDetailsSheet';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
-  fetchProducts, 
-  deleteProducts, 
-  updateProduct, 
-  addProduct 
+  fetchProducts,
+  deleteProducts,
+  updateProduct,
+  addProduct
 } from '../../features/products/productsSlice';
 import { fetchRawMaterials } from '../../features/rawMaterials/rawMaterialsSlice';
 import { fetchCategories } from '../../features/categories/categoriesSlice';

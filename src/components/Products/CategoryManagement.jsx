@@ -18,10 +18,10 @@ import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
-  fetchCategories, 
-  addCategories, 
-  updateCategories, 
-  deleteCategories 
+  fetchCategories,
+  addCategories,
+  updateCategories,
+  deleteCategories
 } from '../../features/categories/categoriesSlice';
 import { fetchProducts } from '../../features/products/productsSlice';
 

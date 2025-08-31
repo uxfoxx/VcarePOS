@@ -27,9 +27,9 @@ import { ExportModal } from '../common/ExportModal';
 import { StockLevelModal } from './StockLevelModal';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
-  fetchRawMaterials, 
-  addRawMaterials, 
-  updateRawMaterials, 
+  fetchRawMaterials,
+  addRawMaterials,
+  updateRawMaterials,
   deleteRawMaterials,
   updateStock
 } from '../../features/rawMaterials/rawMaterialsSlice';

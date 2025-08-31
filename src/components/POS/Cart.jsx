@@ -17,16 +17,16 @@ import {
 import { useSelector, useDispatch } from 'react-redux';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
-  removeFromCart, 
-  updateQuantity, 
-  clearCart 
+  removeFromCart,
+  updateQuantity,
+  clearCart
 } from '../../features/cart/cartSlice';
 import { 
-  fetchTaxes 
+  fetchTaxes
 } from '../../features/taxes/taxesSlice';
 import { 
-  fetchCoupons, 
-  validateCoupon 
+  fetchCoupons,
+  validateCoupon
 } from '../../features/coupons/couponsSlice';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';

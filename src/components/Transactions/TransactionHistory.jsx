@@ -26,8 +26,8 @@ import { InventoryLabelModal } from '../Invoices/InventoryLabelModal';
 import { RefundModal } from './RefundModal';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
-  fetchTransactions, 
-  processRefund 
+  fetchTransactions,
+  processRefund
 } from '../../features/transactions/transactionsSlice';
 import dayjs from 'dayjs';
 

@@ -27,8 +27,8 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
   const { currentUser } = useAuth();
   const { notifications, stockAlerts, markAsRead, clearAllNotifications, markAllAsRead, clearStockAlerts } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
-  const [tourOpen, setTourOpen] = useState(false);
   const [readStockAlerts, setReadStockAlerts] = useState(new Set());
+  const [tourOpen, setTourOpen] = useState(false);
 
   // Clean up read stock alerts when stock alerts change (e.g., when alerts are resolved)
   useEffect(() => {
@@ -123,73 +123,29 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
     setReadStockAlerts(prev => new Set([...prev, ...allStockAlertIds]));
   };
 
-  // Tour steps for different pages
   const getTourSteps = () => {
-    const commonSteps = [
+    return [
       {
-        title: 'Navigation Menu',
-        description: 'Use this sidebar to navigate between different sections of the system.',
-        target: () => document.querySelector('.ant-layout-sider'),
+        title: 'Welcome to VCare POS',
+        description: 'Let us show you around the main features of your dashboard.',
+        target: null,
       },
       {
         title: 'Notifications',
-        description: 'Check your notifications here for stock alerts and system updates.',
+        description: 'Stay updated with stock alerts and system notifications.',
         target: () => document.querySelector('[data-tour="notifications"]'),
       },
       {
         title: 'User Menu',
-        description: 'Access your profile settings and logout from here.',
+        description: 'Access your profile settings and account options.',
         target: () => document.querySelector('[data-tour="user-menu"]'),
       },
+      {
+        title: 'Help & Support',
+        description: 'Click here anytime you need assistance or want to take this tour again.',
+        target: () => document.querySelector('[data-tour="help"]'),
+      },
     ];
-
-    const pageSpecificSteps = {
-      'pos': [
-        {
-          title: 'Product Grid',
-          description: 'Browse and select products to add to your cart.',
-          target: () => document.querySelector('[data-tour="product-grid"]'),
-        },
-        {
-          title: 'Shopping Cart',
-          description: 'Review selected items and proceed to checkout.',
-          target: () => document.querySelector('[data-tour="cart"]'),
-        },
-      ],
-      'products': [
-        {
-          title: 'Product Management',
-          description: 'Add, edit, and manage your product inventory here.',
-          target: () => document.querySelector('[data-tour="product-table"]'),
-        },
-        {
-          title: 'Add Product',
-          description: 'Click here to add new products to your inventory.',
-          target: () => document.querySelector('[data-tour="add-product"]'),
-        },
-      ],
-      'transactions': [
-        {
-          title: 'Order History',
-          description: 'View all completed transactions and their details.',
-          target: () => document.querySelector('[data-tour="transaction-table"]'),
-        },
-      ],
-      'reports': [
-        {
-          title: 'Analytics Dashboard',
-          description: 'Monitor your business performance with these key metrics.',
-          target: () => document.querySelector('[data-tour="stats-cards"]'),
-        },
-        {
-          title: 'Export Reports',
-          description: 'Download detailed reports in CSV format.',
-          target: () => document.querySelector('[data-tour="export-reports"]'),
-        },
-      ],
-    };
-
-    return [...commonSteps, ...(pageSpecificSteps[activeTab] || [])];
   };
 
   const notificationContent = (

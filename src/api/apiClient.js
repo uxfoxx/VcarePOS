@@ -512,3 +512,27 @@ export const vendorsApi = {
     });
   }
 };
+
+// Customers API
+export const customersApi = {
+  getAll: async () => {
+    return apiRequest('/customers');
+  },
+  
+  getById: async (id) => {
+    return apiRequest(`/customers/${id}`);
+  },
+  
+  update: async (id, customer) => {
+    return apiRequest(`/customers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(customer)
+    });
+  },
+  
+  delete: async (id) => {
+    return apiRequest(`/customers/${id}`, {
+      method: 'DELETE'
+    });
+  }
+};

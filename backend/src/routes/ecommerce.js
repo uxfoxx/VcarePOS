@@ -552,16 +552,16 @@ router.post(
       const taxes = taxesResult.rows;
       
       // Process each item
-      for (const item of items) {
-        // Get product details
-        const productResult = await client.query(
-          'SELECT * FROM products WHERE id = $1',
-          [item.productId]
-        );
+     for (const item of items) {
+  // Get product details
+  const productResult = await client.query(
+    'SELECT * FROM products WHERE id = $1',
+    [item.productId]
+  );
         
-        if (productResult.rows.length === 0) {
-          throw new Error(`Product ${item.productId} not found`);
-        }
+         if (productResult.rows.length === 0) {
+    throw new Error(`Product ${item.productId} not found`);
+  }
         
         const product = productResult.rows[0];
         

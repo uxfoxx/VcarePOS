@@ -193,7 +193,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
   };
 
   const notificationContent = (
-    <div className="w-80 max-h-96 overflow-y-auto">
+    <div className="w-80  bg-white shadow-lg rounded-md">
       <div className="p-3 border-b flex justify-between items-center">
         <Title level={5} className="m-0">Notifications</Title>
         <Space size="small">
@@ -223,6 +223,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
         />
       ) : (
         <List
+        className='max-h-96 overflow-y-auto'
           dataSource={allNotifications}
           renderItem={item => (
             <List.Item 
@@ -346,7 +347,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
               >
                 {currentUser?.firstName?.[0]}{currentUser?.lastName?.[0]}
               </Avatar>
-              <div className="hidden sm:block text-left">
+              <div className="hidden sm:flex text-left sm:flex-col ">
                 <Text strong className="text-gray-900 block text-sm">
                   {currentUser?.firstName} {currentUser?.lastName}
                 </Text>

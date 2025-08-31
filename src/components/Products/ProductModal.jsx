@@ -809,7 +809,7 @@ export function ProductModal({
             label="Allow Pre-order"
             valuePropName="checked"
             
-            initialValue={false}
+            initialValue={true}
           >
             <div className="bg-purple-50 p-3 rounded-lg">
               <div className="flex items-center justify-between">

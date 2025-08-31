@@ -5,7 +5,7 @@ import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import JsBarcode from 'jsbarcode';
-import { QRCode } from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 
 const { Text } = Typography;
 
@@ -235,7 +235,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
           backgroundColor: '#ffffff',
           padding: '1px'
         }}>
-          <QRCode 
+          <QRCodeSVG 
             value={code}
             size={16}
             level="L"

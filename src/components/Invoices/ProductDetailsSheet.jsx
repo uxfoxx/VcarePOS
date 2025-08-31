@@ -4,7 +4,7 @@ import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { QRCode } from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 
 const { Title, Text } = Typography;
 
@@ -518,7 +518,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                   <div className="text-center">
                     <div className="w-24 h-24 mx-auto flex items-center justify-center border rounded bg-white p-2">
                       {product.barcode ? (
-                        <QRCode 
+                        <QRCodeSVG 
                           value={product.barcode}
                           size={80}
                           level="M"

@@ -22,6 +22,7 @@ import { useReduxNotifications as useNotifications } from '../../hooks/useReduxN
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon'; 
 import { CheckoutModal } from '../POS/CheckoutModal';
+import { BarcodeScanner } from './BarcodeScanner';
 
 const { Title, Text } = Typography;
 
@@ -35,6 +36,7 @@ export function Cart() {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponCode, setCouponCode] = useState('');
   const [materialWarnings, setMaterialWarnings] = useState({ unavailableMaterials: [], lowMaterials: [] });
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
 
   // Check raw material availability and reset coupon when cart is cleared
   useEffect(() => {
@@ -261,6 +263,10 @@ export function Cart() {
     setShowCheckoutModal(true);
   };
 
+  const handleProductFound = (product) => {
+    // This is called when barcode scanner finds a product
+    // The scanner component handles the logic, this is just for additional actions if needed
+  };
   return (
     <>
       <Card 
@@ -272,10 +278,28 @@ export function Cart() {
               <h2 className="text-xl font-bold m-0">Current Order</h2>
               <Badge count={cart.length} size="small" />
             </div>
+            <div className="flex items-center space-x-2">
+              <ActionButton.Text
+                icon={showBarcodeScanner ? "qr_code_scanner" : "qr_code_scanner"}
+                onClick={() => setShowBarcodeScanner(!showBarcodeScanner)}
+                className={showBarcodeScanner ? "text-blue-600" : "text-gray-400"}
+                size="small"
+              />
+            </div>
           </div>
         }
       >
         <div className="flex flex-col h-full">
+          {/* Barcode Scanner */}
+          {showBarcodeScanner && (
+            <div className="border-b">
+              <BarcodeScanner 
+                onProductFound={handleProductFound}
+                className="m-0"
+              />
+            </div>
+          )}
+
           {/* Raw Material Warnings */}
           {(materialWarnings.unavailableMaterials.length > 0 || materialWarnings.lowMaterials.length > 0) && (
             <div className="p-4 border-b">

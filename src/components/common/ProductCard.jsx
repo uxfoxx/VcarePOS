@@ -1,6 +1,8 @@
 import React from 'react';
 import { Card, Typography, Image, Badge, Tag, Button } from 'antd';
 import { Icon } from './Icon';
+import { useDispatch } from 'react-redux';
+import { addToCart } from '../../features/cart/cartSlice';
 
 const { Text } = Typography;
 
@@ -12,9 +14,23 @@ export function ProductCard({
   className = '',
   ...props
 }) {
+  const dispatch = useDispatch();
+
   const handleAddToCart = (e) => {
     e.stopPropagation();
-    onAddToCart?.(product);
+    
+    // For simple products without color variations, add directly to cart
+    if (!product.colors || product.colors.length === 0) {
+      dispatch(addToCart({ 
+        product, 
+        quantity: 1,
+        selectedColorId: null,
+        selectedSize: null
+      }));
+    } else {
+      // For products with variations, use the existing flow
+      onAddToCart?.(product);
+    }
   };
 
   const getStockStatus = (stock) => {

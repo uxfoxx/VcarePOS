@@ -4,6 +4,7 @@ import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import QRCode from 'qrcode.react';
 
 const { Title, Text } = Typography;
 
@@ -515,11 +516,30 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                 </Col>
                 <Col span={8}>
                   <div className="text-center">
-                    <div className="w-24 h-24 bg-gray-200 mx-auto flex items-center justify-center border rounded">
-                      <Text type="secondary">QR CODE</Text>
+                    <div className="w-24 h-24 mx-auto flex items-center justify-center border rounded bg-white p-2">
+                      {product.barcode ? (
+                        <QRCode 
+                          value={product.barcode}
+                          size={80}
+                          level="M"
+                          includeMargin={false}
+                          bgColor="#FFFFFF"
+                          fgColor="#000000"
+                        />
+                      ) : (
+                        <Text type="secondary" className="text-xs">No SKU</Text>
+                      )}
                     </div>
-                    <Text type="secondary" className="text-xs mt-2 block">
-                      Scan for product details
+                    <Text type="secondary" className="text-xs mt-2 block text-center">
+                      {product.barcode ? (
+                        <>
+                          Scan to add to POS
+                          <br />
+                          SKU: {product.barcode}
+                        </>
+                      ) : (
+                        'No barcode available'
+                      )}
                     </Text>
 
                     <div className="mt-4 text-center">

@@ -11,6 +11,7 @@ import {
   Image,
   Select,
   Input,
+  message,
 } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchProducts } from '../../features/products/productsSlice';
@@ -40,6 +41,7 @@ export function ProductGrid({ collapsed }) {
   const [showColorSizeModal, setShowColorSizeModal] = useState(false);
   const [showCustomProductModal, setShowCustomProductModal] = useState(false);
   const [showAddonsModal, setShowAddonsModal] = useState(false);
+  const [scannerInput, setScannerInput] = useState('');
 
   React.useEffect(() => {
     dispatch(fetchProducts());
@@ -61,6 +63,46 @@ export function ProductGrid({ collapsed }) {
       return matchesSearch && matchesCategory;
     }) : [];
 
+  const handleBarcodeScan = (scannedValue) => {
+    if (!scannedValue || !scannedValue.trim()) {
+      return;
+    }
+
+    // Search for product by barcode/SKU
+    const foundProduct = products.find(product => 
+      product.barcode && product.barcode.toLowerCase() === scannedValue.toLowerCase()
+    );
+
+    if (foundProduct) {
+      // Check if product is out of stock
+      if (foundProduct.stock <= 0) {
+        message.warning(`${foundProduct.name} is out of stock`);
+        setScannerInput('');
+        return;
+      }
+
+      // If product has color/size variations, show selection modal
+      if (foundProduct.colors && foundProduct.colors.length > 0) {
+        setSelectedProduct(foundProduct);
+        setShowColorSizeModal(true);
+        message.success(`Product found: ${foundProduct.name}. Please select color and size.`);
+      } else {
+        // Simple product without variations - add directly to cart
+        dispatch(addToCart({ 
+          product: foundProduct, 
+          quantity: 1,
+          selectedColorId: null,
+          selectedSize: null
+        }));
+        message.success(`${foundProduct.name} added to cart!`);
+      }
+    } else {
+      message.error(`No product found with barcode: ${scannedValue}`);
+    }
+
+    // Clear the scanner input
+    setScannerInput('');
+  };
   const handleAddToCart = (product) => {
     if (product.colors && product.colors.length > 0) {
       // Show color and size selection modal
@@ -142,15 +184,38 @@ export function ProductGrid({ collapsed }) {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold m-0">Products</h2>
+              <Text type="secondary" className="text-sm">
+                Scan barcode or search manually to add items to cart
+              </Text>
             </div>
             <Space>
               <Search
-                placeholder="Search by product name or SKU..."
+                placeholder="Scan barcode or search by product name/SKU..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onSearch={setSearchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setScannerInput(e.target.value);
+                }}
+                onSearch={(value) => {
+                  setSearchTerm(value);
+                  // If the search was triggered by Enter key and looks like a barcode scan
+                  if (value && value.trim()) {
+                    handleBarcodeScan(value.trim());
+                  }
+                }}
+                onPressEnter={(e) => {
+                  const value = e.target.value;
+                  if (value && value.trim()) {
+                    handleBarcodeScan(value.trim());
+                  }
+                }}
                 className="w-80"
                 size="large"
+                enterButton={
+                  <Button type="primary" icon={<Icon name="qr_code_scanner" />}>
+                    Scan
+                  </Button>
+                }
               />
               <ActionButton.Primary 
                 size="large"

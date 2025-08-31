@@ -5,7 +5,7 @@ import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import JsBarcode from 'jsbarcode';
-import QRCode from 'qrcode.react';
+import { QRCode } from 'qrcode.react';
 
 const { Text } = Typography;
 

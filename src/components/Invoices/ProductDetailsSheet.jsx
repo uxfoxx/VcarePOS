@@ -4,7 +4,7 @@ import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import QRCode from 'qrcode.react';
+import { QRCode } from 'qrcode.react';
 
 const { Title, Text } = Typography;
 

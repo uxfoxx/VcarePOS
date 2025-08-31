@@ -11,11 +11,12 @@ import {
   failed
 } from "./customersSlice";
 
-// API functions for customers
+// Import customers API from the centralized API client
 const customersApi = {
   getAll: async () => {
     const token = localStorage.getItem('vcare_token');
-    const response = await fetch('/api/customers', {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+    const response = await fetch(`${API_URL}/customers`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -23,7 +24,8 @@ const customersApi = {
     });
     
     if (!response.ok) {
-      throw new Error('Failed to fetch customers');
+      const data = await response.json();
+      throw new Error(data.message || 'Failed to fetch customers');
     }
     
     return response.json();
@@ -31,7 +33,8 @@ const customersApi = {
   
   getById: async (id) => {
     const token = localStorage.getItem('vcare_token');
-    const response = await fetch(`/api/customers/${id}`, {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+    const response = await fetch(`${API_URL}/customers/${id}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -39,7 +42,8 @@ const customersApi = {
     });
     
     if (!response.ok) {
-      throw new Error('Failed to fetch customer');
+      const data = await response.json();
+      throw new Error(data.message || 'Failed to fetch customer');
     }
     
     return response.json();
@@ -47,7 +51,8 @@ const customersApi = {
   
   update: async (id, customerData) => {
     const token = localStorage.getItem('vcare_token');
-    const response = await fetch(`/api/customers/${id}`, {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+    const response = await fetch(`${API_URL}/customers/${id}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -57,7 +62,8 @@ const customersApi = {
     });
     
     if (!response.ok) {
-      throw new Error('Failed to update customer');
+      const data = await response.json();
+      throw new Error(data.message || 'Failed to update customer');
     }
     
     return response.json();
@@ -65,7 +71,8 @@ const customersApi = {
   
   delete: async (id) => {
     const token = localStorage.getItem('vcare_token');
-    const response = await fetch(`/api/customers/${id}`, {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+    const response = await fetch(`${API_URL}/customers/${id}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -74,7 +81,8 @@ const customersApi = {
     });
     
     if (!response.ok) {
-      throw new Error('Failed to delete customer');
+      const data = await response.json();
+      throw new Error(data.message || 'Failed to delete customer');
     }
     
     return response.json();

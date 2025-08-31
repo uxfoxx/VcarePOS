@@ -9,7 +9,8 @@ import {
   Tooltip,
   List,
   Empty,
-  Tag
+  Tag,
+  Tour
 } from 'antd';
 import { useDispatch } from 'react-redux';
 import { logout as logoutAction } from '../../features/auth/authSlice';
@@ -27,6 +28,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
   const { notifications, stockAlerts, markAsRead, clearAllNotifications, markAllAsRead, clearStockAlerts } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
   const [readStockAlerts, setReadStockAlerts] = useState(new Set());
+  const [tourOpen, setTourOpen] = useState(false);
 
   // Clean up read stock alerts when stock alerts change (e.g., when alerts are resolved)
   useEffect(() => {
@@ -121,6 +123,30 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
     setReadStockAlerts(prev => new Set([...prev, ...allStockAlertIds]));
   };
 
+  const getTourSteps = () => {
+    return [
+      {
+        title: 'Welcome to VCare POS',
+        description: 'Let us show you around the main features of your dashboard.',
+        target: null,
+      },
+      {
+        title: 'Notifications',
+        description: 'Stay updated with stock alerts and system notifications.',
+        target: () => document.querySelector('[data-tour="notifications"]'),
+      },
+      {
+        title: 'User Menu',
+        description: 'Access your profile settings and account options.',
+        target: () => document.querySelector('[data-tour="user-menu"]'),
+      },
+      {
+        title: 'Help & Support',
+        description: 'Click here anytime you need assistance or want to take this tour again.',
+        target: () => document.querySelector('[data-tour="help"]'),
+      },
+    ];
+  };
 
   const notificationContent = (
     <div className="w-80 max-h-96 overflow-y-auto">
@@ -160,58 +186,6 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
               onClick={() => handleNotificationClick(item)}
             >
               <div className="flex items-start p-2 w-full">
-          </Title>
-        </div>
-      </div>
-      
-      <Space size="middle" className="flex items-center">
-        <Tooltip title="WiFi Connected">
-          <Icon name="wifi" className="text-green-500" />
-        </Tooltip>
-        
-        <Dropdown 
-          open={showNotifications}
-          onOpenChange={setShowNotifications}
-          dropdownRender={() => notificationContent}
-          placement="bottomRight"
-          trigger={['click']}
-        >
-          <Badge count={unreadCount} size="small" offset={[-2, 2]}>
-            <ActionButton.Text 
-              icon="notifications"
-              className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all"
-            />
-          </Badge>
-        </Dropdown>
-        
-        <Dropdown 
-          menu={{ items: userMenuItems }} 
-          placement="bottomRight"
-          trigger={['click']}
-        >
-          <div className="flex items-center space-x-3 cursor-pointer">
-            <Avatar 
-              size={40}
-              style={{ 
-                background: 'linear-gradient(135deg, #0E72BD, #1890ff)',
-              }}
-            >
-              {currentUser?.firstName?.[0]}{currentUser?.lastName?.[0]}
-            </Avatar>
-            <div className="hidden sm:block text-left">
-              <Text strong className="text-gray-900 block text-sm">
-                {currentUser?.firstName} {currentUser?.lastName}
-              </Text>
-              <Text type="secondary" className="text-xs capitalize">
-                {currentUser?.role}
-              </Text>
-            </div>
-          </div>
-        </Dropdown>
-      </Space>
-    </AntHeader>
-  );
-}
                 <div className={`flex-shrink-0 mr-3 mt-1 text-${item.type === 'error' ? 'red' : item.type === 'warning' ? 'orange' : 'blue'}-500`}>
                   <Icon name={item.icon || 'notifications'} />
                 </div>

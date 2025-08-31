@@ -1,7 +1,7 @@
 import { useSelector, useDispatch } from 'react-redux';
-import { message } from 'antd';
-import { 
-  addNotification, 
+import { useCallback } from 'react';
+import {
+  addNotification,
   checkStockLevels,
   markNotificationRead,
   markAllNotificationsRead,
@@ -12,129 +12,89 @@ import {
 } from '../features/notifications/notificationsSlice';
 
 /**
- * Enhanced Redux notifications hook that provides backward compatibility
- * with the old NotificationContext API. This allows for seamless migration
- * of existing components.
+ * Custom hook for managing Redux-based notifications
+ * Provides a clean interface for notification operations
  */
 export function useReduxNotifications() {
   const dispatch = useDispatch();
-  const {
-    notifications,
-    stockAlerts,
-    settings,
-    lastChecked,
-    loading,
-    error
-  } = useSelector(state => state.notifications);
-
-  // Get products and raw materials for compatibility functions
+  
+  // Get notification state from Redux
+  const notifications = useSelector(state => state.notifications.notifications);
+  const stockAlerts = useSelector(state => state.notifications.stockAlerts);
+  const settings = useSelector(state => state.notifications.settings);
+  const lastChecked = useSelector(state => state.notifications.lastChecked);
+  const loading = useSelector(state => state.notifications.loading);
+  const error = useSelector(state => state.notifications.error);
+  
+  // Get products and raw materials for stock checking
   const productsList = useSelector(state => state.products?.productsList || []);
   const rawMaterialsList = useSelector(state => state.rawMaterials?.rawMaterialsList || []);
 
-  const addNotificationWithDisplay = (notificationData) => {
-    const newNotification = {
-      id: `NOTIF-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date().toISOString(),
-      read: false,
-      showUINotification: true, // Always show UI notification for manually added ones
-      ...notificationData
-    };
-    
-    dispatch(addNotification(newNotification));
-  };
+  // Action creators wrapped in useCallback for performance
+  const addNotificationAction = useCallback((notification) => {
+    dispatch(addNotification(notification));
+  }, [dispatch]);
 
-  const checkStockLevelsAction = () => {
-    dispatch(checkStockLevels());
-  };
-
-  const markAsRead = (notificationId) => {
+  const markAsRead = useCallback((notificationId) => {
     dispatch(markNotificationRead(notificationId));
-  };
+  }, [dispatch]);
 
-  const markAllAsRead = () => {
+  const markAllAsRead = useCallback(() => {
     dispatch(markAllNotificationsRead());
-  };
+  }, [dispatch]);
 
-  const clearAllNotifications = () => {
-    dispatch(clearNotifications());
-    message.success('All notifications cleared');
-  };
-
-  const removeNotificationById = (notificationId) => {
+  const removeNotificationAction = useCallback((notificationId) => {
     dispatch(removeNotification(notificationId));
-  };
+  }, [dispatch]);
 
-  const clearStockAlertsAction = () => {
+  const clearAllNotifications = useCallback(() => {
+    dispatch(clearNotifications());
+  }, [dispatch]);
+
+  const clearStockAlertsAction = useCallback(() => {
     dispatch(clearStockAlerts());
-  };
+  }, [dispatch]);
 
-  const updateSettings = (newSettings) => {
+  const updateSettings = useCallback((newSettings) => {
     dispatch(updateNotificationSettings(newSettings));
-  };
+  }, [dispatch]);
 
-  // Enhanced backward compatibility function for raw material availability
-  const checkRawMaterialAvailability = (cartItems, rawMaterials = rawMaterialsList) => {
-    const unavailableMaterials = [];
-    const lowMaterials = [];
+  const checkStockLevelsAction = useCallback(() => {
+    dispatch(checkStockLevels());
+  }, [dispatch]);
+
+  // Helper functions
+  const getUnreadCount = useCallback(() => {
+    return notifications.filter(n => !n.read).length;
+  }, [notifications]);
+
+  const getCriticalAlertsCount = useCallback(() => {
+    return stockAlerts.filter(alert => alert.type === 'critical').length;
+  }, [stockAlerts]);
+
+  const getWarningAlertsCount = useCallback(() => {
+    return stockAlerts.filter(alert => alert.type === 'warning').length;
+  }, [stockAlerts]);
+
+  // Get low stock items for quick access
+  const getLowStockItems = useCallback(() => {
+    const lowStockProducts = productsList.filter(product => 
+      product.stock <= settings.criticalStockThreshold
+    );
     
-    // Ensure we have valid arrays to work with
-    if (!Array.isArray(cartItems) || !Array.isArray(rawMaterials)) {
-      return { unavailableMaterials, lowMaterials };
-    }
-
-    cartItems.forEach(cartItem => {
-      // Get raw materials from the selected size
-      let requiredMaterials = [];
-      
-      // Find the selected size data which contains raw materials
-      if (cartItem?.selectedColorId && cartItem?.selectedSize && cartItem?.product?.colors) {
-        const selectedColor = cartItem.product.colors.find(color => color.id === cartItem.selectedColorId);
-        if (selectedColor && selectedColor.sizes) {
-          const selectedSizeData = selectedColor.sizes.find(size => size.name === cartItem.selectedSize);
-          if (selectedSizeData && Array.isArray(selectedSizeData.rawMaterials)) {
-            requiredMaterials = selectedSizeData.rawMaterials;
-          }
-        }
-      } else if (cartItem?.product && Array.isArray(cartItem.product.rawMaterials)) {
-        // Fallback for products without color/size structure
-        requiredMaterials = cartItem.product.rawMaterials;
-      }
-      
-      if (requiredMaterials.length > 0) {
-        requiredMaterials.forEach(requiredMaterial => {
-          const material = rawMaterials.find(m => m.id === requiredMaterial.rawMaterialId);
-          if (material) {
-            const totalRequired = requiredMaterial.quantity * cartItem.quantity;
-            
-            if (material.stockQuantity < totalRequired) {
-              if (material.stockQuantity === 0) {
-                unavailableMaterials.push({
-                  materialName: material.name,
-                  productName: cartItem.product.name,
-                  required: totalRequired,
-                  available: material.stockQuantity,
-                  unit: material.unit
-                });
-              } else {
-                lowMaterials.push({
-                  materialName: material.name,
-                  productName: cartItem.product.name,
-                  required: totalRequired,
-                  available: material.stockQuantity,
-                  unit: material.unit
-                });
-              }
-            }
-          }
-        });
-      }
-    });
-
-    return { unavailableMaterials, lowMaterials };
-  };
+    const lowStockMaterials = rawMaterialsList.filter(material => 
+      material.stockQuantity <= material.minimumStock
+    );
+    
+    return {
+      products: lowStockProducts,
+      materials: lowStockMaterials,
+      total: lowStockProducts.length + lowStockMaterials.length
+    };
+  }, [productsList, rawMaterialsList, settings.criticalStockThreshold]);
 
   return {
-    // State - maintaining exact same structure as old context
+    // State
     notifications,
     stockAlerts,
     settings,
@@ -142,21 +102,22 @@ export function useReduxNotifications() {
     loading,
     error,
     
-    // Backward compatibility aliases for settings
-    enableStockAlerts: settings.enableStockAlerts,
-    lowStockThreshold: settings.lowStockThreshold,
-    criticalStockThreshold: settings.criticalStockThreshold,
-    enableLowStockWarnings: settings.enableLowStockWarnings,
-    
-    // Actions - maintaining exact same function names as old context
-    addNotification: addNotificationWithDisplay,
-    checkStockLevels: checkStockLevelsAction,
-    checkRawMaterialAvailability,
+    // Actions
+    addNotification: addNotificationAction,
     markAsRead,
     markAllAsRead,
+    removeNotification: removeNotificationAction,
     clearAllNotifications,
-    removeNotification: removeNotificationById,
     clearStockAlerts: clearStockAlertsAction,
     updateSettings,
+    checkStockLevels: checkStockLevelsAction,
+    
+    // Helper functions
+    getUnreadCount,
+    getCriticalAlertsCount,
+    getWarningAlertsCount,
+    getLowStockItems
   };
 }
+
+export default useReduxNotifications;

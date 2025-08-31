@@ -1,203 +1,288 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
 import { 
   Card, 
-  Button, 
-  Input, 
   Space, 
-  Modal, 
-  Form, 
-  Select, 
-  InputNumber, 
   Typography,
   Tag,
-  Alert,
   Popconfirm,
   message,
   Row,
   Col,
+  Progress,
   Tooltip,
-  Tabs
+  InputNumber,
+  Select,
+  Modal,
+  Form,
+  Input
 } from 'antd';
+import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
+import { FormModal } from '../common/FormModal';
 import { EnhancedTable } from '../common/EnhancedTable';
-import { DetailModal } from '../common/DetailModal';
-import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { EmptyState } from '../common/EmptyState';
-import { fetchRawMaterials, addRawMaterials, updateRawMaterials, deleteRawMaterials } from '../../features/rawMaterials/rawMaterialsSlice';
+import { LoadingSkeleton } from '../common/LoadingSkeleton';
+import { ExportModal } from '../common/ExportModal';
+import { StockLevelModal } from './StockLevelModal';
+import { useDispatch, useSelector } from 'react-redux';
+import { 
+  fetchRawMaterials, 
+  addRawMaterials, 
+  updateRawMaterials, 
+  deleteRawMaterials,
+  updateStock
+} from '../../features/rawMaterials/rawMaterialsSlice';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
 export function RawMaterialManagement() {
-  const dispatch2 = useDispatch();
+  const dispatch = useDispatch();
+  const { hasPermission } = useAuth();
+  const rawMaterials = useSelector(state => state.rawMaterials.rawMaterialsList);
+  const loading = useSelector(state => state.rawMaterials.loading);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [showStockModal, setShowStockModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showStockLevelModal, setShowStockLevelModal] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [form] = Form.useForm();
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const {rawMaterialsList, error} = useSelector(state => state.rawMaterials);
-  const [activeTab, setActiveTab] = useState('materials');
+  const [form] = Form.useForm();
+  const [stockForm] = Form.useForm();
 
-  useEffect(() => { dispatch2(fetchRawMaterials()); }, [dispatch2]);
+  useEffect(() => {
+    dispatch(fetchRawMaterials());
+  }, [dispatch]);
 
-  const categories = ['All', ...new Set(rawMaterialsList.map(m => m.category))];
-  
-  const filteredMaterials = rawMaterialsList.filter(material => {
-    const matchesSearch = material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         material.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         material.supplier?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || material.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredMaterials = rawMaterials.filter(material =>
+    material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    material.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (material.supplier && material.supplier.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
-  const lowStockMaterials = rawMaterialsList.filter(m => m.stockQuantity <= m.minimumStock);
-  const outOfStockMaterials = rawMaterialsList.filter(m => m.stockQuantity === 0);
-  const almostOutOfStockMaterials = rawMaterialsList.filter(m => m.stockQuantity > m.minimumStock && m.stockQuantity <= m.minimumStock * 2);
+  const handleSubmit = (values) => {
+    const materialData = {
+      id: editingMaterial?.id || `RM-${Date.now()}`,
+      name: values.name,
+      category: values.category,
+      unit: values.unit,
+      stockQuantity: values.stockQuantity || 0,
+      unitPrice: values.unitPrice || 0,
+      supplier: values.supplier,
+      minimumStock: values.minimumStock || 0,
+      description: values.description,
+      createdAt: editingMaterial?.createdAt || new Date(),
+      updatedAt: new Date()
+    };
 
-  const handleSubmit = async (values) => {
-    try {
-      setLoading(true);
-      const materialData = {
-        id: editingMaterial?.id || `RM-${Date.now()}`,
-        name: values.name,
-        category: values.category,
-        unit: values.unit,
-        stockQuantity: values.stockQuantity,
-        unitPrice: values.unitPrice,
-        supplier: values.supplier,
-        minimumStock: values.minimumStock,
-        description: values.description,
-      };
-
-      if (editingMaterial) {
-        dispatch2(updateRawMaterials({materialData}));
-        // dispatch({ type: 'UPDATE_RAW_MATERIAL', payload: materialData });
-        message.success('Raw material updated successfully');
-      } else {
-        dispatch2(addRawMaterials({materialData}));
-        // dispatch({ type: 'ADD_RAW_MATERIAL', payload: materialData });
-        message.success('Raw material added successfully');
-      }
-
-      setShowModal(false);
-      setEditingMaterial(null);
-      form.resetFields();
-    } catch (error) {
-      message.error('Please fill in all required fields');
-    } finally {
-      setLoading(false);
+    if (editingMaterial) {
+      dispatch(updateRawMaterials({ materialData }));
+      message.success('Raw material updated successfully');
+    } else {
+      dispatch(addRawMaterials({ materialData }));
+      message.success('Raw material added successfully');
     }
+
+    setShowModal(false);
+    setEditingMaterial(null);
+    form.resetFields();
   };
 
   const handleEdit = (material) => {
+    if (!hasPermission('raw-materials', 'edit')) {
+      message.error('You do not have permission to edit raw materials');
+      return;
+    }
     setEditingMaterial(material);
     form.setFieldsValue(material);
     setShowModal(true);
   };
 
   const handleDelete = (materialId) => {
-    dispatch2(deleteRawMaterials({materialId}));
-    // dispatch({ type: 'DELETE_RAW_MATERIAL', payload: materialId });
-    // message.success('Raw material deleted successfully');
+    if (!hasPermission('raw-materials', 'delete')) {
+      message.error('You do not have permission to delete raw materials');
+      return;
+    }
+    dispatch(deleteRawMaterials({ materialId }));
+    message.success('Raw material deleted successfully');
   };
 
   const handleBulkDelete = (materialIds) => {
+    if (!hasPermission('raw-materials', 'delete')) {
+      message.error('You do not have permission to delete raw materials');
+      return;
+    }
     materialIds.forEach(id => {
-      dispatch({ type: 'DELETE_RAW_MATERIAL', payload: id });
+      dispatch(deleteRawMaterials({ materialId: id }));
     });
-    message.success(`${materialIds.length} materials deleted successfully`);
+    message.success(`${materialIds.length} raw materials deleted successfully`);
     setSelectedRowKeys([]);
   };
 
-  const handleRowClick = (material) => {
+  const handleStockUpdate = (material) => {
     setSelectedMaterial(material);
-    setShowDetailModal(true);
+    stockForm.setFieldsValue({
+      currentStock: material.stockQuantity,
+      operation: 'add',
+      quantity: 0
+    });
+    setShowStockModal(true);
+  };
+
+  const handleStockSubmit = (values) => {
+    dispatch(updateStock({
+      id: selectedMaterial.id,
+      quantity: values.quantity,
+      operation: values.operation
+    }));
+    
+    message.success('Stock updated successfully');
+    setShowStockModal(false);
+    setSelectedMaterial(null);
+    stockForm.resetFields();
+  };
+
+  const getStockStatus = (material) => {
+    if (material.stockQuantity <= 0) return 'out-of-stock';
+    if (material.stockQuantity <= material.minimumStock) return 'low-stock';
+    if (material.stockQuantity <= material.minimumStock * 2) return 'medium-stock';
+    return 'high-stock';
+  };
+
+  const getStockColor = (status) => {
+    switch (status) {
+      case 'high-stock': return 'green';
+      case 'medium-stock': return 'blue';
+      case 'low-stock': return 'orange';
+      case 'out-of-stock': return 'red';
+      default: return 'default';
+    }
+  };
+
+  const getStockPercentage = (material) => {
+    const maxStock = material.minimumStock * 3; // Assume 3x minimum is "full"
+    return Math.min((material.stockQuantity / maxStock) * 100, 100);
   };
 
   const columns = [
     {
       title: 'Material',
-      dataIndex: 'name',
-      key: 'name',
+      key: 'material',
       fixed: 'left',
-      width: 200,
-      render: (text) => <Text strong>{text}</Text>,
+      width: 250,
+      render: (record) => (
+        <div>
+          <Text strong className="block">{record.name}</Text>
+          <Text type="secondary" className="text-xs">
+            {record.category} • {record.supplier || 'No supplier'}
+          </Text>
+        </div>
+      ),
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
-      title: 'Category',
-      dataIndex: 'category',
-      key: 'category',
-      width: 120,
-      render: (category) => <Tag color="blue">{category}</Tag>,
-      filters: categories.filter(cat => cat !== 'All').map(cat => ({ text: cat, value: cat })),
-      onFilter: (value, record) => record.category === value,
-    },
-    {
-      title: 'Stock',
-      key: 'stock',
-      width: 120,
-      render: (record) => (
-        <div>
-          <Text strong>{record.stockQuantity} {record.unit}</Text>
-          {record.stockQuantity <= record.minimumStock && (
-            <Tag color={record.stockQuantity === 0 ? 'red' : 'orange'} className="ml-2">
-              {record.stockQuantity === 0 ? 'Out of Stock' : 'Low Stock'}
-            </Tag>
-          )}
-        </div>
-      ),
-      sorter: (a, b) => a.stockQuantity - b.stockQuantity,
-    },
-    {
-      title: 'Min. Stock',
-      dataIndex: 'minimumStock',
-      key: 'minimumStock',
-      width: 120,
-      render: (min, record) => <Text>{min} {record.unit}</Text>,
+      title: 'Stock Level',
+      key: 'stockLevel',
+      width: 200,
+      render: (record) => {
+        const status = getStockStatus(record);
+        const percentage = getStockPercentage(record);
+        
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Text strong>{record.stockQuantity} {record.unit}</Text>
+              <Tag color={getStockColor(status)}>
+                {status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              </Tag>
+            </div>
+            <Progress 
+              percent={percentage} 
+              size="small" 
+              status={status === 'out-of-stock' ? 'exception' : status === 'low-stock' ? 'active' : 'normal'}
+              showInfo={false}
+            />
+            <Text type="secondary" className="text-xs">
+              Minimum: {record.minimumStock} {record.unit}
+            </Text>
+          </div>
+        );
+      },
+      filters: [
+        { text: 'High Stock', value: 'high-stock' },
+        { text: 'Medium Stock', value: 'medium-stock' },
+        { text: 'Low Stock', value: 'low-stock' },
+        { text: 'Out of Stock', value: 'out-of-stock' },
+      ],
+      onFilter: (value, record) => getStockStatus(record) === value,
     },
     {
       title: 'Unit Price',
       dataIndex: 'unitPrice',
       key: 'unitPrice',
       width: 120,
-      render: (price) => <Text strong>LKR {price.toFixed(2)}</Text>,
+      render: (price, record) => (
+        <div>
+          <Text strong className="text-blue-600">
+            LKR {price.toFixed(2)}
+          </Text>
+          <br />
+          <Text type="secondary" className="text-xs">
+            per {record.unit}
+          </Text>
+        </div>
+      ),
       sorter: (a, b) => a.unitPrice - b.unitPrice,
     },
     {
-      title: 'Supplier',
-      dataIndex: 'supplier',
-      key: 'supplier',
-      width: 150,
-      sorter: (a, b) => (a.supplier || '').localeCompare(b.supplier || ''),
+      title: 'Total Value',
+      key: 'totalValue',
+      width: 120,
+      render: (record) => (
+        <Text strong className="text-green-600">
+          LKR {(record.stockQuantity * record.unitPrice).toFixed(2)}
+        </Text>
+      ),
+      sorter: (a, b) => (a.stockQuantity * a.unitPrice) - (b.stockQuantity * b.unitPrice),
     },
     {
       title: 'Actions',
       key: 'actions',
       fixed: 'right',
-      width: 120,
+      width: 180,
       render: (record) => (
         <Space>
-          <Tooltip title="Edit">
+          <Tooltip title="Update Stock">
+            <ActionButton.Text 
+              icon="inventory"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStockUpdate(record);
+              }}
+              className="text-green-600"
+            />
+          </Tooltip>
+          
+          <Tooltip title={hasPermission('raw-materials', 'edit') ? 'Edit Material' : 'No permission'}>
             <ActionButton.Text 
               icon="edit"
               onClick={(e) => {
                 e.stopPropagation();
                 handleEdit(record);
               }}
+              disabled={!hasPermission('raw-materials', 'edit')}
               className="text-blue-600"
             />
           </Tooltip>
-          <Tooltip title="Delete">
+          
+          <Tooltip title={hasPermission('raw-materials', 'delete') ? 'Delete Material' : 'No permission'}>
             <Popconfirm
               title="Delete this material?"
+              description="This action cannot be undone."
               onConfirm={(e) => {
                 e?.stopPropagation();
                 handleDelete(record.id);
@@ -205,10 +290,12 @@ export function RawMaterialManagement() {
               okText="Delete"
               cancelText="Cancel"
               okButtonProps={{ danger: true }}
+              disabled={!hasPermission('raw-materials', 'delete')}
             >
               <ActionButton.Text 
                 icon="delete"
                 danger
+                disabled={!hasPermission('raw-materials', 'delete')}
                 onClick={(e) => e.stopPropagation()}
               />
             </Popconfirm>
@@ -218,299 +305,106 @@ export function RawMaterialManagement() {
     },
   ];
 
+  if (!hasPermission('raw-materials', 'view')) {
+    return (
+      <Card>
+        <EmptyState
+          icon="lock"
+          title="Access Denied"
+          description="You do not have permission to view raw materials."
+        />
+      </Card>
+    );
+  }
+
   if (loading) {
     return <LoadingSkeleton type="table" />;
   }
 
-  const renderRawMaterialsTab = () => (
-    <div className="space-y-4">
-      {/* Low Stock Alert */}
-      {lowStockMaterials.length > 0 && (
-        <Alert
-          message="Low Stock Alert"
-          description={
-            <div>
-              <Text>{lowStockMaterials.length} material(s) are running low on stock:</Text>
-              <div className="mt-2 flex flex-wrap gap-1">
-                {lowStockMaterials.map(material => (
-                  <Tag key={material.id} color="red" className="mb-1">
-                    {material.name} ({material.stockQuantity} {material.unit} left)
-                  </Tag>
-                ))}
-              </div>
-            </div>
-          }
-          type="warning"
-          icon={<Icon name="warning" />}
-          showIcon
-        />
-      )}
-
-      <EnhancedTable
-        title="Raw Materials"
-        icon="category"
-        columns={columns}
-        dataSource={filteredMaterials}
-        rowKey="id"
-        onRow={(record) => ({
-          onClick: () => handleRowClick(record),
-          className: 'cursor-pointer hover:bg-blue-50'
-        })}
-        rowSelection={{
-          type: 'checkbox',
-          onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys)
-        }}
-        onDelete={handleBulkDelete}
-        searchFields={['name', 'category', 'supplier']}
-        searchPlaceholder="Search raw materials..."
-        extra={
-          <Space>
-            <Select
-              value={selectedCategory}
-              onChange={setSelectedCategory}
-              className="w-40"
-            >
-              {categories.map(category => (
-                <Option key={category} value={category}>{category}</Option>
-              ))}
-            </Select>
-            <ActionButton.Primary 
-              icon="add"
-              onClick={() => setShowModal(true)}
-            >
-              Add Material
-            </ActionButton.Primary>
-          </Space>
-        }
-        emptyDescription="No raw materials found"
-        emptyImage={<Icon name="category" className="text-6xl text-gray-300" />}
-      />
-    </div>
-  );
-
-  const renderStockAlertsTab = () => {
-    const stockAlertColumns = [
-      {
-        title: 'Material',
-        dataIndex: 'name',
-        key: 'name',
-        fixed: 'left',
-        width: 200,
-        render: (text, record) => (
-          <div>
-            <Text strong>{text}</Text>
-            <br />
-            <Text type="secondary" className="text-xs">{record.category}</Text>
-          </div>
-        ),
-        sorter: (a, b) => a.name.localeCompare(b.name),
-      },
-      {
-        title: 'Current Stock',
-        key: 'stock',
-        width: 150,
-        render: (record) => {
-          const percentage = Math.min((record.stockQuantity / (record.minimumStock * 3)) * 100, 100);
-          const isOutOfStock = record.stockQuantity === 0;
-          const isLowStock = record.stockQuantity <= record.minimumStock;
-          const isAlmostLow = record.stockQuantity <= record.minimumStock * 2;
-          
-          let color = 'green';
-          let status = 'In Stock';
-          
-          if (isOutOfStock) {
-            color = 'red';
-            status = 'Out of Stock';
-          } else if (isLowStock) {
-            color = 'orange';
-            status = 'Low Stock';
-          } else if (isAlmostLow) {
-            color = 'yellow';
-            status = 'Almost Low';
-          }
-          
-          return (
-            <div>
-              <Text strong className={`text-${color === 'red' ? 'red' : color === 'orange' ? 'orange' : color === 'yellow' ? 'yellow' : 'green'}-600`}>
-                {record.stockQuantity} {record.unit}
-              </Text>
-              <br />
-              <Tag color={color} size="small">
-                {status}
-              </Tag>
-              <div className="mt-1">
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full ${
-                      isOutOfStock ? 'bg-red-500' : 
-                      isLowStock ? 'bg-orange-500' : 
-                      isAlmostLow ? 'bg-yellow-500' : 'bg-green-500'
-                    }`}
-                    style={{ width: `${Math.max(percentage, 5)}%` }}
-                  />
-                </div>
-                <Text type="secondary" className="text-xs">
-                  Min: {record.minimumStock} {record.unit}
-                </Text>
-              </div>
-            </div>
-          );
-        },
-        sorter: (a, b) => a.stockQuantity - b.stockQuantity,
-      },
-      {
-        title: 'Supplier',
-        dataIndex: 'supplier',
-        key: 'supplier',
-        width: 150,
-        sorter: (a, b) => (a.supplier || '').localeCompare(b.supplier || ''),
-      },
-      {
-        title: 'Actions',
-        key: 'actions',
-        fixed: 'right',
-        width: 120,
-        render: (record) => (
-          <Space>
-            <Tooltip title="Edit">
-              <ActionButton.Text 
-                icon="edit"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEdit(record);
-                }}
-                className="text-blue-600"
-              />
-            </Tooltip>
-            <Tooltip title="Restock">
-              <ActionButton.Text 
-                icon="add_shopping_cart"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  message.info('Restock feature coming soon');
-                }}
-                className="text-green-600"
-              />
-            </Tooltip>
-          </Space>
-        ),
-      },
-    ];
-
-    const stockAlertData = [
-      ...outOfStockMaterials.map(m => ({ ...m, alertType: 'out-of-stock' })),
-      ...rawMaterialsList.filter(m => m.stockQuantity <= m.minimumStock && m.stockQuantity > 0).map(m => ({ ...m, alertType: 'low-stock' })),
-      ...almostOutOfStockMaterials.map(m => ({ ...m, alertType: 'almost-low' }))
-    ];
-
-    return (
-      <div className="space-y-4">
-        {/* Stock Alert Statistics */}
-        <Row gutter={16} className="mb-6">
-          <Col span={8}>
-            <Card size="small" className="text-center border-red-200 bg-red-50">
-              <div className="text-2xl font-bold text-red-600">{outOfStockMaterials.length}</div>
-              <div className="text-sm text-red-500">Out of Stock</div>
-            </Card>
-          </Col>
-          <Col span={8}>
-            <Card size="small" className="text-center border-orange-200 bg-orange-50">
-              <div className="text-2xl font-bold text-orange-600">
-                {rawMaterialsList.filter(m => m.stockQuantity <= m.minimumStock && m.stockQuantity > 0).length}
-              </div>
-              <div className="text-sm text-orange-500">Low Stock</div>
-            </Card>
-          </Col>
-          <Col span={8}>
-            <Card size="small" className="text-center border-yellow-200 bg-yellow-50">
-              <div className="text-2xl font-bold text-yellow-600">{almostOutOfStockMaterials.length}</div>
-              <div className="text-sm text-yellow-500">Almost Low</div>
-            </Card>
-          </Col>
-        </Row>
-
-        {stockAlertData.length === 0 ? (
-          <Card>
-            <EmptyState
-              icon="check_circle"
-              title="All Materials Well Stocked"
-              description="No stock alerts at this time. All raw materials have adequate inventory levels."
-            />
-          </Card>
-        ) : (
-          <EnhancedTable
-            title="Raw Material Stock Alerts"
-            icon="warning"
-            subtitle={`${stockAlertData.length} materials need attention`}
-            columns={stockAlertColumns}
-            dataSource={stockAlertData}
-            rowKey="id"
-            onRow={(record) => ({
-              onClick: () => handleRowClick(record),
-              className: `cursor-pointer hover:bg-blue-50 ${
-                record.alertType === 'out-of-stock' ? 'bg-red-50' : 
-                record.alertType === 'low-stock' ? 'bg-orange-50' : 
-                'bg-yellow-50'
-              }`
-            })}
-            searchFields={['name', 'category', 'supplier']}
-            searchPlaceholder="Search materials with stock issues..."
-            showSearch={true}
-            extra={
-              <ActionButton.Primary 
-                icon="add"
-                onClick={() => setShowModal(true)}
-              >
-                Add Material
-              </ActionButton.Primary>
-            }
-            emptyDescription="No stock alerts"
-            emptyImage={<Icon name="check_circle" className="text-6xl text-green-300" />}
-          />
-        )}
-      </div>
-    );
-  };
-
-  const tabItems = [
-    {
-      key: 'materials',
-      label: (
-        <span className="flex items-center space-x-2">
-          <Icon name="category" />
-          <span>Raw Materials</span>
-        </span>
-      ),
-      children: renderRawMaterialsTab()
-    },
-    {
-      key: 'stock-alerts',
-      label: (
-        <span className="flex items-center space-x-2">
-          <Icon name="warning" />
-          <span>Stock Alerts</span>
-          {(outOfStockMaterials.length + lowStockMaterials.length + almostOutOfStockMaterials.length) > 0 && (
-            <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 ml-1">
-              {outOfStockMaterials.length + lowStockMaterials.length + almostOutOfStockMaterials.length}
-            </span>
-          )}
-        </span>
-      ),
-      children: renderStockAlertsTab()
-    }
-  ];
-
   return (
     <>
       <Card>
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          items={tabItems}
+        {/* Raw Materials Statistics */}
+        <Row gutter={16} className="mb-6">
+          <Col span={6}>
+            <Card size="small" className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{rawMaterials.length}</div>
+              <div className="text-sm text-gray-500">Total Materials</div>
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card size="small" className="text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {rawMaterials.filter(m => getStockStatus(m) === 'high-stock').length}
+              </div>
+              <div className="text-sm text-gray-500">High Stock</div>
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card size="small" className="text-center">
+              <div className="text-2xl font-bold text-orange-600">
+                {rawMaterials.filter(m => getStockStatus(m) === 'low-stock').length}
+              </div>
+              <div className="text-sm text-gray-500">Low Stock</div>
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card size="small" className="text-center">
+              <div className="text-2xl font-bold text-red-600">
+                {rawMaterials.filter(m => getStockStatus(m) === 'out-of-stock').length}
+              </div>
+              <div className="text-sm text-gray-500">Out of Stock</div>
+            </Card>
+          </Col>
+        </Row>
+        
+        <EnhancedTable
+          title="Raw Materials Inventory"
+          icon="category"
+          columns={columns}
+          dataSource={filteredMaterials}
+          rowKey="id"
+          rowSelection={hasPermission('raw-materials', 'delete') ? {
+            type: 'checkbox',
+            onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys)
+          } : null}
+          onDelete={handleBulkDelete}
+          searchFields={['name', 'category', 'supplier']}
+          searchPlaceholder="Search raw materials..."
+          extra={
+            <Space>
+              <ActionButton 
+                icon="analytics"
+                onClick={() => setShowStockLevelModal(true)}
+              >
+                Stock Report
+              </ActionButton>
+              <ActionButton 
+                icon="download"
+                onClick={() => setShowExportModal(true)}
+              >
+                Export
+              </ActionButton>
+              {hasPermission('raw-materials', 'edit') && (
+                <ActionButton.Primary 
+                  icon="add"
+                  onClick={() => {
+                    setEditingMaterial(null);
+                    form.resetFields();
+                    setShowModal(true);
+                  }}
+                >
+                  Add Material
+                </ActionButton.Primary>
+              )}
+            </Space>
+          }
+          emptyDescription="No raw materials found"
+          emptyImage={<Icon name="category" className="text-6xl text-gray-300" />}
         />
       </Card>
 
-      <Modal
+      <FormModal
         title={editingMaterial ? 'Edit Raw Material' : 'Add New Raw Material'}
         open={showModal}
         onCancel={() => {
@@ -518,153 +412,209 @@ export function RawMaterialManagement() {
           setEditingMaterial(null);
           form.resetFields();
         }}
-        footer={null}
+        onSubmit={handleSubmit}
+        form={form}
         width={700}
-        destroyOnClose
+        submitText={editingMaterial ? 'Update Material' : 'Add Material'}
+        loading={loading}
+      >
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="name"
+              label="Material Name"
+              rules={[{ required: true, message: 'Please enter material name' }]}
+            >
+              <Input placeholder="Enter material name" />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="category"
+              label="Category"
+              rules={[{ required: true, message: 'Please enter category' }]}
+            >
+              <Select placeholder="Select or enter category">
+                <Option value="Wood">Wood</Option>
+                <Option value="Hardware">Hardware</Option>
+                <Option value="Upholstery">Upholstery</Option>
+                <Option value="Finishing">Finishing</Option>
+                <Option value="Metal">Metal</Option>
+                <Option value="Fabric">Fabric</Option>
+                <Option value="Materials">Materials</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={8}>
+            <Form.Item
+              name="unit"
+              label="Unit of Measurement"
+              rules={[{ required: true, message: 'Please enter unit' }]}
+            >
+              <Select placeholder="Select unit">
+                <Option value="sq ft">Square Feet</Option>
+                <Option value="pieces">Pieces</Option>
+                <Option value="liters">Liters</Option>
+                <Option value="kg">Kilograms</Option>
+                <Option value="meters">Meters</Option>
+                <Option value="pairs">Pairs</Option>
+                <Option value="units">Units</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col span={8}>
+            <Form.Item
+              name="stockQuantity"
+              label="Current Stock"
+              rules={[{ required: true, message: 'Please enter stock quantity' }]}
+            >
+              <InputNumber
+                min={0}
+                step={0.01}
+                placeholder="0.00"
+                className="w-full"
+              />
+            </Form.Item>
+          </Col>
+          <Col span={8}>
+            <Form.Item
+              name="minimumStock"
+              label="Minimum Stock"
+              rules={[{ required: true, message: 'Please enter minimum stock' }]}
+            >
+              <InputNumber
+                min={0}
+                step={0.01}
+                placeholder="0.00"
+                className="w-full"
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="unitPrice"
+              label="Unit Price (LKR)"
+              rules={[{ required: true, message: 'Please enter unit price' }]}
+            >
+              <InputNumber
+                min={0}
+                step={0.01}
+                placeholder="0.00"
+                className="w-full"
+                formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item name="supplier" label="Supplier">
+              <Input placeholder="Enter supplier name" />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Form.Item name="description" label="Description">
+          <TextArea
+            rows={3}
+            placeholder="Enter material description"
+          />
+        </Form.Item>
+      </FormModal>
+
+      {/* Stock Update Modal */}
+      <Modal
+        title={
+          <Space>
+            <Icon name="inventory" className="text-green-600" />
+            <span>Update Stock - {selectedMaterial?.name}</span>
+          </Space>
+        }
+        open={showStockModal}
+        onCancel={() => {
+          setShowStockModal(false);
+          setSelectedMaterial(null);
+          stockForm.resetFields();
+        }}
+        footer={null}
+        width={500}
       >
         <Form
-          form={form}
+          form={stockForm}
           layout="vertical"
-          onFinish={handleSubmit}
+          onFinish={handleStockSubmit}
           className="mt-4"
         >
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="name"
-                label="Material Name"
-                rules={[{ required: true, message: 'Please enter material name' }]}
-              >
-                <Input placeholder="Enter material name" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="category"
-                label="Category"
-                rules={[{ required: true, message: 'Please select category' }]}
-              >
-                <Select placeholder="Select category">
-                  <Option value="Wood">Wood</Option>
-                  <Option value="Hardware">Hardware</Option>
-                  <Option value="Upholstery">Upholstery</Option>
-                  <Option value="Finishing">Finishing</Option>
-                  <Option value="Metal">Metal</Option>
-                  <Option value="Fabric">Fabric</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
+          <div className="bg-gray-50 p-4 rounded-lg mb-4">
+            <div className="flex justify-between items-center">
+              <Text>Current Stock:</Text>
+              <Text strong className="text-blue-600">
+                {selectedMaterial?.stockQuantity} {selectedMaterial?.unit}
+              </Text>
+            </div>
+          </div>
 
           <Row gutter={16}>
-            <Col span={8}>
+            <Col span={12}>
               <Form.Item
-                name="unit"
-                label="Unit"
-                rules={[{ required: true, message: 'Please select unit' }]}
+                name="operation"
+                label="Operation"
+                rules={[{ required: true, message: 'Please select operation' }]}
+                initialValue="add"
               >
-                <Select placeholder="Select unit">
-                  <Option value="sq ft">Square Feet</Option>
-                  <Option value="pieces">Pieces</Option>
-                  <Option value="kg">Kilograms</Option>
-                  <Option value="liters">Liters</Option>
-                  <Option value="meters">Meters</Option>
+                <Select>
+                  <Option value="add">Add Stock</Option>
+                  <Option value="subtract">Remove Stock</Option>
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col span={12}>
               <Form.Item
-                name="unitPrice"
-                label="Unit Price (LKR)"
-                rules={[{ required: false, message: 'Please enter unit price' }]}
+                name="quantity"
+                label="Quantity"
+                rules={[{ required: true, message: 'Please enter quantity' }]}
               >
                 <InputNumber
-                  min={0}
-                  step={100}
+                  min={0.01}
+                  step={0.01}
                   placeholder="0.00"
                   className="w-full"
-                  formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value.replace(/LKR\s?|(,*)/g, '')}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="supplier" label="Supplier">
-                <Input placeholder="Enter supplier name" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="stockQuantity"
-                label="Current Stock"
-                rules={[{ required: true, message: 'Please enter stock quantity' }]}
-              >
-                <InputNumber
-                  min={0}
-                  placeholder="0"
-                  className="w-full"
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="minimumStock"
-                label="Minimum Stock Level"
-                rules={[{ required: true, message: 'Please enter minimum stock' }]}
-              >
-                <InputNumber
-                  min={0}
-                  placeholder="0"
-                  className="w-full"
                 />
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item name="description" label="Description">
-            <TextArea
-              rows={3}
-              placeholder="Enter description"
-            />
-          </Form.Item>
-
-          <div className="flex justify-end space-x-2 mt-6">
-            <ActionButton onClick={() => setShowModal(false)}>
+          <div className="flex justify-end space-x-2">
+            <ActionButton onClick={() => setShowStockModal(false)}>
               Cancel
             </ActionButton>
             <ActionButton.Primary htmlType="submit" loading={loading}>
-              {editingMaterial ? 'Update' : 'Add'} Material
+              Update Stock
             </ActionButton.Primary>
           </div>
         </Form>
       </Modal>
 
-      {/* Raw Material Detail Modal */}
-      <DetailModal
-        open={showDetailModal}
-        onClose={() => {
-          setShowDetailModal(false);
-          setSelectedMaterial(null);
-        }}
-        title={`Raw Material Details - ${selectedMaterial?.name}`}
-        icon="category"
-        data={selectedMaterial}
-        type="rawMaterial"
-        actions={[
-          <ActionButton 
-            key="edit" 
-            icon="edit"
-            onClick={() => {
-              setShowDetailModal(false);
-              handleEdit(selectedMaterial);
-            }}
-          >
-            Edit Material
-          </ActionButton>
-        ]}
+      {/* Export Modal */}
+      <ExportModal
+        open={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        dataType="raw-materials"
+        data={{ rawMaterials }}
+      />
+
+      {/* Stock Level Modal */}
+      <StockLevelModal
+        open={showStockLevelModal}
+        onClose={() => setShowStockLevelModal(false)}
+        rawMaterials={rawMaterials}
+        products={[]} // Pass empty array since this is raw materials only
+        onEditMaterial={handleEdit}
       />
     </>
   );

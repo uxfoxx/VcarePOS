@@ -1,118 +1,86 @@
 import React from 'react';
-import { Button, Result, Typography } from 'antd';
-import { useDispatch } from 'react-redux';
-import { logout } from '../../features/auth/authSlice';
+import { Card, Typography, Button, Space } from 'antd';
 import { Icon } from './Icon';
 
-const { Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
-class ErrorBoundaryFallback extends React.Component {
+export class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
   static getDerivedStateFromError(error) {
-    return { hasError: true, error };
+    return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
-    this.setState({ errorInfo });
-    console.error('Error caught by ErrorBoundary:', error, errorInfo);
+    this.setState({
+      error,
+      errorInfo
+    });
     
-    // Log error to monitoring service if available
-    if (window.errorReporting) {
-      window.errorReporting.captureException(error, { extra: errorInfo });
+    // Log error to console in development
+    if (import.meta.env.DEV) {
+      console.error('Error caught by boundary:', error, errorInfo);
     }
   }
 
+  handleReload = () => {
+    window.location.reload();
+  };
+
+  handleReset = () => {
+    this.setState({ hasError: false, error: null, errorInfo: null });
+  };
+
   render() {
     if (this.state.hasError) {
-      // Check if error is related to authentication
-      const isAuthError = this.state.error?.message?.toLowerCase().includes('auth') || 
-                         this.state.error?.message?.toLowerCase().includes('login') ||
-                         this.state.error?.message?.toLowerCase().includes('permission') ||
-                         this.state.error?.message?.toLowerCase().includes('unauthorized') ||
-                         this.state.error?.message?.toLowerCase().includes('token');
-
       return (
-        <Result
-          status="error"
-          title={isAuthError ? "Authentication Error" : "Something went wrong"}
-          subTitle={
-            <div>
-              <Paragraph>
-                {isAuthError 
-                  ? "There was a problem with your authentication. This could be due to an expired session or insufficient permissions."
-                  : "We encountered an unexpected error. The development team has been notified."}
-              </Paragraph>
-              {this.props.showErrorDetails && (
-                <div className="mt-4 p-4 bg-gray-100 rounded text-left overflow-auto max-h-40">
-                  <Text code>{this.state.error?.toString()}</Text>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+          <Card className="max-w-md w-full text-center">
+            <Space direction="vertical" size="large" className="w-full">
+              <div className="text-red-500">
+                <Icon name="error" className="text-6xl" />
+              </div>
+              
+              <div>
+                <Title level={3} className="text-red-600 mb-2">
+                  Something went wrong
+                </Title>
+                <Text type="secondary">
+                  An unexpected error occurred. Please try refreshing the page.
+                </Text>
+              </div>
+
+              {import.meta.env.DEV && this.state.error && (
+                <div className="text-left bg-gray-50 p-3 rounded border text-xs">
+                  <Text strong>Error Details:</Text>
+                  <pre className="mt-2 text-red-600 whitespace-pre-wrap">
+                    {this.state.error.toString()}
+                  </pre>
+                  {this.state.errorInfo && (
+                    <pre className="mt-2 text-gray-600 whitespace-pre-wrap">
+                      {this.state.errorInfo.componentStack}
+                    </pre>
+                  )}
                 </div>
               )}
-            </div>
-          }
-          extra={[
-            <ErrorActions 
-              key="actions"
-              isAuthError={isAuthError}
-              onReset={() => {
-                this.setState({ hasError: false, error: null, errorInfo: null });
-                this.props.onReset?.();
-              }}
-            />
-          ]}
-        />
+
+              <Space>
+                <Button onClick={this.handleReset}>
+                  Try Again
+                </Button>
+                <Button type="primary" onClick={this.handleReload}>
+                  Reload Page
+                </Button>
+              </Space>
+            </Space>
+          </Card>
+        </div>
       );
     }
 
     return this.props.children;
   }
-}
-
-// We use a functional component for actions to use hooks
-function ErrorActions({ isAuthError, onReset }) {
-  const dispatch = useDispatch();
-  
-  const handleLogout = () => {
-    dispatch(logout());
-  };
-  
-  return (
-    <div className="space-x-4">
-      {isAuthError ? (
-        <Button 
-          type="primary" 
-          onClick={handleLogout}
-          icon={<Icon name="logout" />}
-        >
-          Log Out and Try Again
-        </Button>
-      ) : (
-        <Button 
-          type="primary" 
-          onClick={onReset}
-          icon={<Icon name="refresh" />}
-        >
-          Try Again
-        </Button>
-      )}
-      <Button 
-        onClick={() => window.location.href = '/'}
-        icon={<Icon name="home" />}
-      >
-        Go to Homepage
-      </Button>
-    </div>
-  );
-}
-
-// Export a wrapped version that can use hooks
-export function ErrorBoundary({ children, showErrorDetails = false }) {
-  return (
-    <ErrorBoundaryFallback showErrorDetails={showErrorDetails}>
-      {children}
-    </ErrorBoundaryFallback>
-  );
 }

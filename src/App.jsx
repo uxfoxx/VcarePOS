@@ -27,6 +27,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
   const { notifications, stockAlerts, markAsRead, clearAllNotifications, markAllAsRead, clearStockAlerts } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
   const [readStockAlerts, setReadStockAlerts] = useState(new Set());
+  const [tourOpen, setTourOpen] = useState(false);
 
   // Clean up read stock alerts when stock alerts change (e.g., when alerts are resolved)
   useEffect(() => {
@@ -77,53 +78,9 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
       icon: alert.type === 'critical' ? 'error' : 'warning',
       type: alert.type === 'critical' ? 'error' : 'warning',
       read: readStockAlerts.has(alert.id),
-      navigateTo: alert.navigateTo,
-      isStockAlert: true
-    })),
-    ...notifications.map(notif => ({
-      ...notif,
-      isStockAlert: false
-    }))
-  ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-  const unreadCount = allNotifications.filter(n => !n.read).length;
-
-  const handleNotificationClick = (notification) => {
-    if (notification.isStockAlert) {
-      setReadStockAlerts(prev => new Set([...prev, notification.id]));
-    } else {
-      markAsRead(notification.id);
-    }
-    
-    // Navigate to relevant page if specified
-    if (notification.navigateTo && onTabChange) {
-      onTabChange(notification.navigateTo);
-    }
-    
-    setShowNotifications(false);
-  };
-
-  const handleClearAll = () => {
-    // Clear regular notifications
-    clearAllNotifications();
-    // Clear stock alerts
-    clearStockAlerts();
-    // Clear local read state for stock alerts
-    setReadStockAlerts(new Set());
-    setShowNotifications(false);
-  };
-
-  const handleMarkAllRead = () => {
-    // Mark all regular notifications as read
-    markAllAsRead();
-    // Mark all stock alerts as read locally
-    const allStockAlertIds = stockAlerts.map(alert => alert.id);
-    setReadStockAlerts(prev => new Set([...prev, ...allStockAlertIds]));
-  };
-
 
   const notificationContent = (
-    <div className="w-80 max-h-96 overflow-y-auto">
+    <div className="w-80  bg-white shadow-lg rounded-md">
       <div className="p-3 border-b flex justify-between items-center">
         <Title level={5} className="m-0">Notifications</Title>
         <Space size="small">
@@ -153,6 +110,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
         />
       ) : (
         <List
+        className='max-h-96 overflow-y-auto'
           dataSource={allNotifications}
           renderItem={item => (
             <List.Item 
@@ -276,7 +234,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
               >
                 {currentUser?.firstName?.[0]}{currentUser?.lastName?.[0]}
               </Avatar>
-              <div className="hidden sm:block text-left">
+              <div className="hidden sm:flex text-left sm:flex-col ">
                 <Text strong className="text-gray-900 block text-sm">
                   {currentUser?.firstName} {currentUser?.lastName}
                 </Text>
@@ -288,7 +246,6 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
           </Dropdown>
         </Space>
       </AntHeader>
-
       {/* Tour Component */}
       <Tour
         open={tourOpen}

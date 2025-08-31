@@ -1,118 +1,78 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Modal, 
-  Form, 
-  Checkbox, 
   Typography, 
   Space, 
-  Divider, 
-  List, 
-  Tag,
-  InputNumber,
-  message,
-  Button,
-  Card,
+  Card, 
+  InputNumber, 
+  Checkbox, 
+  Divider,
   Row,
   Col,
-  Input,
-  Image
+  Image,
+  Tag,
+  Alert,
+  message
 } from 'antd';
-import { useSelector, useDispatch } from 'react-redux';
-import { fetchRawMaterials } from '../../features/rawMaterials/rawMaterialsSlice';
+import { useSelector } from 'react-redux';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
-import { addToCart } from '../../features/cart/cartSlice';
 
 const { Title, Text } = Typography;
-const { Search } = Input;
 
-export function ProductAddonsModal({ open, onClose, product }) {
-  const dispatch = useDispatch();
-  const rawMaterials = useSelector(state => state.rawMaterials.rawMaterialsList);
-  const [loading, setLoading] = useState(false);
-  const [editablePrice, setEditablePrice] = useState(0);
-  const [selectedAddons, setSelectedAddons] = useState([]);
+export function ProductAddonsModal({ 
+  open, 
+  onClose, 
+  product, 
+  onAddToCart 
+}) {
   const [quantity, setQuantity] = useState(1);
-  const [totalPrice, setTotalPrice] = useState(0);
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  // Filter raw materials that can be used as addons (only those with enough stock)
-  const availableAddons = (rawMaterials || []).filter(material => 
-    product?.addons?.some(addon => addon.id === material.id) &&
-    material.stockQuantity > 0 &&
-    material.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const [selectedAddons, setSelectedAddons] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Reset selections when modal opens or product changes
   useEffect(() => {
-    if (open) {
-      dispatch(fetchRawMaterials());
-      setSelectedAddons([]);
+    if (open && product) {
       setQuantity(1);
-      setSearchTerm('');
+      setSelectedAddons([]);
     }
-  }, [open, product, dispatch]);
+  }, [open, product]);
 
-  // Calculate total price whenever selected addons or quantity changes
-  useEffect(() => {
-    if (!product) return;
-    
-    const basePrice = product.price;
-    const addonsTotalPrice = selectedAddons.reduce((sum, addon) => {
-      const material = (rawMaterials || []).find(m => m.id === addon.id);
-      return sum + (material ? material.unitPrice * addon.quantity : 0);
-    }, 0);
-    
-    const calculatedTotal = (basePrice + addonsTotalPrice) * quantity;
-    setTotalPrice(calculatedTotal);
-    setEditablePrice(basePrice * quantity);
-    
-    // Only set editable price initially or when it's 0
-    // if (editablePrice === 0) {
-    //   setEditablePrice(calculatedTotal);
-    // }
-  }, [selectedAddons, quantity, product, rawMaterials]);
+  if (!product) return null;
 
-  const handleAddonChange = (addonId, checked) => {
+  const handleAddonChange = (addon, checked) => {
     if (checked) {
-      // Add the addon
-      const material = (rawMaterials || []).find(m => m.id === addonId);
-      if (material) {
-        setSelectedAddons([...selectedAddons, { id: addonId, quantity: 1 }]);
-      }
+      setSelectedAddons([...selectedAddons, { ...addon, quantity: 1 }]);
     } else {
-      // Remove the addon
-      setSelectedAddons(selectedAddons.filter(addon => addon.id !== addonId));
+      setSelectedAddons(selectedAddons.filter(a => a.id !== addon.id));
     }
   };
 
-  const handleAddonQuantityChange = (addonId, value) => {
+  const handleAddonQuantityChange = (addonId, addonQuantity) => {
     setSelectedAddons(selectedAddons.map(addon => 
-      addon.id === addonId ? { ...addon, quantity: value } : addon
+      addon.id === addonId ? { ...addon, quantity: addonQuantity } : addon
     ));
   };
 
-  const handleSubmit = () => {
-    if (!product) return;
+  const calculateTotal = () => {
+    const productTotal = product.price * quantity;
+    const addonsTotal = selectedAddons.reduce((sum, addon) => 
+      sum + (addon.price * addon.quantity), 0
+    );
+    return productTotal + addonsTotal;
+  };
+
+  const handleAddToCart = () => {
     try {
       setLoading(true);
+      
       const productWithAddons = {
         ...product,
-        addons: selectedAddons.map(addon => {
-          const material = rawMaterials.find(m => m.id === addon.id);
-          return {
-            id: addon.id,
-            name: material.name,
-            quantity: addon.quantity,
-            price: material.unitPrice * addon.quantity
-          };
-        }),
-        price: editablePrice / quantity,
-        selectedVariant: product.selectedVariant,
-        selectedSize: product.selectedSize
+        addons: selectedAddons
       };
-      dispatch(addToCart({ product: productWithAddons, quantity }));
-      message.success('Product added to cart with addons');
+
+      onAddToCart(productWithAddons, quantity);
+      
+      message.success(`${product.name} added to cart with ${selectedAddons.length} add-on(s)!`);
       onClose();
     } catch (error) {
       message.error('Failed to add product to cart');
@@ -121,128 +81,104 @@ export function ProductAddonsModal({ open, onClose, product }) {
     }
   };
 
-  if (!product) return null;
-
   return (
     <Modal
       title={
         <Space>
           <Icon name="add_circle" className="text-blue-600" />
-          <span>Add {product.name} with Addons</span>
+          <span>Product Options</span>
         </Space>
       }
       open={open}
       onCancel={onClose}
-      width={800}
+      width={700}
       footer={null}
       destroyOnClose
     >
       <div className="space-y-6">
-        {/* Product Info */}
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <Image
-                src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
-                alt={product.name}
-                width={80}
-                height={80}
-                className="object-cover rounded"
-                preview={false}
-                style={{ aspectRatio: '1/1', objectFit: 'cover' }}
-              />
-              <div>
-                <Text strong className="text-lg">{product.name}</Text>
-                <div>
-                  <Text type="secondary">{product.description}</Text>
-                </div>
-                <div className="mt-1">
-                  <Tag color="blue">{product.category}</Tag>
-                  <Tag color={product.stock > 10 ? 'green' : product.stock > 0 ? 'orange' : 'red'}>
-                    {product.stock} in stock
-                  </Tag>
-                </div>
-              </div>
-            </div> 
-            <div className="text-right">
-              <Text strong className="text-xl text-blue-600">LKR {(product.price || 0).toFixed(2)}</Text>
-              <div className="mt-2">
-                <Text strong>Quantity: </Text>
-                <InputNumber
-                  min={1}
-                  max={product.stock || 1}
-                  value={quantity}
-                  onChange={setQuantity}
-                  className="ml-2"
-                  step={1}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Addons Selection */}
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <Title level={5}>Available Addons</Title>
-            <Search
-              placeholder="Search addons..."
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-64"
-              allowClear
+        {/* Product Summary */}
+        <Card size="small">
+          <div className="flex items-center space-x-4">
+            <Image
+              src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=100'}
+              alt={product.name}
+              width={80}
+              height={80}
+              className="object-cover rounded"
+              preview={false}
+              style={{ aspectRatio: '1/1', objectFit: 'cover' }}
             />
-          </div>
-          
-          {availableAddons.length === 0 ? (
-            <div className="text-center py-4 bg-gray-50 rounded-lg">
-              <Icon name="category" className="text-gray-300 text-2xl mb-2" />
-              <Text type="secondary">No addons available</Text>
+            <div className="flex-1">
+              <Title level={4} className="mb-1">{product.name}</Title>
+              <Text type="secondary">{product.category}</Text>
+              <br />
+              <Text strong className="text-blue-600 text-lg">
+                LKR {product.price.toFixed(2)}
+              </Text>
+              {product.selectedSize && (
+                <div className="mt-1">
+                  <Tag color="blue">Size: {product.selectedSize}</Tag>
+                </div>
+              )}
+              {product.selectedColor && (
+                <div className="mt-1">
+                  <Tag color="purple">Color: {product.selectedColor.name}</Tag>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {availableAddons.map(material => {
-                const isSelected = selectedAddons.some(addon => addon.id === material.id);
+            <div className="text-right">
+              <Text type="secondary" className="block mb-2">Quantity</Text>
+              <InputNumber
+                min={1}
+                max={product.stock}
+                value={quantity}
+                onChange={setQuantity}
+                className="w-20"
+              />
+            </div>
+          </div>
+        </Card>
+
+        {/* Add-ons Section */}
+        {product.hasAddons && product.addons && product.addons.length > 0 ? (
+          <div>
+            <Title level={5} className="mb-4">
+              <Icon name="add_circle" className="mr-2 text-green-600" />
+              Available Add-ons
+            </Title>
+            
+            <div className="space-y-3">
+              {product.addons.map(addon => {
+                const isSelected = selectedAddons.find(a => a.id === addon.id);
+                
                 return (
-                  <Card
-                    key={material.id}
-                    size="small"
-                    className={`cursor-pointer transition-all ${isSelected ? 'border-blue-500 bg-blue-50' : 'hover:border-blue-300'}`}
-                  >
+                  <Card key={addon.id} size="small" className={isSelected ? 'border-blue-500 bg-blue-50' : ''}>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center">
+                      <div className="flex items-center space-x-3">
                         <Checkbox
-                          checked={isSelected}
-                          onChange={(e) => handleAddonChange(material.id, e.target.checked)}
-                          className="mr-3"
+                          checked={!!isSelected}
+                          onChange={(e) => handleAddonChange(addon, e.target.checked)}
                         />
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <Icon name="category" className="text-blue-600" />
-                          </div>
-                          <div>
-                            <Text strong>{material.name}</Text>
-                            <div>
-                              <Text type="secondary" className="text-sm">
-                                LKR {material.unitPrice.toFixed(2)} per {material.unit}
-                              </Text>
-                            </div>
-                          </div>
+                        <div>
+                          <Text strong>{addon.name}</Text>
+                          <br />
+                          <Text type="secondary" className="text-sm">
+                            {addon.quantity} {addon.unit} • LKR {addon.price.toFixed(2)}
+                          </Text>
                         </div>
                       </div>
                       
                       {isSelected && (
-                        <div>
+                        <div className="flex items-center space-x-2">
+                          <Text className="text-sm">Qty:</Text>
                           <InputNumber
                             min={1}
-                            max={material.stockQuantity}
-                            value={selectedAddons.find(addon => addon.id === material.id)?.quantity || 1}
-                            onChange={(value) => handleAddonQuantityChange(material.id, value)}
+                            max={10}
+                            value={isSelected.quantity}
+                            onChange={(value) => handleAddonQuantityChange(addon.id, value)}
                             size="small"
                             className="w-16"
-                            step={1}
-                            onClick={(e) => e.stopPropagation()}
                           />
-                          <Text className="ml-2">{material.unit}</Text>
                         </div>
                       )}
                     </div>
@@ -250,99 +186,47 @@ export function ProductAddonsModal({ open, onClose, product }) {
                 );
               })}
             </div>
-          )}
-        </div>
-
-        {/* Selected Addons Summary */}
-        {selectedAddons.length > 0 && (
-          <div className="border rounded-lg p-4">
-            <Title level={5}>Selected Addons</Title>
-            <List
-              dataSource={selectedAddons}
-              renderItem={addon => {
-                const material = (rawMaterials || []).find(m => m.id === addon.id);
-                if (!material) return null;
-                
-                return (
-                  <List.Item
-                    key={addon.id}
-                    className="flex justify-between items-center"
-                  >
-                    <div>
-                      <Text strong>{material.name}</Text>
-                      <div>
-                        <Text type="secondary" className="text-sm">
-                          {addon.quantity} {material.unit} × LKR {material.unitPrice.toFixed(2)}
-                        </Text>
-                      </div>
-                    </div>
-                    <Text strong>LKR {(material.unitPrice * addon.quantity).toFixed(2)}</Text>
-                  </List.Item>
-                );
-              }}
-            />
+          </div>
+        ) : (
+          <div className="text-center py-8 bg-gray-50 rounded-lg">
+            <Icon name="add_circle" className="text-4xl text-gray-300 mb-2" />
+            <Text type="secondary">No add-ons available for this product</Text>
           </div>
         )}
 
-        {/* Price Summary */}
-        <div className="bg-gray-50 p-4 rounded-lg">
+        {/* Order Summary */}
+        <Card size="small" className="bg-blue-50">
           <div className="space-y-2">
             <div className="flex justify-between">
-              <Text>Base Price:</Text>
-              <Text>LKR {(product.price || 0).toFixed(2)} × {quantity}</Text>
+              <Text>Product ({quantity}x):</Text>
+              <Text>LKR {(product.price * quantity).toFixed(2)}</Text>
             </div>
-            
             {selectedAddons.length > 0 && (
               <>
-                <div className="flex justify-between">
-                  <Text>Addons:</Text>
-                  <Text>
-                    LKR {selectedAddons.reduce((sum, addon) => {
-                      const material = (rawMaterials || []).find(m => m.id === addon.id);
-                      return sum + (material ? material.unitPrice * addon.quantity : 0);
-                    }, 0).toFixed(2)}
-                  </Text>
-                </div>
-                <div className="flex justify-between">
-                  <Text>Quantity:</Text>
-                  <Text>× {quantity}</Text>
-                </div>
+                {selectedAddons.map(addon => (
+                  <div key={addon.id} className="flex justify-between text-sm">
+                    <Text type="secondary">{addon.name} ({addon.quantity}x):</Text>
+                    <Text type="secondary">LKR {(addon.price * addon.quantity).toFixed(2)}</Text>
+                  </div>
+                ))}
+                <Divider className="my-2" />
               </>
             )}
-
-            {/* <div className="flex justify-between items-center">
-              <Text strong>Final Price:</Text>
-              <InputNumber
-                className="w-32"
-                min={0}
-                value={editablePrice}
-                onChange={(value) => setEditablePrice(value)}
-                formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={value => value.replace(/LKR\s?|(,*)/g, '')}
-                step={100}
-              />
-            </div> */}
-
-            <Text type="secondary" className="text-xs block">
-              Suggested price: LKR {totalPrice.toFixed(2)} (calculated from base price and addons)
-            </Text>
-
-            <Divider className="my-2" />
-            
             <div className="flex justify-between">
-              <Text strong>Total:</Text>
-              <Text strong className="text-blue-600 text-lg">LKR {totalPrice.toFixed(2)}</Text>
+              <Title level={5} className="m-0">Total:</Title>
+              <Title level={5} className="m-0 text-blue-600">
+                LKR {calculateTotal().toFixed(2)}
+              </Title>
             </div>
           </div>
-        </div>
+        </Card>
 
-        {/* Footer */}
         <div className="flex justify-end space-x-2">
           <ActionButton onClick={onClose}>
             Cancel
           </ActionButton>
           <ActionButton.Primary 
-            onClick={handleSubmit}
+            onClick={handleAddToCart}
             loading={loading}
             icon="add_shopping_cart"
           >

@@ -1,120 +1,108 @@
-import { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, useEffect } from 'react';
 import { 
-  Table, 
-  Input, 
+  Card, 
   Space, 
-  Form, 
   Typography,
   Tag,
   Popconfirm,
   message,
-  Row,
-  Col,
-  Card,
-  Switch
+  Switch,
+  Tooltip
 } from 'antd';
+import { useAuth } from '../../contexts/AuthContext';
+import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
-import { SearchInput } from '../common/SearchInput';
 import { FormModal } from '../common/FormModal';
-import { fetchCategories, addCategories, updateCategories, deleteCategories } from '../../features/categories/categoriesSlice';
+import { EnhancedTable } from '../common/EnhancedTable';
+import { EmptyState } from '../common/EmptyState';
+import { LoadingSkeleton } from '../common/LoadingSkeleton';
+import { useDispatch, useSelector } from 'react-redux';
+import { 
+  fetchCategories, 
+  addCategories, 
+  updateCategories, 
+  deleteCategories 
+} from '../../features/categories/categoriesSlice';
 import { fetchProducts } from '../../features/products/productsSlice';
 
 const { Title, Text } = Typography;
-const { TextArea } = Input;
 
 export function CategoryManagement() {
   const dispatch = useDispatch();
-  const { categoriesList} = useSelector(state => state.categories);
-  const { productsList } = useSelector(state => state.products);
-  const [searchTerm, setSearchTerm] = useState('');
+  const { hasPermission } = useAuth();
+  const categories = useSelector(state => state.categories.categoriesList);
+  const products = useSelector(state => state.products.productsList);
+  const loading = useSelector(state => state.categories.loading);
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [form] = Form.useForm();
 
-  useEffect(() => { 
-    dispatch(fetchCategories()); 
+  useEffect(() => {
+    dispatch(fetchCategories());
     dispatch(fetchProducts());
   }, [dispatch]);
 
-  const categories = categoriesList
+  const handleSubmit = (values) => {
+    const categoryData = {
+      id: editingCategory?.id || `CAT-${Date.now()}`,
+      name: values.name,
+      description: values.description,
+      isActive: values.isActive !== false,
+      createdAt: editingCategory?.createdAt || new Date()
+    };
 
-  const filteredCategories = categories.filter(category =>
-    category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.description?.toLowerCase().includes(searchTerm.toLowerCase()));  
-  
-  const handleSubmit = async (values) => {
-    try {
-      // Check for duplicate category names
-      const existingCategory = categories.find(cat => 
-        cat.name.toLowerCase() === values.name.toLowerCase() && 
-        cat.id !== editingCategory?.id
-      );
-
-      if (existingCategory) {
-        message.error('Category name already exists');
-        return;
-      }
-
-      const categoryData = {
-        id: editingCategory?.id || `CAT-${Date.now()}`,
-        name: values.name,
-        description: values.description,
-        isActive: values.isActive !== false,
-        createdAt: editingCategory?.createdAt || new Date()
-      };
-
-      if (editingCategory) {
-        dispatch(updateCategories({categoryData}));
-        // dispatch({ type: 'UPDATE_CATEGORY', payload: categoryData });
-        message.success('Category updated successfully');
-      } else {
-        dispatch(addCategories({categoryData}));
-        // dispatch({ type: 'ADD_CATEGORY', payload: categoryData });
-        message.success('Category added successfully');
-      }
-
-      setShowModal(false);
-      setEditingCategory(null);
-      form.resetFields();
-    } catch {
-      message.error('Please fill in all required fields');
+    if (editingCategory) {
+      dispatch(updateCategories({ categoryData }));
+      message.success('Category updated successfully');
+    } else {
+      dispatch(addCategories({ categoryData }));
+      message.success('Category added successfully');
     }
+
+    setShowModal(false);
+    setEditingCategory(null);
+    form.resetFields();
   };
 
   const handleEdit = (category) => {
-    console.log("category modal",category)
+    if (!hasPermission('products', 'edit')) {
+      message.error('You do not have permission to edit categories');
+      return;
+    }
     setEditingCategory(category);
     form.setFieldsValue(category);
     setShowModal(true);
   };
 
   const handleDelete = (categoryId) => {
-    // Check if category is being used by any products
-    const categoryToDelete = categoriesList.find(cat => cat.id === categoryId);
-    const productsUsingCategory = productsList.filter(product => 
-      product.category === categoryToDelete?.name
-    );
-
-    if (productsUsingCategory.length > 0) {
-      message.error(`Cannot delete category. ${productsUsingCategory.length} product(s) are using this category.`);
+    if (!hasPermission('products', 'delete')) {
+      message.error('You do not have permission to delete categories');
       return;
     }
-
-    dispatch(deleteCategories({categoryId}));
-    // dispatch({ type: 'DELETE_CATEGORY', payload: categoryId });
+    
+    // Check if category is being used by products
+    const productsUsingCategory = products.filter(p => p.category === categories.find(c => c.id === categoryId)?.name);
+    if (productsUsingCategory.length > 0) {
+      message.error(`Cannot delete category. It is being used by ${productsUsingCategory.length} product(s).`);
+      return;
+    }
+    
+    dispatch(deleteCategories({ categoryId }));
     message.success('Category deleted successfully');
   };
 
   const handleToggleStatus = (category) => {
+    if (!hasPermission('products', 'edit')) {
+      message.error('You do not have permission to modify categories');
+      return;
+    }
     const updatedCategory = { ...category, isActive: !category.isActive };
-    dispatch(updateCategories({categoryData:updatedCategory}));
-    // dispatch({ type: 'UPDATE_CATEGORY', payload: updatedCategory });
+    dispatch(updateCategories({ categoryData: updatedCategory }));
     message.success(`Category ${updatedCategory.isActive ? 'activated' : 'deactivated'}`);
   };
 
   const getProductCount = (categoryName) => {
-    return productsList.filter(product => product.category === categoryName).length;
+    return products.filter(p => p.category === categoryName).length;
   };
 
   const columns = [
@@ -124,141 +112,129 @@ export function CategoryManagement() {
       key: 'name',
       render: (text, record) => (
         <div>
-          <Text strong className="text-base">{record.name}</Text>
+          <Text strong>{text}</Text>
           <br />
-          <Text type="secondary" className="text-sm">{record.description}</Text>
+          <Text type="secondary" className="text-xs">
+            {getProductCount(text)} product{getProductCount(text) !== 1 ? 's' : ''}
+          </Text>
         </div>
       ),
+      sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
-      title: 'Products',
-      key: 'productCount',
-      render: (record) => {
-        const count = getProductCount(record.name);
-        return (
-          <Tag color={count > 0 ? 'blue' : 'default'}>
-            {count} product{count !== 1 ? 's' : ''}
-          </Tag>
-        );
-      },
+      title: 'Description',
+      dataIndex: 'description',
+      key: 'description',
+      render: (description) => description || 'No description',
     },
     {
       title: 'Status',
       key: 'status',
+      width: 120,
       render: (record) => (
-        <Switch
-          checked={record.isActive}
-          onChange={() => handleToggleStatus(record)}
-          size="small"
-        />
+        <div className="flex items-center space-x-2">
+          <Switch
+            checked={record.isActive}
+            onChange={() => handleToggleStatus(record)}
+            size="small"
+            disabled={!hasPermission('products', 'edit')}
+            onClick={(checked, e) => e.stopPropagation()}
+          />
+          <Text className="text-sm">
+            {record.isActive ? 'Active' : 'Inactive'}
+          </Text>
+        </div>
       ),
+      filters: [
+        { text: 'Active', value: true },
+        { text: 'Inactive', value: false },
+      ],
+      onFilter: (value, record) => record.isActive === value,
     },
     {
       title: 'Created',
       dataIndex: 'createdAt',
       key: 'createdAt',
+      width: 120,
       render: (date) => new Date(date).toLocaleDateString(),
+      sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
     },
     {
       title: 'Actions',
       key: 'actions',
+      fixed: 'right',
+      width: 120,
       render: (record) => (
         <Space>
-          <ActionButton.Text 
-            icon="edit"
-            onClick={() => handleEdit(record)}
-            className="text-[#0E72BD]"
-          />
-          <Popconfirm
-            title="Are you sure you want to delete this category?"
-            description={getProductCount(record.name) > 0 ? 
-              `This category has ${getProductCount(record.name)} product(s). Please reassign them first.` : 
-              'This action cannot be undone.'
-            }
-            onConfirm={() => handleDelete(record.id)}
-            okText="Yes"
-            cancelText="No"
-            disabled={getProductCount(record.name) > 0}
-          >
+          <Tooltip title={hasPermission('products', 'edit') ? 'Edit Category' : 'No permission'}>
             <ActionButton.Text 
-              icon="delete"
-              danger
-              disabled={getProductCount(record.name) > 0}
+              icon="edit"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(record);
+              }}
+              disabled={!hasPermission('products', 'edit')}
+              className="text-blue-600"
             />
-          </Popconfirm>
+          </Tooltip>
+          
+          <Tooltip title={hasPermission('products', 'delete') ? 'Delete Category' : 'No permission'}>
+            <Popconfirm
+              title="Delete this category?"
+              description="This action cannot be undone."
+              onConfirm={(e) => {
+                e?.stopPropagation();
+                handleDelete(record.id);
+              }}
+              okText="Delete"
+              cancelText="Cancel"
+              okButtonProps={{ danger: true }}
+              disabled={!hasPermission('products', 'delete')}
+            >
+              <ActionButton.Text 
+                icon="delete"
+                danger
+                disabled={!hasPermission('products', 'delete')}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </Popconfirm>
+          </Tooltip>
         </Space>
       ),
     },
   ];
 
+  if (loading) {
+    return <LoadingSkeleton type="table" />;
+  }
+
   return (
     <>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <Title level={5} className="m-0">Product Categories</Title>
-            <Text type="secondary">Organize your products into categories</Text>
-          </div>
-          <Space>
-            <SearchInput
-              placeholder="Search categories..."
-              value={searchTerm}
-              onSearch={setSearchTerm}
-              className="w-64"
-            />
+      <EnhancedTable
+        title="Product Categories"
+        icon="category"
+        columns={columns}
+        dataSource={categories}
+        rowKey="id"
+        searchFields={['name', 'description']}
+        searchPlaceholder="Search categories..."
+        extra={
+          hasPermission('products', 'edit') && (
             <ActionButton.Primary 
               icon="add"
-              onClick={() => setShowModal(true)}
+              onClick={() => {
+                setEditingCategory(null);
+                form.resetFields();
+                setShowModal(true);
+              }}
             >
               Add Category
             </ActionButton.Primary>
-          </Space>
-        </div>
-
-        {/* Category Stats */}
-        <Row gutter={16} className="mb-4">
-          <Col span={8}>
-            <Card size="small">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-[#0E72BD]">{categories.length}</div>
-                <div className="text-sm text-gray-500">Total Categories</div>
-              </div>
-            </Card>
-          </Col>
-          <Col span={8}>
-            <Card size="small">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {categories.filter(cat => cat.isActive).length}
-                </div>
-                <div className="text-sm text-gray-500">Active Categories</div>
-              </div>
-            </Card>
-          </Col>
-          <Col span={8}>
-            <Card size="small">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">
-                  {productsList.length}
-                </div>
-                <div className="text-sm text-gray-500">Total Products</div>
-              </div>
-            </Card>
-          </Col>
-        </Row>
-        
-        <Table
-          columns={columns}
-          dataSource={filteredCategories}
-          rowKey="id"
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-          }}
-        />
-      </div>
+          )
+        }
+        emptyDescription="No categories found"
+        emptyImage={<Icon name="category" className="text-6xl text-gray-300" />}
+      />
 
       <FormModal
         title={editingCategory ? 'Edit Category' : 'Add New Category'}
@@ -270,35 +246,25 @@ export function CategoryManagement() {
         }}
         onSubmit={handleSubmit}
         form={form}
-        width={600}
         submitText={editingCategory ? 'Update Category' : 'Add Category'}
+        loading={loading}
       >
         <Form.Item
           name="name"
           label="Category Name"
-          rules={[
-            { required: true, message: 'Please enter category name' },
-            { min: 2, message: 'Category name must be at least 2 characters' },
-            { max: 50, message: 'Category name must be less than 50 characters' }
-          ]}
+          rules={[{ required: true, message: 'Please enter category name' }]}
         >
-          <Input placeholder="e.g., Tables, Chairs, Storage" />
+          <Input placeholder="Enter category name" />
         </Form.Item>
 
-        <Form.Item 
-          name="description" 
-          label="Description"
-          rules={[
-            { max: 200, message: 'Description must be less than 200 characters' }
-          ]}
-        >
-          <TextArea
+        <Form.Item name="description" label="Description">
+          <Input.TextArea
             rows={3}
-            placeholder="Enter category description (optional)"
+            placeholder="Enter category description"
           />
         </Form.Item>
 
-        <Form.Item name="isActive" label="Status" valuePropName="checked" initialValue={true}>
+        <Form.Item name="isActive" label="Active Status" valuePropName="checked" initialValue={true}>
           <Switch />
         </Form.Item>
       </FormModal>

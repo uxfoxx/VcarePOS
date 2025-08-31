@@ -1,163 +1,231 @@
 import React from 'react';
-import { Card, Typography, Image, Badge, Tag, Button } from 'antd';
+import { Card, Button, Typography, Space, Image, Tag, Tooltip } from 'antd';
 import { Icon } from './Icon';
-import { useDispatch } from 'react-redux';
-import { addToCart } from '../../features/cart/cartSlice';
+import { ActionButton } from './ActionButton';
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
-export function ProductCard({
-  product,
-  onAddToCart,
-  showDetails = true,
-  showPriceRange = false,
+export function ProductCard({ 
+  product, 
+  onAddToCart, 
+  onClick,
+  showDetails = false,
+  showPriceRange = true,
   className = '',
-  ...props
+  ...props 
 }) {
-  const dispatch = useDispatch();
+  if (!product) return null;
 
-  const handleAddToCart = (e) => {
-    e.stopPropagation();
-    
-    // For simple products without color variations, add directly to cart
-    if (!product.colors || product.colors.length === 0) {
-      dispatch(addToCart({ 
-        product, 
-        quantity: 1,
-        selectedColorId: null,
-        selectedSize: null
-      }));
-    } else {
-      // For products with variations, use the existing flow
-      onAddToCart?.(product);
+  const hasStock = product.stock > 0;
+  const isPreorderAvailable = product.allowPreorder && !hasStock;
+  const isAvailable = hasStock || isPreorderAvailable;
+
+  const getLowestPrice = () => {
+    if (product.colors && product.colors.length > 0) {
+      // Find the lowest price among all color/size combinations
+      let minPrice = product.price;
+      product.colors.forEach(color => {
+        if (color.sizes && color.sizes.length > 0) {
+          color.sizes.forEach(size => {
+            if (size.price && size.price < minPrice) {
+              minPrice = size.price;
+            }
+          });
+        }
+      });
+      return minPrice;
+    }
+    return product.price;
+  };
+
+  const getHighestPrice = () => {
+    if (product.colors && product.colors.length > 0) {
+      // Find the highest price among all color/size combinations
+      let maxPrice = product.price;
+      product.colors.forEach(color => {
+        if (color.sizes && color.sizes.length > 0) {
+          color.sizes.forEach(size => {
+            if (size.price && size.price > maxPrice) {
+              maxPrice = size.price;
+            }
+          });
+        }
+      });
+      return maxPrice;
+    }
+    return product.price;
+  };
+
+  const lowestPrice = getLowestPrice();
+  const highestPrice = getHighestPrice();
+  const hasPriceRange = lowestPrice !== highestPrice;
+
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick(product);
     }
   };
 
-  const getStockStatus = (stock) => {
-    if (stock === 0) return 'out-of-stock';
-    if (stock <= 5) return 'low-stock';
-    return 'in-stock';
-  };
-
-  const renderPrice = () => {
-    // Price is now fixed for all variations
-    return `LKR ${(product.price || 0).toFixed(2) || '0.00'}`;
+  const handleAddToCartClick = (e) => {
+    e.stopPropagation();
+    if (onAddToCart) {
+      onAddToCart(product);
+    }
   };
 
   return (
     <Card
       hoverable
-      className={`h-full cursor-pointer ${className}`}
+      className={`product-card transition-all duration-300 hover:shadow-lg ${className}`}
       cover={
-        <div className="relative h-48 overflow-hidden">
+        <div className="relative overflow-hidden">
           <Image
-            alt={product.name}
             src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
-            className="w-full h-full object-cover"
+            alt={product.name}
+            height={200}
+            className="object-cover w-full"
             preview={false}
-            style={{ objectFit: 'cover', aspectRatio: '4/3' }}
+            style={{ aspectRatio: '4/3', objectFit: 'cover' }}
           />
-          <div className="absolute top-2 right-2">
-            <Badge 
-              count={renderPrice()}
-              style={{ backgroundColor: '#0E72BD' }}
-            />
-          </div>
+          
+          {/* Stock Status Badge */}
           <div className="absolute top-2 left-2">
-            <Tag color="blue">
-              {product.category}
-            </Tag>
+            {!hasStock && !isPreorderAvailable ? (
+              <Tag color="red" className="text-xs">Out of Stock</Tag>
+            ) : isPreorderAvailable ? (
+              <Tag color="blue" className="text-xs">Pre-order</Tag>
+            ) : product.stock <= 5 ? (
+              <Tag color="orange" className="text-xs">Low Stock</Tag>
+            ) : (
+              <Tag color="green" className="text-xs">In Stock</Tag>
+            )}
           </div>
-          {product.hasColors && (
-            <div className="absolute bottom-2 right-2">
-              <Tag color="purple" size="small">
-                {product.colors?.length || 0} Color{(product.colors?.length || 0) !== 1 ? 's' : ''}
-              </Tag>
-            </div>
-          )}
-          {product.isCustom && (
-            <div className="absolute bottom-2 right-2">
-              <Tag color="purple" size="small">
-                Custom
-              </Tag>
-            </div>
-          )}
-          {product.stock <= 5 && product.stock > 0 && (
-            <div className="absolute bottom-2 left-2">
-              <Tag color="orange">
-                Low Stock
-              </Tag>
-            </div>
-          )}
-          {product.stock === 0 && (
-            <div className="absolute bottom-2 left-2">
-              <Tag color="red">
-                Out of Stock
-              </Tag>
+
+          {/* Color indicators */}
+          {product.colors && product.colors.length > 1 && (
+            <div className="absolute top-2 right-2">
+              <div className="flex space-x-1">
+                {product.colors.slice(0, 3).map((color, index) => (
+                  <div
+                    key={index}
+                    className="w-4 h-4 rounded-full border border-white shadow-sm"
+                    style={{
+                      backgroundImage: color.image ? `url(${color.image})` : 'none',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundColor: color.colorCode || '#f0f0f0'
+                    }}
+                  />
+                ))}
+                {product.colors.length > 3 && (
+                  <div className="w-4 h-4 rounded-full bg-gray-400 text-white text-xs flex items-center justify-center">
+                    +
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
       }
-      onClick={() => onClick?.(product)}
-      bodyStyle={{ padding: '16px' }}
+      onClick={handleCardClick}
       {...props}
     >
       <div className="space-y-3">
-        <div>
-          <Text strong className="text-base line-clamp-2 leading-tight block mb-1">
-            {product.name}
+        {/* Product Category */}
+        <Tag color="blue" className="text-xs">
+          {product.category}
+        </Tag>
+
+        {/* Product Name */}
+        <Title level={5} className="mb-2 line-clamp-2">
+          {product.name}
+        </Title>
+
+        {/* Product Description */}
+        {showDetails && product.description && (
+          <Text type="secondary" className="text-sm line-clamp-2">
+            {product.description}
           </Text>
-          <Text type="secondary" className="text-sm block mb-1">
-            SKU: {product.barcode || 'N/A'}
-          </Text>
-          {product.hasColors && (
-            <Text type="secondary" className="text-xs block mb-1">
-              {product.colors?.length || 0} color variations available
+        )}
+
+        {/* Price Display */}
+        <div className="flex items-center justify-between">
+          <div>
+            {showPriceRange && hasPriceRange ? (
+              <div>
+                <Text strong className="text-lg text-blue-600">
+                  LKR {lowestPrice.toFixed(2)} - {highestPrice.toFixed(2)}
+                </Text>
+                <br />
+                <Text type="secondary" className="text-xs">
+                  {product.colors?.length || 0} variations
+                </Text>
+              </div>
+            ) : (
+              <Text strong className="text-lg text-blue-600">
+                LKR {product.price.toFixed(2)}
+              </Text>
+            )}
+          </div>
+          
+          {/* Stock Info */}
+          <div className="text-right">
+            <Text type="secondary" className="text-xs block">
+              {product.stock} units
             </Text>
-          )}
-          <div className="flex items-center justify-between">
-            <Text strong className="text-lg text-[#0E72BD]">
-              {renderPrice()}
-            </Text>
-            <Text type="secondary" className="text-sm">
-              Stock: {product.stock}
-            </Text>
+            {product.colors && product.colors.length > 0 && (
+              <Text type="secondary" className="text-xs">
+                {product.colors.length} color{product.colors.length !== 1 ? 's' : ''}
+              </Text>
+            )}
           </div>
         </div>
 
-        {showDetails && !product.isCustom && (
+        {/* Product Details */}
+        {showDetails && (
           <div className="space-y-1">
             {product.material && (
-              <Text type="secondary" className="text-xs block">
-                <Icon name="texture" size="text-xs" className="mr-1" />
-                {product.material}
-              </Text>
+              <div className="flex justify-between text-xs">
+                <Text type="secondary">Material:</Text>
+                <Text>{product.material}</Text>
+              </div>
             )}
-            {product.color && (
-              <Text type="secondary" className="text-xs block">
-                <Icon name="palette" size="text-xs" className="mr-1" />
-                {product.color}
-              </Text>
+            {product.barcode && (
+              <div className="flex justify-between text-xs">
+                <Text type="secondary">SKU:</Text>
+                <Text code className="text-xs">{product.barcode}</Text>
+              </div>
             )}
           </div>
         )}
-        
-        <Button
-          type="primary"
-          icon={<Icon name="add_shopping_cart" />}
-          size="large"
-          block
-          onClick={handleAddToCart}
-          disabled={product.stock === 0}
-          className="bg-[#0E72BD] hover:bg-blue-700 font-semibold"
-        >
-          {product.stock === 0 
-            ? 'Out of Stock' 
-            : product.hasColors
-              ? 'Select Color & Size'
-              : 'Add to Cart'
-          }
-        </Button>
+
+        {/* Action Buttons */}
+        <div className="flex space-x-2">
+          <ActionButton.Primary
+            block
+            onClick={handleAddToCartClick}
+            disabled={!isAvailable}
+            icon={hasStock ? "add_shopping_cart" : isPreorderAvailable ? "schedule" : "block"}
+            className={
+              hasStock ? "bg-blue-600 hover:bg-blue-700" :
+              isPreorderAvailable ? "bg-purple-600 hover:bg-purple-700" :
+              "bg-gray-400 cursor-not-allowed"
+            }
+          >
+            {hasStock ? 'Add to Cart' : 
+             isPreorderAvailable ? 'Pre-order' : 'Out of Stock'}
+          </ActionButton.Primary>
+          
+          {showDetails && (
+            <Tooltip title="View Details">
+              <ActionButton.Text
+                icon="visibility"
+                onClick={handleCardClick}
+                className="text-blue-600"
+              />
+            </Tooltip>
+          )}
+        </div>
       </div>
     </Card>
   );

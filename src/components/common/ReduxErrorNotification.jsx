@@ -1,132 +1,70 @@
-import React, { useEffect, useRef } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { notification } from 'antd';
-import { clearAuthError } from '../../features/auth/authSlice';
-import { failed as clearProductsError } from '../../features/products/productsSlice';
-import { failed as clearUsersError } from '../../features/users/usersSlice';
-import { failed as clearCategoriesError } from '../../features/categories/categoriesSlice';
-import { failed as clearVendorsError } from '../../features/vendors/vendorsSlice';
-import { failed as clearTransactionsError } from '../../features/transactions/transactionsSlice';
-import { failed as clearCouponsError } from '../../features/coupons/couponsSlice';
-import { failed as clearTaxesError } from '../../features/taxes/taxesSlice';
-import { failed as clearPurchaseOrdersError } from '../../features/purchaseOrders/purchaseOrdersSlice';
-import { failed as clearRawMaterialsError } from '../../features/rawMaterials/rawMaterialsSlice';
-import { failed as clearAuditError } from '../../features/audit/auditSlice';
 
-// Map slice names to selectors and clear actions
-const errorSelectors = [
-  {
-    key: 'auth',
-    selector: (state) => state.auth.error,
-    clear: clearAuthError
-  },
-  {
-    key: 'products',
-    selector: (state) => state.products.error,
-    clear: clearProductsError
-  },
-  {
-    key: 'users',
-    selector: (state) => state.users.error,
-    clear: clearUsersError
-  },
-  {
-    key: 'categories',
-    selector: (state) => state.categories.error,
-    clear: clearCategoriesError
-  },
-  {
-    key: 'vendors',
-    selector: (state) => state.vendors.error,
-    clear: clearVendorsError
-  },
-  {
-    key: 'transactions',
-    selector: (state) => state.transactions.error,
-    clear: clearTransactionsError
-  },
-  {
-    key: 'coupons',
-    selector: (state) => state.coupons.error,
-    clear: clearCouponsError
-  },
-  {
-    key: 'taxes',
-    selector: (state) => state.taxes.error,
-    clear: clearTaxesError
-  },
-  {
-    key: 'purchaseOrders',
-    selector: (state) => state.purchaseOrders.error,
-    clear: clearPurchaseOrdersError
-  },
-  {
-    key: 'rawMaterials',
-    selector: (state) => state.rawMaterials.error,
-    clear: clearRawMaterialsError
-  },
-  {
-    key: 'audit',
-    selector: (state) => state.audit.error,
-    clear: clearAuditError
-  },
-];
+/**
+ * Component to display Redux error notifications
+ */
+function ReduxErrorNotification() {
+  const authError = useSelector(state => state.auth.error);
+  const productsError = useSelector(state => state.products.error);
+  const rawMaterialsError = useSelector(state => state.rawMaterials.error);
+  const transactionsError = useSelector(state => state.transactions.error);
+  const couponsError = useSelector(state => state.coupons.error);
+  const taxesError = useSelector(state => state.taxes.error);
+  const categoriesError = useSelector(state => state.categories.error);
+  const usersError = useSelector(state => state.users.error);
+  const auditError = useSelector(state => state.audit.error);
+  const purchaseOrdersError = useSelector(state => state.purchaseOrders.error);
+  const vendorsError = useSelector(state => state.vendors.error);
+  const customersError = useSelector(state => state.customers.error);
+  const notificationsError = useSelector(state => state.notifications.error);
 
-export default function ReduxErrorNotification() {
-  const dispatch = useDispatch();
-  
-  // Get all errors
-  const errors = errorSelectors.map(({ selector }) => useSelector(selector));
-  const prevErrors = useRef(errors);
-  
-  // Get session expiration message
-  const sessionExpiredMessage = useSelector(state => state.auth.sessionExpiredMessage);
-  const prevSessionExpiredMessage = useRef(sessionExpiredMessage);
-  
-  // Handle regular errors
+  // Show error notifications
   useEffect(() => {
-    errors.forEach((err, idx) => {
-      if (
-        err &&
-        (prevErrors.current[idx] !== err) &&
-        typeof err === 'string' &&
-        err.trim() !== ''
-      ) {
+    const errors = [
+      { error: authError, module: 'Authentication' },
+      { error: productsError, module: 'Products' },
+      { error: rawMaterialsError, module: 'Raw Materials' },
+      { error: transactionsError, module: 'Transactions' },
+      { error: couponsError, module: 'Coupons' },
+      { error: taxesError, module: 'Taxes' },
+      { error: categoriesError, module: 'Categories' },
+      { error: usersError, module: 'Users' },
+      { error: auditError, module: 'Audit Trail' },
+      { error: purchaseOrdersError, module: 'Purchase Orders' },
+      { error: vendorsError, module: 'Vendors' },
+      { error: customersError, module: 'Customers' },
+      { error: notificationsError, module: 'Notifications' }
+    ];
+
+    errors.forEach(({ error, module }) => {
+      if (error) {
         notification.error({
-          message: 'Error',
-          description: err,
-          duration: 3,
+          message: `${module} Error`,
+          description: error,
+          placement: 'topRight',
+          duration: 5,
         });
-        // Optionally clear error after showing
-        const clearAction = errorSelectors[idx].clear;
-        if (clearAction) {
-          dispatch(clearAction(null));
-        }
       }
     });
-    prevErrors.current = errors;
-  }, [errors, dispatch]);
-  
-  // Handle session expiration separately
-  useEffect(() => {
-    if (
-      sessionExpiredMessage && 
-      sessionExpiredMessage !== prevSessionExpiredMessage.current &&
-      typeof sessionExpiredMessage === 'string' &&
-      sessionExpiredMessage.trim() !== ''
-    ) {
-      notification.warning({
-        message: 'Session Expired',
-        description: sessionExpiredMessage,
-        duration: 5,
-        placement: 'top',
-      });
-      
-      // Don't automatically clear this message as it's important for the user to see
-      // It will be cleared when they attempt to log in again
-    }
-    prevSessionExpiredMessage.current = sessionExpiredMessage;
-  }, [sessionExpiredMessage]);
+  }, [
+    authError,
+    productsError,
+    rawMaterialsError,
+    transactionsError,
+    couponsError,
+    taxesError,
+    categoriesError,
+    usersError,
+    auditError,
+    purchaseOrdersError,
+    vendorsError,
+    customersError,
+    notificationsError
+  ]);
 
-  return null; // This component does not render anything
+  return null;
 }
+
+export default ReduxErrorNotification;

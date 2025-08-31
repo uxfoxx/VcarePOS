@@ -2,32 +2,40 @@ import React, { useState, useEffect } from 'react';
 import { 
   Modal, 
   Typography, 
+  Space, 
+  Card, 
   Row, 
   Col, 
-  Card, 
-  Tag, 
-  Button, 
-  Empty, 
   Image,
-  Space,
-  Badge
+  Tag,
+  Alert,
+  message
 } from 'antd';
 import { Icon } from '../common/Icon';
+import { ActionButton } from '../common/ActionButton';
 
-const { Text, Title } = Typography;
+const { Title, Text } = Typography;
 
 export function ColorAndSizeSelectionModal({ 
   open, 
   onClose, 
   product, 
-  onColorAndSizeSelected
+  onColorAndSizeSelected 
 }) {
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
 
-  // Reset selections when modal opens or product changes
   useEffect(() => {
-    if (open && product) {
+    if (open && product && product.colors && product.colors.length > 0) {
+      // Auto-select first color
+      const firstColor = product.colors[0];
+      setSelectedColor(firstColor);
+      
+      // Auto-select first size if available
+      if (firstColor.sizes && firstColor.sizes.length > 0) {
+        setSelectedSize(firstColor.sizes[0]);
+      }
+    } else if (open) {
       setSelectedColor(null);
       setSelectedSize(null);
     }
@@ -35,70 +43,57 @@ export function ColorAndSizeSelectionModal({
 
   if (!product) return null;
 
-  const colors = product.colors || [];
+  const handleConfirm = () => {
+    if (!selectedColor) {
+      message.error('Please select a color');
+      return;
+    }
+    
+    if (!selectedSize) {
+      message.error('Please select a size');
+      return;
+    }
+
+    if (selectedSize.stock <= 0) {
+      message.error('Selected size is out of stock');
+      return;
+    }
+
+    onColorAndSizeSelected(selectedColor, selectedSize, selectedSize);
+    onClose();
+  };
 
   const handleColorSelect = (color) => {
     setSelectedColor(color);
-    setSelectedSize(null); // Reset size when color changes
-  };
-
-  const handleSizeSelect = (size) => {
-    setSelectedSize(size);
-  };
-
-  const handleAddToCart = () => {
-    if (!selectedColor || !selectedSize) return;
-    
-    onColorAndSizeSelected(selectedColor, selectedSize);
-  };
-
-  const getAvailableSizes = () => {
-    if (!selectedColor) return [];
-    return selectedColor.sizes || [];
-  };
-
-  const getTotalStock = (color) => {
-    if (!color.sizes) return 0;
-    return color.sizes.reduce((total, size) => total + (size.stock || 0), 0);
+    // Auto-select first available size for the new color
+    if (color.sizes && color.sizes.length > 0) {
+      const firstAvailableSize = color.sizes.find(size => size.stock > 0) || color.sizes[0];
+      setSelectedSize(firstAvailableSize);
+    } else {
+      setSelectedSize(null);
+    }
   };
 
   return (
     <Modal
       title={
         <Space>
-          <Icon name="palette" className="text-blue-600" />
-          <span>Select Color and Size for {product.name}</span>
+          <Icon name="palette" className="text-purple-600" />
+          <span>Select Color & Size</span>
         </Space>
       }
       open={open}
       onCancel={onClose}
-      width={900}
-      footer={[
-        <Button key="cancel" onClick={onClose}>
-          Cancel
-        </Button>,
-        <Button
-          key="add"
-          type="primary"
-          disabled={!selectedColor || !selectedSize}
-          onClick={handleAddToCart}
-          icon={<Icon name="add_shopping_cart" />}
-        >
-          {!selectedColor 
-            ? 'Select a Color' 
-            : !selectedSize 
-              ? 'Select a Size' 
-              : `Add to Cart - LKR ${(product.price || 0).toFixed(2)}`
-          }
-        </Button>
-      ]}
+      width={700}
+      footer={null}
+      destroyOnClose
     >
       <div className="space-y-6">
-        {/* Product Info */}
-        <div className="bg-blue-50 p-4 rounded-lg">
+        {/* Product Summary */}
+        <Card size="small">
           <div className="flex items-center space-x-4">
             <Image
-              src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
+              src={selectedColor?.image || product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=100'}
               alt={product.name}
               width={80}
               height={80}
@@ -108,174 +103,142 @@ export function ColorAndSizeSelectionModal({
             />
             <div className="flex-1">
               <Title level={4} className="mb-1">{product.name}</Title>
-              <Text type="secondary">{product.description}</Text>
-              <div className="mt-2">
-                <Tag color="blue">{product.category}</Tag>
-                <Text strong className="text-xl text-blue-600 ml-4">
-                  LKR {(product.price || 0).toFixed(2)}
-                </Text>
-              </div>
+              <Text type="secondary">{product.category}</Text>
+              <br />
+              <Text strong className="text-blue-600 text-lg">
+                LKR {(selectedSize?.price || product.price).toFixed(2)}
+              </Text>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Color Selection */}
-        <div>
-          <Title level={5} className="mb-4">Step 1: Select Color</Title>
-          {colors.length === 0 ? (
-            <Empty description="No colors available for this product" />
-          ) : (
+        {product.colors && product.colors.length > 0 && (
+          <div>
+            <Title level={5} className="mb-4">
+              <Icon name="palette" className="mr-2 text-blue-600" />
+              Select Color
+            </Title>
+            
             <Row gutter={[16, 16]}>
-              {colors.map(color => (
-                <Col key={color.id} xs={24} sm={12} md={8} lg={6}>
+              {product.colors.map(color => (
+                <Col key={color.id} span={8}>
                   <Card
+                    size="small"
                     hoverable
-                    className={`cursor-pointer transition-all ${selectedColor?.id === color.id ? 'border-blue-500 shadow-md bg-blue-50' : ''}`}
+                    className={`cursor-pointer transition-all ${
+                      selectedColor?.id === color.id ? 'border-blue-500 bg-blue-50' : ''
+                    }`}
                     onClick={() => handleColorSelect(color)}
-                    bodyStyle={{ padding: '16px' }}
                   >
-                    <div className="text-center space-y-3">
-                      {/* Color Image Circle */}
-                      <div className="flex justify-center">
-                        <div className="relative">
-                          <div 
-                            className="w-12 h-12 rounded-full border-2 border-gray-300 overflow-hidden"
-                            style={{ 
-                              backgroundImage: color.image ? `url(${color.image})` : 'none',
-                              backgroundSize: 'cover',
-                              backgroundPosition: 'center',
-                              backgroundColor: color.colorCode || '#f0f0f0'
-                            }}
-                          >
-                            {!color.image && (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Icon name="palette" className="text-gray-400" />
-                              </div>
-                            )}
+                    <div className="text-center space-y-2">
+                      <div 
+                        className="w-12 h-12 rounded-full border-2 border-gray-300 mx-auto"
+                        style={{
+                          backgroundImage: color.image ? `url(${color.image})` : 'none',
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                          backgroundColor: color.colorCode || '#f0f0f0'
+                        }}
+                      >
+                        {!color.image && (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Icon name="palette" className="text-gray-400" />
                           </div>
-                          {selectedColor?.id === color.id && (
-                            <div className="absolute -top-1 -right-1 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                              <Icon name="check" className="text-white text-sm" />
-                            </div>
-                          )}
-                        </div>
+                        )}
                       </div>
-                      
-                      {/* Color Name */}
-                      <div>
-                        <Text strong className="block">{color.name}</Text>
-                        <Badge 
-                          count={getTotalStock(color)} 
-                          showZero 
-                          style={{ backgroundColor: getTotalStock(color) > 0 ? '#52c41a' : '#ff4d4f' }}
-                        />
-                        <Text type="secondary" className="text-xs block mt-1">
-                          {color.sizes?.length || 0} size{(color.sizes?.length || 0) !== 1 ? 's' : ''} available
-                        </Text>
+                      <Text strong className="block">{color.name}</Text>
+                      <Text type="secondary" className="text-xs">
+                        {color.sizes?.length || 0} size{(color.sizes?.length || 0) !== 1 ? 's' : ''}
+                      </Text>
+                    </div>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          </div>
+        )}
+
+        {/* Size Selection */}
+        {selectedColor && selectedColor.sizes && selectedColor.sizes.length > 0 && (
+          <div>
+            <Title level={5} className="mb-4">
+              <Icon name="straighten" className="mr-2 text-green-600" />
+              Select Size for {selectedColor.name}
+            </Title>
+            
+            <Row gutter={[16, 16]}>
+              {selectedColor.sizes.map(size => (
+                <Col key={size.id} span={8}>
+                  <Card
+                    size="small"
+                    hoverable={size.stock > 0}
+                    className={`cursor-pointer transition-all ${
+                      selectedSize?.id === size.id ? 'border-green-500 bg-green-50' : ''
+                    } ${size.stock <= 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={() => size.stock > 0 && setSelectedSize(size)}
+                  >
+                    <div className="text-center space-y-2">
+                      <Text strong className="block">{size.name}</Text>
+                      <Text className="text-blue-600 font-semibold">
+                        LKR {(size.price || product.price).toFixed(2)}
+                      </Text>
+                      <div className="space-y-1">
+                        <Tag color={size.stock > 5 ? 'green' : size.stock > 0 ? 'orange' : 'red'}>
+                          {size.stock > 0 ? `${size.stock} in stock` : 'Out of stock'}
+                        </Tag>
+                        {size.dimensions && (
+                          <Text type="secondary" className="text-xs block">
+                            {size.dimensions.length}×{size.dimensions.width}×{size.dimensions.height} {size.dimensions.unit}
+                          </Text>
+                        )}
+                        {size.weight && (
+                          <Text type="secondary" className="text-xs block">
+                            Weight: {size.weight} kg
+                          </Text>
+                        )}
                       </div>
                     </div>
                   </Card>
                 </Col>
               ))}
             </Row>
-          )}
-        </div>
-
-        {/* Size Selection */}
-        {selectedColor && (
-          <div>
-            <Title level={5} className="mb-4">
-              Step 2: Select Size for {selectedColor.name}
-            </Title>
-            {getAvailableSizes().length === 0 ? (
-              <Empty description="No sizes available for this color" />
-            ) : (
-              <Row gutter={[16, 16]}>
-                {getAvailableSizes().map(size => (
-                  <Col key={size.id} xs={24} sm={12} md={8} lg={6}>
-                    <Card
-                      hoverable
-                      className={`cursor-pointer transition-all ${selectedSize?.id === size.id ? 'border-blue-500 shadow-md bg-blue-50' : ''}`}
-                      onClick={() => handleSizeSelect(size)}
-                      bodyStyle={{ padding: '16px' }}
-                    >
-                      <div className="text-center space-y-2">
-                        <div className="relative">
-                          <Text strong className="text-lg">{size.name}</Text>
-                          {selectedSize?.id === size.id && (
-                            <div className="absolute -top-2 -right-2 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                              <Icon name="check" className="text-white text-sm" />
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div>
-                          <Tag color={size.stock > 0 ? 'green' : 'red'} className="text-sm">
-                            {size.stock} in stock
-                          </Tag>
-                        </div>
-                        
-                        {size.dimensions && (
-                          <Text type="secondary" className="text-xs block">
-                            {size.dimensions.length}×{size.dimensions.width}×{size.dimensions.height} {size.dimensions.unit}
-                          </Text>
-                        )}
-                      </div>
-                    </Card>
-                  </Col>
-                ))}
-              </Row>
-            )}
           </div>
         )}
 
         {/* Selection Summary */}
-        {(selectedColor || selectedSize) && (
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <Title level={5} className="mb-3">Selection Summary</Title>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Text>Product:</Text>
-                <Text strong>{product.name}</Text>
+        {selectedColor && selectedSize && (
+          <Alert
+            message="Selection Summary"
+            description={
+              <div className="space-y-1">
+                <Text>Color: <strong>{selectedColor.name}</strong></Text>
+                <br />
+                <Text>Size: <strong>{selectedSize.name}</strong></Text>
+                <br />
+                <Text>Price: <strong className="text-blue-600">LKR {(selectedSize.price || product.price).toFixed(2)}</strong></Text>
+                <br />
+                <Text>Stock: <strong>{selectedSize.stock} units available</strong></Text>
               </div>
-              <div className="flex items-center justify-between">
-                <Text>Price:</Text>
-                <Text strong className="text-blue-600">LKR {(product.price || 0).toFixed(2)}</Text>
-              </div>
-              {selectedColor && (
-                <div className="flex items-center justify-between">
-                  <Text>Color:</Text>
-                  <div className="flex items-center space-x-2">
-                    <div 
-                      className="w-4 h-4 rounded-full border"
-                      style={{ 
-                        backgroundImage: selectedColor.image ? `url(${selectedColor.image})` : 'none',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        backgroundColor: selectedColor.colorCode || '#f0f0f0'
-                      }}
-                    />
-                    <Text strong>{selectedColor.name}</Text>
-                  </div>
-                </div>
-              )}
-              {selectedSize && (
-                <div className="flex items-center justify-between">
-                  <Text>Size:</Text>
-                  <Text strong>{selectedSize.name}</Text>
-                </div>
-              )}
-              {selectedSize && (
-                <div className="flex items-center justify-between">
-                  <Text>Stock Available:</Text>
-                  <Tag color={selectedSize.stock > 0 ? 'green' : 'red'}>
-                    {selectedSize.stock} units
-                  </Tag>
-                </div>
-              )}
-            </div>
-          </div>
+            }
+            type="info"
+            showIcon
+          />
         )}
+
+        <div className="flex justify-end space-x-2">
+          <ActionButton onClick={onClose}>
+            Cancel
+          </ActionButton>
+          <ActionButton.Primary 
+            onClick={handleConfirm}
+            loading={loading}
+            disabled={!selectedColor || !selectedSize || selectedSize.stock <= 0}
+            icon="check"
+          >
+            Continue
+          </ActionButton.Primary>
+        </div>
       </div>
     </Modal>
   );

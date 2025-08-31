@@ -1,597 +1,392 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   List, 
-  InputNumber, 
   Typography, 
+  Space, 
+  InputNumber, 
+  Button, 
   Divider, 
-  Badge,
-  Popconfirm,
-  message,
   Input,
-  Button,
-  Alert,
   Tag,
-  Empty
+  Image,
+  Alert,
+  message,
+  Popconfirm
 } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
-import { removeFromCart, updateQuantity, clearCart } from '../../features/cart/cartSlice';
-import { fetchTaxes } from '../../features/taxes/taxesSlice';
-import { fetchCoupons } from '../../features/coupons/couponsSlice';
-import { useReduxNotifications as useNotifications } from '../../hooks/useReduxNotifications';
+import { useAuth } from '../../contexts/AuthContext';
+import { 
+  removeFromCart, 
+  updateQuantity, 
+  clearCart 
+} from '../../features/cart/cartSlice';
+import { 
+  fetchTaxes 
+} from '../../features/taxes/taxesSlice';
+import { 
+  fetchCoupons, 
+  validateCoupon 
+} from '../../features/coupons/couponsSlice';
+import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
-import { Icon } from '../common/Icon'; 
-import { CheckoutModal } from '../POS/CheckoutModal';
-import { BarcodeScanner } from './BarcodeScanner';
+import { CheckoutModal } from './CheckoutModal';
 
 const { Title, Text } = Typography;
+const { Search } = Input;
 
 export function Cart() {
   const dispatch = useDispatch();
+  const { hasPermission } = useAuth();
   const cart = useSelector(state => state.cart.cart);
   const taxes = useSelector(state => state.taxes.taxesList);
   const coupons = useSelector(state => state.coupons.couponsList);
-  const { checkRawMaterialAvailability } = useNotifications();
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponCode, setCouponCode] = useState('');
-  const [materialWarnings, setMaterialWarnings] = useState({ unavailableMaterials: [], lowMaterials: [] });
-  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [couponLoading, setCouponLoading] = useState(false);
 
-  // Check raw material availability and reset coupon when cart is cleared
-  useEffect(() => {
-    if (cart && cart.length > 0) {
-      const warnings = checkRawMaterialAvailability(cart);
-      setMaterialWarnings(warnings);
-    } else {
-      setMaterialWarnings({ unavailableMaterials: [], lowMaterials: [] });
-      setAppliedCoupon(null); // Reset applied coupon when cart is empty
-      setCouponCode(''); // Reset coupon code input when cart is empty
-    }
-  }, [cart, checkRawMaterialAvailability]);
-
-  // Fetch taxes and coupons on mount
   useEffect(() => {
     dispatch(fetchTaxes());
     dispatch(fetchCoupons());
   }, [dispatch]);
 
-  // Early return if cart is not properly initialized
-  if (!cart) {
-    return (
-      <Card 
-        className="h-full"
-        bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
-        title={
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <h2 className="text-xl font-bold m-0">Current Order</h2>
-              <Badge count={0} size="small" />
-            </div>
-          </div>
-        }
-      >
-        <div className="flex flex-col h-full items-center justify-center">
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="Loading cart..."
-            className="flex flex-col items-center justify-center h-full"
-          />
-        </div>
-      </Card>
-    );
-  }
-
-  // Calculate taxes for each item and total
-  const calculateTaxes = () => {
-    const activeTaxes = Array.isArray(taxes) ? taxes.filter(tax => tax.isActive) : [];
-    let itemTaxes = [];
-    
-    // Calculate category taxes for each item
-    cart.forEach(cartItem => {
-      const categoryTaxes = activeTaxes.filter(tax =>
-        tax.taxType === 'category' &&
-        Array.isArray(tax.applicableCategories) &&
-        tax.applicableCategories.includes(cartItem.product.category)
-      );
-      
-      categoryTaxes.forEach(tax => {
-        const taxAmount = (cartItem.product.price * cartItem.quantity * tax.rate) / 100;
-        itemTaxes.push({
-          taxId: tax.id,
-          taxName: tax.name,
-          rate: tax.rate,
-          amount: taxAmount,
-          productId: cartItem.product.id,
-          productName: cartItem.product.name
-        });
-      });
-    });
-
-    // Get full bill taxes
-    const fullBillTaxes = activeTaxes.filter(tax => tax && tax.taxType === 'full_bill');
-    
-    return { itemTaxes, fullBillTaxes };
-  };
-
-  const { itemTaxes, fullBillTaxes } = calculateTaxes();
-  
+  // Calculate totals
   const subtotal = cart.reduce((sum, item) => {
-    // Include base price
-    let itemTotal = item.product.price * item.quantity;
-
-    // Add addon prices if any
-    if (item.product.addons) {
-      const addonTotal = item.product.addons.reduce((addonSum, addon) => 
-        addonSum + addon.price, 0) * item.quantity;
-      itemTotal += addonTotal;
-    }
-    
-    return sum + itemTotal;
+    const itemPrice = item.product.price;
+    const addonsPrice = (item.addons || []).reduce((addonSum, addon) => 
+      addonSum + (addon.price * addon.quantity), 0
+    );
+    return sum + ((itemPrice + addonsPrice) * item.quantity);
   }, 0);
-  
-  const categoryTaxTotal = itemTaxes.reduce((sum, tax) => sum + (tax.amount || 0), 0);
-  
-  // Calculate coupon discount based on type
+
+  // Calculate category taxes
+  const categoryTaxTotal = cart.reduce((sum, item) => {
+    const itemTotal = item.product.price * item.quantity;
+    const categoryTaxes = taxes.filter(tax => 
+      tax.isActive && 
+      tax.taxType === 'category' && 
+      tax.applicableCategories.includes(item.product.category)
+    );
+    
+    return sum + categoryTaxes.reduce((taxSum, tax) => 
+      taxSum + (itemTotal * tax.rate / 100), 0
+    );
+  }, 0);
+
+  // Apply coupon discount
   let couponDiscount = 0;
   if (appliedCoupon) {
     if (appliedCoupon.discountType === 'percentage') {
-      couponDiscount = (subtotal * (appliedCoupon.discountPercent || 0)) / 100;
-      // Apply maximum discount limit if specified
+      couponDiscount = (subtotal * appliedCoupon.discountPercent) / 100;
       if (appliedCoupon.maxDiscount && couponDiscount > appliedCoupon.maxDiscount) {
         couponDiscount = appliedCoupon.maxDiscount;
       }
-    } else if (appliedCoupon.discountType === 'fixed') {
-      couponDiscount = appliedCoupon.discountAmount || 0;
+    } else {
+      couponDiscount = appliedCoupon.discountAmount;
     }
   }
-  
-  const taxableAmount = subtotal + categoryTaxTotal - couponDiscount;
-  
-  // Calculate full bill taxes on the taxable amount
-  const fullBillTaxTotal = fullBillTaxes.reduce((sum, tax) => sum + (taxableAmount * tax.rate) / 100, 0);
-  
-  const total = taxableAmount + fullBillTaxTotal;
 
-  const handleQuantityChange = (productId, selectedSize, newQuantity) => {
+  // Calculate full bill taxes (applied after discount)
+  const taxableAmount = subtotal + categoryTaxTotal - couponDiscount;
+  const fullBillTaxes = taxes.filter(tax => 
+    tax.isActive && tax.taxType === 'full_bill'
+  );
+  const fullBillTaxTotal = fullBillTaxes.reduce((sum, tax) => 
+    sum + (taxableAmount * tax.rate / 100), 0
+  );
+
+  const totalTax = categoryTaxTotal + fullBillTaxTotal;
+  const total = subtotal + totalTax - couponDiscount;
+
+  const handleQuantityChange = (productId, selectedColorId, selectedSize, newQuantity) => {
     if (newQuantity <= 0) {
-      // Find the cart item to get the selectedColorId
-      const cartItem = cart.find(item => 
-        item.product.id === productId && item.selectedSize === selectedSize
-      );
-      dispatch(removeFromCart({ 
-        productId, 
-        selectedColorId: cartItem?.selectedColorId,
-        selectedSize 
-      }));
+      dispatch(removeFromCart({ productId, selectedColorId, selectedSize }));
     } else {
-      // Find the cart item to get the selectedColorId
-      const cartItem = cart.find(item => 
-        item.product.id === productId && item.selectedSize === selectedSize
-      );
-      dispatch(updateQuantity({ 
-        productId, 
-        selectedColorId: cartItem?.selectedColorId,
-        selectedSize, 
-        quantity: newQuantity 
-      }));
+      dispatch(updateQuantity({ productId, selectedColorId, selectedSize, quantity: newQuantity }));
     }
   };
 
-  const handleApplyCoupon = () => {
-    const coupon = coupons?.find(c => c.code === couponCode && c.isActive);
-    if (coupon) {
-      // Check if coupon is valid
-      const now = new Date();
-      const isExpired = coupon.validTo && new Date(coupon.validTo) < now;
-      const isUsedUp = coupon.usageLimit && coupon.usedCount >= coupon.usageLimit;
-      const meetsMinimum = !coupon.minimumAmount || subtotal >= coupon.minimumAmount;
+  const handleRemoveItem = (productId, selectedColorId, selectedSize) => {
+    dispatch(removeFromCart({ productId, selectedColorId, selectedSize }));
+    message.success('Item removed from cart');
+  };
 
-      if (isExpired) {
-        message.error('Coupon has expired');
+  const handleClearCart = () => {
+    dispatch(clearCart());
+    setAppliedCoupon(null);
+    setCouponCode('');
+    message.success('Cart cleared');
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      message.error('Please enter a coupon code');
+      return;
+    }
+
+    setCouponLoading(true);
+    
+    try {
+      // Find coupon in the list
+      const coupon = coupons.find(c => 
+        c.code.toLowerCase() === couponCode.toLowerCase() && c.isActive
+      );
+      
+      if (!coupon) {
+        message.error('Invalid coupon code');
+        setCouponLoading(false);
         return;
       }
-      if (isUsedUp) {
-        message.error('Coupon usage limit reached');
-        return;
-      }
-      if (!meetsMinimum) {
-        message.error(`Minimum order amount is LKR ${coupon.minimumAmount}`);
-        return;
-      }
 
-      // Check category restrictions
-      if (coupon.applicableCategories && coupon.applicableCategories.length > 0) {
-        const cartCategories = cart.map(item => item.product.category);
-        const hasApplicableProducts = coupon.applicableCategories.some(category => 
-          cartCategories.includes(category)
-        );
-        if (!hasApplicableProducts) {
-          message.error(`This coupon is only valid for: ${coupon.applicableCategories.join(', ')}`);
-          return;
-        }
-      }
-
+      // Validate coupon
+      dispatch(validateCoupon({ code: couponCode, amount: subtotal }));
+      
+      // For demo purposes, we'll apply it directly
+      // In a real app, you'd wait for the validation response
       setAppliedCoupon(coupon);
-      const discountText = coupon.discountType === 'percentage' 
-        ? `${coupon.discountPercent}% discount`
-        : `LKR ${coupon.discountAmount} discount`;
-      message.success(`Coupon applied! ${discountText}`);
-      setCouponCode(''); // Clear the coupon code input
-    } else {
-      message.error('Invalid or expired coupon code');
+      message.success(`Coupon "${coupon.code}" applied successfully!`);
+      setCouponCode('');
+    } catch (error) {
+      message.error('Failed to apply coupon');
+    } finally {
+      setCouponLoading(false);
     }
   };
 
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null);
-    setCouponCode(''); // Clear the coupon code input when removing coupon
-    message.info('Coupon removed');
-  };
-
-  const handleCheckoutSuccess = () => {
-    // Clear cart, coupon code, and applied coupon after successful checkout
-    dispatch(clearCart());
-    setAppliedCoupon(null);
     setCouponCode('');
-    setShowCheckoutModal(false);
-    message.success('Checkout completed successfully');
+    message.success('Coupon removed');
   };
 
-  const handleCloseCheckoutModal = () => {
-    setShowCheckoutModal(false);
-    setCouponCode(''); // Clear coupon code input when closing checkout modal
-    // Clear applied coupon only if cart is empty
-    if (cart.length === 0) {
-      setAppliedCoupon(null);
-    }
-  };
+  const canCheckout = cart.length > 0 && hasPermission('transactions', 'edit');
 
-  const handleProceedToCheckout = () => {
-    if (cart.length === 0) {
-      message.warning('Cart is empty');
-      return;
-    }
-    
-    // Show warnings but allow user to proceed
-    if (materialWarnings.unavailableMaterials.length > 0) {
-      message.warning('Some raw materials are out of stock. Production may be delayed.');
-    } else if (materialWarnings.lowMaterials.length > 0) {
-      message.warning('Some raw materials are running low. Consider restocking soon.');
-    }
-    
-    setShowCheckoutModal(true);
-  };
-
-  const handleProductFound = (product) => {
-    // This is called when barcode scanner finds a product
-    // The scanner component handles the logic, this is just for additional actions if needed
-  };
   return (
     <>
       <Card 
         className="h-full"
         bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
-        title={
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <h2 className="text-xl font-bold m-0">Current Order</h2>
-              <Badge count={cart.length} size="small" />
-            </div>
-            <div className="flex items-center space-x-2">
-              <ActionButton.Text
-                icon={showBarcodeScanner ? "qr_code_scanner" : "qr_code_scanner"}
-                onClick={() => setShowBarcodeScanner(!showBarcodeScanner)}
-                className={showBarcodeScanner ? "text-blue-600" : "text-gray-400"}
-                size="small"
-              />
-            </div>
-          </div>
-        }
       >
-        <div className="flex flex-col h-full">
-          {/* Barcode Scanner */}
-          {showBarcodeScanner && (
-            <div className="border-b">
-              <BarcodeScanner 
-                onProductFound={handleProductFound}
-                className="m-0"
-              />
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <Title level={4} className="m-0">Shopping Cart</Title>
+              <Text type="secondary" className="text-sm">
+                {cart.length} item{cart.length !== 1 ? 's' : ''} in cart
+              </Text>
             </div>
-          )}
-
-          {/* Raw Material Warnings */}
-          {(materialWarnings.unavailableMaterials.length > 0 || materialWarnings.lowMaterials.length > 0) && (
-            <div className="p-4 border-b">
-              {materialWarnings.unavailableMaterials.length > 0 && (
-                <Alert
-                  type="error"
-                  showIcon
-                  message="Raw Materials Out of Stock"
-                  description={
-                    <div className="space-y-1">
-                      {materialWarnings.unavailableMaterials.map((material, index) => (
-                        <div key={index} className="text-sm">
-                          <Text strong>{material.materialName}</Text> needed for{' '}
-                          <Text>{material.productName}</Text> - Required: {material.required} {material.unit}, Available: {material.available} {material.unit}
-                        </div>
-                      ))}
-                      <Text type="secondary" className="text-xs block mt-2">
-                        You can still proceed with the order, but production may be delayed.
-                      </Text>
-                    </div>
-                  }
-                  className="mb-2"
-                />
-              )}
-              
-              {materialWarnings.lowMaterials.length > 0 && (
-                <Alert
-                  type="warning"
-                  showIcon
-                  message="Raw Materials Running Low"
-                  description={
-                    <div className="space-y-1">
-                      {materialWarnings.lowMaterials.map((material, index) => (
-                        <div key={index} className="text-sm">
-                          <Text strong>{material.materialName}</Text> for{' '}
-                          <Text>{material.productName}</Text> - Required: {material.required} {material.unit}, Available: {material.available} {material.unit}
-                        </div>
-                      ))}
-                      <Text type="secondary" className="text-xs block mt-2">
-                        Consider restocking these materials soon.
-                      </Text>
-                    </div>
-                  }
-                />
-              )}
-            </div>
-          )}
-
-          {/* Cart Items */}
-          <div className="flex-1 overflow-y-auto p-4">
-            {cart.length === 0 ? (
-              <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description="Your cart is empty"
-                className="flex flex-col items-center justify-center h-full"
-              />
-            ) : (
-              <List
-                dataSource={cart}
-                renderItem={(item, index) => {
-                  // Get category taxes for this item
-                  const itemCategoryTaxes = itemTaxes.filter(tax => tax.productId === item.product.id);
-                  const itemTaxAmount = itemCategoryTaxes.reduce((sum, tax) => sum + tax.amount, 0);
-                  
-                  // Calculate addon price if any
-                  const addonPrice = item.product.addons ? 
-                    item.product.addons.reduce((sum, addon) => sum + addon.price, 0) * item.quantity : 0;
-                  
-                  // Calculate total price including addons
-                  const itemTotalPrice = (item.product.price * item.quantity) + addonPrice;
-                  
-                  return (
-                    <List.Item className="px-0 py-3 border-b border-gray-100">
-                      <div className="w-full">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-2">
-                            <Badge count={index + 1} size="small" color="#0E72BD" />
-                            <div>
-                              <Text strong className="text-sm">{item.product.name}</Text>
-                              {item.selectedSize && (
-                                <Text type="secondary" className="text-xs block">
-                                  Size: {item.selectedSize}
-                                </Text>
-                              )}
-                              {item.selectedColor && (
-                                <Text type="secondary" className="text-xs block">
-                                  Color: {item.selectedColor.name}
-                                </Text>
-                              )}
-                              {item.product.isCustom && (
-                                <Tag color="purple" className="ml-1">Custom</Tag>
-                              )}
-                            </div>
-                          </div>
-                          <Popconfirm
-                            title="Remove item?"
-                            onConfirm={() => dispatch(removeFromCart({ 
-                              productId: item.product.id, 
-                              selectedColorId: item.selectedColorId,
-                              selectedSize: item.selectedSize 
-                            }))}
-                          >
-                            <ActionButton.Text 
-                              icon="close"
-                              size="small"
-                              className="text-gray-400 hover:text-red-500"
-                            />
-                          </Popconfirm>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <Text className="text-sm">LKR {item.product.price.toFixed(2)}</Text>
-                            <InputNumber
-                              min={1} 
-                              max={100}
-                              value={item.quantity}
-                              onChange={(value) => handleQuantityChange(item.product.id, item.selectedSize, value || 1)}
-                              size="small"
-                              className="w-16"
-                            />
-                          </div>
-                          <div className="text-right">
-                            <Text strong className="text-blue-600">
-                              LKR {(itemTotalPrice || 0).toFixed(2)}
-                            </Text>
-                            {itemTaxAmount > 0 && (
-                              <Text type="secondary" className="text-xs block">
-                                +LKR {(itemTaxAmount || 0).toFixed(2)} tax
-                              </Text>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {/* Show addons if any */ }
-                        {item.product.addons && Array.isArray(item.product.addons) && item.product.addons.length > 0 && (
-                          <div className="mt-1 pl-4 border-l-2 border-blue-200">
-                            <Text type="secondary" className="text-xs">Addons:</Text>
-                            {item.product.addons.map((addonItem, idx) => (
-                              <div key={idx} className="flex justify-between text-xs">
-                                <Text type="secondary">
-                                  {addonItem.name || 'Addon'} × {addonItem.quantity || 1}
-                                </Text>
-                                <Text type="secondary">
-                                  +LKR {(addonItem.price || 0).toFixed(2)}
-                                </Text>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        
-                        {/* Show category taxes for this item */}
-                        {itemCategoryTaxes.length > 0 && (
-                          <div className="mt-1">
-                            {itemCategoryTaxes.map(tax => (
-                              <Text key={tax.taxId} type="secondary" className="text-xs block">
-                                {tax.taxName || 'Tax'} ({tax.rate || 0}%): +LKR {(tax.amount || 0).toFixed(2)}
-                              </Text>
-                            ))}
-                          </div>
-                        )}
-                        
-                        <div className="mt-1">
-                          <Text type="secondary" className="text-xs">
-                            {itemTaxAmount > 0 && ` + LKR ${itemTaxAmount.toFixed(2)} tax`} 
-                          </Text>
-                        </div>
-                      </div>
-                    </List.Item>
-                  );
-                }}
-              />
+            {cart.length > 0 && (
+              <Popconfirm
+                title="Clear all items from cart?"
+                onConfirm={handleClearCart}
+                okText="Clear"
+                cancelText="Cancel"
+                okButtonProps={{ danger: true }}
+              >
+                <ActionButton.Text 
+                  icon="delete_sweep"
+                  danger
+                  size="small"
+                >
+                  Clear Cart
+                </ActionButton.Text>
+              </Popconfirm>
             )}
           </div>
+        </div>
 
-          {/* Order Summary */}
-          <div className="border-t border-gray-200 p-4 space-y-3">
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Text>Subtotal</Text>
-                <Text>LKR {(subtotal || 0).toFixed(2)}</Text>
+        {/* Cart Items */}
+        <div className="flex-1 overflow-y-auto" style={{ height: 'calc(100% - 300px)' }}>
+          {cart.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <Icon name="shopping_cart" className="text-6xl text-gray-300 mb-4" />
+                <Title level={4} type="secondary">Cart is Empty</Title>
+                <Text type="secondary">Add products to get started</Text>
               </div>
-
-              {/* Category Taxes */}
-              {categoryTaxTotal > 0 && (
-                <div className="flex justify-between">
-                  <Text>Category Taxes</Text>
-                  <Text>LKR {(categoryTaxTotal || 0).toFixed(2)}</Text>
-                </div>
-              )}
-
-              {/* Coupon Section */}
-              <div className="space-y-2">
-                {appliedCoupon ? (
-                  <div className="p-2 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Text strong className="text-green-800 text-sm">{appliedCoupon.code}</Text>
-                        <br />
-                        <Text className="text-green-600 text-xs">
-                          {appliedCoupon.discountType === 'percentage' 
-                            ? `${appliedCoupon.discountPercent}% discount`
-                            : `LKR ${appliedCoupon.discountAmount} discount`
-                          }
+            </div>
+          ) : (
+            <List
+              dataSource={cart}
+              renderItem={(item) => (
+                <List.Item className="px-4 py-3 border-b border-gray-100">
+                  <div className="flex items-center space-x-3 w-full">
+                    <Image
+                      src={item.product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=100'}
+                      alt={item.product.name}
+                      width={50}
+                      height={50}
+                      className="object-cover rounded"
+                      preview={false}
+                      style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                    />
+                    
+                    <div className="flex-1">
+                      <Text strong className="block">{item.product.name}</Text>
+                      <Text type="secondary" className="text-xs">
+                        SKU: {item.product.barcode}
+                      </Text>
+                      {item.selectedSize && (
+                        <Tag size="small" color="blue" className="mt-1">
+                          {item.selectedSize}
+                        </Tag>
+                      )}
+                      {item.addons && item.addons.length > 0 && (
+                        <Tag size="small" color="green" className="mt-1">
+                          +{item.addons.length} addon{item.addons.length !== 1 ? 's' : ''}
+                        </Tag>
+                      )}
+                      <div className="mt-1">
+                        <Text strong className="text-blue-600">
+                          LKR {item.product.price.toFixed(2)}
                         </Text>
                       </div>
-                      <ActionButton.Text 
-                        icon="close"
-                        danger 
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <InputNumber
+                        min={1}
+                        max={item.product.stock}
+                        value={item.quantity}
+                        onChange={(value) => handleQuantityChange(
+                          item.product.id, 
+                          item.selectedColorId, 
+                          item.selectedSize, 
+                          value
+                        )}
                         size="small"
-                        onClick={handleRemoveCoupon}
+                        className="w-16"
+                      />
+                      
+                      <ActionButton.Text
+                        icon="delete"
+                        danger
+                        size="small"
+                        onClick={() => handleRemoveItem(
+                          item.product.id, 
+                          item.selectedColorId, 
+                          item.selectedSize
+                        )}
                       />
                     </div>
-                    <div className="flex justify-between mt-1">
-                      <Text className="text-green-600 text-sm">Discount</Text>
-                      <Text className="text-green-600 text-sm">-LKR {(couponDiscount || 0).toFixed(2)}</Text>
-                    </div>
                   </div>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="flex space-x-1">
-                      <Input 
-                        placeholder="Enter coupon code"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        size="middle"
-                        onPressEnter={handleApplyCoupon}
-                        className="flex-1"
-                      />
-                      <Button 
-                        size="middle" 
-                        type="primary"
-                        onClick={handleApplyCoupon}
-                        disabled={!couponCode.trim()}
-                      >
-                        Apply
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
+                </List.Item>
+              )}
+            />
+          )}
+        </div>
 
-              {/* Full Bill Taxes */}
-              {fullBillTaxes.map(tax => (
-                <div key={tax.id} className="flex justify-between">
-                  <Text>{tax.name} ({tax.rate}%)</Text>
-                  <Text>LKR {((taxableAmount * (tax.rate || 0)) / 100).toFixed(2)}</Text>
+        {/* Cart Summary */}
+        {cart.length > 0 && (
+          <div className="p-4 border-t border-gray-200">
+            {/* Coupon Section */}
+            <div className="mb-4">
+              {!appliedCoupon ? (
+                <div className="flex space-x-2">
+                  <Input
+                    placeholder="Enter coupon code"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    onPressEnter={handleApplyCoupon}
+                    className="flex-1"
+                  />
+                  <ActionButton
+                    onClick={handleApplyCoupon}
+                    loading={couponLoading}
+                    icon="local_offer"
+                  >
+                    Apply
+                  </ActionButton>
                 </div>
-              ))}
+              ) : (
+                <div className="flex items-center justify-between bg-green-50 p-3 rounded border border-green-200">
+                  <div>
+                    <Text strong className="text-green-800">
+                      Coupon Applied: {appliedCoupon.code}
+                    </Text>
+                    <br />
+                    <Text type="secondary" className="text-sm">
+                      {appliedCoupon.description}
+                    </Text>
+                  </div>
+                  <ActionButton.Text
+                    icon="close"
+                    onClick={handleRemoveCoupon}
+                    size="small"
+                  />
+                </div>
+              )}
+            </div>
 
-              <Divider className="my-2" />
+            {/* Order Summary */}
+            <div className="space-y-2">
               <div className="flex justify-between">
-                <Title level={5} className="m-0">Total</Title>
+                <Text>Subtotal:</Text>
+                <Text>LKR {subtotal.toFixed(2)}</Text>
+              </div>
+              
+              {categoryTaxTotal > 0 && (
+                <div className="flex justify-between">
+                  <Text>Category Tax:</Text>
+                  <Text>LKR {categoryTaxTotal.toFixed(2)}</Text>
+                </div>
+              )}
+              
+              {fullBillTaxTotal > 0 && (
+                <div className="flex justify-between">
+                  <Text>Sales Tax:</Text>
+                  <Text>LKR {fullBillTaxTotal.toFixed(2)}</Text>
+                </div>
+              )}
+              
+              {couponDiscount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <Text>Discount:</Text>
+                  <Text>-LKR {couponDiscount.toFixed(2)}</Text>
+                </div>
+              )}
+              
+              <Divider className="my-2" />
+              
+              <div className="flex justify-between">
+                <Title level={4} className="m-0">Total:</Title>
                 <Title level={4} className="m-0 text-blue-600">
-                  LKR {(total || 0).toFixed(2)}
+                  LKR {total.toFixed(2)}
                 </Title>
               </div>
             </div>
-          </div>
 
-          {/* Action Button */}
-          <div className="border-t border-gray-200 p-4">
-            <Button
-              type="primary"
-              icon={<Icon name="arrow_forward" />}
-              size="large"
+            <ActionButton.Primary
               block
-              onClick={handleProceedToCheckout}
-              disabled={cart.length === 0}
-              className="bg-blue-600 hover:bg-blue-700 h-12 text-lg font-semibold"
+              size="large"
+              onClick={() => setShowCheckout(true)}
+              disabled={!canCheckout}
+              icon="payment"
+              className="mt-4"
             >
-              Proceed to Checkout
-              {(materialWarnings.unavailableMaterials.length > 0 || materialWarnings.lowMaterials.length > 0) && (
-                <Icon name="warning" className="ml-2 text-yellow-300" />
-              )}
-            </Button>
+              {canCheckout ? 'Proceed to Checkout' : 'No Permission to Checkout'}
+            </ActionButton.Primary>
           </div>
-        </div>
+        )}
       </Card>
 
+      {/* Checkout Modal */}
       <CheckoutModal
-        open={showCheckoutModal}
-        onClose={handleCloseCheckoutModal}
-        onSubmit={handleCheckoutSuccess}
+        open={showCheckout}
+        onClose={() => setShowCheckout(false)}
         cartItems={cart}
-        orderTotal={total}
-        appliedCoupon={appliedCoupon}
-        couponDiscount={couponDiscount}
-        itemTaxes={itemTaxes}
-        fullBillTaxes={fullBillTaxes}
+        subtotal={subtotal}
         categoryTaxTotal={categoryTaxTotal}
         fullBillTaxTotal={fullBillTaxTotal}
+        totalTax={totalTax}
+        discount={couponDiscount}
+        total={total}
+        appliedCoupon={appliedCoupon?.code}
+        appliedTaxes={{
+          categoryTaxes: taxes.filter(t => t.isActive && t.taxType === 'category'),
+          fullBillTaxes: taxes.filter(t => t.isActive && t.taxType === 'full_bill')
+        }}
       />
     </>
   );

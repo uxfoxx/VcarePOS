@@ -1,140 +1,159 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Button, 
-  Input, 
+  Card, 
   Space, 
-  Modal, 
-  Form, 
-  Select, 
-  InputNumber, 
   Typography,
   Tag,
-  Switch,
-  DatePicker,
   Popconfirm,
   message,
   Row,
   Col,
-  Tooltip
+  Switch,
+  Tooltip,
+  Form,
+  Input,
+  Select,
+  InputNumber,
+  DatePicker,
+  Radio
 } from 'antd';
-import { useSelector, useDispatch } from 'react-redux';
-import dayjs from 'dayjs';
-import {
-  addCoupon,
-  updateCoupon,
-  deleteCoupon,
-  fetchCoupons
-} from '../../features/coupons/couponsSlice';
+import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
+import { FormModal } from '../common/FormModal';
 import { EnhancedTable } from '../common/EnhancedTable';
-import { DetailModal } from '../common/DetailModal';
+import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
+import { ExportModal } from '../common/ExportModal';
+import { useDispatch, useSelector } from 'react-redux';
+import { 
+  addCoupon, 
+  updateCoupon, 
+  deleteCoupon, 
+  fetchCoupons 
+} from '../../features/coupons/couponsSlice';
+import { fetchCategories } from '../../features/categories/categoriesSlice';
+import dayjs from 'dayjs';
 
-const { Text } = Typography;
+const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 const { RangePicker } = DatePicker;
 
 export function CouponManagement() {
   const dispatch = useDispatch();
-  const coupons = useSelector(state => state.coupons.couponsList) || [];
+  const { hasPermission } = useAuth();
+  const coupons = useSelector(state => state.coupons.couponsList);
+  const categories = useSelector(state => state.categories.categoriesList);
   const loading = useSelector(state => state.coupons.loading);
-  const categories = useSelector(state => state.categories.categoriesList) || [];
-  const [searchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState(null);
-  const [selectedCoupon, setSelectedCoupon] = useState(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [form] = Form.useForm();
+  const [showExportModal, setShowExportModal] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [form] = Form.useForm();
   const [discountType, setDiscountType] = useState('percentage');
 
   useEffect(() => {
     dispatch(fetchCoupons());
+    dispatch(fetchCategories());
   }, [dispatch]);
 
   const filteredCoupons = coupons.filter(coupon =>
     coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    coupon.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    coupon.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSubmit = async (values) => {
-    try {
-      const couponData = {
-        id: editingCoupon?.id || `COUPON-${Date.now()}`,
-        code: values.code.toUpperCase(),
-        description: values.description,
-        discountType: values.discountType,
-        discountPercent: values.discountPercent,
-        discountAmount: values.discountAmount,
-        minimumAmount: values.minimumAmount || 0,
-        maxDiscount: values.maxDiscount,
-        usageLimit: values.usageLimit,
-        usedCount: editingCoupon?.usedCount || 0,
-        validFrom: values.dateRange ? values.dateRange[0].toDate() : new Date(),
-        validTo: values.dateRange ? values.dateRange[1].toDate() : null,
-        isActive: values.isActive !== false,
-        applicableCategories: values.applicableCategories || [],
-        createdAt: editingCoupon?.createdAt || new Date()
-      };
+  const handleSubmit = (values) => {
+    const couponData = {
+      id: editingCoupon?.id || `COUPON-${Date.now()}`,
+      code: values.code.toUpperCase(),
+      description: values.description,
+      discountType: values.discountType,
+      discountPercent: values.discountType === 'percentage' ? values.discountPercent : 0,
+      discountAmount: values.discountType === 'fixed' ? values.discountAmount : 0,
+      minimumAmount: values.minimumAmount || 0,
+      maxDiscount: values.maxDiscount,
+      usageLimit: values.usageLimit,
+      usedCount: editingCoupon?.usedCount || 0,
+      validFrom: values.validFrom.toDate(),
+      validTo: values.validTo ? values.validTo.toDate() : null,
+      isActive: values.isActive !== false,
+      applicableCategories: values.applicableCategories || [],
+      createdAt: editingCoupon?.createdAt || new Date()
+    };
 
-      if (editingCoupon) {
-        dispatch(updateCoupon(couponData));
-      } else {
-        dispatch(addCoupon(couponData));
-      }
-
-      setShowModal(false);
-      setEditingCoupon(null);
-      setDiscountType('percentage');
-      form.resetFields();
-    } catch {
-      message.error('Please fill in all required fields');
+    if (editingCoupon) {
+      dispatch(updateCoupon(couponData));
+      message.success('Coupon updated successfully');
+    } else {
+      dispatch(addCoupon(couponData));
+      message.success('Coupon added successfully');
     }
+
+    setShowModal(false);
+    setEditingCoupon(null);
+    form.resetFields();
+    setDiscountType('percentage');
   };
 
   const handleEdit = (coupon) => {
+    if (!hasPermission('coupons', 'edit')) {
+      message.error('You do not have permission to edit coupons');
+      return;
+    }
     setEditingCoupon(coupon);
-    setDiscountType(coupon.discountType || 'percentage');
+    setDiscountType(coupon.discountType);
     form.setFieldsValue({
       ...coupon,
-      dateRange: coupon.validFrom && coupon.validTo ? [
-        dayjs(coupon.validFrom),
-        dayjs(coupon.validTo)
-      ] : null
+      validFrom: dayjs(coupon.validFrom),
+      validTo: coupon.validTo ? dayjs(coupon.validTo) : null
     });
     setShowModal(true);
   };
 
   const handleDelete = (couponId) => {
+    if (!hasPermission('coupons', 'delete')) {
+      message.error('You do not have permission to delete coupons');
+      return;
+    }
     dispatch(deleteCoupon({ id: couponId }));
-  };
-
-  const handleBulkDelete = (couponIds) => {
-    couponIds.forEach(id => {
-      dispatch(deleteCoupon({ id }));
-    });
-    setSelectedRowKeys([]);
+    message.success('Coupon deleted successfully');
   };
 
   const handleToggleStatus = (coupon) => {
+    if (!hasPermission('coupons', 'edit')) {
+      message.error('You do not have permission to modify coupons');
+      return;
+    }
     const updatedCoupon = { ...coupon, isActive: !coupon.isActive };
     dispatch(updateCoupon(updatedCoupon));
+    message.success(`Coupon ${updatedCoupon.isActive ? 'activated' : 'deactivated'}`);
   };
 
-  const handleRowClick = (coupon) => {
-    setSelectedCoupon(coupon);
-    setShowDetailModal(true);
+  const isExpired = (coupon) => {
+    return coupon.validTo && new Date(coupon.validTo) < new Date();
   };
 
-  const generateCouponCode = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 8; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
+  const isUsedUp = (coupon) => {
+    return coupon.usageLimit && coupon.usedCount >= coupon.usageLimit;
+  };
+
+  const getCouponStatus = (coupon) => {
+    if (!coupon.isActive) return 'inactive';
+    if (isExpired(coupon)) return 'expired';
+    if (isUsedUp(coupon)) return 'used-up';
+    return 'active';
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'active': return 'green';
+      case 'inactive': return 'default';
+      case 'expired': return 'red';
+      case 'used-up': return 'orange';
+      default: return 'default';
     }
-    form.setFieldsValue({ code: result });
   };
 
   const columns = [
@@ -144,8 +163,14 @@ export function CouponManagement() {
       key: 'code',
       fixed: 'left',
       width: 150,
-      render: (code) => (
-        <Text strong className="font-mono">{code}</Text>
+      render: (code, record) => (
+        <div>
+          <Text strong className="text-lg">{code}</Text>
+          <br />
+          <Tag color={getStatusColor(getCouponStatus(record))}>
+            {getCouponStatus(record).replace('-', ' ').toUpperCase()}
+          </Tag>
+        </div>
       ),
       sorter: (a, b) => a.code.localeCompare(b.code),
     },
@@ -153,97 +178,92 @@ export function CouponManagement() {
       title: 'Description',
       dataIndex: 'description',
       key: 'description',
-      width: 200,
+      render: (description) => description || 'No description',
     },
     {
       title: 'Discount',
       key: 'discount',
-      width: 120,
-      render: (record) => (
-        <Text strong>
-          {record.discountType === 'percentage' 
-            ? `${record.discountPercent}%` 
-            : `LKR ${record.discountAmount}`
-          }
-        </Text>
-      ),
-    },
-    {
-      title: 'Min. Amount',
-      dataIndex: 'minimumAmount',
-      key: 'minimumAmount',
-      width: 120,
-      render: (amount) => amount > 0 ? `LKR ${amount.toFixed(2)}` : 'No minimum',
-    },
-    {
-      title: 'Usage',
-      key: 'usage',
-      width: 100,
+      width: 150,
       render: (record) => (
         <div>
-          <Text>{record.usedCount || 0}</Text>
-          {record.usageLimit && (
-            <Text type="secondary"> / {record.usageLimit}</Text>
+          {record.discountType === 'percentage' ? (
+            <div>
+              <Text strong className="text-green-600 text-lg">
+                {record.discountPercent}%
+              </Text>
+              {record.maxDiscount && (
+                <Text type="secondary" className="text-xs block">
+                  Max: LKR {record.maxDiscount.toFixed(2)}
+                </Text>
+              )}
+            </div>
+          ) : (
+            <Text strong className="text-green-600 text-lg">
+              LKR {record.discountAmount.toFixed(2)}
+            </Text>
+          )}
+          {record.minimumAmount > 0 && (
+            <Text type="secondary" className="text-xs block">
+              Min order: LKR {record.minimumAmount.toFixed(2)}
+            </Text>
           )}
         </div>
       ),
     },
     {
-      title: 'Valid Until',
-      key: 'validTo',
+      title: 'Usage',
+      key: 'usage',
       width: 120,
       render: (record) => (
-        <Text>
-          {record.validTo ? new Date(record.validTo).toLocaleDateString() : 'No expiry'}
-        </Text>
+        <div className="text-center">
+          <Text strong className="block">
+            {record.usedCount}
+            {record.usageLimit && ` / ${record.usageLimit}`}
+          </Text>
+          <Text type="secondary" className="text-xs">
+            {record.usageLimit ? 'Limited' : 'Unlimited'}
+          </Text>
+        </div>
       ),
-      sorter: (a, b) => {
-        if (!a.validTo && !b.validTo) return 0;
-        if (!a.validTo) return 1;
-        if (!b.validTo) return -1;
-        return new Date(a.validTo) - new Date(b.validTo);
-      },
+    },
+    {
+      title: 'Validity',
+      key: 'validity',
+      width: 150,
+      render: (record) => (
+        <div>
+          <Text className="text-sm block">
+            From: {new Date(record.validFrom).toLocaleDateString()}
+          </Text>
+          <Text className="text-sm block">
+            To: {record.validTo ? new Date(record.validTo).toLocaleDateString() : 'No expiry'}
+          </Text>
+          {isExpired(record) && (
+            <Tag color="red" size="small" className="mt-1">
+              Expired
+            </Tag>
+          )}
+        </div>
+      ),
     },
     {
       title: 'Status',
       key: 'status',
       width: 100,
-      render: (record) => {
-        const isExpired = record.validTo && new Date(record.validTo) < new Date();
-        const isUsedUp = record.usageLimit && record.usedCount >= record.usageLimit;
-        
-        let status = 'Active';
-        let color = 'green';
-        
-        if (!record.isActive) {
-          status = 'Inactive';
-          color = 'red';
-        } else if (isExpired) {
-          status = 'Expired';
-          color = 'orange';
-        } else if (isUsedUp) {
-          status = 'Used Up';
-          color = 'orange';
-        }
-        
-        return <Tag color={color}>{status}</Tag>;
-      },
+      render: (record) => (
+        <Switch
+          checked={record.isActive}
+          onChange={() => handleToggleStatus(record)}
+          size="small"
+          disabled={!hasPermission('coupons', 'edit')}
+          onClick={(checked, e) => e.stopPropagation()}
+        />
+      ),
       filters: [
-        { text: 'Active', value: 'active' },
-        { text: 'Inactive', value: 'inactive' },
-        { text: 'Expired', value: 'expired' },
-        { text: 'Used Up', value: 'used-up' },
+        { text: 'Active', value: true },
+        { text: 'Inactive', value: false },
       ],
-      onFilter: (value, record) => {
-        const isExpired = record.validTo && new Date(record.validTo) < new Date();
-        const isUsedUp = record.usageLimit && record.usedCount >= record.usageLimit;
-        
-        if (value === 'active') return record.isActive && !isExpired && !isUsedUp;
-        if (value === 'inactive') return !record.isActive;
-        if (value === 'expired') return isExpired;
-        if (value === 'used-up') return isUsedUp;
-        return true;
-      },
+      onFilter: (value, record) => record.isActive === value,
     },
     {
       title: 'Actions',
@@ -252,30 +272,22 @@ export function CouponManagement() {
       width: 120,
       render: (record) => (
         <Space>
-          <Tooltip title="Edit">
+          <Tooltip title={hasPermission('coupons', 'edit') ? 'Edit Coupon' : 'No permission'}>
             <ActionButton.Text 
               icon="edit"
               onClick={(e) => {
                 e.stopPropagation();
                 handleEdit(record);
               }}
+              disabled={!hasPermission('coupons', 'edit')}
               className="text-blue-600"
             />
           </Tooltip>
-          <Tooltip title={record.isActive ? 'Deactivate' : 'Activate'}>
-            <Switch
-              size="small"
-              checked={record.isActive}
-              onChange={(checked, e) => {
-                e?.stopPropagation();
-                handleToggleStatus(record);
-              }}
-              onClick={(checked, e) => e.stopPropagation()}
-            />
-          </Tooltip>
-          <Tooltip title="Delete">
+          
+          <Tooltip title={hasPermission('coupons', 'delete') ? 'Delete Coupon' : 'No permission'}>
             <Popconfirm
               title="Delete this coupon?"
+              description="This action cannot be undone."
               onConfirm={(e) => {
                 e?.stopPropagation();
                 handleDelete(record.id);
@@ -283,10 +295,12 @@ export function CouponManagement() {
               okText="Delete"
               cancelText="Cancel"
               okButtonProps={{ danger: true }}
+              disabled={!hasPermission('coupons', 'delete')}
             >
               <ActionButton.Text 
                 icon="delete"
                 danger
+                disabled={!hasPermission('coupons', 'delete')}
                 onClick={(e) => e.stopPropagation()}
               />
             </Popconfirm>
@@ -296,44 +310,97 @@ export function CouponManagement() {
     },
   ];
 
+  if (!hasPermission('coupons', 'view')) {
+    return (
+      <Card>
+        <EmptyState
+          icon="lock"
+          title="Access Denied"
+          description="You do not have permission to view coupon management."
+        />
+      </Card>
+    );
+  }
+
   if (loading) {
     return <LoadingSkeleton type="table" />;
   }
 
   return (
     <>
-      <EnhancedTable
-        title="Coupon Management"
-        icon="local_offer"
-        columns={columns}
-        dataSource={filteredCoupons}
-        rowKey="id"
-        rowSelection={{
-          type: 'checkbox',
-          selectedRowKeys,
-          onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys)
-        }}
-        onDelete={handleBulkDelete}
-        onRow={(record) => ({
-          onClick: () => handleRowClick(record),
-          className: 'cursor-pointer hover:bg-blue-50'
-        })}
-        searchFields={['code', 'description']}
-        searchPlaceholder="Search coupons..."
-        extra={
-          <ActionButton.Primary 
-            icon="add"
-            onClick={() => setShowModal(true)}
-          >
-            Create Coupon
-          </ActionButton.Primary>
-        }
-        emptyDescription="No coupons found"
-        emptyImage={<Icon name="local_offer" className="text-6xl text-gray-300" />}
-      />
+      <Card>
+        {/* Coupon Statistics */}
+        <Row gutter={16} className="mb-6">
+          <Col span={6}>
+            <Card size="small" className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{coupons.length}</div>
+              <div className="text-sm text-gray-500">Total Coupons</div>
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card size="small" className="text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {coupons.filter(c => c.isActive && !isExpired(c) && !isUsedUp(c)).length}
+              </div>
+              <div className="text-sm text-gray-500">Active</div>
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card size="small" className="text-center">
+              <div className="text-2xl font-bold text-red-600">
+                {coupons.filter(c => isExpired(c)).length}
+              </div>
+              <div className="text-sm text-gray-500">Expired</div>
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card size="small" className="text-center">
+              <div className="text-2xl font-bold text-orange-600">
+                {coupons.filter(c => isUsedUp(c)).length}
+              </div>
+              <div className="text-sm text-gray-500">Used Up</div>
+            </Card>
+          </Col>
+        </Row>
+        
+        <EnhancedTable
+          title="Coupon Management"
+          icon="local_offer"
+          columns={columns}
+          dataSource={filteredCoupons}
+          rowKey="id"
+          searchFields={['code', 'description']}
+          searchPlaceholder="Search coupons..."
+          extra={
+            <Space>
+              <ActionButton 
+                icon="download"
+                onClick={() => setShowExportModal(true)}
+              >
+                Export
+              </ActionButton>
+              {hasPermission('coupons', 'edit') && (
+                <ActionButton.Primary 
+                  icon="add"
+                  onClick={() => {
+                    setEditingCoupon(null);
+                    form.resetFields();
+                    setDiscountType('percentage');
+                    setShowModal(true);
+                  }}
+                >
+                  Add Coupon
+                </ActionButton.Primary>
+              )}
+            </Space>
+          }
+          emptyDescription="No coupons found"
+          emptyImage={<Icon name="local_offer" className="text-6xl text-gray-300" />}
+        />
+      </Card>
 
-      <Modal
-        title={editingCoupon ? 'Edit Coupon' : 'Create New Coupon'}
+      <FormModal
+        title={editingCoupon ? 'Edit Coupon' : 'Add New Coupon'}
         open={showModal}
         onCancel={() => {
           setShowModal(false);
@@ -341,225 +408,180 @@ export function CouponManagement() {
           setDiscountType('percentage');
           form.resetFields();
         }}
-        footer={null}
-        width={800}
-        destroyOnClose
+        onSubmit={handleSubmit}
+        form={form}
+        width={700}
+        submitText={editingCoupon ? 'Update Coupon' : 'Add Coupon'}
+        loading={loading}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-          className="mt-4"
-        >
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="code"
-                label="Coupon Code"
-                rules={[{ required: true, message: 'Please enter coupon code' }]}
-              >
-                <Input 
-                  placeholder="Enter coupon code"
-                  className="font-mono"
-                  addonAfter={
-                    <Button 
-                      type="text" 
-                      size="small"
-                      onClick={generateCouponCode}
-                      icon={<Icon name="refresh" size="text-sm" />}
-                    />
-                  }
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="discountType"
-                label="Discount Type"
-                rules={[{ required: true, message: 'Please select discount type' }]}
-                initialValue="percentage"
-              >
-                <Select onChange={setDiscountType}>
-                  <Option value="percentage">Percentage</Option>
-                  <Option value="fixed">Fixed Amount</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="code"
+              label="Coupon Code"
+              rules={[
+                { required: true, message: 'Please enter coupon code' },
+                { min: 3, message: 'Code must be at least 3 characters' },
+                { pattern: /^[A-Z0-9]+$/, message: 'Code must contain only uppercase letters and numbers' }
+              ]}
+            >
+              <Input 
+                placeholder="Enter coupon code" 
+                style={{ textTransform: 'uppercase' }}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  form.setFieldsValue({ code: value });
+                }}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="discountType"
+              label="Discount Type"
+              rules={[{ required: true, message: 'Please select discount type' }]}
+              initialValue="percentage"
+            >
+              <Radio.Group onChange={(e) => setDiscountType(e.target.value)}>
+                <Radio value="percentage">Percentage</Radio>
+                <Radio value="fixed">Fixed Amount</Radio>
+              </Radio.Group>
+            </Form.Item>
+          </Col>
+        </Row>
 
-          <Row gutter={16}>
-            {discountType === 'percentage' && (
-              <Col span={8}>
+        <Form.Item name="description" label="Description">
+          <TextArea
+            rows={2}
+            placeholder="Enter coupon description"
+          />
+        </Form.Item>
+
+        <Row gutter={16}>
+          {discountType === 'percentage' ? (
+            <>
+              <Col span={12}>
                 <Form.Item
                   name="discountPercent"
-                  label="Discount Percentage (%)"
-                  rules={[{ required: true, message: 'Please enter discount percentage' }]}
-                >
-                  <InputNumber
-                    min={0}
-                    max={100}
-                    step={1}
-                    placeholder="0"
-                    className="w-full"
-                  />
-                </Form.Item>
-              </Col>
-            )}
-            {discountType === 'fixed' && (
-              <Col span={8}>
-                <Form.Item
-                  name="discountAmount"
-                  label="Discount Amount (LKR)"
+                  label="Discount Percentage"
                   rules={[
-                    { required: true, message: 'Please enter discount amount' },
-                    {
-                      validator: (_, value) => {
-                        const minimumAmount = form.getFieldValue('minimumAmount');
-                        if (value && minimumAmount && minimumAmount <= value) {
-                          return Promise.reject(new Error('Discount amount must be less than minimum order amount'));
-                        }
-                        return Promise.resolve();
-                      }
-                    }
+                    { required: true, message: 'Please enter discount percentage' },
+                    { type: 'number', min: 0.01, max: 100, message: 'Percentage must be between 0.01 and 100' }
                   ]}
                 >
                   <InputNumber
-                    min={0}
-                    step={10}
+                    min={0.01}
+                    max={100}
+                    step={0.01}
                     placeholder="0.00"
                     className="w-full"
-                    formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                    parser={value => value.replace(/LKR\s?|(,*)/g, '')}
-                    onChange={() => {
-                      // Trigger validation on minimum amount field when discount amount changes
-                      form.validateFields(['minimumAmount']);
-                    }}
+                    formatter={value => `${value}%`}
+                    parser={value => value.replace('%', '')}
                   />
                 </Form.Item>
               </Col>
-            )}
-            {discountType === 'percentage' && (
-              <Col span={8}>
+              <Col span={12}>
                 <Form.Item name="maxDiscount" label="Maximum Discount (LKR)">
                   <InputNumber
                     min={0}
                     step={100}
-                    placeholder="0.00"
+                    placeholder="No limit"
                     className="w-full"
-                    formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    formatter={value => value ? `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''}
                     parser={value => value.replace(/LKR\s?|(,*)/g, '')}
                   />
                 </Form.Item>
               </Col>
-            )}
-            <Col span={8}>
-              <Form.Item 
-                name="minimumAmount" 
-                label="Minimum Order Amount (LKR)"
-                rules={discountType === 'fixed' ? [
-                  {
-                    validator: (_, value) => {
-                      const discountAmount = form.getFieldValue('discountAmount');
-                      if (discountAmount && value && value <= discountAmount) {
-                        return Promise.reject(new Error('Minimum amount must be greater than discount amount'));
-                      }
-                      return Promise.resolve();
-                    }
-                  }
-                ] : []}
+            </>
+          ) : (
+            <Col span={12}>
+              <Form.Item
+                name="discountAmount"
+                label="Discount Amount (LKR)"
+                rules={[
+                  { required: true, message: 'Please enter discount amount' },
+                  { type: 'number', min: 0.01, message: 'Amount must be greater than 0' }
+                ]}
               >
                 <InputNumber
-                  min={0}
+                  min={0.01}
                   step={100}
                   placeholder="0.00"
                   className="w-full"
                   formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                   parser={value => value.replace(/LKR\s?|(,*)/g, '')}
-                  onChange={() => {
-                    // Trigger validation on discount amount field when minimum amount changes
-                    if (discountType === 'fixed') {
-                      form.validateFields(['discountAmount']);
-                    }
-                  }}
                 />
               </Form.Item>
             </Col>
-          </Row>
+          )}
+        </Row>
 
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="usageLimit" label="Usage Limit">
-                <InputNumber
-                  min={1}
-                  placeholder="Unlimited"
-                  className="w-full"
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="dateRange" label="Valid Period">
-                <RangePicker 
-                  className="w-full"
-                  showTime
-                  format="YYYY-MM-DD HH:mm"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item name="minimumAmount" label="Minimum Order Amount (LKR)">
+              <InputNumber
+                min={0}
+                step={100}
+                placeholder="0.00"
+                className="w-full"
+                formatter={value => value ? `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''}
+                parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item name="usageLimit" label="Usage Limit">
+              <InputNumber
+                min={1}
+                placeholder="Unlimited"
+                className="w-full"
+              />
+            </Form.Item>
+          </Col>
+        </Row>
 
-          <Form.Item name="applicableCategories" label="Applicable Categories">
-            <Select mode="multiple" placeholder="Select categories (leave empty for all)">
-              {categories.filter(cat => cat.isActive).map(cat => (
-                <Option key={cat.id} value={cat.name}>{cat.name}</Option>
-              ))}
-            </Select>
-          </Form.Item>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="validFrom"
+              label="Valid From"
+              rules={[{ required: true, message: 'Please select start date' }]}
+            >
+              <DatePicker className="w-full" />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item name="validTo" label="Valid Until">
+              <DatePicker className="w-full" placeholder="No expiry date" />
+            </Form.Item>
+          </Col>
+        </Row>
 
-          <Form.Item name="description" label="Description">
-            <TextArea
-              rows={3}
-              placeholder="Enter coupon description"
-            />
-          </Form.Item>
-
-          <Form.Item name="isActive" label="Active" valuePropName="checked" initialValue={true}>
-              <Switch />
-          </Form.Item>
-
-          <div className="flex justify-end space-x-2 mt-6">
-            <ActionButton onClick={() => setShowModal(false)}>
-              Cancel
-            </ActionButton>
-            <ActionButton.Primary htmlType="submit" loading={loading}>
-              {editingCoupon ? 'Update' : 'Create'} Coupon
-            </ActionButton.Primary>
-          </div>
-        </Form>
-      </Modal>
-
-      {/* Coupon Detail Modal */}
-      <DetailModal
-        open={showDetailModal}
-        onClose={() => {
-          setShowDetailModal(false);
-          setSelectedCoupon(null);
-        }}
-        title={`Coupon Details - ${selectedCoupon?.code}`}
-        icon="local_offer"
-        data={selectedCoupon}
-        type="coupon"
-        actions={[
-          <ActionButton 
-            key="edit" 
-            icon="edit"
-            onClick={() => {
-              setShowDetailModal(false);
-              handleEdit(selectedCoupon);
-            }}
+        <Form.Item name="applicableCategories" label="Applicable Categories">
+          <Select 
+            mode="multiple" 
+            placeholder="All categories (leave empty for all)"
+            allowClear
           >
-            Edit Coupon
-          </ActionButton>
-        ]}
+            {categories?.filter(cat => cat.isActive).map(category => (
+              <Option key={category.id} value={category.name}>
+                {category.name}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
+
+        <Form.Item name="isActive" label="Active Status" valuePropName="checked" initialValue={true}>
+          <Switch />
+        </Form.Item>
+      </FormModal>
+
+      {/* Export Modal */}
+      <ExportModal
+        open={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        dataType="coupons"
+        data={{ coupons }}
       />
     </>
   );

@@ -1,262 +1,235 @@
-import  { useState, useEffect } from 'react';
-import { 
-  Layout, 
-  Avatar, 
-  Dropdown, 
-  Badge, 
-  Space, 
-  Typography, 
-  Tooltip,
-  List,
-  Empty,
-  Tag
-} from 'antd';
-import { useDispatch } from 'react-redux';
-import { logout as logoutAction } from '../../features/auth/authSlice';
-import { useAuth } from '../../contexts/AuthContext';
-import { useReduxNotifications as useNotifications } from '../../hooks/useReduxNotifications';
-import { ActionButton } from '../common/ActionButton';
-import { Icon } from '../common/Icon';
+import React, { useState, useEffect } from 'react';
+import { Layout } from 'antd';
+import { useSelector, useDispatch } from 'react-redux';
+import { AuthProvider } from './contexts/AuthContext';
+import { Header } from './components/Layout/Header';
+import { Sidebar } from './components/Layout/Sidebar';
+import { Footer } from './components/Layout/Footer';
+import { ProtectedRoute } from './components/Layout/ProtectedRoute';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { NotificationDisplay } from './components/common/NotificationDisplay';
+import { ReduxErrorNotification } from './components/common/ReduxErrorNotification';
+import { getCurrentUser } from './features/auth/authSlice';
+import { checkStockLevels } from './features/notifications/notificationsSlice';
 
-const { Header: AntHeader } = Layout;
-const { Text, Title } = Typography;
+// Import all page components
+import { ProductGrid } from './components/POS/ProductGrid';
+import { Cart } from './components/POS/Cart';
+import { ProductManagement } from './components/Products/ProductManagement';
+import { RawMaterialManagement } from './components/RawMaterials/RawMaterialManagement';
+import { TransactionHistory } from './components/Transactions/TransactionHistory';
+import { ReportsOverview } from './components/Reports/ReportsOverview';
+import { CouponManagement } from './components/Coupons/CouponManagement';
+import { TaxManagement } from './components/Tax/TaxManagement';
+import { UserManagement } from './components/Users/UserManagement';
+import { CustomerManagement } from './components/Customers/CustomerManagement';
+import { AuditTrail } from './components/AuditTrail/AuditTrail';
+import { PurchaseOrderManagement } from './components/PurchaseOrders/PurchaseOrderManagement';
+import { SettingsPanel } from './components/Settings/SettingsPanel';
+import { LoginPage } from './components/Auth/LoginPage';
 
-export function Header({ collapsed, onCollapse, activeTab, style, onTabChange }) {
+const { Content } = Layout;
+
+function App() {
   const dispatch = useDispatch();
-  const { currentUser } = useAuth();
-  const { notifications, stockAlerts, markAsRead, clearAllNotifications, markAllAsRead, clearStockAlerts } = useNotifications();
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [readStockAlerts, setReadStockAlerts] = useState(new Set());
-  const [tourOpen, setTourOpen] = useState(false);
+  const { isAuthenticated, loading } = useSelector(state => state.auth);
+  const [collapsed, setCollapsed] = useState(false);
+  const [activeTab, setActiveTab] = useState('pos');
 
-  // Clean up read stock alerts when stock alerts change (e.g., when alerts are resolved)
+  // Check authentication on app start
   useEffect(() => {
-    const currentAlertIds = new Set(stockAlerts.map(alert => alert.id));
-    setReadStockAlerts(prev => new Set([...prev].filter(id => currentAlertIds.has(id))));
-  }, [stockAlerts]);
+    const token = localStorage.getItem('vcare_token');
+    if (token) {
+      dispatch(getCurrentUser());
+    }
+  }, [dispatch]);
 
-  // Handler for logout
-  const handleLogout = () => {
-    dispatch(logoutAction());
-  };
-
-  const userMenuItems = [
-    {
-      key: 'profile',
-      icon: <Icon name="person" />,
-      label: 'Profile Settings',
-    },
-    {
-      key: 'preferences',
-      icon: <Icon name="tune" />,
-      label: 'Preferences',
-    },
-    {
-      type: 'divider',
-    },
-    {
-      key: 'help',
-      icon: <Icon name="help_outline" />,
-      label: 'Help & Support',
-    },
-    {
-      key: 'logout',
-      icon: <Icon name="logout" />,
-      label: 'Sign Out',
-      danger: true,
-      onClick: handleLogout
-    },
-  ];
-
-  // Combine notifications and stock alerts
-  const allNotifications = [
-    ...stockAlerts.map(alert => ({
-      id: alert.id,
-      title: alert.title,
-      message: alert.message,
-      timestamp: alert.timestamp,
-      icon: alert.type === 'critical' ? 'error' : 'warning',
-      type: alert.type === 'critical' ? 'error' : 'warning',
-      read: readStockAlerts.has(alert.id),
-
-  const notificationContent = (
-    <div className="w-80  bg-white shadow-lg rounded-md">
-      <div className="p-3 border-b flex justify-between items-center">
-        <Title level={5} className="m-0">Notifications</Title>
-        <Space size="small">
-          {allNotifications.length > 0 && unreadCount > 0 && (
-            <ActionButton.Text 
-              size="small" 
-              onClick={handleMarkAllRead}
-            >
-              Mark All Read
-            </ActionButton.Text>
-          )}
-          <ActionButton.Text 
-            size="small" 
-            onClick={handleClearAll}
-            disabled={allNotifications.length === 0}
-          >
-            Clear All
-          </ActionButton.Text>
-        </Space>
-      </div>
+  // Start stock level monitoring when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Initial stock check
+      dispatch(checkStockLevels());
       
-      {allNotifications.length === 0 ? (
-        <Empty 
-          image={Empty.PRESENTED_IMAGE_SIMPLE} 
-          description="No notifications" 
-          className="py-8"
-        />
-      ) : (
-        <List
-        className='max-h-96 overflow-y-auto'
-          dataSource={allNotifications}
-          renderItem={item => (
-            <List.Item 
-              className={`cursor-pointer hover:bg-gray-50 transition-colors ${item.read ? 'opacity-70' : ''}`}
-              onClick={() => handleNotificationClick(item)}
-            >
-              <div className="flex items-start p-2 w-full">
-                <div className={`flex-shrink-0 mr-3 mt-1 text-${item.type === 'error' ? 'red' : item.type === 'warning' ? 'orange' : 'blue'}-500`}>
-                  <Icon name={item.icon || 'notifications'} />
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <Text strong className={item.read ? 'text-gray-500' : 'text-gray-900'}>
-                      {item.title}
-                    </Text>
-                    {!item.read && <Badge status="processing" color="blue" />}
-                  </div>
-                  <Text type="secondary" className="text-xs block">
-                    {new Date(item.timestamp).toLocaleString()}
-                  </Text>
-                  <Text className={`text-sm block mt-1 ${item.read ? 'text-gray-500' : 'text-gray-700'}`}>
-                    {item.message}
-                  </Text>
-                  {item.navigateTo && (
-                    <Tag color="blue" size="small" className="mt-1">
-                      Click to view
-                    </Tag>
-                  )}
-                </div>
-              </div>
-            </List.Item>
-          )}
-        />
-      )}
-    </div>
-  );
+      // Set up periodic stock checking (every 5 minutes)
+      const stockCheckInterval = setInterval(() => {
+        dispatch(checkStockLevels());
+      }, 5 * 60 * 1000);
+      
+      return () => clearInterval(stockCheckInterval);
+    }
+  }, [isAuthenticated, dispatch]);
 
-  const getPageTitle = () => {
-    const titles = {
-      'pos': 'Point of Sale',
-      'products': 'Product Management',
-      'raw-materials': 'Raw Materials',
-      'transactions': 'Orders',
-      'reports': 'Reports & Analytics',
-      'coupons': 'Coupon Management',
-      'tax': 'Tax Management',
-      'user-management': 'User Management',
-      'audit-trail': 'Audit Trail',
-      'settings': 'Settings'
-    };
-    return titles[activeTab] || 'VCare POS';
+  // Show loading screen while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <div className="text-gray-600">Loading VCare POS...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <ErrorBoundary>
+        <LoginPage />
+        <NotificationDisplay />
+        <ReduxErrorNotification />
+      </ErrorBoundary>
+    );
+  }
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'pos':
+        return (
+          <ProtectedRoute module="pos" action="view">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+              <div className="lg:col-span-2">
+                <ProductGrid collapsed={collapsed} />
+              </div>
+              <div className="lg:col-span-1">
+                <Cart />
+              </div>
+            </div>
+          </ProtectedRoute>
+        );
+      case 'products':
+        return (
+          <ProtectedRoute module="products" action="view">
+            <ProductManagement />
+          </ProtectedRoute>
+        );
+      case 'raw-materials':
+        return (
+          <ProtectedRoute module="raw-materials" action="view">
+            <RawMaterialManagement />
+          </ProtectedRoute>
+        );
+      case 'transactions':
+        return (
+          <ProtectedRoute module="transactions" action="view">
+            <TransactionHistory />
+          </ProtectedRoute>
+        );
+      case 'reports':
+        return (
+          <ProtectedRoute module="reports" action="view">
+            <ReportsOverview />
+          </ProtectedRoute>
+        );
+      case 'coupons':
+        return (
+          <ProtectedRoute module="coupons" action="view">
+            <CouponManagement />
+          </ProtectedRoute>
+        );
+      case 'tax':
+        return (
+          <ProtectedRoute module="tax" action="view">
+            <TaxManagement />
+          </ProtectedRoute>
+        );
+      case 'user-management':
+        return (
+          <ProtectedRoute module="user-management" action="view">
+            <UserManagement />
+          </ProtectedRoute>
+        );
+      case 'customers':
+        return (
+          <ProtectedRoute module="user-management" action="view">
+            <CustomerManagement />
+          </ProtectedRoute>
+        );
+      case 'audit-trail':
+        return (
+          <ProtectedRoute module="audit-trail" action="view">
+            <AuditTrail />
+          </ProtectedRoute>
+        );
+      case 'purchase-orders':
+        return (
+          <ProtectedRoute module="purchase-orders" action="view">
+            <PurchaseOrderManagement />
+          </ProtectedRoute>
+        );
+      case 'settings':
+        return (
+          <ProtectedRoute module="settings" action="view">
+            <SettingsPanel />
+          </ProtectedRoute>
+        );
+      default:
+        return (
+          <div className="text-center py-12">
+            <div className="text-gray-500">Page not found</div>
+          </div>
+        );
+    }
   };
 
   return (
-    <>
-      <AntHeader 
-        style={style}
-        className="flex items-center justify-between"
-      >
-        <div className="flex items-center space-x-6">
-          {/* Expand/Collapse Button */}
-          <Tooltip title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}>
-            <ActionButton.Text
-              icon={collapsed ? 'menu_open' : 'menu'}
-              onClick={() => onCollapse(!collapsed)}
-              className="hover:bg-blue-50 transition-colors"
-              size="large"
+    <ErrorBoundary>
+      <AuthProvider>
+        <Layout className="min-h-screen">
+          <Layout.Sider
+            collapsible
+            collapsed={collapsed}
+            onCollapse={setCollapsed}
+            width={280}
+            collapsedWidth={80}
+            className="vcare-layout__sider"
+            trigger={null}
+          >
+            <Sidebar
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              collapsed={collapsed}
+              onCollapse={setCollapsed}
             />
-          </Tooltip>
-
-          <div className="flex items-center space-x-4">
-            <Title level={4} className="m-0 text-gray-900">
-              {getPageTitle()}
-              {activeTab === 'settings' && <span className="text-sm text-gray-500 ml-2">v1.0.0</span>}
-            </Title>
-          </div>
-        </div>
+          </Layout.Sider>
+          
+          <Layout>
+            <Header
+              collapsed={collapsed}
+              onCollapse={setCollapsed}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                position: 'sticky',
+                top: 0,
+                zIndex: 100,
+              }}
+            />
+            
+            <Content className="vcare-layout__content">
+              {renderContent()}
+            </Content>
+            
+            <Footer
+              style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+                padding: '12px 24px',
+              }}
+            />
+          </Layout>
+        </Layout>
         
-        <Space size="middle" className="flex items-center">
-          <Tooltip title="WiFi Connected">
-            <Icon name="wifi" className="text-green-500" />
-          </Tooltip>
-          
-          {/* Help Tour Button */}
-          <Tooltip title="Take a Tour">
-            <ActionButton.Text 
-              icon="help_outline"
-              onClick={() => setTourOpen(true)}
-              className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all"
-              data-tour="help"
-            />
-          </Tooltip>
-
-          <Dropdown 
-            open={showNotifications}
-            onOpenChange={setShowNotifications}
-            dropdownRender={() => notificationContent}
-            placement="bottomRight"
-            trigger={['click']}
-          >
-            <Badge count={unreadCount} size="small" offset={[-2, 2]}>
-              <ActionButton.Text 
-                icon="notifications"
-                className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all"
-                data-tour="notifications"
-              />
-            </Badge>
-          </Dropdown>
-          
-          <Dropdown 
-            menu={{ items: userMenuItems }} 
-            placement="bottomRight"
-            trigger={['click']}
-          >
-            <div className="flex items-center space-x-3 cursor-pointer" data-tour="user-menu">
-              <Avatar 
-                size={40}
-                style={{ 
-                  background: 'linear-gradient(135deg, #0E72BD, #1890ff)',
-                }}
-              >
-                {currentUser?.firstName?.[0]}{currentUser?.lastName?.[0]}
-              </Avatar>
-              <div className="hidden sm:flex text-left sm:flex-col ">
-                <Text strong className="text-gray-900 block text-sm">
-                  {currentUser?.firstName} {currentUser?.lastName}
-                </Text>
-                <Text type="secondary" className="text-xs capitalize">
-                  {currentUser?.role}
-                </Text>
-              </div>
-            </div>
-          </Dropdown>
-        </Space>
-      </AntHeader>
-      {/* Tour Component */}
-      <Tour
-        open={tourOpen}
-        onClose={() => setTourOpen(false)}
-        steps={getTourSteps()}
-        indicatorsRender={(current, total) => (
-          <span className="text-blue-600">
-            {current + 1} / {total}
-          </span>
-        )}
-      />
-    </>
+        <NotificationDisplay />
+        <ReduxErrorNotification />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
+
+export default App;

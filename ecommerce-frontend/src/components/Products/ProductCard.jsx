@@ -33,6 +33,9 @@ export function ProductCard({ product }) {
     }))
     
     // Show immediate feedback
+    const hasStock = product.stock > 0
+    const isPreorderAvailable = product.allowPreorder && !hasStock
+    
     if (hasStock) {
       toast.success(`${product.name} added to cart!`, {
         icon: '🛒',

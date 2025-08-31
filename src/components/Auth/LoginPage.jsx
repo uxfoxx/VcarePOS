@@ -10,7 +10,7 @@ import {
   Divider
 } from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
-import { login, clearAuthError } from '../features/auth/authSlice';
+import { login, clearAuthError } from '../../features/auth/authSlice';
 import { Icon } from '../common/Icon';
 
 const { Title, Text } = Typography;

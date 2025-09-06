@@ -24,6 +24,7 @@ export function ColorAndSizeSelectionModal({
 }) {
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (open && product && product.colors && product.colors.length > 0) {
@@ -44,23 +45,34 @@ export function ColorAndSizeSelectionModal({
   if (!product) return null;
 
   const handleConfirm = () => {
+    setLoading(true);
+    
     if (!selectedColor) {
       message.error('Please select a color');
+      setLoading(false);
       return;
     }
     
     if (!selectedSize) {
       message.error('Please select a size');
+      setLoading(false);
       return;
     }
 
     if (selectedSize.stock <= 0) {
       message.error('Selected size is out of stock');
+      setLoading(false);
       return;
     }
 
-    onColorAndSizeSelected(selectedColor, selectedSize, selectedSize);
-    onClose();
+    try {
+      onColorAndSizeSelected(selectedColor, selectedSize, selectedSize);
+      onClose();
+    } catch (error) {
+      message.error('Failed to add product to cart');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleColorSelect = (color) => {

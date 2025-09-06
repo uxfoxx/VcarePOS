@@ -391,7 +391,6 @@ export function ExportModal({
         return renderTransactionFilters();
       case 'transaction-items':
         return renderTransactionItemFilters();
-        await exportTransactionItems(data.transactions || [], filters);
         return renderCouponFilters();
       case 'users':
         return renderUserFilters();

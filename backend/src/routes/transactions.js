@@ -651,6 +651,7 @@ router.post(
             )
             WHERE id = $1
           `, [item.product.id]);
+          }
         } else {
           // Update regular product stock
           await client.query(`
@@ -941,7 +942,6 @@ router.post(
               )
               WHERE id = $1
             `, [item.product.id]);
-          }
           } else {
             // Restore regular product stock
             await client.query(`

@@ -972,14 +972,16 @@ router.put(
       
       // Update specific color/size stock
       const sizeResult = await client.query(`
-        SELECT ps.*, pc.product_id FROM product_sizes ps
-        JOIN product_colors pc ON ps.product_color_id = pc.id
-        WHERE pc.id = $1 AND ps.name = $2
+        SELECT ps.* FROM product_sizes ps
+        WHERE ps.product_color_id = $1 AND ps.name = $2
       `, [selectedColorId, selectedSize]);
       
       if (sizeResult.rows.length === 0) {
         client.release();
-        return res.status(404).json({ message: 'Color/Size combination not found' });
+        return res.status(404).json({ 
+          message: `Size "${selectedSize}" not found for the selected color`,
+          details: { selectedColorId, selectedSize }
+        });
       }
       
       const size = sizeResult.rows[0];

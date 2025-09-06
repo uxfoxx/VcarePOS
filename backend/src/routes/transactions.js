@@ -611,12 +611,7 @@ router.post(
           await client.query(`
             UPDATE product_sizes
             SET stock = stock - $1
-            WHERE id = (
-              SELECT ps.id 
-              FROM product_sizes ps
-              JOIN product_colors pc ON ps.product_color_id = pc.id
-              WHERE pc.id = $2 AND ps.name = $3
-            )
+            WHERE product_color_id = $2 AND name = $3
           `, [
             item.quantity,
             item.selectedColorId,
@@ -652,8 +647,7 @@ router.post(
             SELECT prm.raw_material_id, prm.quantity
             FROM product_raw_materials prm
             JOIN product_sizes ps ON prm.product_size_id = ps.id
-            JOIN product_colors pc ON ps.product_color_id = pc.id
-            WHERE pc.id = $1 AND ps.name = $2
+            WHERE ps.product_color_id = $1 AND ps.name = $2
           `, [item.selectedColorId, item.selectedSize]);
           
           for (const material of rawMaterialsResult.rows) {
@@ -949,12 +943,7 @@ router.post(
             await client.query(`
               UPDATE product_sizes 
               SET stock = stock + $1
-              WHERE id = (
-                SELECT ps.id 
-                FROM product_sizes ps
-                JOIN product_colors pc ON ps.product_color_id = pc.id
-                WHERE pc.id = $2 AND ps.name = $3
-              )
+              WHERE product_color_id = $2 AND name = $3
             `, [
               item.quantity,
               item.selected_color_id,

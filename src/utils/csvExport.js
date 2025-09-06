@@ -483,6 +483,12 @@ export function exportTransactionItems(transactions, filters = {}) {
       });
     }
     
+    // If not a large dataset, proceed normally
+    processLargeExport();
+    
+    function processLargeExport() {
+    }
+    
     // Flatten transaction items with chunking for large datasets
     const items = [];
     const chunkSize = 1000;
@@ -528,7 +534,6 @@ export function exportTransactionItems(transactions, filters = {}) {
     const csv = convertToCSV(filteredItems, TRANSACTION_ITEMS_HEADERS);
     const filename = `transaction-items-export-${dayjs().format('YYYY-MM-DD-HHmm')}.csv`;
     downloadCSV(csv, filename);
-    }
   } catch (error) {
     console.error('Error exporting transaction items:', error);
     throw new Error(`Failed to export transaction items: ${error.message}`);

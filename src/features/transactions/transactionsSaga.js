@@ -1,5 +1,6 @@
 import { takeLatest, call, put, all } from "redux-saga/effects";
 import { message as antdMessage } from "antd";
+import { message as antdMessage } from "antd";
 import {
   fetchTransactions,
   fetchTransactionById,
@@ -39,6 +40,10 @@ function* createTransactionSaga(action) {
   try {
     const data = yield call(transactionsApi.create, action.payload);
     yield put(createTransactionSucceeded(data));
+    
+    // Show success message only after API call succeeds
+    yield call([antdMessage, 'success'], 'Transaction completed successfully!');
+    
     // refresh products and raw materials after creating a transaction
     yield all([
       put(fetchProducts()),
@@ -46,6 +51,10 @@ function* createTransactionSaga(action) {
     ]);
   } catch (error) {
     yield put(failed(error.message));
+    
+    // Show error message with more details if available
+    const errorMessage = error.message || 'Failed to complete transaction. Please try again.';
+    yield call([antdMessage, 'error'], errorMessage);
   }
 }
 

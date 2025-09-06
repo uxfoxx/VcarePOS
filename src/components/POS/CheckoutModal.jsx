@@ -126,7 +126,6 @@ export function CheckoutModal({
       dispatch(createTransaction(transactionData));
       dispatch(clearCart());
       
-      message.success('Transaction completed successfully!');
       onClose();
     } catch (error) {
       console.error('Checkout error:', error);

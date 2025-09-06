@@ -449,6 +449,7 @@ export function exportTransactions(transactions, filters = {}) {
 }
 
 export function exportTransactionItems(transactions, filters = {}) {
+}
 export async function exportTransactionItems(transactions, filters = {}) {
   try {
     let filteredTransactions = [...transactions];

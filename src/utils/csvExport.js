@@ -449,8 +449,6 @@ export function exportTransactions(transactions, filters = {}) {
 }
 
 export function exportTransactionItems(transactions, filters = {}) {
-}
-export async function exportTransactionItems(transactions, filters = {}) {
   try {
     let filteredTransactions = [...transactions];
     
@@ -467,8 +465,22 @@ export async function exportTransactionItems(transactions, filters = {}) {
     // Check for large datasets and warn user
     const totalItems = filteredTransactions.reduce((sum, t) => sum + (t.items?.length || 0), 0);
     if (totalItems > 10000) {
-      // For large datasets, we'll proceed but warn in console
-      console.warn(`Large export: Processing ${totalItems} items. This may take a moment.`);
+      // Use a Promise-based approach instead of blocking window.confirm
+      const { Modal } = await import('antd');
+      return new Promise((resolve) => {
+        Modal.confirm({
+          title: 'Large Export Warning',
+          content: `This export will process ${totalItems} items. This may slow down your browser. Continue?`,
+          onOk: () => {
+            resolve(true);
+            // Continue with the export logic here
+            processLargeExport();
+          },
+          onCancel: () => {
+            resolve(false);
+          }
+        });
+      });
     }
     
     // Flatten transaction items with chunking for large datasets

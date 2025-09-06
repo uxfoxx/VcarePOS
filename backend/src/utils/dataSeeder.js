@@ -20,7 +20,7 @@ async function seedDatabase() {
       console.log('Seeding users...');
       
       // Create admin user
-      const adminPassword = await hashPassword('admin123');
+      const adminPassword = await hashPassword(process.env.ADMIN_PASSWORD || 'admin123');
       await client.query(`
         INSERT INTO users (
           id, username, password, email, first_name, last_name, role, is_active, permissions
@@ -38,7 +38,7 @@ async function seedDatabase() {
       `, [adminPassword]);
       
       // Create cashier user
-      const cashierPassword = await hashPassword('cashier123');
+      const cashierPassword = await hashPassword(process.env.CASHIER_PASSWORD || 'cashier123');
       await client.query(`
         INSERT INTO users (
           id, username, password, email, first_name, last_name, role, is_active, permissions
@@ -56,7 +56,7 @@ async function seedDatabase() {
       `, [cashierPassword]);
       
       // Create manager user
-      const managerPassword = await hashPassword('manager123');
+      const managerPassword = await hashPassword(process.env.MANAGER_PASSWORD || 'manager123');
       await client.query(`
         INSERT INTO users (
           id, username, password, email, first_name, last_name, role, is_active, permissions

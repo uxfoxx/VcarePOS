@@ -36,7 +36,9 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: '*',
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://your-production-domain.com'] // Replace with your actual production domain
+    : ['http://localhost:3001', 'http://localhost:3002'], // Development origins
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: false
@@ -44,30 +46,40 @@ app.use(cors({
 
 
 app.use(express.json({ 
-  limit: '50mb',
+  limit: '10mb', // Reduced from 50mb to prevent potential DoS attacks
   verify: (req, res, buf) => {
     req.rawBody = buf.toString();
   }
 }));
 app.use(timeoutMiddleware(60000)); // 60 second timeout for all requests
 app.use(requestLogger); // Add request logging before other middleware
-app.use(logAction);
 
 // Register API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/auth', logAction); // Apply audit logging after auth routes
 app.use('/api/products', productsRoutes);
+app.use('/api/products', logAction);
 app.use('/api/raw-materials', rawMaterialsRoutes);
+app.use('/api/raw-materials', logAction);
 app.use('/api/transactions', transactionsRoutes);
+app.use('/api/transactions', logAction);
 app.use('/api/coupons', couponsRoutes);
+app.use('/api/coupons', logAction);
 app.use('/api/taxes', taxesRoutes);
+app.use('/api/taxes', logAction);
 app.use('/api/categories', categoriesRoutes);
+app.use('/api/categories', logAction);
 app.use('/api/purchase-orders', purchaseOrdersRoutes);
+app.use('/api/purchase-orders', logAction);
 app.use('/api/vendors', vendorsRoutes);
+app.use('/api/vendors', logAction);
 app.use('/api/users', usersRoutes);
+app.use('/api/users', logAction);
 app.use('/api/audit', auditRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/ecommerce', ecommerceRoutes);
 app.use('/api/customers', customersRoutes);
+app.use('/api/customers', logAction);
 
 // Swagger docs
 setupSwagger(app);

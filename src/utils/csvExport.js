@@ -465,12 +465,22 @@ export function exportTransactionItems(transactions, filters = {}) {
     // Check for large datasets and warn user
     const totalItems = filteredTransactions.reduce((sum, t) => sum + (t.items?.length || 0), 0);
     if (totalItems > 10000) {
-      const proceed = window.confirm(
-        `This export will process ${totalItems} items. This may slow down your browser. Continue?`
-      );
-      if (!proceed) {
-        return;
-      }
+      // Use a Promise-based approach instead of blocking window.confirm
+      const { Modal } = await import('antd');
+      return new Promise((resolve) => {
+        Modal.confirm({
+          title: 'Large Export Warning',
+          content: `This export will process ${totalItems} items. This may slow down your browser. Continue?`,
+          onOk: () => {
+            resolve(true);
+            // Continue with the export logic here
+            processLargeExport();
+          },
+          onCancel: () => {
+            resolve(false);
+          }
+        });
+      });
     }
     
     // Flatten transaction items with chunking for large datasets
@@ -518,6 +528,7 @@ export function exportTransactionItems(transactions, filters = {}) {
     const csv = convertToCSV(filteredItems, TRANSACTION_ITEMS_HEADERS);
     const filename = `transaction-items-export-${dayjs().format('YYYY-MM-DD-HHmm')}.csv`;
     downloadCSV(csv, filename);
+    }
   } catch (error) {
     console.error('Error exporting transaction items:', error);
     throw new Error(`Failed to export transaction items: ${error.message}`);

@@ -200,7 +200,12 @@ export const productsApi = {
   updateStock: async (id, quantity, operation, selectedSize) => {
     return apiRequest(`/products/${id}/stock`, {
       method: 'PUT',
-      body: JSON.stringify({ quantity, operation, selectedSize })
+      body: JSON.stringify({ 
+        quantity, 
+        operation, 
+        selectedSize,
+        selectedColorId
+      })
     });
   }
 };

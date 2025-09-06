@@ -63,7 +63,14 @@ function* deleteProductsSaga(action) {
 
 function* updateProductStockSaga(action) {
   try {
-    const data = yield call(productsApi.updateStock, action.payload.id, action.payload.quantity, action.payload.operation, action.payload.selectedSize);
+    const data = yield call(
+      productsApi.updateStock, 
+      action.payload.id, 
+      action.payload.quantity, 
+      action.payload.operation, 
+      action.payload.selectedSize,
+      action.payload.selectedColorId
+    );
     yield put(updateProductStockSucceeded(data));
   } catch (error) {
     yield put(failed(error.message));

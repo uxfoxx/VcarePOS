@@ -483,6 +483,12 @@ export function exportTransactionItems(transactions, filters = {}) {
       });
     }
     
+    // If not a large dataset, proceed normally
+    processLargeExport();
+    
+    function processLargeExport() {
+    }
+    
     // Flatten transaction items with chunking for large datasets
     const items = [];
     const chunkSize = 1000;

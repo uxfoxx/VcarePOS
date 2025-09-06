@@ -1,6 +1,5 @@
 import { takeLatest, call, put, all } from "redux-saga/effects";
 import { message as antdMessage } from "antd";
-import { message as antdMessage } from "antd";
 import {
   fetchTransactions,
   fetchTransactionById,

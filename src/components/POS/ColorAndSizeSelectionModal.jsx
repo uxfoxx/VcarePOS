@@ -78,7 +78,7 @@ export function ColorAndSizeSelectionModal({
     <Modal
       title={
         <Space>
-          <Icon name="palette" className="text-purple-600" />
+          <Icon name="tune" className="text-purple-600" />
           <span>Select Color & Size</span>
         </Space>
       }

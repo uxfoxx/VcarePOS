@@ -227,7 +227,7 @@ export function BarcodeScannerModal({
           </Title>
           <div className="space-y-2 text-sm">
             <div className="flex items-center space-x-2">
-              <Icon name="qr_code_scanner" className="text-blue-600" size="text-sm" />
+              <Icon name="barcode_scanner" className="text-blue-600" size="text-sm" />
               <Text>Use a barcode scanner to scan product barcodes</Text>
             </div>
             <div className="flex items-center space-x-2">

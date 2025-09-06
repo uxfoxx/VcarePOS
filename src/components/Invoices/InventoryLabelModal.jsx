@@ -5,7 +5,6 @@ import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import JsBarcode from 'jsbarcode';
-import { QRCodeSVG } from 'qrcode.react';
 
 const { Text } = Typography;
 
@@ -221,35 +220,6 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
       );
     }
   };
-
-  // Generate QR code for POS scanning
-  const renderQRCode = (code) => {
-    if (!code) return null;
-    
-    try {
-      return (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          backgroundColor: '#ffffff',
-          padding: '1px'
-        }}>
-          <QRCodeSVG 
-            value={code}
-            size={16}
-            level="L"
-            includeMargin={false}
-            bgColor="#FFFFFF"
-            fgColor="#000000"
-          />
-        </div>
-      );
-    } catch (error) {
-      console.warn('Error generating QR code:', error);
-      return null;
-    }
-  };
   const renderInventoryLabels = () => (
     <div id="inventory-labels-content" style={{ 
       fontFamily: 'Arial, sans-serif', 
@@ -356,13 +326,8 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                 </div>
               </div>
               
-              {/* QR Code and Barcode */}
+              {/* Barcode */}
               <div style={{ marginTop: 'auto' }}>
-                {/* QR Code for POS scanning */}
-                <div style={{ textAlign: 'center', marginBottom: '2px' }}>
-                  {renderQRCode(item.product.barcode)}
-                </div>
-                
                 <div style={{ maxWidth: '100%', overflow: 'hidden' }}>
                   {renderBarcode(item.product.barcode || 'NOBARCODE')}
                 </div>
@@ -465,7 +430,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
           <div className="mb-4 p-4 bg-blue-50 rounded-lg">
             <Text className="text-sm">
               <Icon name="info" className="mr-2 text-blue-600" />
-              <strong>Inventory Labels:</strong> Optimized for A4 printing with 24 labels per page (4×6 grid). Each label includes both QR code and barcode for POS scanning.
+              <strong>Inventory Labels:</strong> Optimized for A4 printing with 24 labels per page (4×6 grid). Each label includes a barcode for POS scanning.
               Each item will have {transaction?.items?.reduce((sum, item) => sum + item.quantity, 0)} labels generated 
               (one for each quantity ordered). Perfect size for sticking to inventory items.
             </Text>

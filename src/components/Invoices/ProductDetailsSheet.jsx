@@ -4,7 +4,7 @@ import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { QRCodeSVG } from 'qrcode.react';
+import JsBarcode from 'jsbarcode';
 
 const { Title, Text } = Typography;
 
@@ -161,6 +161,67 @@ export function ProductDetailsSheet({ open, onClose, product }) {
       handlePrint();
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Generate professional barcode using JsBarcode
+  const renderBarcode = (code) => {
+    if (!code) return null;
+    
+    try {
+      const canvas = document.createElement('canvas');
+      JsBarcode(canvas, code, {
+        format: "CODE128",
+        width: 2,
+        height: 40,
+        displayValue: true,
+        background: "#ffffff",
+        lineColor: "#000000",
+        margin: 10,
+        fontSize: 12,
+        textAlign: "center",
+        textPosition: "bottom"
+      });
+      
+      return (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          backgroundColor: '#ffffff',
+          padding: '10px',
+          border: '1px solid #ddd',
+          borderRadius: '4px'
+        }}>
+          <img 
+            src={canvas.toDataURL('image/png')} 
+            alt={`Barcode ${code}`}
+            style={{ 
+              maxWidth: '100%', 
+              height: 'auto',
+              display: 'block'
+            }}
+          />
+        </div>
+      );
+    } catch (error) {
+      console.warn('Error generating barcode:', error);
+      // Fallback to text display
+      return (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          backgroundColor: '#ffffff',
+          padding: '10px',
+          border: '1px solid #ddd',
+          borderRadius: '4px',
+          fontSize: '12px',
+          fontFamily: 'monospace'
+        }}>
+          {code}
+        </div>
+      );
     }
   };
 
@@ -516,16 +577,9 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                 </Col>
                 <Col span={8}>
                   <div className="text-center">
-                    <div className="w-24 h-24 mx-auto flex items-center justify-center border rounded bg-white p-2">
+                    <div className="w-full mx-auto flex items-center justify-center bg-white p-2">
                       {product.barcode ? (
-                        <QRCodeSVG 
-                          value={product.barcode}
-                          size={80}
-                          level="M"
-                          includeMargin={false}
-                          bgColor="#FFFFFF"
-                          fgColor="#000000"
-                        />
+                        renderBarcode(product.barcode)
                       ) : (
                         <Text type="secondary" className="text-xs">No SKU</Text>
                       )}
@@ -533,7 +587,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                     <Text type="secondary" className="text-xs mt-2 block text-center">
                       {product.barcode ? (
                         <>
-                          Scan to add to POS
+                          Scan barcode to add to POS
                           <br />
                           SKU: {product.barcode}
                         </>

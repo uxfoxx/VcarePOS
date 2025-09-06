@@ -213,7 +213,7 @@ export function ProductGrid({ collapsed }) {
                 size="large"
                 enterButton={
                   <Button type="primary" icon={<Icon name="qr_code_scanner" />}>
-                    Scan
+                    Scan Barcode
                   </Button>
                 }
               />

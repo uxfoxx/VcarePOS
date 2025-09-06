@@ -128,24 +128,24 @@ async function seedDatabase() {
       // Add colors for Executive Dining Table
       await client.query(`
         INSERT INTO product_colors (id, product_id, name, color_code, image) VALUES
-        ('COLOR-001-1', 'PROD-001', 'Natural Oak', '#D2B48C', 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=400'),
-        ('COLOR-001-2', 'PROD-001', 'Dark Walnut', '#654321', 'https://images.pexels.com/photos/1395967/pexels-photo-1395967.jpeg?auto=compress&cs=tinysrgb&w=400')
+        ('COLOR-PROD-001-DEFAULT', 'PROD-001', 'Natural Oak', '#D2B48C', 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=400'),
+        ('COLOR-PROD-001-WALNUT', 'PROD-001', 'Dark Walnut', '#654321', 'https://images.pexels.com/photos/1395967/pexels-photo-1395967.jpeg?auto=compress&cs=tinysrgb&w=400')
       `);
       
       // Add sizes for Natural Oak color
       await client.query(`
         INSERT INTO product_sizes (id, product_color_id, name, stock, weight, dimensions) VALUES
-        ('SIZE-001-1-1', 'COLOR-001-1', 'Small', 5, 40.0, '{"length": 150, "width": 80, "height": 75, "unit": "cm"}'),
-        ('SIZE-001-1-2', 'COLOR-001-1', 'Medium', 3, 50.0, '{"length": 180, "width": 90, "height": 75, "unit": "cm"}'),
-        ('SIZE-001-1-3', 'COLOR-001-1', 'Large', 2, 60.0, '{"length": 200, "width": 100, "height": 75, "unit": "cm"}')
+        ('SIZE-001-1-1', 'COLOR-PROD-001-DEFAULT', 'Small', 5, 40.0, '{"length": 150, "width": 80, "height": 75, "unit": "cm"}'),
+        ('SIZE-001-1-2', 'COLOR-PROD-001-DEFAULT', 'Medium', 3, 50.0, '{"length": 180, "width": 90, "height": 75, "unit": "cm"}'),
+        ('SIZE-001-1-3', 'COLOR-PROD-001-DEFAULT', 'Large', 2, 60.0, '{"length": 200, "width": 100, "height": 75, "unit": "cm"}')
       `);
       
       // Add sizes for Dark Walnut color
       await client.query(`
         INSERT INTO product_sizes (id, product_color_id, name, stock, weight, dimensions) VALUES
-        ('SIZE-001-2-1', 'COLOR-001-2', 'Small', 3, 40.0, '{"length": 150, "width": 80, "height": 75, "unit": "cm"}'),
-        ('SIZE-001-2-2', 'COLOR-001-2', 'Medium', 2, 50.0, '{"length": 180, "width": 90, "height": 75, "unit": "cm"}'),
-        ('SIZE-001-2-3', 'COLOR-001-2', 'Large', 1, 60.0, '{"length": 200, "width": 100, "height": 75, "unit": "cm"}')
+        ('SIZE-001-2-1', 'COLOR-PROD-001-WALNUT', 'Small', 3, 40.0, '{"length": 150, "width": 80, "height": 75, "unit": "cm"}'),
+        ('SIZE-001-2-2', 'COLOR-PROD-001-WALNUT', 'Medium', 2, 50.0, '{"length": 180, "width": 90, "height": 75, "unit": "cm"}'),
+        ('SIZE-001-2-3', 'COLOR-PROD-001-WALNUT', 'Large', 1, 60.0, '{"length": 200, "width": 100, "height": 75, "unit": "cm"}')
       `);
       
       // Product 2: Executive Office Chair (with colors and sizes)
@@ -172,22 +172,22 @@ async function seedDatabase() {
       // Add colors for Executive Office Chair
       await client.query(`
         INSERT INTO product_colors (id, product_id, name, color_code, image) VALUES
-        ('COLOR-002-1', 'PROD-002', 'Black', '#000000', 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=400'),
-        ('COLOR-002-2', 'PROD-002', 'Brown', '#8B4513', 'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=400')
+        ('COLOR-PROD-002-DEFAULT', 'PROD-002', 'Black', '#000000', 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=400'),
+        ('COLOR-PROD-002-BROWN', 'PROD-002', 'Brown', '#8B4513', 'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=400')
       `);
       
       // Add sizes for Black color
       await client.query(`
         INSERT INTO product_sizes (id, product_color_id, name, stock, weight, dimensions) VALUES
-        ('SIZE-002-1-1', 'COLOR-002-1', 'Standard', 8, 18.5, '{"length": 65, "width": 65, "height": 120, "unit": "cm"}'),
-        ('SIZE-002-1-2', 'COLOR-002-1', 'Large', 5, 20.0, '{"length": 70, "width": 70, "height": 125, "unit": "cm"}')
+        ('SIZE-002-1-1', 'COLOR-PROD-002-DEFAULT', 'Standard', 8, 18.5, '{"length": 65, "width": 65, "height": 120, "unit": "cm"}'),
+        ('SIZE-002-1-2', 'COLOR-PROD-002-DEFAULT', 'Large', 5, 20.0, '{"length": 70, "width": 70, "height": 125, "unit": "cm"}')
       `);
       
       // Add sizes for Brown color
       await client.query(`
         INSERT INTO product_sizes (id, product_color_id, name, stock, weight, dimensions) VALUES
-        ('SIZE-002-2-1', 'COLOR-002-2', 'Standard', 4, 18.5, '{"length": 65, "width": 65, "height": 120, "unit": "cm"}'),
-        ('SIZE-002-2-2', 'COLOR-002-2', 'Large', 3, 20.0, '{"length": 70, "width": 70, "height": 125, "unit": "cm"}')
+        ('SIZE-002-2-1', 'COLOR-PROD-002-BROWN', 'Standard', 4, 18.5, '{"length": 65, "width": 65, "height": 120, "unit": "cm"}'),
+        ('SIZE-002-2-2', 'COLOR-PROD-002-BROWN', 'Large', 3, 20.0, '{"length": 70, "width": 70, "height": 125, "unit": "cm"}')
       `);
       
       // Product 3: Modern Coffee Table (PRE-ORDER ENABLED - OUT OF STOCK)
@@ -214,22 +214,22 @@ async function seedDatabase() {
       // Add colors for Modern Coffee Table (pre-order product)
       await client.query(`
         INSERT INTO product_colors (id, product_id, name, color_code, image) VALUES
-        ('COLOR-003-1', 'PROD-003', 'Dark Walnut', '#654321', 'https://images.pexels.com/photos/2082090/pexels-photo-2082090.jpeg?auto=compress&cs=tinysrgb&w=400'),
-        ('COLOR-003-2', 'PROD-003', 'Light Oak', '#D2B48C', 'https://images.pexels.com/photos/1571468/pexels-photo-1571468.jpeg?auto=compress&cs=tinysrgb&w=400')
+        ('COLOR-PROD-003-DEFAULT', 'PROD-003', 'Dark Walnut', '#654321', 'https://images.pexels.com/photos/2082090/pexels-photo-2082090.jpeg?auto=compress&cs=tinysrgb&w=400'),
+        ('COLOR-PROD-003-LIGHT', 'PROD-003', 'Light Oak', '#D2B48C', 'https://images.pexels.com/photos/1571468/pexels-photo-1571468.jpeg?auto=compress&cs=tinysrgb&w=400')
       `);
       
       // Add sizes for Dark Walnut color (all out of stock for pre-order testing)
       await client.query(`
         INSERT INTO product_sizes (id, product_color_id, name, stock, weight, dimensions) VALUES
-        ('SIZE-003-1-1', 'COLOR-003-1', 'Standard', 0, 25.0, '{"length": 120, "width": 60, "height": 45, "unit": "cm"}'),
-        ('SIZE-003-1-2', 'COLOR-003-1', 'Large', 0, 30.0, '{"length": 140, "width": 70, "height": 45, "unit": "cm"}')
+        ('SIZE-003-1-1', 'COLOR-PROD-003-DEFAULT', 'Standard', 0, 25.0, '{"length": 120, "width": 60, "height": 45, "unit": "cm"}'),
+        ('SIZE-003-1-2', 'COLOR-PROD-003-DEFAULT', 'Large', 0, 30.0, '{"length": 140, "width": 70, "height": 45, "unit": "cm"}')
       `);
       
       // Add sizes for Light Oak color (all out of stock for pre-order testing)
       await client.query(`
         INSERT INTO product_sizes (id, product_color_id, name, stock, weight, dimensions) VALUES
-        ('SIZE-003-2-1', 'COLOR-003-2', 'Standard', 0, 25.0, '{"length": 120, "width": 60, "height": 45, "unit": "cm"}'),
-        ('SIZE-003-2-2', 'COLOR-003-2', 'Large', 0, 30.0, '{"length": 140, "width": 70, "height": 45, "unit": "cm"}')
+        ('SIZE-003-2-1', 'COLOR-PROD-003-LIGHT', 'Standard', 0, 25.0, '{"length": 120, "width": 60, "height": 45, "unit": "cm"}'),
+        ('SIZE-003-2-2', 'COLOR-PROD-003-LIGHT', 'Large', 0, 30.0, '{"length": 140, "width": 70, "height": 45, "unit": "cm"}')
       `);
       
       // Product 4: Bookshelf (regular product with stock)
@@ -256,15 +256,15 @@ async function seedDatabase() {
       // Add colors for Bookshelf
       await client.query(`
         INSERT INTO product_colors (id, product_id, name, color_code, image) VALUES
-        ('COLOR-004-1', 'PROD-004', 'Natural Oak', '#D2B48C', 'https://images.pexels.com/photos/696407/pexels-photo-696407.jpeg?auto=compress&cs=tinysrgb&w=400')
+        ('COLOR-PROD-004-DEFAULT', 'PROD-004', 'Natural Oak', '#D2B48C', 'https://images.pexels.com/photos/696407/pexels-photo-696407.jpeg?auto=compress&cs=tinysrgb&w=400')
       `);
       
       // Add sizes for Bookshelf
       await client.query(`
         INSERT INTO product_sizes (id, product_color_id, name, stock, weight, dimensions) VALUES
-        ('SIZE-004-1-1', 'COLOR-004-1', 'Small', 5, 30.0, '{"length": 60, "width": 30, "height": 150, "unit": "cm"}'),
-        ('SIZE-004-1-2', 'COLOR-004-1', 'Medium', 3, 40.0, '{"length": 80, "width": 30, "height": 180, "unit": "cm"}'),
-        ('SIZE-004-1-3', 'COLOR-004-1', 'Large', 2, 50.0, '{"length": 100, "width": 30, "height": 200, "unit": "cm"}')
+        ('SIZE-004-1-1', 'COLOR-PROD-004-DEFAULT', 'Small', 5, 30.0, '{"length": 60, "width": 30, "height": 150, "unit": "cm"}'),
+        ('SIZE-004-1-2', 'COLOR-PROD-004-DEFAULT', 'Medium', 3, 40.0, '{"length": 80, "width": 30, "height": 180, "unit": "cm"}'),
+        ('SIZE-004-1-3', 'COLOR-PROD-004-DEFAULT', 'Large', 2, 50.0, '{"length": 100, "width": 30, "height": 200, "unit": "cm"}')
       `);
       
       // Product 5: Premium Sofa (PRE-ORDER ENABLED - OUT OF STOCK)
@@ -312,13 +312,13 @@ async function seedDatabase() {
       // Add colors for Simple Dining Chair
       await client.query(`
         INSERT INTO product_colors (id, product_id, name, color_code, image) VALUES
-        ('COLOR-006-1', 'PROD-006', 'Beige', '#F5F5DC', 'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=400')
+        ('COLOR-PROD-006-DEFAULT', 'PROD-006', 'Beige', '#F5F5DC', 'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=400')
       `);
       
       // Add sizes for Simple Dining Chair
       await client.query(`
         INSERT INTO product_sizes (id, product_color_id, name, stock, weight, dimensions) VALUES
-        ('SIZE-006-1-1', 'COLOR-006-1', 'Standard', 12, 8.5, '{"length": 45, "width": 45, "height": 85, "unit": "cm"}')
+        ('SIZE-006-1-1', 'COLOR-PROD-006-DEFAULT', 'Standard', 12, 8.5, '{"length": 45, "width": 45, "height": 85, "unit": "cm"}')
       `);
       
       // Product 7: Test Pre-order Table (ZERO STOCK + PRE-ORDER for testing)
@@ -345,30 +345,30 @@ async function seedDatabase() {
       // Add colors for Designer Glass Table (pre-order product)
       await client.query(`
         INSERT INTO product_colors (id, product_id, name, color_code, image) VALUES
-        ('COLOR-007-1', 'PROD-007', 'Clear', '#FFFFFF', 'https://images.pexels.com/photos/1571468/pexels-photo-1571468.jpeg?auto=compress&cs=tinysrgb&w=400')
+        ('COLOR-PROD-007-DEFAULT', 'PROD-007', 'Clear', '#FFFFFF', 'https://images.pexels.com/photos/1571468/pexels-photo-1571468.jpeg?auto=compress&cs=tinysrgb&w=400')
       `);
       
       // Add sizes for Designer Glass Table (all zero stock for pre-order testing)
       await client.query(`
         INSERT INTO product_sizes (id, product_color_id, name, stock, weight, dimensions) VALUES
-        ('SIZE-007-1-1', 'COLOR-007-1', 'Standard', 0, 35.0, '{"length": 160, "width": 90, "height": 75, "unit": "cm"}'),
-        ('SIZE-007-1-2', 'COLOR-007-1', 'Large', 0, 45.0, '{"length": 200, "width": 100, "height": 75, "unit": "cm"}')
+        ('SIZE-007-1-1', 'COLOR-PROD-007-DEFAULT', 'Standard', 0, 35.0, '{"length": 160, "width": 90, "height": 75, "unit": "cm"}'),
+        ('SIZE-007-1-2', 'COLOR-PROD-007-DEFAULT', 'Large', 0, 45.0, '{"length": 200, "width": 100, "height": 75, "unit": "cm"}')
       `);
       
       // Add colors for Premium Sofa (pre-order product)
       await client.query(`
         INSERT INTO product_colors (id, product_id, name, color_code, image) VALUES
-        ('COLOR-005-1', 'PROD-005', 'Brown', '#8B4513', 'https://images.pexels.com/photos/276583/pexels-photo-276583.jpeg?auto=compress&cs=tinysrgb&w=400'),
-        ('COLOR-005-2', 'PROD-005', 'Black', '#000000', 'https://images.pexels.com/photos/1571468/pexels-photo-1571468.jpeg?auto=compress&cs=tinysrgb&w=400')
+        ('COLOR-PROD-005-DEFAULT', 'PROD-005', 'Brown', '#8B4513', 'https://images.pexels.com/photos/276583/pexels-photo-276583.jpeg?auto=compress&cs=tinysrgb&w=400'),
+        ('COLOR-PROD-005-BLACK', 'PROD-005', 'Black', '#000000', 'https://images.pexels.com/photos/1571468/pexels-photo-1571468.jpeg?auto=compress&cs=tinysrgb&w=400')
       `);
       
       // Add sizes for Premium Sofa (all out of stock for pre-order testing)
       await client.query(`
         INSERT INTO product_sizes (id, product_color_id, name, stock, weight, dimensions) VALUES
-        ('SIZE-005-1-1', 'COLOR-005-1', '2-Seater', 0, 70.0, '{"length": 180, "width": 90, "height": 85, "unit": "cm"}'),
-        ('SIZE-005-1-2', 'COLOR-005-1', '3-Seater', 0, 85.0, '{"length": 220, "width": 90, "height": 85, "unit": "cm"}'),
-        ('SIZE-005-2-1', 'COLOR-005-2', '2-Seater', 0, 70.0, '{"length": 180, "width": 90, "height": 85, "unit": "cm"}'),
-        ('SIZE-005-2-2', 'COLOR-005-2', '3-Seater', 0, 85.0, '{"length": 220, "width": 90, "height": 85, "unit": "cm"}')
+        ('SIZE-005-1-1', 'COLOR-PROD-005-DEFAULT', '2-Seater', 0, 70.0, '{"length": 180, "width": 90, "height": 85, "unit": "cm"}'),
+        ('SIZE-005-1-2', 'COLOR-PROD-005-DEFAULT', '3-Seater', 0, 85.0, '{"length": 220, "width": 90, "height": 85, "unit": "cm"}'),
+        ('SIZE-005-2-1', 'COLOR-PROD-005-BLACK', '2-Seater', 0, 70.0, '{"length": 180, "width": 90, "height": 85, "unit": "cm"}'),
+        ('SIZE-005-2-2', 'COLOR-PROD-005-BLACK', '3-Seater', 0, 85.0, '{"length": 220, "width": 90, "height": 85, "unit": "cm"}')
       `);
       
       // Update total stock for all products (sum of all sizes)

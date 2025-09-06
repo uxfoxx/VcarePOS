@@ -102,7 +102,20 @@ export function CheckoutModal({
       const allValues = await form.validateFields();
       
       const transactionData = {
-        items: cartItems,
+        items: cartItems.map(cartItem => ({
+          product: {
+            id: cartItem.product.id,
+            name: cartItem.product.name,
+            price: cartItem.product.price,
+            barcode: cartItem.product.barcode,
+            category: cartItem.product.category,
+            image: cartItem.product.image
+          },
+          quantity: cartItem.quantity,
+          selectedColorId: cartItem.selectedColorId,
+          selectedSize: cartItem.selectedSize,
+          addons: cartItem.addons || []
+        })),
         subtotal,
         categoryTaxTotal,
         fullBillTaxTotal,

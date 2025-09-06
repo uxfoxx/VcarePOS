@@ -140,8 +140,6 @@ export function CheckoutModal({
         cashier: `${currentUser.firstName} ${currentUser.lastName}`,
        salesperson: allValues.salesperson,
        salespersonId: users.find(u => `${u.firstName} ${u.lastName}` === allValues.salesperson)?.id
-        salesperson: allValues.salesperson,
-        salespersonId: users.find(u => `${u.firstName} ${u.lastName}` === allValues.salesperson)?.id
       };
 
       dispatch(createTransaction(transactionData));

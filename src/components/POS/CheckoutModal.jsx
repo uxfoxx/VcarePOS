@@ -122,24 +122,18 @@ export function CheckoutModal({
         totalTax,
         discount,
         total,
-       paymentMethod: allValues.paymentMethod,
-       customerName: allValues.customerName || 'Walk-in Customer',
-       customerPhone: allValues.customerPhone,
-       customerEmail: allValues.customerEmail,
-       customerAddress: allValues.customerAddress,
         paymentMethod: allValues.paymentMethod,
         customerName: allValues.customerName || 'Walk-in Customer',
         customerPhone: allValues.customerPhone,
         customerEmail: allValues.customerEmail,
         customerAddress: allValues.customerAddress,
         appliedCoupon,
-       notes: allValues.notes,
         notes: allValues.notes,
         status: 'completed',
         appliedTaxes,
         cashier: `${currentUser.firstName} ${currentUser.lastName}`,
-       salesperson: allValues.salesperson,
-       salespersonId: users.find(u => `${u.firstName} ${u.lastName}` === allValues.salesperson)?.id
+        salesperson: allValues.salesperson,
+        salespersonId: users.find(u => `${u.firstName} ${u.lastName}` === allValues.salesperson)?.id
       };
 
       dispatch(createTransaction(transactionData));

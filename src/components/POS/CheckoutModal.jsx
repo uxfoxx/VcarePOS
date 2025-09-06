@@ -336,7 +336,7 @@ export function CheckoutModal({
         <Form
           form={form}
           layout="vertical"
-          preserve={false}
+          preserve={true}
         >
           <div className="min-h-[300px]">
             {currentStep === 0 && renderCustomerStep()}

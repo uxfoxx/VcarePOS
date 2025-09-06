@@ -607,7 +607,29 @@ router.post(
         
         // Update product stock
         if (item.selectedSize && item.selectedColorId) {
-          // Update specific size stock using the correct relationship chain
+          // Check if the size exists before updating stock
+          const sizeCheckResult = await client.query(`
+            SELECT id FROM product_sizes 
+            WHERE product_color_id = $1 AND name = $2
+          `, [item.selectedColorId, item.selectedSize]);
+          
+          if (sizeCheckResult.rows.length > 0) {
+            // Update specific size stock
+          const sizeCheckResult = await client.query(`
+            SELECT id, stock FROM product_sizes 
+            WHERE product_color_id = $1 AND name = $2
+          `, [item.selectedColorId, item.selectedSize]);
+          
+          if (sizeCheckResult.rows.length === 0) {
+            throw new Error(`Size "${item.selectedSize}" not found for color "${item.selectedColorId}" in product "${item.product.name}"`);
+          }
+          
+          const currentSizeStock = sizeCheckResult.rows[0].stock;
+          if (currentSizeStock < item.quantity) {
+            throw new Error(`Insufficient stock for ${item.product.name} - ${item.selectedSize}. Available: ${currentSizeStock}, Required: ${item.quantity}`);
+          }
+          
+          // Update specific size stock
           await client.query(`
             UPDATE product_sizes
             SET stock = stock - $1
@@ -919,6 +941,7 @@ router.post(
               )
               WHERE id = $1
             `, [item.product.id]);
+          }
           } else {
             // Restore regular product stock
             await client.query(`
@@ -939,7 +962,14 @@ router.post(
         
         for (const item of itemsResult.rows) {
           if (item.selected_size && item.selected_color_id) {
-            // Restore size stock using correct relationship chain
+            // Check if the size exists before restoring stock
+            const sizeCheckResult = await client.query(`
+              SELECT id FROM product_sizes 
+              WHERE product_color_id = $1 AND name = $2
+            `, [item.selected_color_id, item.selected_size]);
+            
+            if (sizeCheckResult.rows.length > 0) {
+              // Restore size stock
             await client.query(`
               UPDATE product_sizes 
               SET stock = stock + $1
@@ -961,6 +991,7 @@ router.post(
               )
               WHERE id = $1
             `, [item.product_id]);
+            }
           } else {
             // Restore regular product stock
             await client.query(`

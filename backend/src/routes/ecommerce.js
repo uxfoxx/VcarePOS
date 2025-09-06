@@ -722,17 +722,20 @@ router.post(
         // Update product stock
         // Only update stock if product doesn't allow pre-orders OR has actual inventory
         if (item.selectedSize && item.selectedColorId) {
-          // Get current size stock
+          // Check if the size exists and get current stock
           const sizeStockResult = await client.query(`
-            SELECT ps.stock FROM product_sizes ps
-            JOIN product_colors pc ON ps.product_color_id = pc.id
-            WHERE pc.id = $1 AND ps.name = $2
+            SELECT stock FROM product_sizes
+            WHERE product_color_id = $1 AND name = $2
           `, [item.selectedColorId, item.selectedSize]);
+          
+          if (sizeStockResult.rows.length === 0) {
+            throw new Error(`Size "${item.selectedSize}" not found for color "${item.selectedColorId}" in product "${product.name}"`);
+          }
           
           const currentSizeStock = sizeStockResult.rows[0]?.stock || 0;
           
           // Only update stock if NOT a pre-order item AND we have actual inventory to deduct
-          if (!product.allow_preorder && currentSizeStock >= item.quantity) {
+          if (currentSizeStock >= item.quantity || product.allow_preorder) {
             // Update specific size stock
             await client.query(`
               UPDATE product_sizes
@@ -770,16 +773,20 @@ router.post(
                 material.raw_material_id
               ]);
             }
+          } else if (!product.allow_preorder) {
+            throw new Error(`Insufficient stock for ${product.name} - ${item.selectedSize}. Available: ${currentSizeStock}, Required: ${item.quantity}`);
           }
         } else {
           // For products without color/size variations
           // Only update stock if NOT a pre-order item AND we have actual inventory to deduct
-          if (!product.allow_preorder && product.stock >= item.quantity) {
+          if (product.stock >= item.quantity || product.allow_preorder) {
             await client.query(`
               UPDATE products
               SET stock = stock - $1
               WHERE id = $2
             `, [item.quantity, item.product.id]);
+          } else if (!product.allow_preorder) {
+            throw new Error(`Insufficient stock for ${product.name}. Available: ${product.stock}, Required: ${item.quantity}`);
           }
         }
         

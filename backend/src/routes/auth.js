@@ -4,7 +4,7 @@ const { pool } = require('../utils/db');
 const { generateToken, comparePassword, hashPassword } = require('../utils/auth');
 const { authenticate } = require('../middleware/auth');
 const { logger } = require('../utils/logger');
-const { logAuthEvent, logRequestDetails } = require('../utils/loggerUtils');
+const { logAuthEvent, logRequestDetails, handleRouteError } = require('../utils/loggerUtils');
 
 const router = express.Router();
 
@@ -300,8 +300,7 @@ router.post('/logout', authenticate, async (req, res) => {
     
     res.json({ success: true, message: 'Logged out successfully' });
   } catch (error) {
-    console.error('Logout error:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Auth - Logout');
   }
 });
 
@@ -353,8 +352,7 @@ router.get('/me', authenticate, async (req, res) => {
       lastLogin: user.last_login
     });
   } catch (error) {
-    console.error('Get current user error:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Auth - Get Current User');
   }
 });
 
@@ -455,8 +453,7 @@ router.put(
       
       res.json({ success: true, message: 'Password updated successfully' });
     } catch (error) {
-      console.error('Change password error:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Auth - Change Password');
     }
   }
 );

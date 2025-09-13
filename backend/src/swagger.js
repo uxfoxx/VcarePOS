@@ -11,7 +11,7 @@ const options = {
     },
     servers: [
       { url: 'http://localhost:3000/api/' },
-      { url: 'http://167.71.207.88:3000/api/' }
+      { url: 'https://vcarepos-api.nimesha.dev/api/' }
     ],
   },
   apis: ['./src/routes/*.js'], // All route files

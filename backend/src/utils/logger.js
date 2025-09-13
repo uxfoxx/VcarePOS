@@ -115,6 +115,21 @@ const logger = winston.createLogger({
       format: fileFormat,
       zippedArchive: true,
     }),
+    // Request failures log - dedicated file for debugging failed requests
+    new winston.transports.DailyRotateFile({
+      filename: path.join(logDir, 'request-failures-%DATE%.log'),
+      datePattern: 'YYYY-MM-DD',
+      level: 'warn', // Will capture warn and error level request failures
+      maxSize: '20m',
+      maxFiles: '30d', // keep request failure logs longer for debugging
+      format: fileFormat,
+      zippedArchive: true,
+      // Filter to only capture request-related failures
+      filter: (info) => {
+        return info.requestFailure === true || info.timeout === true || 
+               (info.level === 'error' && (info.reqId || info.requestId));
+      }
+    }),
   ],
   exceptionHandlers: [
     new winston.transports.DailyRotateFile({
@@ -220,6 +235,37 @@ const requestLogger = (req, res, next) => {
     if (res.statusCode >= 400) {
       logMeta.ip = req.ip;
     }
+
+    // For failed requests, add detailed context for debugging
+    if (res.statusCode >= 400) {
+      const failureDetails = {
+        ...logMeta,
+        requestFailure: true,
+        method: req.method,
+        url: req.originalUrl,
+        userAgent: req.get('User-Agent'),
+        contentType: req.get('Content-Type'),
+        contentLength: req.get('Content-Length'),
+        referer: req.get('Referer'),
+        requestBody: maskSensitiveData(req.body),
+        queryParams: maskSensitiveData(req.query),
+        routeParams: req.params,
+        user: req.user ? { 
+          id: req.user.id, 
+          role: req.user.role,
+          email: req.user.email 
+        } : null,
+        sessionId: req.sessionID,
+        timestamp: new Date().toISOString()
+      };
+
+      // Log detailed failure information
+      if (res.statusCode >= 500) {
+        logger.error(`Request Failure: ${message}`, failureDetails);
+      } else if (res.statusCode >= 400) {
+        logger.warn(`Request Failure: ${message}`, failureDetails);
+      }
+    }
     
     // Log request info with appropriate level based on status code
     if (res.statusCode >= 500) {
@@ -245,11 +291,73 @@ const createChildLogger = (component) => {
   };
 };
 
+/**
+ * Log request timeout with detailed context
+ * @param {Object} req - Express request object
+ * @param {number} timeoutDuration - Timeout duration in milliseconds
+ */
+const logRequestTimeout = (req, timeoutDuration = 60000) => {
+  const timeoutDetails = {
+    timeout: true,
+    requestFailure: true,
+    reqId: req.requestId,
+    method: req.method,
+    url: req.originalUrl,
+    timeoutMs: timeoutDuration,
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+    user: req.user ? { 
+      id: req.user.id, 
+      role: req.user.role 
+    } : null,
+    timestamp: new Date().toISOString()
+  };
+
+  logger.error(`Request Timeout: ${req.method} ${req.originalUrl} (${timeoutDuration}ms)`, timeoutDetails);
+};
+
+/**
+ * Log detailed error context for debugging
+ * @param {Error} error - The error object
+ * @param {Object} req - Express request object
+ * @param {string} context - Additional context about where the error occurred
+ */
+const logErrorWithContext = (error, req, context = 'Request') => {
+  const errorId = `err_${Date.now().toString(36)}`;
+  
+  const errorDetails = {
+    id: errorId,
+    requestFailure: true,
+    reqId: req.requestId,
+    context,
+    error: error.message,
+    stack: error.stack,
+    method: req.method,
+    url: req.originalUrl,
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+    user: req.user ? { 
+      id: req.user.id, 
+      role: req.user.role,
+      email: req.user.email 
+    } : null,
+    requestBody: maskSensitiveData(req.body),
+    queryParams: maskSensitiveData(req.query),
+    routeParams: req.params,
+    timestamp: new Date().toISOString()
+  };
+
+  logger.error(`${context} Error [${errorId}]: ${error.message}`, errorDetails);
+  return errorId;
+};
+
 module.exports = {
   logger,
   requestLogger,
   maskSensitiveData,
   createChildLogger,
+  logRequestTimeout,
+  logErrorWithContext,
   // Convenience methods
   error: (message, meta) => logger.error(message, meta),
   warn: (message, meta) => logger.warn(message, meta),

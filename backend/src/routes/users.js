@@ -3,6 +3,7 @@ const { body, param, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { authenticate, authorize, hasPermission } = require('../middleware/auth');
 const { hashPassword } = require('../utils/auth');
+const { handleRouteError } = require('../utils/loggerUtils');
 
 const router = express.Router();
 
@@ -205,8 +206,7 @@ router.get(
       
       res.json(users);
     } catch (error) {
-      console.error('Error fetching users:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Users - Fetching users:');
     }
   }
 );
@@ -250,8 +250,7 @@ router.get(
         lastLogin: user.last_login
       });
     } catch (error) {
-      console.error('Error fetching user:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Users - Fetching user:');
     }
   }
 );
@@ -357,8 +356,7 @@ router.post(
         createdAt: user.created_at
       });
     } catch (error) {
-      console.error('Error creating user:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Users - Creating user:');
     }
   }
 );
@@ -474,8 +472,7 @@ router.put(
         lastLogin: user.last_login
       });
     } catch (error) {
-      console.error('Error updating user:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Users - Updating user:');
     }
   }
 );
@@ -520,8 +517,7 @@ router.delete(
       
       res.json({ message: 'User deleted successfully' });
     } catch (error) {
-      console.error('Error deleting user:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Users - Deleting user:');
     }
   }
 );

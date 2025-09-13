@@ -2,6 +2,7 @@ const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { authenticate, hasPermission } = require('../middleware/auth');
+const { handleRouteError } = require('../utils/loggerUtils');
 
 const router = express.Router();
 
@@ -176,8 +177,7 @@ router.get('/', authenticate, async (req, res) => {
       createdAt: category.created_at
     })));
   } catch (error) {
-    console.error('Error fetching categories:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Categories - Fetching categories:');
   }
 });
 
@@ -208,8 +208,7 @@ router.get('/:id', authenticate, async (req, res) => {
       createdAt: category.created_at
     });
   } catch (error) {
-    console.error('Error fetching category:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Categories - Fetching category:');
   }
 });
 
@@ -271,8 +270,7 @@ router.post(
         createdAt: category.created_at
       });
     } catch (error) {
-      console.error('Error creating category:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Categories - Creating category:');
     }
   }
 );
@@ -354,8 +352,7 @@ router.put(
         createdAt: category.created_at
       });
     } catch (error) {
-      console.error('Error updating category:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Categories - Updating category:');
     }
   }
 );
@@ -409,8 +406,7 @@ router.delete(
       
       res.json({ message: 'Category deleted successfully' });
     } catch (error) {
-      console.error('Error deleting category:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Categories - Deleting category:');
     }
   }
 );

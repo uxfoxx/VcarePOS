@@ -4,7 +4,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs').promises;
-const { logSystemMetrics } = require('../utils/loggerUtils');
+const { logSystemMetrics, handleRouteError } = require('../utils/loggerUtils');
 const { logger } = require('../utils/logger');
 const { authenticate } = require('../middleware/auth');
 

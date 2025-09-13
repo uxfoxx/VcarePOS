@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Typography, Divider, Row, Col, Space, Image, Button } from 'antd';
+import { Modal, Typography, Divider, Row, Col, Space, Image } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
@@ -9,11 +9,49 @@ const { Title, Text } = Typography;
 
 export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) {
   const [loading, setLoading] = useState(false);
-  
+
   if (!transaction) return null;
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    const element = document.getElementById('invoice-content');
+    if (!element) {
+      console.error('Invoice content element not found');
+      return;
+    }
+
+    // Create a temporary container in the document body
+    const printContainer = document.createElement('div');
+    printContainer.id = 'print-container';
+    printContainer.style.position = 'absolute';
+    printContainer.style.top = '0';
+    printContainer.style.left = '0';
+    printContainer.style.width = '210mm';
+    printContainer.style.height = 'auto';
+    printContainer.style.padding = '8mm';
+    printContainer.style.backgroundColor = '#ffffff';
+
+    // Clone the content and append to the temporary container
+    const clonedContent = element.cloneNode(true);
+    printContainer.appendChild(clonedContent);
+    document.body.appendChild(printContainer);
+
+    // Force reflow to ensure content is rendered
+    clonedContent.style.display = 'none';
+    clonedContent.offsetHeight; // Trigger reflow
+    clonedContent.style.display = 'block';
+
+    // Wait briefly to ensure rendering
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    try {
+      // Trigger print
+      window.print();
+    } catch (error) {
+      console.error('Error during print:', error);
+    } finally {
+      // Clean up: remove the temporary container
+      document.body.removeChild(printContainer);
+    }
   };
 
   const handleView = async () => {
@@ -36,7 +74,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
         height: element.scrollHeight
       });
 
-      // Calculate PDF dimensions
+       // Calculate PDF dimensions
       const imgWidth = 210; // A4 width in mm
       const pageHeight = 295; // A4 height in mm
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -46,7 +84,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
       const pdf = new jsPDF('p', 'mm', 'a4');
       let position = 0;
 
-      // Add first page
+       // Add first page
       pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
 
@@ -91,7 +129,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
         height: element.scrollHeight
       });
 
-      // Calculate PDF dimensions
+       // Calculate PDF dimensions
       const imgWidth = 210; // A4 width in mm
       const pageHeight = 295; // A4 height in mm
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -113,12 +151,12 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
         heightLeft -= pageHeight;
       }
 
-      // Download the PDF
+       // Download the PDF
       const filename = `${type === 'detailed' ? 'invoice' : 'labels'}-${transaction.id}.pdf`;
       pdf.save(filename);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      // Fallback to print
+      // Fallback to print 
       handlePrint();
     } finally {
       setLoading(false);
@@ -127,27 +165,27 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
 
   const renderDetailedInvoice = () => (
     <div id="invoice-content" className="p-8 bg-white" style={{ fontFamily: 'Arial, sans-serif' }}>
-      {/* Header */}
+     {/* Header */}  
       <div className="text-center mb-8">
         <div className="flex items-center justify-center space-x-4 mb-4">
           <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center">
-            <img 
-              src={localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
-                ? JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
-                : "/VCARELogo 1.png"} 
-              alt="VCare Logo" 
+            <img
+              src={localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview
+                ? JSON.parse(localStorage.getItem('vcare_branding')).logoPreview
+                : "/VCARELogo 1.png"}
+              alt="VCare Logo"
               className="w-10 h-10 object-contain"
             />
           </div>
           <div>
             <Title level={2} className="m-0 text-blue-600">
-              {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
-                ? JSON.parse(localStorage.getItem('vcare_branding')).businessName 
+              {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName
+                ? JSON.parse(localStorage.getItem('vcare_branding')).businessName
                 : "VCare Furniture Store"}
             </Title>
             <Text type="secondary">
-              {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).tagline 
-                ? JSON.parse(localStorage.getItem('vcare_branding')).tagline 
+              {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).tagline
+                ? JSON.parse(localStorage.getItem('vcare_branding')).tagline
                 : "Premium Furniture Solutions"}
             </Text>
           </div>
@@ -156,22 +194,22 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
         <Title level={3} className="text-gray-800">INVOICE</Title>
       </div>
 
-      {/* Invoice Details */}
+        {/* Invoice Details */}
       <Row gutter={32} className="mb-6">
         <Col span={12}>
           <div className="space-y-2">
             <Text strong>Invoice Number:</Text>
             <Text className="block">{transaction.id}</Text>
-            
+
             <Text strong>Date:</Text>
             <Text className="block">{new Date(transaction.timestamp).toLocaleDateString()}</Text>
             
             <Text strong>Time:</Text>
             <Text className="block">{new Date(transaction.timestamp).toLocaleTimeString()}</Text>
-            
-            <Text strong>Cashier:</Text>
+           
+           <Text strong>Cashier:</Text>
             <Text className="block">{transaction.cashier}</Text>
-
+            
             {transaction.salesperson && (
               <>
                 <Text strong>Sales Person:</Text>
@@ -264,10 +302,10 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
         </table>
       </div>
 
-      {/* Totals */}
+       {/* Totals */}
       <Row gutter={32}>
         <Col span={12}>
-          {/* Payment Info */}
+          {/* Payment Info */} 
           <div className="space-y-2">
             <Text strong>Payment Information:</Text>
             <div className="border-l-4 border-green-500 pl-4">
@@ -306,7 +344,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
         </Col>
       </Row>
 
-      {/* Notes */}
+        {/* Notes */}
       {transaction.notes && (
         <div className="mt-6">
           <Text strong>Order Notes:</Text>
@@ -319,20 +357,20 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
       {/* Footer */}
       <div className="mt-8 pt-6 border-t text-center">
         <Text type="secondary" className="text-sm">
-          {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).receiptFooter 
-            ? JSON.parse(localStorage.getItem('vcare_branding')).receiptFooter 
+          {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).receiptFooter
+            ? JSON.parse(localStorage.getItem('vcare_branding')).receiptFooter
             : "Thank you for your business! For any questions, please contact us."}
         </Text>
         <br />
         <Text type="secondary" className="text-sm">
-          {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
-            ? JSON.parse(localStorage.getItem('vcare_branding')).businessName 
+          {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName
+            ? JSON.parse(localStorage.getItem('vcare_branding')).businessName
             : "VCare Furniture Store"} | 
-          {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).address 
-            ? JSON.parse(localStorage.getItem('vcare_branding')).address 
+          {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).address
+            ? JSON.parse(localStorage.getItem('vcare_branding')).address
             : "123 Main Street, City, State 12345"} | 
-          {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).phoneNumber 
-            ? JSON.parse(localStorage.getItem('vcare_branding')).phoneNumber 
+          {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).phoneNumber
+            ? JSON.parse(localStorage.getItem('vcare_branding')).phoneNumber
             : "(555) 123-4567"}
         </Text>
       </div>
@@ -341,11 +379,11 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
 
   const renderItemLabel = () => (
     <div id="invoice-content" className="p-4 bg-white max-w-md mx-auto">
-      {/* Multiple labels for each item */}
-      {transaction.items.map((item, itemIndex) => 
+       {/* Multiple labels for each item */}
+      {transaction.items.map((item, itemIndex) =>
         Array.from({ length: item.quantity }, (_, qtyIndex) => (
           <div key={`${itemIndex}-${qtyIndex}`} className="border-2 border-dashed border-gray-400 p-4 mb-4 page-break-after">
-            {/* Header */}
+             {/* Header */}
             <div className="text-center mb-3">
               <div className="w-8 h-8 bg-blue-600 rounded mx-auto mb-2 flex items-center justify-center">
                 <span className="text-white font-bold text-sm">VC</span>
@@ -355,7 +393,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
 
             <Divider className="my-2" />
 
-            {/* Item Info */}
+           {/* Item Info */}
             <div className="space-y-2">
               <div>
                 <Text strong className="text-base">{item.product.name}</Text>
@@ -365,26 +403,26 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
                 <Text type="secondary">SKU:</Text>
                 <Text code>{item.product.barcode}</Text>
               </div>
-
+              
               <div className="flex justify-between">
                 <Text type="secondary">Category:</Text>
                 <Text>{item.product.category}</Text>
               </div>
-
+              
               {item.product.material && (
                 <div className="flex justify-between">
                   <Text type="secondary">Material:</Text>
                   <Text>{item.product.material}</Text>
                 </div>
               )}
-
+              
               {item.product.color && (
                 <div className="flex justify-between">
                   <Text type="secondary">Color:</Text>
                   <Text>{item.product.color}</Text>
                 </div>
               )}
-
+              
               {item.product.dimensions && (
                 <div className="flex justify-between">
                   <Text type="secondary">Size:</Text>
@@ -397,7 +435,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
 
             <Divider className="my-2" />
 
-            {/* Order Info */}
+             {/* Order Info */}
             <div className="space-y-1">
               <div className="flex justify-between">
                 <Text type="secondary" className="text-xs">Order:</Text>
@@ -413,14 +451,14 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
                 <Text type="secondary" className="text-xs">Date:</Text>
                 <Text className="text-xs">{new Date(transaction.timestamp).toLocaleDateString()}</Text>
               </div>
-
+              
               <div className="flex justify-between">
                 <Text type="secondary" className="text-xs">Item:</Text>
                 <Text className="text-xs">{qtyIndex + 1} of {item.quantity}</Text>
               </div>
             </div>
 
-            {/* QR Code placeholder */}
+             {/* QR Code placeholder */}
             <div className="mt-3 text-center">
               <div className="w-16 h-16 bg-gray-200 mx-auto flex items-center justify-center border">
                 <Text type="secondary" className="text-xs">QR</Text>
@@ -434,49 +472,84 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
   );
 
   return (
-    <Modal
-      title={
-        <Space>
-          <Icon name={type === 'detailed' ? 'receipt_long' : 'label'} className="text-blue-600" />
-          <span>{type === 'detailed' ? 'Invoice' : 'Item Labels'}</span>
-        </Space>
-      }
-      open={open}
-      onCancel={onClose}
-      width={type === 'detailed' ? 900 : 600}
-      footer={[
-        <ActionButton key="close" onClick={onClose}>
-          Close
-        </ActionButton>,
-        <ActionButton 
+    <>
+      <style>
+        {`
+          @media print {
+            body * {
+              visibility: hidden;
+            }
+            #print-container,
+            #print-container * {
+              visibility: visible;
+            }
+            #print-container {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 210mm;
+              height: auto;
+              margin: 0;
+              padding: 8mm;
+              box-sizing: border-box;
+              background-color: #ffffff;
+            }
+            #print-container .page-break-after {
+              page-break-after: always;
+              break-after: page;
+            }
+            .ant-modal,
+            .ant-modal-content,
+            .ant-modal-header,
+            .ant-modal-footer {
+              display: none !important;
+            }
+          `}
+      </style>
+      <Modal
+        title={
+          <Space>
+            <Icon name={type === 'detailed' ? 'receipt_long' : 'label'} className="text-blue-600" />
+            <span>{type === 'detailed' ? 'Invoice' : 'Item Labels'}</span>
+          </Space>
+        }
+        open={open}
+        onCancel={onClose}
+        width={type === 'detailed' ? 900 : 600}
+        footer={[
+          <ActionButton key="close" onClick={onClose}>
+            Close
+          </ActionButton>,
+          <ActionButton 
           key="view" 
           icon="visibility" 
-          onClick={handleView}
+          onClick={handleView} 
           loading={loading}
-        >
-          View PDF
-        </ActionButton>,
-        <ActionButton 
+          >
+            View PDF
+          </ActionButton>,
+          <ActionButton 
           key="download" 
           icon="download" 
-          onClick={handleDownload}
+          onClick={handleDownload} 
           loading={loading}
-        >
-          Download PDF
-        </ActionButton>,
-        <ActionButton.Primary 
+          >
+            Download PDF
+          </ActionButton>,
+          <ActionButton.Primary 
           key="print" 
           icon="print" 
           onClick={handlePrint}
-        >
-          Print
-        </ActionButton.Primary>
-      ]}
-      className="invoice-modal"
-    >
-      <div className="max-h-[70vh] overflow-y-auto">
-        {type === 'detailed' ? renderDetailedInvoice() : renderItemLabel()}
-      </div>
-    </Modal>
+          >
+            Print
+          </ActionButton.Primary>,
+        ]}
+        className="invoice-modal"
+      >
+        <div className="max-h-[70vh] overflow-y-auto">
+          {type === 'detailed' ? renderDetailedInvoice() : renderItemLabel()}
+        </div>
+      </Modal>
+    </>
   );
 }

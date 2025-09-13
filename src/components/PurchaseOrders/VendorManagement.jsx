@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
   fetchVendors, 
@@ -16,12 +16,10 @@ import {
   Input, 
   Typography, 
   Popconfirm, 
-  message,
   Tag,
   Tooltip,
   Select
 } from 'antd';
-import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { SearchInput } from '../common/SearchInput';
 
@@ -33,6 +31,7 @@ export function VendorManagement() {
   const dispatch = useDispatch();
   const vendors = useSelector(state => state.vendors.vendorsList);
   const loading = useSelector(state => state.vendors.loading);
+  const _error = useSelector(state => state.vendors.error); // Available for future error handling
   const [searchTerm, setSearchTerm] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [editingVendor, setEditingVendor] = useState(null);
@@ -42,37 +41,65 @@ export function VendorManagement() {
     dispatch(fetchVendors());
   }, [dispatch]);
 
-  const filteredVendors = vendors.filter(vendor => 
-    vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vendor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vendor.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Safe filtering with null checks
+  const filteredVendors = useMemo(() => {
+    if (!vendors || vendors.length === 0) return [];
+    
+    return vendors.filter(vendor => {
+      if (!vendor) return false;
+      
+      const name = vendor.name?.toLowerCase() || '';
+      const email = vendor.email?.toLowerCase() || '';
+      const category = vendor.category?.toLowerCase() || '';
+      const searchLower = searchTerm.toLowerCase();
+      
+      return name.includes(searchLower) || 
+             email.includes(searchLower) || 
+             category.includes(searchLower);
+    });
+  }, [vendors, searchTerm]);
 
-  const handleAddEdit = () => {
-    form.validateFields()
-      .then(values => {
-        if (editingVendor) {
-          // Update existing vendor
-          const updatedVendor = { ...editingVendor, ...values };
-          dispatch(updateVendor(updatedVendor));
-          message.success('Vendor updated successfully'); // todo
-        } else {
-          // Add new vendor
-          const newVendor = {
-            id: `V${String(vendors.length + 1).padStart(3, '0')}`,
-            ...values,
-            isActive: true
-          };
-          dispatch(addVendor(newVendor));
-          message.success('Vendor added successfully'); // todo
-        }
-        setModalVisible(false);
-        form.resetFields();
-        setEditingVendor(null);
-      })
-      .catch(info => {
-        console.log('Validate Failed:', info);
-      });
+  // Memoized category filters
+  const categoryFilters = useMemo(() => {
+    if (!vendors || vendors.length === 0) return [];
+    
+    const categories = vendors
+      .map(v => v?.category)
+      .filter(Boolean) // Remove null/undefined
+      .filter((cat, index, arr) => arr.indexOf(cat) === index); // Remove duplicates
+    
+    return categories.map(cat => ({
+      text: cat,
+      value: cat
+    }));
+  }, [vendors]);
+
+  const handleAddEdit = async () => {
+    try {
+      const values = await form.validateFields();
+      
+      if (editingVendor) {
+        // Update existing vendor
+        const updatedVendor = { ...editingVendor, ...values };
+        dispatch(updateVendor(updatedVendor));
+      } else {
+        // Add new vendor - use timestamp-based ID for uniqueness
+        const newVendor = {
+          id: `V${Date.now()}`,
+          ...values,
+          isActive: true
+        };
+        dispatch(addVendor(newVendor));
+      }
+      
+      // Close modal and reset form
+      setModalVisible(false);
+      form.resetFields();
+      setEditingVendor(null);
+    } catch (validationError) {
+      console.warn('Form validation failed:', validationError);
+      // Form validation errors are automatically shown by Ant Design
+    }
   };
 
   const handleEdit = (vendor) => {
@@ -82,14 +109,22 @@ export function VendorManagement() {
   };
 
   const handleDelete = (vendorId) => {
-    dispatch(deleteVendor({ id: vendorId }));
-    message.success('Vendor deleted successfully'); // todo
+    try {
+      dispatch(deleteVendor({ id: vendorId }));
+      // Success message will be shown by saga
+    } catch (error) {
+      console.error('Error deleting vendor:', error);
+    }
   };
 
   const handleToggleStatus = (vendor) => {
-    const updatedVendor = { ...vendor, isActive: !vendor.isActive };
-    dispatch(updateVendor(updatedVendor));
-    message.success(`Vendor ${!vendor.isActive ? 'activated' : 'deactivated'} successfully`);
+    try {
+      const updatedVendor = { ...vendor, isActive: !vendor.isActive };
+      dispatch(updateVendor(updatedVendor));
+      // Success message will be shown by saga
+    } catch (error) {
+      console.error('Error updating vendor status:', error);
+    }
   };
 
   const columns = [
@@ -111,10 +146,7 @@ export function VendorManagement() {
       dataIndex: 'category',
       key: 'category',
       render: (category) => <Tag color="blue">{category}</Tag>,
-      filters: [...new Set(vendors.map(v => v.category))].map(cat => ({
-        text: cat,
-        value: cat
-      })),
+      filters: categoryFilters,
       onFilter: (value, record) => record.category === value,
     },
     {

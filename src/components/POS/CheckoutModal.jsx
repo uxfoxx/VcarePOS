@@ -159,13 +159,10 @@ export function CheckoutModal({
     
     try {
       // Use the persistent customer data state instead of form data
-      console.log('Customer Data:', customerData);
-      console.log('Payment Method:', paymentMethod);
       const salesperson = users.find(u => u.id === selectedSalesperson);
       
       const transaction = {
         id: `TXN-${Date.now()}`,
-        items: cartItems,
         subtotal,
         categoryTaxTotal: categoryTaxTotal || 0,
         fullBillTaxTotal: fullBillTaxTotal || 0,
@@ -387,75 +384,91 @@ export function CheckoutModal({
     </div>
   );
 
-  const renderCustomerDetails = () => (
-    <div className="space-y-4">
-      <Title level={4}>Customer Information</Title>
-      
-      <Form form={customerForm} layout="vertical" preserve={true}>
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item name="customerName" label="Customer Name">
-              <Input 
-                prefix={<Icon name="person" className="text-gray-400" />}
-                placeholder="Enter customer name (optional)"
-                onChange={(e) => {
-                  // Update persistent state in real-time
-                  setCustomerData(prev => ({ ...prev, customerName: e.target.value }));;
-                }}
-              />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item name="customerPhone" label="Phone Number">
-              <Input 
-                prefix={<Icon name="phone" className="text-gray-400" />}
-                placeholder="Enter phone number (optional)"
-                onChange={(e) => {
-                  // Update persistent state in real-time
-                  setCustomerData(prev => ({ ...prev, customerPhone: e.target.value }));
-                }}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
+  const renderCustomerDetails = () => {
+    const phoneNumberRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
+
+    return (
+      <div className="space-y-4">
+        <Title level={4}>Customer Information</Title>
         
-        <Form.Item name="customerEmail" label="Email Address">
-          <Input 
-            prefix={<Icon name="email" className="text-gray-400" />}
-            placeholder="Enter email address (optional)"
-            type="email"
-            onChange={(e) => {
-              // Update persistent state in real-time
-              setCustomerData(prev => ({ ...prev, customerEmail: e.target.value }));
-            }}
-          />
-        </Form.Item>
-        
-        <Form.Item name="customerAddress" label="Delivery Address">
-          <TextArea 
-            placeholder="Enter delivery address (optional)"
+        <Form form={customerForm} layout="vertical" preserve={true}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="customerName" label="Customer Name">
+                <Input 
+                  prefix={<Icon name="person" className="text-gray-400" />}
+                  placeholder="Enter customer name (optional)"
+                  onChange={(e) => {
+                    // Update persistent state in real-time
+                    setCustomerData(prev => ({ ...prev, customerName: e.target.value }));;
+                  }}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="customerPhone" label="Phone Number"
+              rules={[
+                {
+                  pattern: phoneNumberRegex,
+                  message: 'Please enter a valid phone number',
+                },
+              ]}>
+                <Input 
+                  prefix={<Icon name="phone" className="text-gray-400" />}
+                  placeholder="Enter phone number (optional)"
+                  onChange={(e) => {
+                    // Update persistent state in real-time
+                    setCustomerData(prev => ({ ...prev, customerPhone: e.target.value }));
+                  }}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+          
+          <Form.Item name="customerEmail" label="Email Address"
+          rules={[
+            {
+              type: 'email',
+              message: 'Please enter a valid email address',
+            },
+          ]}>
+            <Input 
+              prefix={<Icon name="email" className="text-gray-400" />}
+              placeholder="Enter email address (optional)"
+              type="email"
+              onChange={(e) => {
+                // Update persistent state in real-time
+                setCustomerData(prev => ({ ...prev, customerEmail: e.target.value }));
+              }}
+            />
+          </Form.Item>
+          
+          <Form.Item name="customerAddress" label="Delivery Address">
+            <TextArea 
+              placeholder="Enter delivery address (optional)"
+              rows={3}
+              onChange={(e) => {
+                // Update persistent state in real-time
+                setCustomerData(prev => ({ ...prev, customerAddress: e.target.value }));
+              }}
+            />
+          </Form.Item>
+        </Form>
+
+        <Divider />
+
+        <div className="space-y-3">
+          <Text strong>Order Notes</Text>
+          <TextArea
+            value={orderNotes}
+            onChange={(e) => setOrderNotes(e.target.value)}
+            placeholder="Add special instructions or notes for this order..."
             rows={3}
-            onChange={(e) => {
-              // Update persistent state in real-time
-              setCustomerData(prev => ({ ...prev, customerAddress: e.target.value }));
-            }}
           />
-        </Form.Item>
-      </Form>
-
-      <Divider />
-
-      <div className="space-y-3">
-        <Text strong>Order Notes</Text>
-        <TextArea
-          value={orderNotes}
-          onChange={(e) => setOrderNotes(e.target.value)}
-          placeholder="Add special instructions or notes for this order..."
-          rows={3}
-        />
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderPayment = () => (
     <div className="space-y-4">

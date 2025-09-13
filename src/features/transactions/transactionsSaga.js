@@ -1,4 +1,5 @@
 import { takeLatest, call, put, all } from "redux-saga/effects";
+import { message as antdMessage } from "antd";
 import {
   fetchTransactions,
   fetchTransactionById,
@@ -59,10 +60,15 @@ function* updateTransactionStatusSaga(action) {
 
 function* processRefundSaga(action) {
   try {
-    const data = yield call(transactionsApi.processRefund, action.payload.id, action.payload.refundData);
+    const { id, refundData } = action.payload;
+    const data = yield call(transactionsApi.processRefund, id, refundData);
     yield put(processRefundSucceeded(data));
+    
+    // Show success message in saga
+    yield call([antdMessage, 'success'], 'Refund processed successfully');
   } catch (error) {
     yield put(failed(error.message));
+    yield call([antdMessage, 'error'], 'Failed to process refund');
   }
 }
 

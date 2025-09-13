@@ -56,8 +56,9 @@ export function ProductModal({
   const [productData, setProductData] = useState({});
   const [colors, setColors] = useState([]);
   const [materialSearchTerm, setMaterialSearchTerm] = useState('');
-  const {rawMaterialsList, error} = useSelector(state => state.rawMaterials);
-  const {categoriesList } = useSelector(state => state.categories);
+  const [selectedMaterialId, setSelectedMaterialId] = useState(null); // Track selected card
+  const { rawMaterialsList, error } = useSelector(state => state.rawMaterials);
+  const { categoriesList } = useSelector(state => state.categories);
 
   // Generate SKU based on category
   const generateSKU = () => {
@@ -75,9 +76,9 @@ export function ProductModal({
       .map(word => word.charAt(0).toUpperCase())
       .join('');
     
-    // Generate unique number (timestamp-based)
+   // Generate unique number (timestamp-based) 
     const uniqueNumber = Date.now().toString().slice(-6);
-    
+
     // Create SKU
     const generatedSKU = `${categoryInitials}${uniqueNumber}`;
     
@@ -106,7 +107,7 @@ export function ProductModal({
       setHasSizes(editingProduct.hasSizes || false);
       setHasAddons(editingProduct.hasAddons || false);
       
-      // Set colors from editing product
+      // Set colors from editing product 
       if (editingProduct.colors) {
         setColors(editingProduct.colors);
       } else {
@@ -175,6 +176,7 @@ export function ProductModal({
       setImageFile(null);
       setImagePreview(null);
       setCurrentStep(0);
+      setSelectedMaterialId(null);
     }
   }, [editingProduct, open, productForm, rawMaterialsList]);
 
@@ -208,14 +210,51 @@ export function ProductModal({
   };
 
   const handleImageUpload = (file) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target.result);
-      setProductData(prev => ({ ...prev, image: e.target.result }));
+     // Define validation constraints
+    const maxSizeMB = 5; // Maximum file size in MB
+    const maxSizeBytes = maxSizeMB * 1024 * 1024; // Convert to bytes
+    const maxDimensions = { width: 2000, height: 2000 }; // Maximum image dimensions
+
+    // Validate file size
+    if (file.size > maxSizeBytes) {
+      message.error(`Image size exceeds ${maxSizeMB}MB. Please upload a smaller image.`);
+      return false; // Prevent further processing
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      message.error('Invalid file type. Please upload a JPG, PNG, or GIF image.');
+      return false; // Prevent further processing
+    }
+
+    // Validate image dimensions
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl); // Clean up
+      if (img.width > maxDimensions.width || img.height > maxDimensions.height) {
+        message.error(
+          `Image dimensions exceed ${maxDimensions.width}x${maxDimensions.height} pixels. Please upload a smaller image.`
+        );
+        return;
+      }
+
+       // If all validations pass, process the image
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target.result);
+        setProductData((prev) => ({ ...prev, image: e.target.result }));
+      };
+      reader.readAsDataURL(file);
     };
-    reader.readAsDataURL(file);
-    setImageFile(file);
-    return false;
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl); // Clean up
+      message.error('Failed to process image. Please try another file.');
+    };
+    img.src = objectUrl;
+
+    return false; // Prevent default upload behavior
   };
 
   const handleAddMaterial = (values) => {
@@ -273,6 +312,7 @@ export function ProductModal({
 
     setSelectedAddons([...selectedAddons, newAddon]);
     addonsForm.resetFields();
+    setSelectedMaterialId(null); // Reset selected card
     message.success('Add-on added successfully');
   };
 
@@ -527,6 +567,7 @@ export function ProductModal({
     setImageFile(null);
     setImagePreview(null);
     setProductData({});
+    setSelectedMaterialId(null);
     onClose();
   };
 
@@ -790,7 +831,7 @@ export function ProductModal({
                   <Text>Click to upload product image</Text>
                   <br />
                   <Text type="secondary" className="text-sm">
-                    Supports: JPG, PNG, GIF (Max: 5MB)
+                    Supports: JPG, PNG, GIF (Max: 5MB, 2000x2000 pixels)
                   </Text>
                 </div>
               </div>
@@ -851,8 +892,10 @@ export function ProductModal({
                   }
                 >
                   {rawMaterialsList?.map(material => (
-                    <Option key={material.id} value={material.id} 
-                    label={`${material.name} ${material.category}`}
+                    <Option 
+                      key={material.id} 
+                      value={material.id} 
+                      label={`${material.name} ${material.category}`}
                     >
                       <div>
                         <Text strong>{material.name}</Text>
@@ -950,37 +993,65 @@ export function ProductModal({
             </Col>
           </Row>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-            {filteredRawMaterials.map(material => (
-              <Card 
-                key={material.id} 
-                size="small" 
-                className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => {
-                  addonsForm.setFieldsValue({
-                    materialId: material.id,
-                    quantity: 1
-                  });
-                }}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Icon name="category" className="text-blue-600" />
-                  </div>
-                  <div>
-                    <Text strong className="block">{material.name}</Text>
-                    <Text type="secondary" className="text-xs">
-                      LKR {material.unitPrice.toFixed(2)} per {material.unit}
-                    </Text>
-                    <br />
-                    <Text type="secondary" className="text-xs">
-                      Stock: {material.stockQuantity} {material.unit}
-                    </Text>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+          {rawMaterialsList?.length > 0 ? (
+            filteredRawMaterials.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                {filteredRawMaterials.map(material => (
+                  <Card 
+                    key={material.id} 
+                    size="small" 
+                    className={`cursor-pointer hover:shadow-md transition-shadow ${
+                      selectedMaterialId === material.id ? 'border-2 border-blue-500 bg-blue-50' : ''
+                    }`}
+                    onClick={() => {
+                      setSelectedMaterialId(material.id);
+                      addonsForm.setFieldsValue({
+                        materialId: material.id,
+                        quantity: 1
+                      });
+                    }}
+                    hoverable
+                    role="button"
+                    aria-label={`Select ${material.name} as add-on`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Icon name="category" className="text-blue-600" />
+                      </div>
+                      <div>
+                        <Text strong className="block">{material.name}</Text>
+                        <Text type="secondary" className="text-xs">
+                          LKR {material.unitPrice.toFixed(2)} per {material.unit}
+                        </Text>
+                        <br />
+                        <Text type="secondary" className="text-xs">
+                          Stock: {material.stockQuantity} {material.unit}
+                        </Text>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 bg-gray-50 rounded-lg">
+                <Icon name="search_off" className="text-4xl text-gray-300 mb-2" />
+                <Text type="secondary">No materials match your search</Text>
+                <br />
+                <Text type="secondary" className="text-sm">
+                  Try adjusting your search term to find available materials
+                </Text>
+              </div>
+            )
+          ) : (
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <Icon name="warning" className="text-4xl text-yellow-500 mb-2" />
+              <Text type="secondary">No raw materials available</Text>
+              <br />
+              <Text type="secondary" className="text-sm">
+                Please add raw materials to the system before creating add-ons
+              </Text>
+            </div>
+          )}
           
           <Row gutter={16}>
             <Col span={12}>
@@ -989,7 +1060,7 @@ export function ProductModal({
                 label="Selected Add-on"
                 rules={[{ required: true, message: 'Please select an add-on' }]}
               >
-
+                
                 <Select
                   placeholder="Select add-on material"
                   showSearch
@@ -997,12 +1068,20 @@ export function ProductModal({
                   filterOption={(input, option) =>
                     (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                   }
+                  value={selectedMaterialId}
+                  onChange={(value) => {
+                    console.log('Select changed:', value);
+                    setSelectedMaterialId(value);
+                    addonsForm.setFieldsValue({ materialId: value });
+                  }}
                 >
                   {rawMaterialsList?.map(material => (
-                    <Option key={material.id} value={material.id}
-                     label= {`${material.name} (LKR ${material.unitPrice.toFixed(2)}/${material.unit})`}>
-                    
-                    {material.name} (LKR {material.unitPrice.toFixed(2)}/{material.unit})
+                    <Option 
+                      key={material.id} 
+                      value={material.id}
+                      label={`${material.name} (LKR ${material.unitPrice.toFixed(2)}/${material.unit})`}
+                    >
+                      {material.name} (LKR {material.unitPrice.toFixed(2)}/{material.unit})
                     </Option>
                   ))}
                 </Select>

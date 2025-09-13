@@ -1,265 +1,343 @@
-import React, { useState } from 'react';
-import { Modal, Typography, Space, Button } from 'antd';
+import { useState } from 'react';
+import { Modal, Typography, Space } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import JsBarcode from 'jsbarcode';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export function InventoryLabelModal({ open, onClose, transaction }) {
   const [loading, setLoading] = useState(false);
-  
+
   if (!transaction) return null;
 
-  const handlePrint = () => {
-    window.print();
+  // Extract branding data from localStorage with error handling
+  const getBrandingData = () => {
+    try {
+      const brandingData = localStorage.getItem('vcare_branding');
+      return brandingData ? JSON.parse(brandingData) : {};
+    } catch (error) {
+      console.warn('Failed to parse branding data from localStorage:', error);
+      return {};
+    }
+  };
+  
+  // Pre-calculate branding values at component level for consistent access
+  const brandingData = getBrandingData();
+  const businessName = brandingData.businessName || 'VCare Furniture';
+  const primaryColor = brandingData.primaryColor || '#2563eb';
+  const businessInitials = businessName.substring(0, 2).toUpperCase();
+  const businessNameShort = businessName.substring(0, 15);
+
+  const handlePrint = async () => {
+    const element = document.getElementById('inventory-labels-content');
+    if (!element) {
+      console.warn('Inventory labels content element not found');
+      return;
+    }
+
+    let printContainer = null;
+    try {
+      // Create a temporary container in the document body
+      printContainer = document.createElement('div');
+      printContainer.id = 'print-container';
+      printContainer.style.position = 'absolute';
+      printContainer.style.top = '0';
+      printContainer.style.left = '0';
+      printContainer.style.width = '210mm';
+      printContainer.style.height = 'auto';
+      printContainer.style.padding = '5mm';
+      printContainer.style.backgroundColor = '#ffffff';
+
+      // Clone the content and append to the temporary container
+      const clonedContent = element.cloneNode(true);
+      printContainer.appendChild(clonedContent);
+      document.body.appendChild(printContainer);
+
+      // Force reflow to ensure content is rendered
+      clonedContent.style.display = 'none';
+      clonedContent.offsetHeight; // Trigger reflow
+      clonedContent.style.display = 'block';
+
+      // Wait briefly to ensure rendering
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Trigger print
+      window.print();
+    } catch (error) {
+      console.warn('Error during print:', error);
+    } finally {
+      // Clean up: remove the temporary container
+      if (printContainer && document.body.contains(printContainer)) {
+        document.body.removeChild(printContainer);
+      }
+    }
+  };
+
+  // Consolidated PDF generation function to eliminate code duplication
+  const generatePDF = async (element, action = 'view') => {
+    try {
+      // Create canvas from the element
+      const canvas = await html2canvas(element, {
+        scale: 3, // Higher scale for better barcode quality
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: element.scrollWidth,
+        height: element.scrollHeight,
+      });
+
+      // Calculate PDF dimensions for label sheets (A4 with multiple labels)
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      // Create PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Add additional pages if needed
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      if (action === 'download') {
+        // Download the PDF
+        const filename = `inventory-labels-${transaction.id}.pdf`;
+        pdf.save(filename);
+      } else {
+        // Open PDF in new tab
+        const pdfBlob = pdf.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, '_blank');
+      }
+    } catch (error) {
+      console.warn('Error generating PDF:', error);
+      // Fallback to print
+      handlePrint();
+    }
   };
 
   const handleView = async () => {
     setLoading(true);
     const element = document.getElementById('inventory-labels-content');
     if (!element) {
-      console.error('Inventory labels content element not found');
+      console.warn('Inventory labels content element not found');
       setLoading(false);
       return;
     }
 
-    try {
-      // Create canvas from the element
-      const canvas = await html2canvas(element, {
-        scale: 3, // Higher scale for better barcode quality
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: element.scrollWidth,
-        height: element.scrollHeight
-      });
-
-      // Calculate PDF dimensions for label sheets (A4 with multiple labels)
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-
-      // Create PDF
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      let position = 0;
-
-      // Add first page
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      // Add additional pages if needed
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      // Open PDF in new tab
-      const pdfBlob = pdf.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      window.open(pdfUrl, '_blank');
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      // Fallback to print
-      handlePrint();
-    } finally {
-      setLoading(false);
-    }
+    await generatePDF(element, 'view');
+    setLoading(false);
   };
 
   const handleDownload = async () => {
     setLoading(true);
     const element = document.getElementById('inventory-labels-content');
     if (!element) {
-      console.error('Inventory labels content element not found');
+      console.warn('Inventory labels content element not found');
       setLoading(false);
       return;
     }
 
-    try {
-      // Create canvas from the element
-      const canvas = await html2canvas(element, {
-        scale: 3, // Higher scale for better barcode quality
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: element.scrollWidth,
-        height: element.scrollHeight
-      });
-
-      // Calculate PDF dimensions for label sheets (A4 with multiple labels)
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-
-      // Create PDF
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      let position = 0;
-
-      // Add first page
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      // Add additional pages if needed
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      // Download the PDF
-      const filename = `inventory-labels-${transaction.id}.pdf`;
-      pdf.save(filename);
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      // Fallback to print
-      handlePrint();
-    } finally {
-      setLoading(false);
-    }
+    await generatePDF(element, 'download');
+    setLoading(false);
   };
 
-  // Generate a simple barcode pattern (in real app, use proper barcode library)
-  const generateBarcodePattern = (code) => {
-    const patterns = {
-      '0': '0001101', '1': '0011001', '2': '0010011', '3': '0111101',
-      '4': '0100011', '5': '0110001', '6': '0101111', '7': '0111011',
-      '8': '0110111', '9': '0001011', 'A': '0100001', 'B': '0110001',
-      'C': '0001001', 'D': '0101001', 'E': '0011001', 'F': '0111001',
-      'G': '0001101', 'H': '0010001', 'I': '0001001', 'J': '0010001',
-      'K': '0100001', 'L': '0110001', 'M': '0001101', 'N': '0010011',
-      'O': '0001011', 'P': '0010001', 'Q': '0100001', 'R': '0001001',
-      'S': '0010001', 'T': '0001001', 'U': '0100001', 'V': '0110001',
-      'W': '0001101', 'X': '0010011', 'Y': '0001011', 'Z': '0010001',
-      '-': '0010001'
-    };
+  // Utility function to truncate text to fit within 2 lines
+  const truncateText = (text, maxLength = 30) => {
+    if (!text) return '';
     
-    let pattern = '101'; // Start pattern
-    for (let char of code.toUpperCase()) {
-      pattern += patterns[char] || '0001001';
-    }
-    pattern += '101'; // End pattern
+    // Split into words and reconstruct to fit approximately 2 lines
+    const words = text.split(' ');
+    if (words.length <= 4) return text; // Short text, no truncation needed
     
-    return pattern;
+    // For longer text, try to fit in about 2 lines (roughly 15 chars per line)
+    if (text.length <= maxLength) return text;
+    
+    // Truncate and add ellipsis
+    return text.substring(0, maxLength - 3) + '...';
   };
 
+  // Generate professional barcode using JsBarcode
   const renderBarcode = (code) => {
-    const pattern = generateBarcodePattern(code);
-    const bars = pattern.split('').map((bit, index) => (
-      <div
-        key={index}
-        style={{
-          width: '0.8px',
-          height: '20px',
-          backgroundColor: bit === '1' ? '#000' : '#fff',
-          display: 'inline-block'
-        }}
-      />
-    ));
-    
-    return (
-      <div className="flex justify-center items-center bg-white">
-        <div style={{ fontSize: 0, lineHeight: 0 }}>
-          {bars}
+    try {
+      const canvas = document.createElement('canvas');
+      JsBarcode(canvas, code || 'NOCODE', {
+        format: "CODE128",
+        width: 1,
+        height: 20,
+        displayValue: false,
+        background: "#ffffff",
+        lineColor: "#000000",
+        margin: 0
+      });
+      
+      return (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          backgroundColor: '#ffffff',
+          padding: '2px 0'
+        }}>
+          <img 
+            src={canvas.toDataURL('image/png')} 
+            alt={`Barcode ${code}`}
+            style={{ 
+              maxWidth: '100%', 
+              height: '20px',
+              display: 'block'
+            }}
+          />
         </div>
-      </div>
-    );
+      );
+    } catch (error) {
+      console.warn('Error generating barcode:', error);
+      // Fallback to text display
+      return (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          backgroundColor: '#ffffff',
+          padding: '2px 0',
+          fontSize: '8px',
+          fontFamily: 'monospace'
+        }}>
+          {code || 'NOCODE'}
+        </div>
+      );
+    }
   };
 
   const renderInventoryLabels = () => (
-    <div id="inventory-labels-content" className="bg-white" style={{ fontFamily: 'Arial, sans-serif', padding: '5mm' }}>
+    <div id="inventory-labels-content" style={{ 
+      fontFamily: 'Arial, sans-serif', 
+      padding: '5mm',
+      backgroundColor: '#ffffff'
+    }}>
       {/* Grid layout: 4 columns x 6 rows = 24 labels per A4 page */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(4, 1fr)', 
-        gap: '2mm',
-        width: '200mm', // A4 width minus margins
-        minHeight: '287mm' // A4 height minus margins
-      }}>
-        {transaction.items.map((item, itemIndex) => 
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '2mm',
+          width: '200mm', // A4 width minus margins
+          minHeight: '287mm',// A4 height minus margins
+        }}
+      >
+        {transaction.items.map((item, itemIndex) =>
           Array.from({ length: item.quantity }, (_, qtyIndex) => (
-            <div 
-              key={`${itemIndex}-${qtyIndex}`} 
-              className="inventory-label border border-gray-800 bg-white flex flex-col"
-              style={{ 
-                width: '48mm', 
+            <div
+              key={`${itemIndex}-${qtyIndex}`}
+              className="inventory-label"
+              style={{
+                width: '48mm',
                 height: '45mm',
                 padding: '2mm',
                 pageBreakInside: 'avoid',
                 fontSize: '8px',
-                lineHeight: '1.2'
+                lineHeight: '1.2',
+                border: '1px solid #374151',
+                backgroundColor: '#ffffff',
+                display: 'flex',
+                flexDirection: 'column',
+                boxSizing: 'border-box'
               }}
             >
               
               {/* Company Header with Logo */}
-              <div className="flex items-center justify-between mb-1 pb-1 border-b border-gray-400">
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '2px',
+                paddingBottom: '2px',
+                borderBottom: '1px solid #9ca3af'
+              }}>
                 <div>
                   <span style={{ fontWeight: 'bold', fontSize: '9px' }}>
-                    {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
-                      ? JSON.parse(localStorage.getItem('vcare_branding')).businessName.substring(0, 15) 
-                      : "VCare Furniture"}
+                    {businessNameShort}
                   </span>
                 </div>
-                <div style={{ 
-                  width: '12px', 
-                  height: '12px', 
-                  backgroundColor: localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).primaryColor 
-                    ? JSON.parse(localStorage.getItem('vcare_branding')).primaryColor 
-                    : '#2563eb', 
-                  borderRadius: '2px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <span style={{ color: 'white', fontWeight: 'bold', fontSize: '6px' }}>
-                    {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
-                      ? JSON.parse(localStorage.getItem('vcare_branding')).businessName.substring(0, 2).toUpperCase() 
-                      : "VC"}
+                <div
+                  style={{
+                    width: '12px',
+                    height: '12px',
+                    backgroundColor: primaryColor,
+                    borderRadius: '2px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <span style={{ 
+                    color: 'white', 
+                    fontWeight: 'bold', 
+                    fontSize: '6px',
+                    lineHeight: '1'
+                  }}>
+                    {businessInitials}
                   </span>
                 </div>
               </div>
-
+              
               {/* Product Name */}
-              <div className="mb-2 text-center flex-1">
-                <div style={{ 
-                  fontWeight: 'bold', 
-                  fontSize: '9px', 
-                  lineHeight: '1.1',
-                  overflow: 'hidden',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical'
-                }}>
-                  {item.product.name}
+              <div style={{
+                marginBottom: '4px',
+                textAlign: 'center',
+                flex: '1'
+              }}>
+                <div
+                  style={{
+                    fontWeight: 'bold',
+                    fontSize: '9px',
+                    lineHeight: '1.2',
+                    height: '21.6px', // Fixed height for exactly 2 lines
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    wordWrap: 'break-word',
+                    textAlign: 'center',
+                  }}
+                >
+                  {truncateText(item.product.name, 30)}
                 </div>
               </div>
-
+              
               {/* SKU */}
-              <div className="mb-2 text-center">
+              <div style={{
+                marginBottom: '4px',
+                textAlign: 'center'
+              }}>
                 <div style={{ fontSize: '6px', color: '#666', marginBottom: '1px' }}>SKU:</div>
                 <div style={{ fontWeight: 'bold', fontFamily: 'monospace', fontSize: '8px' }}>
                   {item.product.barcode || 'N/A'}
                 </div>
               </div>
-
+              
               {/* Barcode */}
-              <div className="mt-auto">
+              <div style={{ marginTop: 'auto' }}>
                 <div style={{ maxWidth: '100%', overflow: 'hidden' }}>
                   {renderBarcode(item.product.barcode || 'NOBARCODE')}
                 </div>
-                <div className="text-center" style={{ marginTop: '1px' }}>
+                <div style={{ textAlign: 'center', marginTop: '1px' }}>
                   <span style={{ fontFamily: 'monospace', fontSize: '6px' }}>
                     {item.product.barcode || 'N/A'}
                   </span>
                 </div>
               </div>
-
             </div>
           ))
         )}
@@ -268,58 +346,99 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
   );
 
   return (
-    <Modal
-      title={
-        <Space>
-          <Icon name="label" className="text-blue-600" />
-          <span>Inventory Labels</span>
-        </Space>
-      }
-      open={open}
-      onCancel={onClose}
-      width={1000}
-      footer={[
-        <ActionButton key="close" onClick={onClose}>
-          Close
-        </ActionButton>,
-        <ActionButton 
+    <>
+      <style>
+        {`
+          @media print {
+            body * {
+              visibility: hidden;
+            }
+            #print-container,
+            #print-container * {
+              visibility: visible;
+            }
+            #print-container {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 210mm;
+              height: auto;
+              margin: 0;
+              padding: 5mm;
+              box-sizing: border-box;
+              background-color: #ffffff;
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
+            }
+            #print-container .inventory-label {
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
+            #print-container * {
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
+            }
+            .ant-modal,
+            .ant-modal-content,
+            .ant-modal-header,
+            .ant-modal-footer {
+              display: none !important;
+            }
+          `}
+      </style>
+      <Modal
+        title={
+          <Space>
+            <Icon name="label" className="text-blue-600" />
+            <span>Inventory Labels</span>
+          </Space>
+        }
+        open={open}
+        onCancel={onClose}
+        width={1000}
+        footer={[
+          <ActionButton key="close" onClick={onClose}>
+            Close
+          </ActionButton>,
+          <ActionButton 
           key="view" 
           icon="visibility" 
-          onClick={handleView}
+          onClick={handleView} 
           loading={loading}
-        >
-          View PDF
-        </ActionButton>,
-        <ActionButton 
+          >
+            View PDF
+          </ActionButton>,
+          <ActionButton 
           key="download" 
           icon="download" 
-          onClick={handleDownload}
+          onClick={handleDownload} 
           loading={loading}
-        >
-          Download PDF
-        </ActionButton>,
-        <ActionButton.Primary 
+          >
+            Download PDF
+          </ActionButton>,
+          <ActionButton.Primary 
           key="print" 
           icon="print" 
           onClick={handlePrint}
-        >
-          Print Labels
-        </ActionButton.Primary>
-      ]}
-      className="inventory-labels-modal"
-      destroyOnClose
-    >
-      <div className="max-h-[70vh] overflow-y-auto">
-        <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-          <Text className="text-sm">
-            <Icon name="info" className="mr-2 text-blue-600" />
-            <strong>Inventory Labels:</strong> Optimized for A4 printing with 24 labels per page (4×6 grid). 
-            Each item will have {transaction?.items?.reduce((sum, item) => sum + item.quantity, 0)} labels generated 
-            (one for each quantity ordered). Perfect size for sticking to inventory items.
-          </Text>
+          >
+            Print Labels 
+          </ActionButton.Primary>
+        ]}
+        className="inventory-labels-modal"
+        destroyOnClose
+      >
+        <div className="max-h-[70vh] overflow-y-auto">
+          <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+            <Text className="text-sm">
+              <Icon name="info" className="mr-2 text-blue-600" />
+              <strong>Inventory Labels:</strong> Optimized for A4 printing with 24 labels per page (4×6 grid). 
+              Each item will have {transaction?.items?.reduce((sum, item) => sum + item.quantity, 0)} labels generated 
+              (one for each quantity ordered). Perfect size for sticking to inventory items.
+            </Text>
+          </div>
+          {renderInventoryLabels()}
         </div>
-        {renderInventoryLabels()}
-      </div>
-    </Modal>
+      </Modal>
+    </>
   );
 }

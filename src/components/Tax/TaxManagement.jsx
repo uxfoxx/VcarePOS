@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Input, 
   Space, 
@@ -23,19 +23,19 @@ import {
   updateTax,
   deleteTax,
   fetchTaxes,
+  bulkUpdateStatus,
+  bulkDeleteTaxes
 } from '../../features/taxes/taxesSlice';
 import { fetchCategories } from '../../features/categories/categoriesSlice';
 import { fetchProducts } from '../../features/products/productsSlice';
 import { Icon } from '../common/Icon';
-import { SearchInput } from '../common/SearchInput';
 import { ActionButton } from '../common/ActionButton';
 import { FormModal } from '../common/FormModal';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { DetailModal } from '../common/DetailModal';
-import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
@@ -46,7 +46,6 @@ export function TaxManagement() {
   const products = useSelector(state => state.products.productsList) || [];
   const loading = useSelector(state => state.taxes.loading);
 
-  const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingTax, setEditingTax] = useState(null);
   const [selectedTax, setSelectedTax] = useState(null);
@@ -62,11 +61,6 @@ export function TaxManagement() {
     dispatch(fetchCategories());
     dispatch(fetchProducts());
   }, [dispatch]);
-
-  const filteredTaxes = taxes.filter(tax =>
-    tax.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    tax.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const handleSubmit = async (values) => {
     try {
@@ -93,8 +87,9 @@ export function TaxManagement() {
       setEditingTax(null);
       form.resetFields();
       setTaxType('full_bill');
-    } catch (error) {
-      message.error('Please fill in all required fields');
+    } catch {
+      // Error handling is managed by Redux saga
+      message.error('Failed to save tax. Please check all required fields.');
     }
   };
 
@@ -114,17 +109,17 @@ export function TaxManagement() {
   };
 
   const handleBulkDelete = (taxIds) => {
-    taxIds.forEach(id => {
-      dispatch(deleteTax(id));
-    });
-    message.success(`${taxIds.length} taxes deleted successfully`);
+    if (!taxIds || taxIds.length === 0) return;
+    
+    // Dispatch the action and let Redux saga handle the async operation
+    dispatch(bulkDeleteTaxes({ taxIds }));
     setSelectedRowKeys([]);
   };
 
   const handleToggleStatus = (tax) => {
     const updatedTax = { ...tax, isActive: !tax.isActive };
     dispatch(updateTax(updatedTax));
-    message.success(`Tax ${updatedTax.isActive ? 'activated' : 'deactivated'}`);
+    // Success/error notifications are handled in the saga
   };
 
   const handleRowClick = (tax) => {
@@ -141,29 +136,11 @@ export function TaxManagement() {
   };
 
   const handleSaveGlobalTaxSettings = () => {
-    if (!globalTaxEnabled) {
-      const updatedTaxes = taxes.map(tax => ({
-        ...tax,
-        isActive: false
-      }));
-      updatedTaxes.forEach(tax => {
-        dispatch(updateTax(tax));
-      });
-      message.success('All taxes have been disabled');
-    } else {
-      if (taxes.every(tax => !tax.isActive)) {
-        if (taxes.length > 0) {
-          const firstTax = taxes[0];
-          const updatedTax = { ...firstTax, isActive: true };
-          dispatch(updateTax(updatedTax));
-          message.success(`${firstTax.name} has been activated`);
-        } else {
-          message.info('No taxes available to activate. Please create a tax first.');
-        }
-      } else {
-        message.success('Taxes have been enabled');
-      }
-    }
+    const action = globalTaxEnabled ? 'enable' : 'disable';
+    const taxIds = 'all'; // Enable/disable all taxes
+    
+    // Dispatch the action and let Redux saga handle the async operation
+    dispatch(bulkUpdateStatus({ action, taxIds }));
     setShowGlobalTaxSettings(false);
   };
 
@@ -303,10 +280,11 @@ export function TaxManagement() {
         icon="receipt"
         subtitle={areTaxesDisabled ? "All taxes are currently disabled" : "Manage tax rates and settings"}
         columns={columns}
-        dataSource={filteredTaxes}
+        dataSource={taxes}
         rowKey="id"
         rowSelection={{
           type: 'checkbox',
+          selectedRowKeys,
           onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys)
         }}
         onDelete={handleBulkDelete}
@@ -320,16 +298,19 @@ export function TaxManagement() {
           <Space>
             <ActionButton 
               icon={areTaxesDisabled ? "toggle_off" : "toggle_on"}
+              loading={loading}
               onClick={() => {
                 setGlobalTaxEnabled(!areTaxesDisabled);
                 setShowGlobalTaxSettings(true);
               }}
+              disabled={loading}
             >
               {areTaxesDisabled ? "Enable Taxes" : "Disable All Taxes"}
             </ActionButton>
             <ActionButton.Primary 
               icon="add"
               onClick={() => setShowModal(true)}
+              disabled={loading}
             >
               Add Tax
             </ActionButton.Primary>
@@ -368,7 +349,15 @@ export function TaxManagement() {
             <Form.Item
               name="rate"
               label="Tax Rate (%)"
-              rules={[{ required: true, message: 'Please enter tax rate' }]}
+              rules={[
+                { required: true, message: 'Please enter tax rate' },
+                { 
+                  type: 'number', 
+                  min: 0, 
+                  max: 100, 
+                  message: 'Tax rate must be between 0 and 100' 
+                }
+              ]}
             >
               <InputNumber
                 min={0}
@@ -376,6 +365,7 @@ export function TaxManagement() {
                 step={0.01}
                 placeholder="0.00"
                 className="w-full"
+                precision={2}
               />
             </Form.Item>
           </Col>
@@ -485,19 +475,35 @@ export function TaxManagement() {
         open={showGlobalTaxSettings}
         onCancel={() => setShowGlobalTaxSettings(false)}
         footer={[
-          <ActionButton key="cancel" onClick={() => setShowGlobalTaxSettings(false)}>
+          <ActionButton 
+            key="cancel" 
+            onClick={() => setShowGlobalTaxSettings(false)}
+            disabled={loading}
+          >
             Cancel
           </ActionButton>,
           <ActionButton.Primary 
             key="save" 
             onClick={handleSaveGlobalTaxSettings}
+            loading={loading}
           >
             {globalTaxEnabled ? "Enable Taxes" : "Disable All Taxes"}
           </ActionButton.Primary>
         ]}
         width={500}
+        closable={!loading}
+        maskClosable={!loading}
       >
         <div className="space-y-4">
+          {loading && (
+            <Alert
+              message="Processing..."
+              description={`Updating ${taxes.length} taxes. Please wait...`}
+              type="info"
+              showIcon
+            />
+          )}
+          
           <Alert
             message={globalTaxEnabled ? "Enable Tax Collection" : "Disable All Taxes"}
             description={

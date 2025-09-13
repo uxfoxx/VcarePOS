@@ -116,11 +116,11 @@ export function ReportsOverview() {
     sum + (material.stockQuantity * material.unitPrice), 0
   );
 
-  // Get stock alerts
-  const lowStockMaterials = (rawMaterialsList || []).filter(m => m.stockQuantity <= m.minimumStock);
+  // Get stock alerts - ensuring no overlap between critical and warning alerts
   const outOfStockMaterials = (rawMaterialsList || []).filter(m => m.stockQuantity === 0);
-  const lowStockProducts = (productsList || []).filter(p => p.stock <= 10 && p.stock > 0);
+  const lowStockMaterials = (rawMaterialsList || []).filter(m => m.stockQuantity > 0 && m.stockQuantity <= m.minimumStock);
   const outOfStockProducts = (productsList || []).filter(p => p.stock === 0);
+  const lowStockProducts = (productsList || []).filter(p => p.stock > 0 && p.stock <= 10);
 
   // Calculate top selling products
   const productSales = {};
@@ -422,7 +422,7 @@ export function ReportsOverview() {
       key: 'status',
       render: (record) => {
         const isOutOfStock = record.stockQuantity === 0;
-        const isLowStock = record.stockQuantity <= record.minimumStock;
+        const isLowStock = record.stockQuantity > 0 && record.stockQuantity <= record.minimumStock;
         
         return (
           <Tag color={isOutOfStock ? 'red' : isLowStock ? 'orange' : 'green'}>
@@ -437,11 +437,11 @@ export function ReportsOverview() {
       ],
       onFilter: (value, record) => {
         const isOutOfStock = record.stockQuantity === 0;
-        const isLowStock = record.stockQuantity <= record.minimumStock;
+        const isLowStock = record.stockQuantity > 0 && record.stockQuantity <= record.minimumStock;
         
         if (value === 'out-of-stock') return isOutOfStock;
-        if (value === 'low-stock') return isLowStock && !isOutOfStock;
-        if (value === 'in-stock') return !isLowStock && !isOutOfStock;
+        if (value === 'low-stock') return isLowStock;
+        if (value === 'in-stock') return !isOutOfStock && !isLowStock;
         return true;
       },
     },
@@ -566,7 +566,7 @@ export function ReportsOverview() {
               <ActionButton.Text 
                 icon="download"
                 onClick={() => {
-                  setExportDataType('products');
+                  setExportDataType('top-selling');
                   setShowExportModal(true);
                 }}
               >
@@ -657,8 +657,8 @@ export function ReportsOverview() {
               dataSource={rawMaterialsList.slice(0, 5)}
               renderItem={(material) => {
                 const stockPercentage = Math.min((material.stockQuantity / (material.minimumStock * 3)) * 100, 100);
-                const isLowStock = material.stockQuantity <= material.minimumStock;
                 const isOutOfStock = material.stockQuantity === 0;
+                const isLowStock = material.stockQuantity > 0 && material.stockQuantity <= material.minimumStock;
                 
                 return (
                   <List.Item>
@@ -906,7 +906,8 @@ export function ReportsOverview() {
           coupons: couponsList,
           users: [], // Would come from auth context
           auditTrail: [], // Would come from auth context
-          categories: categoriesList
+          categories: categoriesList,
+          topSellingProducts: topProducts
         }}
       />
     </>

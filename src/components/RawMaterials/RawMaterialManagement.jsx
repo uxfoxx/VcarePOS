@@ -57,8 +57,8 @@ export function RawMaterialManagement() {
     return matchesSearch && matchesCategory;
   });
 
-  const lowStockMaterials = rawMaterialsList.filter(m => m.stockQuantity <= m.minimumStock);
   const outOfStockMaterials = rawMaterialsList.filter(m => m.stockQuantity === 0);
+  const lowStockMaterials = rawMaterialsList.filter(m => m.stockQuantity > 0 && m.stockQuantity <= m.minimumStock);
   const almostOutOfStockMaterials = rawMaterialsList.filter(m => m.stockQuantity > m.minimumStock && m.stockQuantity <= m.minimumStock * 2);
 
   const handleSubmit = async (values) => {

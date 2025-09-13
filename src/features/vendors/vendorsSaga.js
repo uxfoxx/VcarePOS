@@ -1,4 +1,5 @@
 import { takeLatest, call, put } from "redux-saga/effects";
+import { message as antdMessage } from "antd";
 import {
   fetchVendors,
   fetchVendorById,
@@ -20,6 +21,7 @@ function* fetchVendorsSaga() {
     yield put(fetchVendorsSucceeded(data));
   } catch (error) {
     yield put(failed(error.message));
+    yield call([antdMessage, 'error'], 'Failed to fetch vendors');
   }
 }
 
@@ -29,6 +31,7 @@ function* fetchVendorByIdSaga(action) {
     yield put(fetchVendorByIdSucceeded(data));
   } catch (error) {
     yield put(failed(error.message));
+    yield call([antdMessage, 'error'], 'Failed to fetch vendor details');
   }
 }
 
@@ -36,8 +39,10 @@ function* addVendorSaga(action) {
   try {
     const data = yield call(vendorsApi.create, action.payload);
     yield put(addVendorSucceeded(data));
+    yield call([antdMessage, 'success'], 'Vendor added successfully');
   } catch (error) {
     yield put(failed(error.message));
+    yield call([antdMessage, 'error'], 'Failed to add vendor');
   }
 }
 
@@ -45,8 +50,10 @@ function* updateVendorSaga(action) {
   try {
     const data = yield call(vendorsApi.update, action.payload.id, action.payload);
     yield put(updateVendorSucceeded(data));
+    yield call([antdMessage, 'success'], 'Vendor updated successfully');
   } catch (error) {
     yield put(failed(error.message));
+    yield call([antdMessage, 'error'], 'Failed to update vendor');
   }
 }
 
@@ -54,8 +61,10 @@ function* deleteVendorSaga(action) {
   try {
     yield call(vendorsApi.delete, action.payload.id);
     yield put(deleteVendorSucceeded({ id: action.payload.id }));
+    yield call([antdMessage, 'success'], 'Vendor deleted successfully');
   } catch (error) {
     yield put(failed(error.message));
+    yield call([antdMessage, 'error'], 'Failed to delete vendor');
   }
 }
 

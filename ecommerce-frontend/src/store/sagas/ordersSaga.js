@@ -6,9 +6,7 @@ import {
   createOrderSuccess,
   fetchOrdersSuccess,
   fetchOrderByIdSuccess,
-  uploadReceiptSuccess,
   ordersFailure,
-  uploadReceiptFailure,
 } from '../slices/ordersSlice';
 import { clearCart } from '../slices/cartSlice';
 import { ordersApi } from '../../api/apiClient';

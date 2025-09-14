@@ -25,16 +25,14 @@ import LoadingSpinner from './components/Common/LoadingSpinner';
 function App() {
   const dispatch = useDispatch();
   const { isAuthenticated, loading: authLoading } = useSelector(state => state.auth);
-  const { loading: productsLoading } = useSelector(state => state.products);
+  const { listLoading: productsLoading } = useSelector(state => state.products);
 
   useEffect(() => {
-    // Check for existing token and get customer data
     const token = localStorage.getItem('ecommerce_token');
     if (token) {
       dispatch(getCurrentCustomer());
     }
-    
-    // Fetch products on app load
+  
     dispatch(fetchProducts());
   }, [dispatch]);
 

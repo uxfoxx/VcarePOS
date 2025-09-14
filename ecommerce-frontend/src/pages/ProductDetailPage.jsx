@@ -9,7 +9,7 @@ const ProductDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { currentProduct, loading } = useSelector(state => state.products);
+  const { currentProduct, detailLoading } = useSelector(state => state.products);
   
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
@@ -81,7 +81,7 @@ const ProductDetailPage = () => {
     alert('Product added to cart!');
   };
 
-  if (loading) {
+  if (detailLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="large" />

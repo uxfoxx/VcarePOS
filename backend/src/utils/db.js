@@ -10,25 +10,25 @@ let pool;
 try {
   // Try to connect using environment variables
   pool = new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    database: process.env.DB_NAME || 'vcare_pos',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT ,
+    database: process.env.DB_NAME ,
+    user: process.env.DB_USER ,
+    password: process.env.DB_PASSWORD,
   });
   
-  console.log('Database connection pool created');
+  console.log('Database connection pool created 2');
 } catch (error) {
   console.error('Error creating database connection pool:', error);
   
-  // Fallback to default values
-  pool = new Pool({
-    host: 'localhost',
-    port: 5432,
-    database: 'vcare_pos',
-    user: 'postgres',
-    password: 'postgres',
-  });
+  // // Fallback to default values
+  // pool = new Pool({
+  //   host: 'localhost',
+  //   port: 5432,
+  //   database: 'vcare_pos',
+  //   user: 'postgres',
+  //   password: 'postgres',
+  // });
 }
 
 // Export the pool for use in other modules

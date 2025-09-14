@@ -11,7 +11,12 @@ const store = configureStore({
     getDefaultMiddleware({
       thunk: false,
       serializableCheck: {
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+        ignoredActions: [
+          'persist/PERSIST', 
+          'persist/REHYDRATE',
+          'orders/createOrder' // Ignore serialization check for file uploads
+        ],
+        ignoredActionsPaths: ['payload.receiptFile'], // Ignore receiptFile in payload
       },
     }).concat(sagaMiddleware),
   devTools: import.meta.env.DEV,

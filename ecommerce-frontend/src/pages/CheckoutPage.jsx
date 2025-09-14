@@ -72,10 +72,13 @@ const CheckoutPage = () => {
         selectedSize: item.selectedSize,
         quantity: item.quantity,
       })),
-      receiptFile: paymentMethod === 'bank_transfer' ? receiptFile : null,
     };
     
-    dispatch(createOrder(orderData));
+    // Pass receiptFile separately to avoid Redux serialization issues
+    dispatch(createOrder({
+      ...orderData,
+      receiptFile: paymentMethod === 'bank_transfer' ? receiptFile : null
+    }));
   };
 
   const handleFileChange = (e) => {

@@ -13,7 +13,10 @@ import { ordersApi } from '../../api/apiClient';
 
 function* createOrderSaga(action) {
   try {
+    // Extract receiptFile from payload to handle file upload
     const { receiptFile, ...orderData } = action.payload;
+    
+    // Call API with both order data and receipt file
     const order = yield call(ordersApi.create, orderData, receiptFile);
     yield put(createOrderSuccess(order));
     

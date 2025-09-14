@@ -86,7 +86,7 @@ export const ordersApi = {
       const formData = new FormData();
       formData.append('receipt', receiptFile);
       
-      // Append order data as JSON strings
+      // Append order data fields individually
       Object.keys(orderData).forEach(key => {
         if (typeof orderData[key] === 'object') {
           formData.append(key, JSON.stringify(orderData[key]));

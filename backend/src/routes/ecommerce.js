@@ -591,14 +591,21 @@ router.post('/orders', [
   let orderData;
   if (req.file) {
     // Parse JSON strings from FormData
+    try {
     orderData = {
       customerName: req.body.customerName,
       customerEmail: req.body.customerEmail,
       customerPhone: req.body.customerPhone,
       customerAddress: req.body.customerAddress,
       paymentMethod: req.body.paymentMethod,
-      items: JSON.parse(req.body.items)
+        items: typeof req.body.items === 'string' ? JSON.parse(req.body.items) : req.body.items
     };
+    } catch (parseError) {
+      return res.status(400).json({ 
+        message: 'Invalid form data format',
+        error: parseError.message 
+      });
+    }
   } else {
     // Use regular JSON body
     orderData = req.body;

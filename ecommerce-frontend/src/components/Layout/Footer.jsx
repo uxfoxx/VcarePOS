@@ -1,6 +1,15 @@
 import { Link } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../../store/slices/authSlice';
 
 const Footer = () => {
+  const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector(state => state.auth);
+
+  const handleLogout = () => {
+    dispatch(logout());
+  };
+
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -14,7 +23,7 @@ const Footer = () => {
               <span className="text-xl font-bold">VCare Furniture</span>
             </div>
             <p className="text-gray-300 mb-4">
-              Premium furniture solutions for your home and office. Quality craftsmanship, 
+              Premium furniture solutions for your home and office. Quality craftsmanship,
               modern designs, and exceptional customer service.
             </p>
             <div className="flex space-x-4">
@@ -139,8 +148,8 @@ const Footer = () => {
           </p>
         </div>
       </div>
-    </header>
+    </footer>
   );
 };
 
-export default Header;
+export default Footer;

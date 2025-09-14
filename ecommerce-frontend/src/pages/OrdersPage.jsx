@@ -112,11 +112,12 @@ const OrdersPage = () => {
                           <p className="font-medium text-gray-900">{item.productName}</p>
                           <p className="text-sm text-gray-600">
                             Qty: {item.quantity} × LKR {item.unitPrice.toFixed(2)}
+                            Qty: {item.quantity} × LKR {(parseFloat(item.unitPrice) || 0).toFixed(2)}
                             {item.selectedSize && ` • Size: ${item.selectedSize}`}
                           </p>
                         </div>
                         <p className="font-medium text-gray-900">
-                          LKR {item.totalPrice.toFixed(2)}
+                          LKR {(parseFloat(item.totalPrice) || 0).toFixed(2)}
                         </p>
                       </div>
                     ))}
@@ -142,7 +143,7 @@ const OrdersPage = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-gray-600">Delivery to:</p>
-                      <p className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                        LKR {(parseFloat(order.totalAmount) || 0).toFixed(2)}
                         {order.customerAddress}
                       </p>
                     </div>

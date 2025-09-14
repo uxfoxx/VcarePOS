@@ -53,6 +53,28 @@ app.use(requestLogger); // Add request logging before other middleware
 app.use(logAction);
 
 // Register API routes
+app.get('/', (req, res) => {
+  res.json({
+    message: 'VCare POS Backend API',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      products: '/api/products',
+      categories: '/api/categories',
+      users: '/api/users',
+      transactions: '/api/transactions',
+      vendors: '/api/vendors',
+      coupons: '/api/coupons',
+      taxes: '/api/taxes',
+      rawMaterials: '/api/rawMaterials',
+      purchaseOrders: '/api/purchaseOrders',
+      audit: '/api/audit',
+      system: '/api/system',
+      ecommerce: '/api/ecommerce'
+    }
+  });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/raw-materials', rawMaterialsRoutes);

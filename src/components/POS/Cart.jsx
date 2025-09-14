@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Card, 
   List, 
   InputNumber, 
-  Space, 
   Typography, 
   Divider, 
   Badge,
@@ -15,8 +14,11 @@ import {
   Tag,
   Empty
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
-import { useNotifications } from '../../contexts/NotificationContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { removeFromCart, updateQuantity, clearCart } from '../../features/cart/cartSlice';
+import { fetchTaxes } from '../../features/taxes/taxesSlice';
+import { fetchCoupons } from '../../features/coupons/couponsSlice';
+import { useReduxNotifications as useNotifications } from '../../hooks/useReduxNotifications';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon'; 
 import { CheckoutModal } from '../POS/CheckoutModal';
@@ -24,15 +26,36 @@ import { CheckoutModal } from '../POS/CheckoutModal';
 const { Title, Text } = Typography;
 
 export function Cart() {
-  const { state, dispatch } = usePOS();
+  const dispatch = useDispatch();
+  const cart = useSelector(state => state.cart.cart);
+  const taxes = useSelector(state => state.taxes.taxesList);
+  const coupons = useSelector(state => state.coupons.couponsList);
   const { checkRawMaterialAvailability } = useNotifications();
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponCode, setCouponCode] = useState('');
   const [materialWarnings, setMaterialWarnings] = useState({ unavailableMaterials: [], lowMaterials: [] });
 
-  // Early return if state is not properly initialized
-  if (!state || !state.cart) {
+  // Check raw material availability and reset coupon when cart is cleared
+  useEffect(() => {
+    if (cart && cart.length > 0) {
+      const warnings = checkRawMaterialAvailability(cart);
+      setMaterialWarnings(warnings);
+    } else {
+      setMaterialWarnings({ unavailableMaterials: [], lowMaterials: [] });
+      setAppliedCoupon(null); // Reset applied coupon when cart is empty
+      setCouponCode(''); // Reset coupon code input when cart is empty
+    }
+  }, [cart, checkRawMaterialAvailability]);
+
+  // Fetch taxes and coupons on mount
+  useEffect(() => {
+    dispatch(fetchTaxes());
+    dispatch(fetchCoupons());
+  }, [dispatch]);
+
+  // Early return if cart is not properly initialized
+  if (!cart) {
     return (
       <Card 
         className="h-full"
@@ -57,24 +80,13 @@ export function Cart() {
     );
   }
 
-  // Check raw material availability whenever cart changes
-  useEffect(() => {
-    if (state.cart && state.cart.length > 0 && state.rawMaterials) {
-      const warnings = checkRawMaterialAvailability(state.cart, state.rawMaterials);
-      setMaterialWarnings(warnings);
-    } else {
-      setMaterialWarnings({ unavailableMaterials: [], lowMaterials: [] });
-    }
-  }, [state.cart, state.rawMaterials, checkRawMaterialAvailability]);
-
   // Calculate taxes for each item and total
   const calculateTaxes = () => {
-    const activeTaxes = state.taxes && Array.isArray(state.taxes) ? state.taxes.filter(tax => tax.isActive) : [];
+    const activeTaxes = Array.isArray(taxes) ? taxes.filter(tax => tax.isActive) : [];
     let itemTaxes = [];
-    let billTaxes = []; 
     
     // Calculate category taxes for each item
-    state.cart.forEach(cartItem => {
+    cart.forEach(cartItem => {
       const categoryTaxes = activeTaxes.filter(tax =>
         tax.taxType === 'category' &&
         Array.isArray(tax.applicableCategories) &&
@@ -102,7 +114,7 @@ export function Cart() {
 
   const { itemTaxes, fullBillTaxes } = calculateTaxes();
   
-  const subtotal = state.cart.reduce((sum, item) => {
+  const subtotal = cart.reduce((sum, item) => {
     // Include base price
     let itemTotal = item.product.price * item.quantity;
 
@@ -116,8 +128,22 @@ export function Cart() {
     return sum + itemTotal;
   }, 0);
   
-  const categoryTaxTotal = itemTaxes.reduce((sum, tax) => sum + tax.amount, 0);
-  const couponDiscount = appliedCoupon ? (subtotal * appliedCoupon.discountPercent) / 100 : 0;
+  const categoryTaxTotal = itemTaxes.reduce((sum, tax) => sum + (tax.amount || 0), 0);
+  
+  // Calculate coupon discount based on type
+  let couponDiscount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.discountType === 'percentage') {
+      couponDiscount = (subtotal * (appliedCoupon.discountPercent || 0)) / 100;
+      // Apply maximum discount limit if specified
+      if (appliedCoupon.maxDiscount && couponDiscount > appliedCoupon.maxDiscount) {
+        couponDiscount = appliedCoupon.maxDiscount;
+      }
+    } else if (appliedCoupon.discountType === 'fixed') {
+      couponDiscount = appliedCoupon.discountAmount || 0;
+    }
+  }
+  
   const taxableAmount = subtotal + categoryTaxTotal - couponDiscount;
   
   // Calculate full bill taxes on the taxable amount
@@ -127,20 +153,31 @@ export function Cart() {
 
   const handleQuantityChange = (productId, selectedSize, newQuantity) => {
     if (newQuantity <= 0) {
-      dispatch({ 
-        type: 'REMOVE_FROM_CART', 
-        payload: { productId, selectedSize } 
-      });
+      // Find the cart item to get the selectedColorId
+      const cartItem = cart.find(item => 
+        item.product.id === productId && item.selectedSize === selectedSize
+      );
+      dispatch(removeFromCart({ 
+        productId, 
+        selectedColorId: cartItem?.selectedColorId,
+        selectedSize 
+      }));
     } else {
-      dispatch({ 
-        type: 'UPDATE_QUANTITY', 
-        payload: { productId, selectedSize, quantity: newQuantity } 
-      });
+      // Find the cart item to get the selectedColorId
+      const cartItem = cart.find(item => 
+        item.product.id === productId && item.selectedSize === selectedSize
+      );
+      dispatch(updateQuantity({ 
+        productId, 
+        selectedColorId: cartItem?.selectedColorId,
+        selectedSize, 
+        quantity: newQuantity 
+      }));
     }
   };
 
   const handleApplyCoupon = () => {
-    const coupon = state.coupons?.find(c => c.code === couponCode && c.isActive);
+    const coupon = coupons?.find(c => c.code === couponCode && c.isActive);
     if (coupon) {
       // Check if coupon is valid
       const now = new Date();
@@ -161,9 +198,24 @@ export function Cart() {
         return;
       }
 
+      // Check category restrictions
+      if (coupon.applicableCategories && coupon.applicableCategories.length > 0) {
+        const cartCategories = cart.map(item => item.product.category);
+        const hasApplicableProducts = coupon.applicableCategories.some(category => 
+          cartCategories.includes(category)
+        );
+        if (!hasApplicableProducts) {
+          message.error(`This coupon is only valid for: ${coupon.applicableCategories.join(', ')}`);
+          return;
+        }
+      }
+
       setAppliedCoupon(coupon);
-      message.success(`Coupon applied! ${coupon.discountPercent}% discount`);
-      setCouponCode('');
+      const discountText = coupon.discountType === 'percentage' 
+        ? `${coupon.discountPercent}% discount`
+        : `LKR ${coupon.discountAmount} discount`;
+      message.success(`Coupon applied! ${discountText}`);
+      setCouponCode(''); // Clear the coupon code input
     } else {
       message.error('Invalid or expired coupon code');
     }
@@ -171,11 +223,30 @@ export function Cart() {
 
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null);
+    setCouponCode(''); // Clear the coupon code input when removing coupon
     message.info('Coupon removed');
   };
 
+  const handleCheckoutSuccess = () => {
+    // Clear cart, coupon code, and applied coupon after successful checkout
+    dispatch(clearCart());
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setShowCheckoutModal(false);
+    message.success('Checkout completed successfully');
+  };
+
+  const handleCloseCheckoutModal = () => {
+    setShowCheckoutModal(false);
+    setCouponCode(''); // Clear coupon code input when closing checkout modal
+    // Clear applied coupon only if cart is empty
+    if (cart.length === 0) {
+      setAppliedCoupon(null);
+    }
+  };
+
   const handleProceedToCheckout = () => {
-    if (state.cart.length === 0) {
+    if (cart.length === 0) {
       message.warning('Cart is empty');
       return;
     }
@@ -199,7 +270,7 @@ export function Cart() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <h2 className="text-xl font-bold m-0">Current Order</h2>
-              <Badge count={state.cart.length} size="small" />
+              <Badge count={cart.length} size="small" />
             </div>
           </div>
         }
@@ -255,7 +326,7 @@ export function Cart() {
 
           {/* Cart Items */}
           <div className="flex-1 overflow-y-auto p-4">
-            {state.cart.length === 0 ? (
+            {cart.length === 0 ? (
               <Empty
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
                 description="Your cart is empty"
@@ -263,7 +334,7 @@ export function Cart() {
               />
             ) : (
               <List
-                dataSource={state.cart}
+                dataSource={cart}
                 renderItem={(item, index) => {
                   // Get category taxes for this item
                   const itemCategoryTaxes = itemTaxes.filter(tax => tax.productId === item.product.id);
@@ -289,9 +360,9 @@ export function Cart() {
                                   Size: {item.selectedSize}
                                 </Text>
                               )}
-                              {item.selectedVariant && (
+                              {item.selectedColor && (
                                 <Text type="secondary" className="text-xs block">
-                                  Variant: {item.selectedVariant}
+                                  Color: {item.selectedColor.name}
                                 </Text>
                               )}
                               {item.product.isCustom && (
@@ -301,13 +372,11 @@ export function Cart() {
                           </div>
                           <Popconfirm
                             title="Remove item?"
-                            onConfirm={() => dispatch({ 
-                              type: 'REMOVE_FROM_CART', 
-                              payload: { 
-                                productId: item.product.id, 
-                                selectedSize: item.selectedSize 
-                              } 
-                            })}
+                            onConfirm={() => dispatch(removeFromCart({ 
+                              productId: item.product.id, 
+                              selectedColorId: item.selectedColorId,
+                              selectedSize: item.selectedSize 
+                            }))}
                           >
                             <ActionButton.Text 
                               icon="close"
@@ -407,7 +476,10 @@ export function Cart() {
                         <Text strong className="text-green-800 text-sm">{appliedCoupon.code}</Text>
                         <br />
                         <Text className="text-green-600 text-xs">
-                          {appliedCoupon.discountPercent}% discount
+                          {appliedCoupon.discountType === 'percentage' 
+                            ? `${appliedCoupon.discountPercent}% discount`
+                            : `LKR ${appliedCoupon.discountAmount} discount`
+                          }
                         </Text>
                       </div>
                       <ActionButton.Text 
@@ -426,7 +498,7 @@ export function Cart() {
                   <div className="space-y-2">
                     <div className="flex space-x-1">
                       <Input 
-                        placeholder="Coupon code"
+                        placeholder="Enter coupon code"
                         value={couponCode}
                         onChange={(e) => setCouponCode(e.target.value)}
                         size="middle"
@@ -472,7 +544,7 @@ export function Cart() {
               size="large"
               block
               onClick={handleProceedToCheckout}
-              disabled={state.cart.length === 0}
+              disabled={cart.length === 0}
               className="bg-blue-600 hover:bg-blue-700 h-12 text-lg font-semibold"
             >
               Proceed to Checkout
@@ -486,8 +558,9 @@ export function Cart() {
 
       <CheckoutModal
         open={showCheckoutModal}
-        onClose={() => setShowCheckoutModal(false)}
-        cartItems={state.cart}
+        onClose={handleCloseCheckoutModal}
+        onSubmit={handleCheckoutSuccess}
+        cartItems={cart}
         orderTotal={total}
         appliedCoupon={appliedCoupon}
         couponDiscount={couponDiscount}

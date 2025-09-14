@@ -2,8 +2,253 @@ const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { authenticate, hasPermission } = require('../middleware/auth');
+const { handleRouteError } = require('../utils/loggerUtils');
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * tags:
+ *   name: Transactions
+ *   description: Sales transaction management
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Transaction:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           example: TXN-123456
+ *         customerName:
+ *           type: string
+ *           example: John Doe
+ *         customerPhone:
+ *           type: string
+ *           example: '+94112223344'
+ *         customerEmail:
+ *           type: string
+ *           example: johndoe@example.com
+ *         customerAddress:
+ *           type: string
+ *           example: '123 Main St, City'
+ *         cashier:
+ *           type: string
+ *           example: Jane Smith
+ *         salesperson:
+ *           type: string
+ *           example: Alex Brown
+ *         salespersonId:
+ *           type: string
+ *           example: USER-123456
+ *         paymentMethod:
+ *           type: string
+ *           example: cash
+ *         subtotal:
+ *           type: number
+ *           example: 1000.00
+ *         categoryTaxTotal:
+ *           type: number
+ *           example: 50.00
+ *         fullBillTaxTotal:
+ *           type: number
+ *           example: 25.00
+ *         totalTax:
+ *           type: number
+ *           example: 75.00
+ *         discount:
+ *           type: number
+ *           example: 100.00
+ *         total:
+ *           type: number
+ *           example: 975.00
+ *         appliedCoupon:
+ *           type: string
+ *           example: SAVE10
+ *         notes:
+ *           type: string
+ *         status:
+ *           type: string
+ *           example: completed
+ *         timestamp:
+ *           type: string
+ *           format: date-time
+ *         appliedTaxes:
+ *           type: object
+ *         items:
+ *           type: array
+ *           items:
+ *             type: object
+ *         refunds:
+ *           type: array
+ *           items:
+ *             type: object
+ */
+
+/**
+ * @swagger
+ * /transactions:
+ *   get:
+ *     summary: Get all transactions
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of transactions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Transaction'
+ *   post:
+ *     summary: Create a new transaction
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Transaction'
+ *     responses:
+ *       201:
+ *         description: Transaction created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Transaction'
+ *       400:
+ *         description: Validation error
+ */
+
+/**
+ * @swagger
+ * /transactions/{id}:
+ *   get:
+ *     summary: Get a transaction by ID
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Transaction ID
+ *     responses:
+ *       200:
+ *         description: Transaction found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Transaction'
+ *       404:
+ *         description: Transaction not found
+ */
+
+/**
+ * @swagger
+ * /transactions/{id}/status:
+ *   put:
+ *     summary: Update transaction status
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Transaction ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [completed, refunded, partially-refunded]
+ *                 example: refunded
+ *     responses:
+ *       200:
+ *         description: Transaction status updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 status:
+ *                   type: string
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Transaction not found
+ */
+
+/**
+ * @swagger
+ * /transactions/{id}/refund:
+ *   post:
+ *     summary: Process a refund for a transaction
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Transaction ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refundType:
+ *                 type: string
+ *                 enum: [full, partial, items]
+ *                 example: full
+ *               refundAmount:
+ *                 type: number
+ *                 example: 100.00
+ *               reason:
+ *                 type: string
+ *               notes:
+ *                 type: string
+ *               refundMethod:
+ *                 type: string
+ *                 example: cash
+ *               refundItems:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *     responses:
+ *       201:
+ *         description: Refund processed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Transaction not found
+ */
 
 /**
  * @route   GET /api/transactions
@@ -122,8 +367,7 @@ router.get('/', authenticate, hasPermission('transactions', 'view'), async (req,
     
     res.json(transactions);
   } catch (error) {
-    console.error('Error fetching transactions:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Transactions - Fetching transactions:');
   }
 });
 
@@ -250,8 +494,7 @@ router.get('/:id', authenticate, hasPermission('transactions', 'view'), async (r
     
     res.json(formattedTransaction);
   } catch (error) {
-    console.error('Error fetching transaction:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Transactions - Fetching transaction:');
   }
 });
 
@@ -345,8 +588,8 @@ router.post(
           INSERT INTO transaction_items (
             transaction_id, product_id, product_name, product_price,
             product_barcode, product_category, quantity, selected_size,
-            selected_variant, addons
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            selected_variant, addons, selected_color_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         `, [
           transactionId,
           item.product.id,
@@ -357,29 +600,36 @@ router.post(
           item.quantity,
           item.selectedSize,
           item.selectedVariant,
-          JSON.stringify(item.product.addons || null)
+          JSON.stringify(item.product.addons || null),
+          item.selectedColorId
         ]);
         
         // Update product stock
-        if (item.selectedSize) {
-          // Update size stock
+        if (item.selectedSize && item.selectedColorId) {
+          // Update specific size stock using the correct relationship chain
           await client.query(`
             UPDATE product_sizes
             SET stock = stock - $1
-            WHERE product_id = $2 AND name = $3
+            WHERE id = (
+              SELECT ps.id 
+              FROM product_sizes ps
+              JOIN product_colors pc ON ps.product_color_id = pc.id
+              WHERE pc.id = $2 AND ps.name = $3
+            )
           `, [
             item.quantity,
-            item.product.id,
+            item.selectedColorId,
             item.selectedSize
           ]);
           
-          // Update total product stock (sum of all sizes)
+          // Update total product stock (sum of all sizes across all colors)
           await client.query(`
             UPDATE products
             SET stock = (
-              SELECT COALESCE(SUM(stock), 0)
-              FROM product_sizes
-              WHERE product_id = $1
+              SELECT COALESCE(SUM(ps.stock), 0)
+              FROM product_sizes ps
+              JOIN product_colors pc ON ps.product_color_id = pc.id
+              WHERE pc.product_id = $1
             )
             WHERE id = $1
           `, [item.product.id]);
@@ -395,22 +645,26 @@ router.post(
           ]);
         }
         
-        // Update raw material stock for product
-        const rawMaterialsResult = await client.query(`
-          SELECT prm.raw_material_id, prm.quantity
-          FROM product_raw_materials prm
-          WHERE prm.product_id = $1
-        `, [item.product.id]);
-        
-        for (const material of rawMaterialsResult.rows) {
-          await client.query(`
-            UPDATE raw_materials
-            SET stock_quantity = GREATEST(0, stock_quantity - $1)
-            WHERE id = $2
-          `, [
-            parseFloat(material.quantity) * item.quantity,
-            material.raw_material_id
-          ]);
+        // Update raw material stock for the selected size (new relationship structure)
+        if (item.selectedColorId && item.selectedSize) {
+          const rawMaterialsResult = await client.query(`
+            SELECT prm.raw_material_id, prm.quantity
+            FROM product_raw_materials prm
+            JOIN product_sizes ps ON prm.product_size_id = ps.id
+            JOIN product_colors pc ON ps.product_color_id = pc.id
+            WHERE pc.id = $1 AND ps.name = $2
+          `, [item.selectedColorId, item.selectedSize]);
+          
+          for (const material of rawMaterialsResult.rows) {
+            await client.query(`
+              UPDATE raw_materials
+              SET stock_quantity = GREATEST(0, stock_quantity - $1)
+              WHERE id = $2
+            `, [
+              parseFloat(material.quantity) * item.quantity,
+              material.raw_material_id
+            ]);
+          }
         }
         
         // Update raw material stock for addons
@@ -467,8 +721,7 @@ router.post(
       });
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('Error creating transaction:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Transactions - Creating transaction:');
     } finally {
       client.release();
     }
@@ -527,8 +780,7 @@ router.put(
         status: transaction.status
       });
     } catch (error) {
-      console.error('Error updating transaction status:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Transactions - Updating transaction status:');
     }
   }
 );
@@ -632,25 +884,31 @@ router.post(
           ]);
           
           // Restore product stock
-          if (item.selectedSize) {
-            // Restore size stock
+          if (item.selectedColorId && item.selectedSize) {
+            // Update specific size stock using correct relationship chain
             await client.query(`
-              UPDATE product_sizes
+              UPDATE product_sizes 
               SET stock = stock + $1
-              WHERE product_id = $2 AND name = $3
+              WHERE id = (
+                SELECT ps.id 
+                FROM product_sizes ps
+                JOIN product_colors pc ON ps.product_color_id = pc.id
+                WHERE pc.id = $2 AND ps.name = $3
+              )
             `, [
               item.refundQuantity,
-              item.product.id,
+              item.selectedColorId,
               item.selectedSize
             ]);
             
-            // Update total product stock (sum of all sizes)
+            // Update total product stock (sum of all sizes across all colors)
             await client.query(`
               UPDATE products
               SET stock = (
-                SELECT COALESCE(SUM(stock), 0)
-                FROM product_sizes
-                WHERE product_id = $1
+                SELECT COALESCE(SUM(ps.stock), 0)
+                FROM product_sizes ps
+                JOIN product_colors pc ON ps.product_color_id = pc.id
+                WHERE pc.product_id = $1
               )
               WHERE id = $1
             `, [item.product.id]);
@@ -673,25 +931,31 @@ router.post(
         `, [id]);
         
         for (const item of itemsResult.rows) {
-          if (item.selected_size) {
-            // Restore size stock
+          if (item.selected_size && item.selected_color_id) {
+            // Restore size stock using correct relationship chain
             await client.query(`
-              UPDATE product_sizes
+              UPDATE product_sizes 
               SET stock = stock + $1
-              WHERE product_id = $2 AND name = $3
+              WHERE id = (
+                SELECT ps.id 
+                FROM product_sizes ps
+                JOIN product_colors pc ON ps.product_color_id = pc.id
+                WHERE pc.id = $2 AND ps.name = $3
+              )
             `, [
               item.quantity,
-              item.product_id,
+              item.selected_color_id,
               item.selected_size
             ]);
             
-            // Update total product stock (sum of all sizes)
+            // Update total product stock (sum of all sizes across all colors)
             await client.query(`
               UPDATE products
               SET stock = (
-                SELECT COALESCE(SUM(stock), 0)
-                FROM product_sizes
-                WHERE product_id = $1
+                SELECT COALESCE(SUM(ps.stock), 0)
+                FROM product_sizes ps
+                JOIN product_colors pc ON ps.product_color_id = pc.id
+                WHERE pc.product_id = $1
               )
               WHERE id = $1
             `, [item.product_id]);
@@ -736,8 +1000,7 @@ router.post(
       });
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('Error processing refund:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Transactions - Processing refund:');
     } finally {
       client.release();
     }

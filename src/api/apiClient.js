@@ -1,14 +1,47 @@
 /**
  * API client for communicating with the backend
+ * Optimized for Redux Saga workflow
  */
 
-// Import only the supabase client to check if it's null (for error messages)
-import { supabase } from '../utils/supabaseClient';
-
+// Configuration
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_TIMEOUT = 50000; // 50 seconds
 
 /**
- * Make an API request
+ * Creates an error object compatible with Redux Saga error handling
+ * @param {string} message - Error message
+ * @param {number} statusCode - HTTP status code
+ * @param {Object} originalError - Original error object
+ * @returns {Error} - Enhanced error object
+ */
+const createApiError = (message, statusCode = null, originalError = null) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.isApiError = true;
+  
+  if (originalError) {
+    error.originalError = originalError;
+  }
+  
+  return error;
+};
+
+/**
+ * Handle authentication error (401) by clearing credentials
+ * This is called when an API call returns a 401 Unauthorized error
+ * No token refresh is implemented as per requirements
+ */
+const handleAuthError = () => {
+  // Clear auth data from localStorage
+  localStorage.removeItem('vcare_token');
+  localStorage.removeItem('vcare_token_exp');
+  
+  // Log the authentication failure
+  console.warn('Authentication failed - credentials cleared');
+};
+
+/**
+ * Make an API request with timeout and enhanced error handling for Sagas
  * @param {string} endpoint - API endpoint
  * @param {Object} options - Fetch options
  * @returns {Promise<any>} - Response data
@@ -29,23 +62,62 @@ async function apiRequest(endpoint, options = {}) {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
-    // Make request
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+    
+    // Make request with timeout
     const response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
-      headers
+      headers,
+      signal: controller.signal
     });
+    
+    // Clear timeout
+    clearTimeout(timeoutId);
+    
+    // Handle 401 Unauthorized specifically
+    if (response.status === 401) {
+      handleAuthError();
+      throw createApiError(
+        'Authentication failed. Please log in again.',
+        401
+      );
+    }
     
     // Parse response
     const data = await response.json();
     
     // Handle error responses from API
     if (!response.ok) {
-      throw new Error(data.message || 'Something went wrong');
-    }    
+      console.error(`API request failed for ${endpoint}:`, data);
+      throw createApiError(
+        data.message || 'Request failed', 
+        response.status,
+        data
+      );
+    }
+    
     return data;
   } catch (error) {
+    // Handle timeout
+    if (error.name === 'AbortError') {
+      throw createApiError('Request timeout', 408);
+    }
+    
+    // Handle network errors
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw createApiError('Network error - unable to connect to server', 0);
+    }
+    
+    // If already an API error, just rethrow
+    if (error.isApiError) {
+      throw error;
+    }
+    
+    // Otherwise, create a new API error
     console.error(`API request error for ${endpoint}:`, error);
-    throw error;
+    throw createApiError(error.message || 'Something went wrong', null, error);
   }
 }
 
@@ -58,8 +130,7 @@ export const authApi = {
         body: JSON.stringify({ username, password })
       });
     } catch (error) {
-      console.error('API login failed:', error);
-      throw new Error('Login failed. Please check your credentials and try again.');
+      throw createApiError('Login failed. Please check your credentials and try again.', error.statusCode, error);
     }
   },
   
@@ -68,19 +139,19 @@ export const authApi = {
       await apiRequest('/auth/logout', {
         method: 'POST'
       });
+      return { success: true };
     } catch (error) {
       console.error('API logout failed:', error);
+      // We still return success as we want to clear local auth state regardless
+      return { success: true };
     }
-    
-    return { success: true };
   },
   
   getCurrentUser: async () => {
     try {
       return await apiRequest('/auth/me');
     } catch (error) {
-      console.error('API getCurrentUser failed:', error);
-      throw new Error('Failed to get current user. Please log in again.');
+      throw createApiError('Failed to get current user. Please log in again.', error.statusCode, error);
     }
   },
   
@@ -91,8 +162,7 @@ export const authApi = {
         body: JSON.stringify({ currentPassword, newPassword })
       });
     } catch (error) {
-      console.error('API changePassword failed:', error);
-      throw new Error('Failed to change password. Please try again.');
+      throw createApiError('Failed to change password. Please try again.', error.statusCode, error);
     }
   }
 };
@@ -267,6 +337,21 @@ export const taxesApi = {
   delete: async (id) => {
     return apiRequest(`/taxes/${id}`, {
       method: 'DELETE'
+    });
+  },
+
+  // Bulk operations
+  bulkUpdateStatus: async (action, taxIds) => {
+    return apiRequest('/taxes/bulk-status', {
+      method: 'PATCH',
+      body: JSON.stringify({ action, taxIds })
+    });
+  },
+
+  bulkDelete: async (taxIds) => {
+    return apiRequest('/taxes/bulk', {
+      method: 'DELETE',
+      body: JSON.stringify({ taxIds })
     });
   }
 };

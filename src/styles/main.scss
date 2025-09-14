@@ -1,6 +1,4 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@use 'sass:color';
 
 // Custom SCSS Variables
 $primary-color: #0E72BD;
@@ -68,7 +66,7 @@ $spacing-xxl: 48px;
         }
 
         &.ant-menu-item-selected {
-          background: linear-gradient(135deg, $primary-color, lighten($primary-color, 10%));
+          background: linear-gradient(135deg, $primary-color, color.adjust($primary-color, $lightness: 10%));
           color: white;
           box-shadow: 0 4px 12px rgba($primary-color, 0.3);
 
@@ -156,7 +154,7 @@ $spacing-xxl: 48px;
       border-top: 1px solid rgba(0, 0, 0, 0.06);
 
       .ant-btn-primary {
-        background: linear-gradient(135deg, $primary-color, lighten($primary-color, 10%));
+        background: linear-gradient(135deg, $primary-color, color.adjust($primary-color, $lightness: 10%));
         border: none;
         box-shadow: 0 4px 12px rgba($primary-color, 0.3);
         transition: all 0.3s ease;
@@ -233,7 +231,7 @@ $spacing-xxl: 48px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &.ant-btn-primary {
-    background: linear-gradient(135deg, $primary-color, lighten($primary-color, 10%));
+    background: linear-gradient(135deg, $primary-color, color.adjust($primary-color, $lightness: 10%));
     border: none;
     box-shadow: 0 4px 12px rgba($primary-color, 0.3);
 
@@ -351,7 +349,7 @@ $spacing-xxl: 48px;
 // Progress Enhancements
 .ant-progress {
   .ant-progress-bg {
-    background: linear-gradient(135deg, $primary-color, lighten($primary-color, 10%));
+    background: linear-gradient(135deg, $primary-color, color.adjust($primary-color, $lightness: 10%));
     border-radius: 10px;
   }
 }

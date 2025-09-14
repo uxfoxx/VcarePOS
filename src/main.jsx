@@ -1,5 +1,8 @@
 import { createRoot } from 'react-dom/client';
+import { Provider } from 'react-redux';
 import App from './App.jsx';
+import store from './app/store';
+import './styles/tailwind.css';
 import './styles/main.scss';
 import './styles/branding.css'; 
 
@@ -74,15 +77,15 @@ const applyInitialBranding = () => {
         color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
       }
       
-      .text-blue-600, .text-\[#0E72BD\] {
+      .text-blue-600, .text-[#0E72BD] {
         color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
       }
       
-      .bg-blue-600, .bg-\[#0E72BD\] {
+      .bg-blue-600, .bg-[#0E72BD] {
         background-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
       }
       
-      .border-blue-600, .border-\[#0E72BD\] {
+      .border-blue-600, .border-[#0E72BD] {
         border-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
       }
 
@@ -303,5 +306,7 @@ const applyInitialBranding = () => {
 applyInitialBranding();
 
 createRoot(document.getElementById('root')).render(
+  <Provider store={store}>
   <App />
+</Provider>
 );

@@ -17,7 +17,9 @@ import {
   Row,
   Col
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchRawMaterials } from '../../features/rawMaterials/rawMaterialsSlice';
+import { addToCart } from '../../features/cart/cartSlice';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { EnhancedStepper } from '../common/EnhancedStepper';
@@ -27,8 +29,9 @@ const { Option } = Select;
 const { TextArea } = Input;
 const { Search } = Input;
 
-export function CustomProductModal({ open, onClose, onAddToCart }) {
-  const { rawMaterials } = usePOS();
+export function CustomProductModal({ open, onClose }) {
+  const dispatch = useDispatch();
+  const rawMaterials = useSelector(state => state.rawMaterials.rawMaterialsList);
   const [form] = Form.useForm();
   const [materialsForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -43,27 +46,31 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
   // Reset form when modal opens
   useEffect(() => {
     if (open) {
+      dispatch(fetchRawMaterials());
       form.resetFields();
       setSelectedMaterials([]);
       setTotalPrice(0);
       setEditablePrice(0);
-      setCustomName('');
+      setCustomName('Custom Product');
       setCustomDescription('');
       setCurrentStep(0);
       setSearchTerm('');
     }
-  }, [open, form]);
+  }, [open, dispatch, form]);
 
   // Calculate total price whenever selected materials change
   useEffect(() => {
     const calculatedPrice = selectedMaterials.reduce((sum, material) => {
-      return sum + (material.quantity * material.unitPrice * 1.5); // 50% markup
+   //   return sum + (material.quantity * material.unitPrice * 1.5); // 50% markup
+      return sum + (material.quantity * material.unitPrice);
     }, 0); 
     setTotalPrice(calculatedPrice);
-    // Only set editable price initially or when it's 0
-    if (editablePrice === 0) {
-      setEditablePrice(calculatedPrice);
-    }
+    setEditablePrice(calculatedPrice);
+
+    // // Only set editable price initially or when it's 0
+    // if (editablePrice === 0) {
+    //   setEditablePrice(calculatedPrice);
+    // }
   }, [selectedMaterials]);
 
   // Filter materials based on search term
@@ -126,23 +133,19 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
       message.error('Please add at least one material');
       return;
     }
-
     if (!customName.trim()) {
       message.error('Please enter a name for the custom product');
       return;
     }
-
     try {
       setLoading(true);
-      
-      // Create custom product
       const customProduct = {
         id: `CUSTOM-${Date.now()}`,
         name: customName,
         description: customDescription || 'Custom product',
         price: editablePrice,
         category: 'Custom',
-        stock: 999, // Unlimited stock for custom products
+        stock: 999,
         barcode: `CUSTOM-${Date.now()}`,
         rawMaterials: selectedMaterials.map(m => ({
           rawMaterialId: m.id,
@@ -150,10 +153,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
         })),
         isCustom: true
       };
-
-      // Add to cart
-      onAddToCart(customProduct);
-      
+      dispatch(addToCart({ product: customProduct }));
       message.success('Custom product added to cart');
       onClose();
     } catch (error) {
@@ -182,7 +182,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
                 size="large"
               />
             </div>
-            <div>
+            {/* <div>
               <Text strong>Price:</Text>
               <InputNumber
                 className="w-full mt-1"
@@ -199,7 +199,7 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
                   Suggested price: LKR {totalPrice.toFixed(2)} (based on materials with 50% markup)
                 </Text>
               )}
-            </div>
+            </div> */}
           </div>
           <div>
             <Text strong>Description:</Text>
@@ -348,6 +348,25 @@ export function CustomProductModal({ open, onClose, onAddToCart }) {
               />
             )}
           </div>
+
+          <div className="flex gap-2 justify-between">
+              <Text strong>Price:</Text>
+              <InputNumber
+                className="w-44 mt-1"
+                min={0.01}
+                value={editablePrice}
+                onChange={(value) => setEditablePrice(value)}
+                formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+                step={100}
+                size="large"
+              />
+              {totalPrice > 0 && (
+                <Text type="secondary" className="text-xs block mt-1">
+                  Suggested price: LKR {(totalPrice * 1.5 ).toFixed(2)} (based on materials with 50% markup)
+                </Text>
+              )}
+            </div>
         </div>
       )
     }

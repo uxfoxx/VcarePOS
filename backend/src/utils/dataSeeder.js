@@ -11,13 +11,7 @@ async function seedDatabase() {
   
   try {
     console.log('Starting database seeding...');
-    
-    // Read and execute schema.sql
-    const schemaPath = path.join(__dirname, '..', 'schema.sql');
-    const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-    
-    await client.query(schemaSql);
-    console.log('Schema created successfully');
+    // Remove schema.sql logic and assume migrations have already created tables
     
     // Check if users table is empty
     const usersResult = await client.query('SELECT COUNT(*) FROM users');

@@ -2,8 +2,170 @@ const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { authenticate, hasPermission } = require('../middleware/auth');
+const { handleRouteError } = require('../utils/loggerUtils');
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * tags:
+ *   name: Vendors
+ *   description: Vendor management
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Vendor:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           example: VENDOR-123456
+ *         name:
+ *           type: string
+ *           example: ABC Suppliers
+ *         category:
+ *           type: string
+ *           example: Wood
+ *         email:
+ *           type: string
+ *           example: vendor@example.com
+ *         phone:
+ *           type: string
+ *           example: '+94112223344'
+ *         address:
+ *           type: string
+ *           example: '123 Main St, City'
+ *         isActive:
+ *           type: boolean
+ *           example: true
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ */
+
+/**
+ * @swagger
+ * /vendors:
+ *   get:
+ *     summary: Get all vendors
+ *     tags: [Vendors]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of vendors
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Vendor'
+ *   post:
+ *     summary: Create a new vendor
+ *     tags: [Vendors]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Vendor'
+ *     responses:
+ *       201:
+ *         description: Vendor created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Vendor'
+ *       400:
+ *         description: Validation error
+ */
+
+/**
+ * @swagger
+ * /vendors/{id}:
+ *   get:
+ *     summary: Get a vendor by ID
+ *     tags: [Vendors]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Vendor ID
+ *     responses:
+ *       200:
+ *         description: Vendor found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Vendor'
+ *       404:
+ *         description: Vendor not found
+ *   put:
+ *     summary: Update a vendor
+ *     tags: [Vendors]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Vendor ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Vendor'
+ *     responses:
+ *       200:
+ *         description: Vendor updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Vendor'
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Vendor not found
+ *   delete:
+ *     summary: Delete a vendor
+ *     tags: [Vendors]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Vendor ID
+ *     responses:
+ *       200:
+ *         description: Vendor deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Vendor deleted successfully
+ *       400:
+ *         description: Cannot delete vendor (used in purchase orders)
+ *       404:
+ *         description: Vendor not found
+ */
 
 /**
  * @route   GET /api/vendors
@@ -27,8 +189,7 @@ router.get('/', authenticate, hasPermission('purchase-orders', 'view'), async (r
       createdAt: vendor.created_at
     })));
   } catch (error) {
-    console.error('Error fetching vendors:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Vendors - Fetching vendors:');
   }
 });
 
@@ -62,8 +223,7 @@ router.get('/:id', authenticate, hasPermission('purchase-orders', 'view'), async
       createdAt: vendor.created_at
     });
   } catch (error) {
-    console.error('Error fetching vendor:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'Vendors - Fetching vendor:');
   }
 });
 
@@ -133,8 +293,7 @@ router.post(
         createdAt: vendor.created_at
       });
     } catch (error) {
-      console.error('Error creating vendor:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Vendors - Creating vendor:');
     }
   }
 );
@@ -216,8 +375,7 @@ router.put(
         createdAt: vendor.created_at
       });
     } catch (error) {
-      console.error('Error updating vendor:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Vendors - Updating vendor:');
     }
   }
 );
@@ -271,8 +429,7 @@ router.delete(
       
       res.json({ message: 'Vendor deleted successfully' });
     } catch (error) {
-      console.error('Error deleting vendor:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Vendors - Deleting vendor:');
     }
   }
 );

@@ -15,7 +15,6 @@ export function DetailModal({
   actions = []
 }) {
   if (!data) return null;
-
   const renderProductDetails = () => (
     <div className="space-y-6">
       {/* Product Image and Basic Info */}
@@ -65,20 +64,19 @@ export function DetailModal({
         <Descriptions.Item label="Category">
           <Tag color="blue">{data.category}</Tag>
         </Descriptions.Item>
-        <Descriptions.Item label="Weight">
+        {/* <Descriptions.Item label="Weight">
           {data.weight ? `${data.weight} kg` : 'N/A'}
-        </Descriptions.Item>
+        </Descriptions.Item> */}
         <Descriptions.Item label="Material">
-          {data.material || 'N/A'}
+          {data?.colors[0]?.sizes[0]?.rawMaterials.map((material)=> {
+            return <Tag key={material.rawMaterialId} color="blue">{material.name}</Tag>;
+          }) || 'N/A'}
         </Descriptions.Item>
         <Descriptions.Item label="Color">
-          {data.color || 'N/A'}
+          {data.colors?.map((colorData) => {
+            return <Tag key={colorData.id} color="blue">{colorData.name}</Tag>;
+          }) || "N/A"}
         </Descriptions.Item>
-        {data.dimensions && data.dimensions.length && (
-          <Descriptions.Item label="Dimensions">
-            {data.dimensions.length}×{data.dimensions.width}×{data.dimensions.height} {data.dimensions.unit}
-          </Descriptions.Item>
-        )}
         {data.rawMaterials && data.rawMaterials.length > 0 && (
           <Descriptions.Item label="Raw Materials" span={2}>
             <div className="space-y-1">

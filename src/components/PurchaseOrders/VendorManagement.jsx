@@ -1,4 +1,11 @@
-import React, { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { 
+  fetchVendors, 
+  addVendor, 
+  updateVendor, 
+  deleteVendor
+} from '../../features/vendors/vendorsSlice';
 import { 
   Card, 
   Table, 
@@ -9,12 +16,10 @@ import {
   Input, 
   Typography, 
   Popconfirm, 
-  message,
   Tag,
   Tooltip,
   Select
 } from 'antd';
-import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { SearchInput } from '../common/SearchInput';
 
@@ -23,51 +28,78 @@ const { TextArea } = Input;
 const { Option } = Select;
 
 export function VendorManagement() {
-  const [vendors, setVendors] = useState([
-    { id: 'V001', name: 'Premium Wood Co.', email: 'orders@premiumwood.com', phone: '123-456-7890', address: '123 Wood Lane, Timber City', category: 'Wood', isActive: true },
-    { id: 'V002', name: 'MetalWorks Inc.', email: 'sales@metalworks.com', phone: '234-567-8901', address: '456 Steel Ave, Metal Town', category: 'Hardware', isActive: true },
-    { id: 'V003', name: 'Luxury Fabrics Inc.', email: 'orders@luxuryfabrics.com', phone: '345-678-9012', address: '789 Textile Blvd, Fabric City', category: 'Upholstery', isActive: true },
-    { id: 'V004', name: 'FastenRight Co.', email: 'support@fastenright.com', phone: '456-789-0123', address: '101 Screw Drive, Fastener Village', category: 'Hardware', isActive: true },
-    { id: 'V005', name: 'Crystal Glass Co.', email: 'orders@crystalglass.com', phone: '567-890-1234', address: '202 Clear View, Glass City', category: 'Materials', isActive: false }
-  ]);
+  const dispatch = useDispatch();
+  const vendors = useSelector(state => state.vendors.vendorsList);
+  const loading = useSelector(state => state.vendors.loading);
+  const _error = useSelector(state => state.vendors.error); // Available for future error handling
   const [searchTerm, setSearchTerm] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [editingVendor, setEditingVendor] = useState(null);
   const [form] = Form.useForm();
 
-  const filteredVendors = vendors.filter(vendor => 
-    vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vendor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vendor.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    dispatch(fetchVendors());
+  }, [dispatch]);
 
-  const handleAddEdit = () => {
-    form.validateFields()
-      .then(values => {
-        if (editingVendor) {
-          // Update existing vendor
-          const updatedVendors = vendors.map(vendor => 
-            vendor.id === editingVendor.id ? { ...vendor, ...values } : vendor
-          );
-          setVendors(updatedVendors);
-          message.success('Vendor updated successfully');
-        } else {
-          // Add new vendor
-          const newVendor = {
-            id: `V${String(vendors.length + 1).padStart(3, '0')}`,
-            ...values,
-            isActive: true
-          };
-          setVendors([...vendors, newVendor]);
-          message.success('Vendor added successfully');
-        }
-        setModalVisible(false);
-        form.resetFields();
-        setEditingVendor(null);
-      })
-      .catch(info => {
-        console.log('Validate Failed:', info);
-      });
+  // Safe filtering with null checks
+  const filteredVendors = useMemo(() => {
+    if (!vendors || vendors.length === 0) return [];
+    
+    return vendors.filter(vendor => {
+      if (!vendor) return false;
+      
+      const name = vendor.name?.toLowerCase() || '';
+      const email = vendor.email?.toLowerCase() || '';
+      const category = vendor.category?.toLowerCase() || '';
+      const searchLower = searchTerm.toLowerCase();
+      
+      return name.includes(searchLower) || 
+             email.includes(searchLower) || 
+             category.includes(searchLower);
+    });
+  }, [vendors, searchTerm]);
+
+  // Memoized category filters
+  const categoryFilters = useMemo(() => {
+    if (!vendors || vendors.length === 0) return [];
+    
+    const categories = vendors
+      .map(v => v?.category)
+      .filter(Boolean) // Remove null/undefined
+      .filter((cat, index, arr) => arr.indexOf(cat) === index); // Remove duplicates
+    
+    return categories.map(cat => ({
+      text: cat,
+      value: cat
+    }));
+  }, [vendors]);
+
+  const handleAddEdit = async () => {
+    try {
+      const values = await form.validateFields();
+      
+      if (editingVendor) {
+        // Update existing vendor
+        const updatedVendor = { ...editingVendor, ...values };
+        dispatch(updateVendor(updatedVendor));
+      } else {
+        // Add new vendor - use timestamp-based ID for uniqueness
+        const newVendor = {
+          id: `V${Date.now()}`,
+          ...values,
+          isActive: true
+        };
+        dispatch(addVendor(newVendor));
+      }
+      
+      // Close modal and reset form
+      setModalVisible(false);
+      form.resetFields();
+      setEditingVendor(null);
+    } catch (validationError) {
+      console.warn('Form validation failed:', validationError);
+      // Form validation errors are automatically shown by Ant Design
+    }
   };
 
   const handleEdit = (vendor) => {
@@ -77,16 +109,22 @@ export function VendorManagement() {
   };
 
   const handleDelete = (vendorId) => {
-    setVendors(vendors.filter(vendor => vendor.id !== vendorId));
-    message.success('Vendor deleted successfully');
+    try {
+      dispatch(deleteVendor({ id: vendorId }));
+      // Success message will be shown by saga
+    } catch (error) {
+      console.error('Error deleting vendor:', error);
+    }
   };
 
   const handleToggleStatus = (vendor) => {
-    const updatedVendors = vendors.map(v => 
-      v.id === vendor.id ? { ...v, isActive: !v.isActive } : v
-    );
-    setVendors(updatedVendors);
-    message.success(`Vendor ${!vendor.isActive ? 'activated' : 'deactivated'} successfully`);
+    try {
+      const updatedVendor = { ...vendor, isActive: !vendor.isActive };
+      dispatch(updateVendor(updatedVendor));
+      // Success message will be shown by saga
+    } catch (error) {
+      console.error('Error updating vendor status:', error);
+    }
   };
 
   const columns = [
@@ -108,10 +146,7 @@ export function VendorManagement() {
       dataIndex: 'category',
       key: 'category',
       render: (category) => <Tag color="blue">{category}</Tag>,
-      filters: [...new Set(vendors.map(v => v.category))].map(cat => ({
-        text: cat,
-        value: cat
-      })),
+      filters: categoryFilters,
       onFilter: (value, record) => record.category === value,
     },
     {
@@ -209,6 +244,7 @@ export function VendorManagement() {
         columns={columns}
         dataSource={filteredVendors}
         rowKey="id"
+        loading={loading}
         pagination={{
           pageSize: 10,
           showSizeChanger: true,

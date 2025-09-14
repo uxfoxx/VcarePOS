@@ -18,6 +18,8 @@ This is the backend API for the VCare POS System, built with Node.js, Express, a
    DB_PASSWORD=postgres
    JWT_SECRET=your_jwt_secret_key_change_this_in_production
    PORT=3000
+   NODE_ENV=development
+   LOG_LEVEL=info  # Use 'debug' for more verbose logging
    ```
 
 3. Initialize the database:
@@ -28,6 +30,72 @@ This is the backend API for the VCare POS System, built with Node.js, Express, a
 4. Start the server:
    ```
    npm start
+   ```
+
+   For development with auto-reload:
+   ```
+   npm run dev
+   ```
+
+5. Access the API documentation at:
+   ```
+   http://localhost:3000/api/docs
+   ```
+
+## Logging System
+
+The backend includes a comprehensive logging system built with Winston:
+
+### Log Levels
+
+- **error**: Critical issues that need immediate attention
+- **warn**: Issues that should be reviewed but aren't critical
+- **info**: Important application events (default in production)
+- **http**: HTTP request/response logging
+- **debug**: Detailed debugging information (use in development)
+
+### Log Files
+
+Log files are stored in the `logs` directory:
+
+- **combined-YYYY-MM-DD.log**: All logs
+- **error-YYYY-MM-DD.log**: Error logs only
+- **http-YYYY-MM-DD.log**: HTTP request logs
+- **exceptions-YYYY-MM-DD.log**: Unhandled exceptions
+- **rejections-YYYY-MM-DD.log**: Unhandled promise rejections
+
+### Configuring Log Level
+
+To change the logging verbosity, set the `LOG_LEVEL` environment variable:
+
+```
+LOG_LEVEL=debug npm run dev
+```
+
+### Monitoring Endpoints
+
+Admin users can access system monitoring endpoints:
+
+- **GET /api/system/health**: Basic health check
+- **GET /api/system/metrics**: System metrics (memory, CPU, uptime)
+- **GET /api/system/logs**: List available log files
+- **GET /api/system/logs/{filename}**: View specific log file content
+
+### Using the Logger
+
+The logger is available throughout the application:
+
+```javascript
+const { logger } = require('./utils/logger');
+
+// Different log levels
+logger.error('Critical error', { userId: '123', error: err.message });
+logger.warn('Something suspicious', { userId: '123' });
+logger.info('Operation successful', { operation: 'create' });
+logger.debug('Detailed debug info', { data: someData });
+```
+
+For more details, see the [Logging Documentation](./docs/LOGGING.md)
    ```
 
 ## API Endpoints

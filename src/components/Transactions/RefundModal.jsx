@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Modal, 
   Form, 
@@ -6,7 +6,6 @@ import {
   Select, 
   Typography, 
   Space, 
-  Divider, 
   List, 
   InputNumber,
   Radio,
@@ -36,8 +35,8 @@ export function RefundModal({
   const [refundAmounts, setRefundAmounts] = useState({});
 
   if (!transaction) return null;
-
-  const handleSubmit = async (values) => {
+  
+  const handleSubmit = (values) => {
     try {
       setLoading(true);
       
@@ -81,14 +80,17 @@ export function RefundModal({
         status: 'processed'
       };
 
-      await onRefund(refundData);
-      message.success('Refund processed successfully');
+      // Dispatch the action and let Redux saga handle the async operation
+      onRefund(refundData);
+      
+      // Close modal and reset form
       onClose();
       form.resetFields();
       setRefundType('full');
       setSelectedItems([]);
       setRefundAmounts({});
-    } catch (error) {
+    } catch {
+      // Error handling is managed by Redux saga
       message.error('Failed to process refund');
     } finally {
       setLoading(false);
@@ -164,7 +166,7 @@ export function RefundModal({
               <Text type="secondary">Total Amount:</Text>
               <br />
               <Text strong className="text-blue-600 text-lg">
-                ${transaction.total.toFixed(2)}
+                LKR{transaction.total.toFixed(2)}
               </Text>
             </Col>
           </Row>
@@ -187,7 +189,7 @@ export function RefundModal({
                   <Text strong>Full Refund</Text>
                   <br />
                   <Text type="secondary" className="text-sm">
-                    Refund the entire transaction amount (${transaction.total.toFixed(2)})
+                    Refund the entire transaction amount (LKR{transaction.total.toFixed(2)})
                   </Text>
                 </div>
               </Radio>
@@ -224,7 +226,7 @@ export function RefundModal({
                 type: 'number', 
                 min: 0.01, 
                 max: transaction.total, 
-                message: `Amount must be between $0.01 and $${transaction.total.toFixed(2)}` 
+                message: `Amount must be between LKR0.01 and LKR${transaction.total.toFixed(2)}` 
               }
             ]}
           >
@@ -234,7 +236,7 @@ export function RefundModal({
               step={0.01}
               placeholder="0.00"
               className="w-full"
-              prefix="$"
+              prefix="LKR"
             />
           </Form.Item>
         )}
@@ -245,7 +247,7 @@ export function RefundModal({
             <Title level={5} className="mb-3">Select Items to Refund</Title>
             <List
               dataSource={transaction.items}
-              renderItem={(item, index) => {
+              renderItem={(item) => {
                 const isSelected = selectedItems.includes(item.product.id);
                 const maxQuantity = item.quantity;
                 const refundQuantity = refundAmounts[item.product.id] || maxQuantity;
@@ -271,7 +273,7 @@ export function RefundModal({
                         </div>
                         <div className="text-right">
                           <Text strong className="text-blue-600">
-                            ${item.product.price.toFixed(2)} each
+                            LKR{item.product.price.toFixed(2)} each
                           </Text>
                         </div>
                       </div>
@@ -290,7 +292,7 @@ export function RefundModal({
                             />
                           </div>
                           <Text strong className="text-green-600">
-                            Refund: ${(item.product.price * refundQuantity).toFixed(2)}
+                            Refund: LKR{(item.product.price * refundQuantity).toFixed(2)}
                           </Text>
                         </div>
                       )}
@@ -305,7 +307,7 @@ export function RefundModal({
                 <div className="flex justify-between items-center">
                   <Text strong>Total Items Refund:</Text>
                   <Text strong className="text-green-600 text-lg">
-                    ${calculateItemRefundTotal().toFixed(2)}
+                    LKR{calculateItemRefundTotal().toFixed(2)}
                   </Text>
                 </div>
               </div>
@@ -340,6 +342,8 @@ export function RefundModal({
           <Select>
             <Option value="original">Original Payment Method</Option>
             <Option value="cash">Cash</Option>
+            <Option value="card">Card</Option>
+            <Option value="digital">Digital</Option>
             <Option value="store-credit">Store Credit</Option>
             <Option value="bank-transfer">Bank Transfer</Option>
           </Select>

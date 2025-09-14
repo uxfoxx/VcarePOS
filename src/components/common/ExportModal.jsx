@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Modal, 
   Form, 
@@ -9,7 +9,6 @@ import {
   Input,
   Typography, 
   Space, 
-  Divider,
   Row,
   Col,
   Card,
@@ -25,7 +24,10 @@ import {
   exportCoupons, 
   exportUsers, 
   exportAuditTrail,
-  exportComprehensiveReport
+  exportComprehensiveReport,
+  exportPurchaseOrders,
+  exportVendors,
+  exportTopSellingProducts
 } from '../../utils/csvExport';
 import dayjs from 'dayjs';
 
@@ -38,24 +40,63 @@ export function ExportModal({
   onClose, 
   dataType = 'products',
   data = {},
-  title = 'Export Data'
+  title: _title = 'Export Data'
 }) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [exportType, setExportType] = useState('filtered');
 
   const handleExport = async () => {
     try {
       setLoading(true);
       const values = form.getFieldsValue();
       
+      // Validate data exists
+      if (!data || Object.keys(data).length === 0) {
+        message.error('No data available for export. Please ensure data is loaded first.');
+        return;
+      }
+      
       // Prepare filters based on data type
       const filters = { ...values };
       
-      // Convert date ranges to dayjs objects
+      // Validate date ranges
       if (filters.dateRange) {
+        if (filters.dateRange.length !== 2) {
+          message.error('Please select both start and end dates for the date range.');
+          return;
+        }
+        const [startDate, endDate] = filters.dateRange;
+        if (endDate.isBefore(startDate)) {
+          message.error('End date cannot be before start date.');
+          return;
+        }
+        // Convert date ranges to dayjs objects
         filters.dateRange = filters.dateRange.map(date => dayjs(date));
       }
+
+      // Validate price ranges
+      if (filters.priceRange && (filters.priceRange.min !== undefined || filters.priceRange.max !== undefined)) {
+        if (filters.priceRange.min !== undefined && filters.priceRange.max !== undefined) {
+          if (filters.priceRange.min > filters.priceRange.max) {
+            message.error('Minimum price cannot be greater than maximum price.');
+            return;
+          }
+        }
+        if (filters.priceRange.min !== undefined && filters.priceRange.min < 0) {
+          message.error('Minimum price cannot be negative.');
+          return;
+        }
+      }
+
+      // Validate amount ranges
+      if (filters.minAmount !== undefined && filters.maxAmount !== undefined) {
+        if (filters.minAmount > filters.maxAmount) {
+          message.error('Minimum amount cannot be greater than maximum amount.');
+          return;
+        }
+      }
+
+      console.log('Exporting with filters:', dataType, filters);
       
       switch (dataType) {
         case 'products':
@@ -70,6 +111,12 @@ export function ExportModal({
         case 'transaction-items':
           exportTransactionItems(data.transactions || [], filters);
           break;
+        case 'purchase-orders':
+          exportPurchaseOrders(data.purchaseOrders || [], filters);
+          break;
+        case 'vendors':
+          exportVendors(data.vendors || [], filters);
+          break;
         case 'coupons':
           exportCoupons(data.coupons || [], filters);
           break;
@@ -79,18 +126,37 @@ export function ExportModal({
         case 'audit-trail':
           exportAuditTrail(data.auditTrail || [], filters);
           break;
+        case 'top-selling':
+          exportTopSellingProducts(data.topSellingProducts || [], filters);
+          break;
         case 'comprehensive':
           exportComprehensiveReport(data, filters);
           break;
         default:
-          throw new Error('Unknown data type');
+          throw new Error(`Unknown data type: ${dataType}`);
       }
       
       message.success('Export completed successfully!');
       onClose();
     } catch (error) {
       console.error('Export error:', error);
-      message.error('Export failed. Please try again.');
+      
+      // Provide specific error messages based on error type
+      if (error.message.includes('No CSV content')) {
+        message.error('No data available to export. Please check your filters and try again.');
+      } else if (error.message.includes('Failed to convert data to CSV')) {
+        message.error('Data formatting error. Some data may be corrupted. Please contact support.');
+      } else if (error.message.includes('Failed to download file')) {
+        message.error('Download failed. Please check your browser settings and try again.');
+      } else if (error.message.includes('Unknown data type')) {
+        message.error('Invalid export type selected. Please refresh the page and try again.');
+      } else if (error.message.includes('File download is not supported')) {
+        message.error('File downloads are not supported in your browser. Please use a modern browser.');
+      } else if (error.message.includes('memory')) {
+        message.error('Export size too large. Please apply more filters to reduce the data size.');
+      } else {
+        message.error(`Export failed: ${error.message || 'Please try again or contact support if the problem persists.'}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -134,12 +200,18 @@ export function ExportModal({
         </Col>
         <Col span={12}>
           <div className="space-y-2">
-            <Form.Item name="lowStock" valuePropName="checked">
-              <Switch /> <Text>Low Stock Only (≤10 units)</Text>
-            </Form.Item>
-            <Form.Item name="outOfStock" valuePropName="checked">
-              <Switch /> <Text>Out of Stock Only</Text>
-            </Form.Item>
+            <div className="flex items-center space-x-2">
+              <Form.Item name="lowStock" valuePropName="checked" noStyle>
+                <Switch size="small" />
+              </Form.Item>
+              <Text>Low Stock Only (≤10 units)</Text>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Form.Item name="outOfStock" valuePropName="checked" noStyle>
+                <Switch size="small" />
+              </Form.Item>
+              <Text>Out of Stock Only</Text>
+            </div>
           </div>
         </Col>
       </Row>
@@ -170,12 +242,18 @@ export function ExportModal({
       </Row>
       
       <div className="space-y-2">
-        <Form.Item name="lowStock" valuePropName="checked">
-          <Switch /> <Text>Low Stock Only</Text>
-        </Form.Item>
-        <Form.Item name="outOfStock" valuePropName="checked">
-          <Switch /> <Text>Out of Stock Only</Text>
-        </Form.Item>
+        <div className="flex items-center space-x-2">
+          <Form.Item name="lowStock" valuePropName="checked" noStyle>
+            <Switch size="small" />
+          </Form.Item>
+          <Text>Low Stock Only</Text>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Form.Item name="outOfStock" valuePropName="checked" noStyle>
+            <Switch size="small" />
+          </Form.Item>
+          <Text>Out of Stock Only</Text>
+        </div>
       </div>
     </div>
   );
@@ -224,7 +302,7 @@ export function ExportModal({
             <InputNumber 
               placeholder="0.00" 
               className="w-full"
-              prefix="$"
+              prefix="LKR"
               min={0}
               step={0.01}
             />
@@ -235,7 +313,7 @@ export function ExportModal({
             <InputNumber 
               placeholder="No limit" 
               className="w-full"
-              prefix="$"
+              prefix="LKR"
               min={0}
               step={0.01}
             />
@@ -298,12 +376,18 @@ export function ExportModal({
       </Row>
       
       <div className="space-y-2">
-        <Form.Item name="expired" valuePropName="checked">
-          <Switch /> <Text>Expired Coupons Only</Text>
-        </Form.Item>
-        <Form.Item name="usedUp" valuePropName="checked">
-          <Switch /> <Text>Used Up Coupons Only</Text>
-        </Form.Item>
+        <div className="flex items-center space-x-2">
+          <Form.Item name="expired" valuePropName="checked" noStyle>
+            <Switch size="small" />
+          </Form.Item>
+          <Text>Expired Coupons Only</Text>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Form.Item name="usedUp" valuePropName="checked" noStyle>
+            <Switch size="small" />
+          </Form.Item>
+          <Text>Used Up Coupons Only</Text>
+        </div>
       </div>
     </div>
   );
@@ -331,9 +415,12 @@ export function ExportModal({
         </Col>
       </Row>
       
-      <Form.Item name="recentLogin" valuePropName="checked">
-        <Switch /> <Text>Users with Recent Login (Last 30 days)</Text>
-      </Form.Item>
+      <div className="flex items-center space-x-2">
+        <Form.Item name="recentLogin" valuePropName="checked" noStyle>
+          <Switch size="small" />
+        </Form.Item>
+        <Text>Users with Recent Login (Last 30 days)</Text>
+      </div>
     </div>
   );
 
@@ -381,6 +468,141 @@ export function ExportModal({
     </div>
   );
 
+  const renderPurchaseOrderFilters = () => (
+    <div className="space-y-4">
+      <Form.Item name="dateRange" label="Date Range">
+        <RangePicker 
+          className="w-full"
+          format="YYYY-MM-DD"
+          placeholder={['Start Date', 'End Date']}
+        />
+      </Form.Item>
+      
+      <Row gutter={16}>
+        <Col span={8}>
+          <Form.Item name="status" label="Status">
+            <Select placeholder="All statuses" allowClear>
+              <Option value="all">All Statuses</Option>
+              <Option value="pending">Pending</Option>
+              <Option value="received">Received</Option>
+              <Option value="completed">Completed</Option>
+              <Option value="cancelled">Cancelled</Option>
+            </Select>
+          </Form.Item>
+        </Col>
+        <Col span={8}>
+          <Form.Item name="vendorName" label="Vendor Name">
+            <Input placeholder="Filter by vendor name" />
+          </Form.Item>
+        </Col>
+        <Col span={8}>
+          <Form.Item name="createdBy" label="Created By">
+            <Input placeholder="Filter by creator" />
+          </Form.Item>
+        </Col>
+      </Row>
+      
+      <Row gutter={16}>
+        <Col span={12}>
+          <Form.Item name="minAmount" label="Minimum Amount">
+            <InputNumber 
+              placeholder="0.00" 
+              className="w-full"
+              prefix="LKR"
+              min={0}
+              step={0.01}
+            />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item name="maxAmount" label="Maximum Amount">
+            <InputNumber 
+              placeholder="No limit" 
+              className="w-full"
+              prefix="LKR"
+              min={0}
+              step={0.01}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
+    </div>
+  );
+
+  const renderVendorFilters = () => (
+    <div className="space-y-4">
+      <Row gutter={16}>
+        <Col span={12}>
+          <Form.Item name="category" label="Category">
+            <Select placeholder="All categories" allowClear>
+              <Option value="all">All Categories</Option>
+              <Option value="Wood">Wood</Option>
+              <Option value="Hardware">Hardware</Option>
+              <Option value="Upholstery">Upholstery</Option>
+              <Option value="Finishing">Finishing</Option>
+              <Option value="Metal">Metal</Option>
+              <Option value="Fabric">Fabric</Option>
+              <Option value="Materials">Materials</Option>
+            </Select>
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item name="isActive" label="Status">
+            <Select placeholder="All statuses" allowClear>
+              <Option value={true}>Active</Option>
+              <Option value={false}>Inactive</Option>
+            </Select>
+          </Form.Item>
+        </Col>
+      </Row>
+      
+      <Form.Item name="name" label="Vendor Name">
+        <Input placeholder="Filter by vendor name" />
+      </Form.Item>
+    </div>
+  );
+
+  const renderTopSellingFilters = () => (
+    <div className="space-y-4">
+      <Row gutter={16}>
+        <Col span={12}>
+          <Form.Item name="category" label="Category">
+            <Select placeholder="All categories" allowClear>
+              <Option value="all">All Categories</Option>
+              {data.categories?.map(cat => (
+                <Option key={cat.id} value={cat.name}>{cat.name}</Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item name="minQuantity" label="Minimum Units Sold">
+            <InputNumber 
+              placeholder="0" 
+              className="w-full"
+              min={0}
+              step={1}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
+      
+      <Row gutter={16}>
+        <Col span={12}>
+          <Form.Item name="minRevenue" label="Minimum Revenue">
+            <InputNumber 
+              placeholder="0.00" 
+              className="w-full"
+              prefix="LKR"
+              min={0}
+              step={0.01}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
+    </div>
+  );
+
   const renderFilters = () => {
     switch (dataType) {
       case 'products':
@@ -391,12 +613,18 @@ export function ExportModal({
         return renderTransactionFilters();
       case 'transaction-items':
         return renderTransactionItemFilters();
+      case 'purchase-orders':
+        return renderPurchaseOrderFilters();
+      case 'vendors':
+        return renderVendorFilters();
       case 'coupons':
         return renderCouponFilters();
       case 'users':
         return renderUserFilters();
       case 'audit-trail':
         return renderAuditFilters();
+      case 'top-selling':
+        return renderTopSellingFilters();
       case 'comprehensive':
         return (
           <div className="text-center py-8">
@@ -421,6 +649,7 @@ export function ExportModal({
       'coupons': 'Coupons',
       'users': 'Users',
       'audit-trail': 'Audit Trail',
+      'top-selling': 'Top Selling Products',
       'comprehensive': 'Comprehensive Report'
     };
     return titles[dataType] || 'Data';
@@ -435,6 +664,7 @@ export function ExportModal({
       'coupons': data.coupons?.length || 0,
       'users': data.users?.length || 0,
       'audit-trail': data.auditTrail?.length || 0,
+      'top-selling': data.topSellingProducts?.length || 0,
       'comprehensive': 'All Data'
     };
     return counts[dataType] || 0;

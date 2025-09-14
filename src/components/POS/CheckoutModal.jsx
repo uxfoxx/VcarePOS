@@ -4,7 +4,6 @@ import {
   Form, 
   Input, 
   Select, 
-  Button, 
   Typography, 
   Divider, 
   List, 
@@ -13,16 +12,18 @@ import {
   message,
   Row,
   Col,
-  Alert,
   Tag
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { EnhancedStepper } from '../common/EnhancedStepper';
 import { InvoiceModal } from '../Invoices/InvoiceModal';
 import { InventoryLabelModal } from '../Invoices/InventoryLabelModal';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchUsers } from '../../features/users/usersSlice';
+import { clearCart } from '../../features/cart/cartSlice';
+import { createTransaction } from '../../features/transactions/transactionsSlice';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -32,7 +33,6 @@ export function CheckoutModal({
   open, 
   onClose, 
   cartItems, 
-  orderTotal, 
   appliedCoupon, 
   couponDiscount,
   itemTaxes,
@@ -40,8 +40,9 @@ export function CheckoutModal({
   categoryTaxTotal,
   fullBillTaxTotal
 }) {
-  const { state, dispatch } = usePOS();
-  const { users, currentUser } = useAuth();
+  const dispatch = useDispatch();
+  const users = useSelector(state => state.users.usersList);
+  const { currentUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [customerForm] = Form.useForm();
   const [paymentForm] = Form.useForm();
@@ -53,6 +54,33 @@ export function CheckoutModal({
   const [completedTransaction, setCompletedTransaction] = useState(null);
   const [showInvoice, setShowInvoice] = useState(false);
   const [showInventoryLabels, setShowInventoryLabels] = useState(false);
+  
+  // Add state to store customer data persistently
+  const [customerData, setCustomerData] = useState({
+    customerName: '',
+    customerPhone: '',
+    customerEmail: '',
+    customerAddress: ''
+  });
+
+  React.useEffect(() => {
+    if (open) {
+      dispatch(fetchUsers());
+      // Reset forms and customer data when modal opens
+      setCustomerData({
+        customerName: '',
+        customerPhone: '',
+        customerEmail: '',
+        customerAddress: ''
+      });
+      setCurrentStep(0);
+      setOrderNotes('');
+      setPaymentMethod('card');
+      setSelectedSalesperson(currentUser?.id);
+      customerForm.resetFields();
+      paymentForm.resetFields();
+    }
+  }, [open, dispatch, currentUser?.id, customerForm, paymentForm]);
 
   const subtotal = cartItems.reduce((sum, item) => {
     // Include base price
@@ -61,10 +89,10 @@ export function CheckoutModal({
     // Add addon prices if any
     if (item.product.addons) {
       const addonTotal = item.product.addons.reduce((addonSum, addon) => 
-        addonSum + addon.price, 0);
+        addonSum + addon.price*addon.quantity, 0);
       itemTotal += addonTotal;
     }
-    
+
     return sum + itemTotal;
   }, 0);
   
@@ -98,12 +126,21 @@ export function CheckoutModal({
   const handleNext = async () => {
     setStepError('');
     
-    if (currentStep === 1) {
+    if (currentStep === 0) {
+      // Moving from Order Summary to Customer Details
+      setCurrentStep(currentStep + 1);
+    } else if (currentStep === 1) {
+      // Moving from Customer Details to Payment
       try {
-        await customerForm.validateFields();
+        // Capture and store customer data in state
+        const formData = customerForm.getFieldsValue();
+        
+        // Update persistent customer data state
+        setCustomerData(formData);
+        
         setCurrentStep(currentStep + 1);
       } catch (error) {
-        setStepError('Please fill in the required customer information');
+        setStepError('Error processing customer information');
         return;
       }
     } else {
@@ -121,19 +158,18 @@ export function CheckoutModal({
     setStepError('');
     
     try {
-      const customerData = customerForm.getFieldsValue();
+      // Use the persistent customer data state instead of form data
       const salesperson = users.find(u => u.id === selectedSalesperson);
       
       const transaction = {
         id: `TXN-${Date.now()}`,
-        items: cartItems,
         subtotal,
         categoryTaxTotal: categoryTaxTotal || 0,
         fullBillTaxTotal: fullBillTaxTotal || 0,
         totalTax: (categoryTaxTotal || 0) + (fullBillTaxTotal || 0),
         discount: couponDiscount || 0,
         total,
-        paymentMethod,
+        paymentMethod, // Use the state variable directly
         timestamp: new Date(),
         cashier: currentUser?.firstName + ' ' + currentUser?.lastName || 'Unknown',
         salesperson: salesperson ? `${salesperson.firstName} ${salesperson.lastName}` : getSalespersonName(selectedSalesperson),
@@ -148,52 +184,23 @@ export function CheckoutModal({
         appliedTaxes: {
           itemTaxes: itemTaxes || [],
           fullBillTaxes: fullBillTaxes || []
-        }
+        },
+        // Include color selection in transaction items
+        items: cartItems.map(item => ({
+          ...item,
+          selectedColorId: item.selectedColorId,
+          selectedSizeData: item.selectedSizeData // Include size data for raw material deduction
+        }))
       };
 
-      // Update product stock
-      cartItems.forEach(item => {
-        dispatch({ 
-          type: 'UPDATE_PRODUCT_STOCK', 
-          payload: { 
-            productId: item.product.id, 
-            quantity: item.quantity,
-            selectedSize: item.selectedSize
-          }
-        });
-        
-        // Update raw material stock for addons if any
-        if (item.product.addons) {
-          item.product.addons.forEach(addon => {
-            dispatch({
-              type: 'UPDATE_RAW_MATERIAL_STOCK',
-              payload: {
-                materialId: addon.id,
-                quantity: addon.quantity * item.quantity
-              }
-            });
-          });
-        }
-      });
 
-      // Update coupon usage if applied
-      if (appliedCoupon) {
-        dispatch({
-          type: 'UPDATE_COUPON',
-          payload: {
-            ...appliedCoupon,
-            usedCount: (appliedCoupon.usedCount || 0) + 1
-          }
-        });
-      }
-
-      dispatch({ type: 'ADD_TRANSACTION', payload: transaction });
-      dispatch({ type: 'CLEAR_CART' });
+      dispatch(createTransaction(transaction));
+      dispatch(clearCart());
       
       message.success('Order completed successfully!');
       
       // Set completed transaction and show options
-      setCompletedTransaction(transaction);
+      setCompletedTransaction(transaction); // todo
       
       // Close checkout modal
       onClose();
@@ -289,9 +296,9 @@ export function CheckoutModal({
                           Size: {item.selectedSize}
                         </Text>
                       )}
-                      {item.selectedVariant && (
+                      {item.selectedColor && (
                         <Text type="secondary" className="text-xs block">
-                          Variant: {item.selectedVariant}
+                          Color: {item.selectedColor.name}
                         </Text>
                       )}
                       {item.product.isCustom && (
@@ -377,105 +384,137 @@ export function CheckoutModal({
     </div>
   );
 
-  const renderCustomerDetails = () => (
-    <div className="space-y-4">
-      <Title level={4}>Customer Information</Title>
-      
-      <Form form={customerForm} layout="vertical">
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item name="customerName" label="Customer Name">
-              <Input 
-                prefix={<Icon name="person" className="text-gray-400" />}
-                placeholder="Enter customer name (optional)"
-              />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item name="customerPhone" label="Phone Number">
-              <Input 
-                prefix={<Icon name="phone" className="text-gray-400" />}
-                placeholder="Enter phone number (optional)"
-              />
-            </Form.Item>
-          </Col>
-        </Row>
+  const renderCustomerDetails = () => {
+    const phoneNumberRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
+
+    return (
+      <div className="space-y-4">
+        <Title level={4}>Customer Information</Title>
         
-        <Form.Item name="customerEmail" label="Email Address">
-          <Input 
-            prefix={<Icon name="email" className="text-gray-400" />}
-            placeholder="Enter email address (optional)"
-            type="email"
-          />
-        </Form.Item>
-        
-        <Form.Item name="customerAddress" label="Delivery Address">
-          <TextArea 
-            placeholder="Enter delivery address (optional)"
+        <Form form={customerForm} layout="vertical" preserve={true}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="customerName" label="Customer Name">
+                <Input 
+                  prefix={<Icon name="person" className="text-gray-400" />}
+                  placeholder="Enter customer name (optional)"
+                  onChange={(e) => {
+                    // Update persistent state in real-time
+                    setCustomerData(prev => ({ ...prev, customerName: e.target.value }));;
+                  }}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="customerPhone" label="Phone Number"
+              rules={[
+                {
+                  pattern: phoneNumberRegex,
+                  message: 'Please enter a valid phone number',
+                },
+              ]}>
+                <Input 
+                  prefix={<Icon name="phone" className="text-gray-400" />}
+                  placeholder="Enter phone number (optional)"
+                  onChange={(e) => {
+                    // Update persistent state in real-time
+                    setCustomerData(prev => ({ ...prev, customerPhone: e.target.value }));
+                  }}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+          
+          <Form.Item name="customerEmail" label="Email Address"
+          rules={[
+            {
+              type: 'email',
+              message: 'Please enter a valid email address',
+            },
+          ]}>
+            <Input 
+              prefix={<Icon name="email" className="text-gray-400" />}
+              placeholder="Enter email address (optional)"
+              type="email"
+              onChange={(e) => {
+                // Update persistent state in real-time
+                setCustomerData(prev => ({ ...prev, customerEmail: e.target.value }));
+              }}
+            />
+          </Form.Item>
+          
+          <Form.Item name="customerAddress" label="Delivery Address">
+            <TextArea 
+              placeholder="Enter delivery address (optional)"
+              rows={3}
+              onChange={(e) => {
+                // Update persistent state in real-time
+                setCustomerData(prev => ({ ...prev, customerAddress: e.target.value }));
+              }}
+            />
+          </Form.Item>
+        </Form>
+
+        <Divider />
+
+        <div className="space-y-3">
+          <Text strong>Order Notes</Text>
+          <TextArea
+            value={orderNotes}
+            onChange={(e) => setOrderNotes(e.target.value)}
+            placeholder="Add special instructions or notes for this order..."
             rows={3}
           />
-        </Form.Item>
-      </Form>
-
-      <Divider />
-
-      <div className="space-y-3">
-        <Text strong>Order Notes</Text>
-        <TextArea
-          value={orderNotes}
-          onChange={(e) => setOrderNotes(e.target.value)}
-          placeholder="Add special instructions or notes for this order..."
-          rows={3}
-        />
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderPayment = () => (
     <div className="space-y-4">
       <Title level={4}>Payment Method</Title>
       
       <Form form={paymentForm} layout="vertical">
-        <Form.Item name="paymentMethod" label="Select Payment Method">
-          <Radio.Group 
-            value={paymentMethod} 
-            onChange={(e) => setPaymentMethod(e.target.value)}
-            className="w-full"
-          >
-            <Space direction="vertical" className="w-full">
-              <Radio value="card" className="w-full p-4 border rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <Icon name="credit_card" className="text-blue-500" size="text-xl" />
-                  <div>
-                    <Text strong>Credit/Debit Card</Text>
-                    <br />
-                    <Text type="secondary" className="text-sm">Pay with card</Text>
-                  </div>
+              <Form.Item name="paymentMethod" label="Select Payment Method">
+        <Radio.Group 
+          value={paymentMethod} 
+          onChange={(e) => setPaymentMethod(e.target.value)}
+          className="w-full"
+        >
+          <Space direction="vertical" className="w-full">
+            <Radio value="card" className="w-full p-4 border rounded-lg">
+              <div className="flex items-center space-x-3">
+                <Icon name="credit_card" className="text-blue-500" size="text-xl" />
+                <div>
+                  <Text strong>Credit/Debit Card</Text>
+                  <br />
+                  <Text type="secondary" className="text-sm">Pay with card</Text>
                 </div>
-              </Radio>
-              <Radio value="cash" className="w-full p-4 border rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <Icon name="payments" className="text-green-500" size="text-xl" />
-                  <div>
-                    <Text strong>Cash</Text>
-                    <br />
-                    <Text type="secondary" className="text-sm">Pay with cash</Text>
-                  </div>
+              </div>
+            </Radio>
+            <Radio value="cash" className="w-full p-4 border rounded-lg">
+              <div className="flex items-center space-x-3">
+                <Icon name="payments" className="text-green-500" size="text-xl" />
+                <div>
+                  <Text strong>Cash</Text>
+                  <br />
+                  <Text type="secondary" className="text-sm">Pay with cash</Text>
                 </div>
-              </Radio>
-              <Radio value="digital" className="w-full p-4 border rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <Icon name="smartphone" className="text-purple-500" size="text-xl" />
-                  <div>
-                    <Text strong>Digital Wallet</Text>
-                    <br />
-                    <Text type="secondary" className="text-sm">Apple Pay, Google Pay, etc.</Text>
-                  </div>
+              </div>
+            </Radio>
+            <Radio value="digital" className="w-full p-4 border rounded-lg">
+              <div className="flex items-center space-x-3">
+                <Icon name="smartphone" className="text-purple-500" size="text-xl" />
+                <div>
+                  <Text strong>Digital Wallet</Text>
+                  <br />
+                  <Text type="secondary" className="text-sm">Apple Pay, Google Pay, etc.</Text>
                 </div>
-              </Radio>
-            </Space>
-          </Radio.Group>
-        </Form.Item>
+              </div>
+            </Radio>
+          </Space>
+        </Radio.Group>
+                </Form.Item>
       </Form>
 
       <div className="bg-gray-50 p-4 rounded-lg">
@@ -544,7 +583,6 @@ export function CheckoutModal({
         onCancel={onClose}
         width={800}
         footer={null}
-        destroyOnClose
       >
         <div className="space-y-6">
           <EnhancedStepper
@@ -618,7 +656,6 @@ export function CheckoutModal({
               View Invoice
             </ActionButton.Primary>
           ]}
-          destroyOnClose
         >
           <div className="text-center py-8">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -679,7 +716,7 @@ export function CheckoutModal({
         open={showInvoice}
         onClose={() => {
           setShowInvoice(false);
-          setCompletedTransaction(null);
+          // setCompletedTransaction(null);
         }}
         transaction={completedTransaction}
         type="detailed"
@@ -690,7 +727,7 @@ export function CheckoutModal({
         open={showInventoryLabels}
         onClose={() => {
           setShowInventoryLabels(false);
-          setCompletedTransaction(null);
+          // setCompletedTransaction(null);
         }}
         transaction={completedTransaction}
       />

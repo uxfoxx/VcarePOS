@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { 
   Modal, 
   Form, 
@@ -22,10 +23,9 @@ import {
   Steps,
   Tabs
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
-import { VariantManagementPanel } from './VariantManagementPanel';
+import { ColorManagementPanel } from './ColorManagementPanel';
 import { EnhancedStepper } from '../common/EnhancedStepper';
 
 const { Title, Text } = Typography;
@@ -39,7 +39,6 @@ export function ProductModal({
   onSubmit, 
   editingProduct = null 
 }) {
-  const { state } = usePOS();
   const [currentStep, setCurrentStep] = useState(0);
   const [productForm] = Form.useForm();
   const [materialsForm] = Form.useForm();
@@ -54,10 +53,42 @@ export function ProductModal({
   const [hasAddons, setHasAddons] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [hasVariants, setHasVariants] = useState(false);
-  const [variants, setVariants] = useState([]);
   const [productData, setProductData] = useState({});
+  const [colors, setColors] = useState([]);
   const [materialSearchTerm, setMaterialSearchTerm] = useState('');
+  const [selectedMaterialId, setSelectedMaterialId] = useState(null); // Track selected card
+  const { rawMaterialsList, error } = useSelector(state => state.rawMaterials);
+  const { categoriesList } = useSelector(state => state.categories);
+
+  // Generate SKU based on category
+  const generateSKU = () => {
+    const currentValues = productForm.getFieldsValue();
+    const category = currentValues.category;
+    
+    if (!category) {
+      message.warning('Please select a category first');
+      return;
+    }
+    
+    // Get category initials
+    const categoryInitials = category
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase())
+      .join('');
+    
+   // Generate unique number (timestamp-based) 
+    const uniqueNumber = Date.now().toString().slice(-6);
+
+    // Create SKU
+    const generatedSKU = `${categoryInitials}${uniqueNumber}`;
+    
+    // Set the SKU in the form
+    productForm.setFieldsValue({ barcode: generatedSKU });
+    setProductData(prev => ({ ...prev, barcode: generatedSKU }));
+    
+    message.success('SKU generated successfully');
+  };
+
 
   // Initialize form data when editing
   useEffect(() => {
@@ -66,28 +97,25 @@ export function ProductModal({
         name: editingProduct.name || '',
         category: editingProduct.category || '',
         price: editingProduct.price || 0,
-        stock: editingProduct.stock || 0,
         barcode: editingProduct.barcode || '',
         description: editingProduct.description || '',
-        weight: editingProduct.weight || 0,
         color: editingProduct.color || '',
-        dimensions: editingProduct.dimensions || {}
       };
       
       productForm.setFieldsValue(formData);
       setProductData(formData);
       setHasSizes(editingProduct.hasSizes || false);
       setHasAddons(editingProduct.hasAddons || false);
-      setHasVariants(editingProduct.hasVariants || false);
       
-      if (editingProduct.hasSizes && editingProduct.sizes) {
-        setSizes(editingProduct.sizes);
+      // Set colors from editing product 
+      if (editingProduct.colors) {
+        setColors(editingProduct.colors);
       } else {
-        setSizes([]);
+        setColors([]);
       }
       
       const enrichedMaterials = (editingProduct.rawMaterials || []).map(rawMat => {
-        const fullMaterial = state.rawMaterials?.find(m => m.id === rawMat.rawMaterialId);
+        const fullMaterial = rawMaterialsList?.find(m => m.id === rawMat.rawMaterialId);
         if (fullMaterial) {
           return {
             rawMaterialId: rawMat.rawMaterialId,
@@ -110,10 +138,10 @@ export function ProductModal({
       
       setSelectedMaterials(enrichedMaterials);
       
-      // Set addons if any
+      // Set addons if any (always available now)
       if (editingProduct.addons) {
         setSelectedAddons(editingProduct.addons.map(addon => {
-          const material = state.rawMaterials?.find(m => m.id === addon.id);
+          const material = rawMaterialsList?.find(m => m.id === addon.id);
           return {
             id: addon.id,
             name: material?.name || addon.name,
@@ -126,13 +154,6 @@ export function ProductModal({
         setSelectedAddons([]);
       }
       
-      // Set variants if any
-      if (editingProduct.hasVariants && editingProduct.variants) {
-        setVariants(editingProduct.variants);
-      } else {
-        setVariants([]);
-      }
-      
       setImagePreview(editingProduct.image);
       setCurrentStep(0);
     } else if (open && !editingProduct) {
@@ -140,28 +161,24 @@ export function ProductModal({
         name: '',
         category: '',
         price: 0,
-        stock: 0,
         barcode: '',
         description: '',
-        weight: 0,
         color: '',
-        dimensions: {}
       };
       
       productForm.resetFields();
       setProductData(initialData);
       setSelectedMaterials([]);
       setSelectedAddons([]);
-      setSizes([]);
-      setVariants([]);
+      setColors([]);
       setHasSizes(false);
       setHasAddons(false);
-      setHasVariants(false);
       setImageFile(null);
       setImagePreview(null);
       setCurrentStep(0);
+      setSelectedMaterialId(null);
     }
-  }, [editingProduct, open, productForm, state.rawMaterials]);
+  }, [editingProduct, open, productForm, rawMaterialsList]);
 
   const getSteps = () => {
     const baseSteps = [
@@ -170,14 +187,15 @@ export function ProductModal({
         description: 'Basic information',
         icon: 'inventory_2',
         content: renderProductDetails
-      },
-      {
-        title: 'Raw Materials',
-        description: 'Materials used',
-        icon: 'category',
-        content: renderRawMaterials
       }
     ];
+    
+    baseSteps.push({
+      title: 'Colors & Variations',
+      description: 'Color variations',
+      icon: 'palette',
+      content: renderColors
+    });
     
     if (hasAddons) {
       baseSteps.push({
@@ -188,40 +206,59 @@ export function ProductModal({
       });
     }
     
-    if (hasSizes) {
-      baseSteps.push({
-        title: 'Sizes',
-        description: 'Size variations',
-        icon: 'aspect_ratio',
-        content: renderSizes
-      });
-    }
-    
-    if (hasVariants) {
-      baseSteps.push({
-        title: 'Variants',
-        description: 'Product variants',
-        icon: 'style',
-        content: renderVariants
-      });
-    }
-    
     return baseSteps;
   };
 
   const handleImageUpload = (file) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target.result);
-      setProductData(prev => ({ ...prev, image: e.target.result }));
+     // Define validation constraints
+    const maxSizeMB = 5; // Maximum file size in MB
+    const maxSizeBytes = maxSizeMB * 1024 * 1024; // Convert to bytes
+    const maxDimensions = { width: 2000, height: 2000 }; // Maximum image dimensions
+
+    // Validate file size
+    if (file.size > maxSizeBytes) {
+      message.error(`Image size exceeds ${maxSizeMB}MB. Please upload a smaller image.`);
+      return false; // Prevent further processing
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      message.error('Invalid file type. Please upload a JPG, PNG, or GIF image.');
+      return false; // Prevent further processing
+    }
+
+    // Validate image dimensions
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl); // Clean up
+      if (img.width > maxDimensions.width || img.height > maxDimensions.height) {
+        message.error(
+          `Image dimensions exceed ${maxDimensions.width}x${maxDimensions.height} pixels. Please upload a smaller image.`
+        );
+        return;
+      }
+
+       // If all validations pass, process the image
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target.result);
+        setProductData((prev) => ({ ...prev, image: e.target.result }));
+      };
+      reader.readAsDataURL(file);
     };
-    reader.readAsDataURL(file);
-    setImageFile(file);
-    return false;
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl); // Clean up
+      message.error('Failed to process image. Please try another file.');
+    };
+    img.src = objectUrl;
+
+    return false; // Prevent default upload behavior
   };
 
   const handleAddMaterial = (values) => {
-    const material = state.rawMaterials.find(m => m.id === values.materialId);
+    const material = rawMaterialsList.find(m => m.id === values.materialId);
     if (!material) {
       message.error('Material not found');
       return;
@@ -253,7 +290,7 @@ export function ProductModal({
   };
 
   const handleAddAddon = (values) => {
-    const material = state.rawMaterials.find(m => m.id === values.materialId);
+    const material = rawMaterialsList.find(m => m.id === values.materialId);
     if (!material) {
       message.error('Material not found');
       return;
@@ -275,6 +312,7 @@ export function ProductModal({
 
     setSelectedAddons([...selectedAddons, newAddon]);
     addonsForm.resetFields();
+    setSelectedMaterialId(null); // Reset selected card
     message.success('Add-on added successfully');
   };
 
@@ -309,84 +347,85 @@ export function ProductModal({
     message.success('Size removed');
   };
 
-  const handleAddVariant = (variantData) => {
-    const newVariant = {
-      id: `VARIANT-${Date.now()}`,
-      ...variantData,
-      sizes: variantData.hasSizes ? [] : null,
+  const handleAddColor = (colorData) => {
+    const newColor = {
+      id: `COLOR-${Date.now()}`,
+      name: colorData.name,
+      colorCode: colorData.colorCode,
+      image: colorData.image,
+      sizes: [],
       rawMaterials: []
     };
     
-    setVariants([...variants, newVariant]);
-    message.success('Variant added successfully');
+    setColors([...colors, newColor]);
+    message.success('Color added successfully');
   };
-  
-  const handleUpdateVariant = (variantId, updatedData) => {
-    setVariants(variants.map(variant => 
-      variant.id === variantId ? { ...variant, ...updatedData } : variant
+
+  const handleUpdateColor = (colorId, updatedData) => {
+    setColors(colors.map(color => 
+      color.id === colorId ? { ...color, ...updatedData } : color
     ));
-    message.success('Variant updated successfully');
+    message.success('Color updated successfully');
   };
-  
-  const handleRemoveVariant = (variantId) => {
-    setVariants(variants.filter(variant => variant.id !== variantId));
-    message.success('Variant removed');
+
+  const handleRemoveColor = (colorId) => {
+    setColors(colors.filter(color => color.id !== colorId));
+    message.success('Color removed successfully');
   };
-  
-  const handleAddVariantSize = (variantId, sizeData) => {
-    setVariants(variants.map(variant => {
-      if (variant.id === variantId) {
-        const sizes = variant.sizes || [];
+
+  const handleAddColorSize = (colorId, sizeData) => {
+    setColors(colors.map(color => {
+      if (color.id === colorId) {
         return {
-          ...variant,
-          sizes: [...sizes, {
+          ...color,
+          sizes: [...(color.sizes || []), {
             id: `SIZE-${Date.now()}`,
             ...sizeData
           }]
         };
       }
-      return variant;
+      return color;
     }));
-    message.success('Size added to variant');
+    message.success('Size added to color');
   };
-  
-  const handleRemoveVariantSize = (variantId, sizeId) => {
-    setVariants(variants.map(variant => {
-      if (variant.id === variantId && variant.sizes) {
+
+  const handleRemoveColorSize = (colorId, sizeId) => {
+    setColors(colors.map(color => {
+      if (color.id === colorId) {
         return {
-          ...variant,
-          sizes: variant.sizes.filter(size => size.id !== sizeId)
+          ...color,
+          sizes: (color.sizes || []).filter(size => size.id !== sizeId)
         };
       }
-      return variant;
+      return color;
     }));
-    message.success('Size removed from variant');
+    message.success('Size removed from color');
   };
-  
-  const handleAddVariantMaterial = (variantId, materialData) => {
-    setVariants(variants.map(variant => {
-      if (variant.id === variantId) {
+
+  const handleAddColorMaterial = (colorId, materialData) => {
+    setColors(colors.map(color => {
+      if (color.id === colorId) {
         return {
-          ...variant,
-          rawMaterials: [...(variant.rawMaterials || []), materialData]
+          ...color,
+          rawMaterials: [...(color.rawMaterials || []), materialData]
         };
       }
-      return variant;
+      return color;
     }));
-    message.success('Material added to variant');
+    message.success('Material added to color');
   };
-  
-  const handleRemoveVariantMaterial = (variantId, materialId) => {
-    setVariants(variants.map(variant => {
-      if (variant.id === variantId) {
+
+  const handleRemoveColorMaterial = (colorId, materialId) => {
+    setColors(colors.map(color => {
+      if (color.id === colorId) {
         return {
-          ...variant,
-          rawMaterials: (variant.rawMaterials || []).filter(m => m.rawMaterialId !== materialId)
+          ...color,
+          rawMaterials: (color.rawMaterials || []).filter(m => m.rawMaterialId !== materialId)
         };
       }
-      return variant;
+      return color;
     }));
-    message.success('Material removed from variant');
+    message.success('Material removed from color');
   };
 
   const handleFormChange = (changedValues, allValues) => {
@@ -441,17 +480,14 @@ export function ProductModal({
       const currentFormValues = productForm.getFieldsValue();
       const finalProductData = { ...productData, ...currentFormValues };
       
-      const requiredFields = ['name', 'category'];
-      if (!hasSizes) {
-        requiredFields.push('price', 'stock');
-      }
+      const requiredFields = ['name', 'category', 'price'];
       
       const missingFields = [];
       requiredFields.forEach(field => {
         const value = finalProductData[field];
         if (value === undefined || value === null || value === '') {
           missingFields.push(field);
-        } else if ((field === 'price' || field === 'stock') && Number(value) < 0) {
+        } else if (field === 'price' && Number(value) < 0) {
           missingFields.push(field);
         }
       });
@@ -459,9 +495,8 @@ export function ProductModal({
       if (missingFields.length > 0) {
         const fieldLabels = {
           'name': 'Product Name',
-          'category': 'Category', 
+          'category': 'Category',
           'price': 'Price',
-          'stock': 'Stock'
         };
         const missingLabels = missingFields.map(field => fieldLabels[field] || field);
         setStepError(`Please fill in required fields: ${missingLabels.join(', ')}`);
@@ -469,15 +504,17 @@ export function ProductModal({
         return;
       }
 
-      if (hasSizes && sizes.length === 0) {
-        setStepError('Please add at least one size for this product');
-        setCurrentStep(steps.length - 1);
+      if (colors.length === 0) {
+        setStepError('Please add at least one color for this product');
+        setCurrentStep(1); // Colors step
         return;
       }
       
-      if (hasVariants && variants.length === 0) {
-        setStepError('Please add at least one variant for this product');
-        setCurrentStep(steps.length - 1);
+      // Validate that each color has at least one size
+      const colorsWithoutSizes = colors.filter(color => !color.sizes || color.sizes.length === 0);
+      if (colorsWithoutSizes.length > 0) {
+        setStepError(`Please add at least one size for color(s): ${colorsWithoutSizes.map(c => c.name).join(', ')}`);
+        setCurrentStep(1); // Colors step
         return;
       }
 
@@ -487,35 +524,23 @@ export function ProductModal({
         category: finalProductData.category,
         description: finalProductData.description || '',
         image: imagePreview || finalProductData.image || '',
-        hasSizes: hasSizes,
-        hasVariants: hasVariants,
         hasAddons: hasAddons,
         
-        // For products with sizes, calculate total stock from all sizes
-        price: !hasSizes ? (Number(finalProductData.price) || 0) : (sizes.length > 0 ? Math.min(...sizes.map(s => s.price)) : 0),
-        stock: hasSizes ? sizes.reduce((sum, size) => sum + size.stock, 0) : (Number(finalProductData.stock) || 0),
+        // Fixed price for the product
+        price: Number(finalProductData.price) || 0,
+        // Calculate total stock from all color sizes
+        stock: colors.reduce((total, color) => 
+          total + (color.sizes || []).reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
+        ),
         barcode: finalProductData.barcode || '',
-        dimensions: finalProductData.dimensions ? {
-          length: Number(finalProductData.dimensions.length) || 0,
-          width: Number(finalProductData.dimensions.width) || 0,
-          height: Number(finalProductData.dimensions.height) || 0,
-          unit: finalProductData.dimensions.unit || 'cm'
-        } : {},
-        weight: Number(finalProductData.weight) || 0,
         color: finalProductData.color || '',
         material: finalProductData.material || '',
-        rawMaterials: selectedMaterials.map(m => ({
-          rawMaterialId: m.rawMaterialId,
-          quantity: m.quantity
-          
-        })),
         
-        sizes: hasSizes ? sizes : [],
+        // New color-based structure
+        colors: colors,
         
         addons: hasAddons ? selectedAddons : []
       };
-
-      if (hasVariants) productSubmissionData.variants = variants;
 
       await onSubmit(productSubmissionData);
       handleClose();
@@ -537,12 +562,12 @@ export function ProductModal({
     setSelectedMaterials([]);
     setSelectedAddons([]);
     setSizes([]);
-    setHasSizes(false);
-    setHasVariants(false);
+    setColors([]);
     setHasAddons(false);
     setImageFile(null);
     setImagePreview(null);
     setProductData({});
+    setSelectedMaterialId(null);
     onClose();
   };
 
@@ -663,7 +688,7 @@ export function ProductModal({
   ];
 
   // Filter raw materials for addons
-  const filteredRawMaterials = state.rawMaterials.filter(material => 
+  const filteredRawMaterials = rawMaterialsList.filter(material => 
     material.name.toLowerCase().includes(materialSearchTerm.toLowerCase()) ||
     material.category.toLowerCase().includes(materialSearchTerm.toLowerCase())
   );
@@ -674,7 +699,7 @@ export function ProductModal({
       layout="vertical" 
       className="space-y-4"
       onValuesChange={handleFormChange}
-      preserve={false}
+      preserve={true}
     >
       <Row gutter={16}>
         <Col span={16}>
@@ -696,7 +721,7 @@ export function ProductModal({
             rules={[{ required: true, message: 'Please select category' }]}
           >
             <Select placeholder="Select category" allowClear>
-              {state.categories?.filter(cat => cat.isActive).map(category => (
+              {categoriesList?.filter(cat => cat.isActive).map(category => (
                 <Option key={category.id} value={category.name}>
                   {category.name}
                 </Option>
@@ -707,25 +732,6 @@ export function ProductModal({
       </Row>
 
       <Row gutter={16}>
-        <Col span={12}>
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <Text strong>Product Variants</Text>
-                <br />
-                <Text type="secondary" className="text-sm">
-                  Enable if this product has multiple variants (e.g., colors, materials)
-                </Text>
-              </div>
-              <Switch
-                checked={hasVariants}
-                onChange={setHasVariants}
-                checkedChildren="Yes"
-                unCheckedChildren="No"
-              />
-            </div>
-          </div>
-        </Col>
         <Col span={12}>
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center justify-between">
@@ -747,108 +753,48 @@ export function ProductModal({
         </Col>
       </Row>
 
-      {hasVariants && (
-        <Alert
-          message="Product Variants Enabled"
-          description="Since this product has variants, you'll be able to define different variants with their own properties, sizes, and raw materials in the Variants tab."
-          type="info"
-          showIcon
-        />
-      )}
-      {!hasSizes && (
-        <>
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item
-                name="price"
-                label="Price (LKR)"
-                rules={hasSizes ? [] : [
-                  { required: true, message: 'Please enter price' },
-                  { type: 'number', min: 0.01, message: 'Price must be greater than 0' }
-                ]}
-              >
-                <InputNumber
-                  min={0.01}
-                  step={100}
-                  placeholder="0.00"
-                  className="w-full"
-                  formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value.replace(/LKR\s?|(,*)/g, '')}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                name="stock"
-                label="Stock"
-                rules={hasSizes ? [] : [
-                  { required: true, message: 'Please enter stock' },
-                  { type: 'number', min: 0, message: 'Stock cannot be negative' }
-                ]}
-              >
-                <InputNumber
-                  min={0}
-                  placeholder="0"
-                  className="w-full"
-                  step={1}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="weight" label="Weight (kg)">
-                <InputNumber
-                  min={0}
-                  step={0.1}
-                  placeholder="0.0"
-                  className="w-full"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+      <Row gutter={16}>
+        <Col span={24}>
+          <Form.Item
+            name="price"
+            label="Price (LKR)"
+            rules={[
+              { required: true, message: 'Please enter price' },
+              { type: 'number', min: 0.01, message: 'Price must be greater than 0' }
+            ]}
+          >
+            <InputNumber
+              min={0.01}
+              step={100}
+              placeholder="0.00"
+              className="w-full"
+              formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
 
-          <Row gutter={16}>
-            <Col span={16}>
-              <Form.Item name="barcode" label="SKU/Barcode">
-                <Input placeholder="Enter SKU or barcode" />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="color" label="Color">
-                <Input placeholder="Enter color" />
-              </Form.Item>
-            </Col>
-          </Row>
-        </>
-      )}
-
-      {(hasSizes || hasVariants) && (
-        <Alert
-          message="Product Sizes Enabled"
-          description="Since this product has sizes, the price and stock will be set for each size individually. The fields below represent the base values for reference."
-          type="info"
-          showIcon
-        />
-      )}
-
-      <Form.Item label="Dimensions">
-        <Input.Group compact>
-          <Form.Item name={['dimensions', 'length']} noStyle>
-            <InputNumber placeholder="Length" className="w-1/4" min={0} />
+      <Row gutter={16}>
+        <Col span={16}>
+          <Form.Item name="barcode" label="SKU/Barcode">
+            <Input 
+              placeholder="Enter SKU or barcode" 
+              addonAfter={
+                <Button 
+                  type="text" 
+                  size="small"
+                  onClick={generateSKU}
+                  icon={<Icon name="auto_awesome" />}
+                  className="text-blue-600"
+                >
+                  Generate
+                </Button>
+              }
+            />
           </Form.Item>
-          <Form.Item name={['dimensions', 'width']} noStyle>
-            <InputNumber placeholder="Width" className="w-1/4" min={0} />
-          </Form.Item>
-          <Form.Item name={['dimensions', 'height']} noStyle>
-            <InputNumber placeholder="Height" className="w-1/4" min={0} />
-          </Form.Item>
-          <Form.Item name={['dimensions', 'unit']} noStyle>
-            <Select placeholder="Unit" className="w-1/4">
-              <Option value="cm">cm</Option>
-              <Option value="inch">inch</Option>
-            </Select>
-          </Form.Item>
-        </Input.Group>
-      </Form.Item>
+        </Col>
+      </Row>
 
       <Form.Item name="description" label="Description">
         <TextArea
@@ -885,7 +831,7 @@ export function ProductModal({
                   <Text>Click to upload product image</Text>
                   <br />
                   <Text type="secondary" className="text-sm">
-                    Supports: JPG, PNG, GIF (Max: 5MB)
+                    Supports: JPG, PNG, GIF (Max: 5MB, 2000x2000 pixels)
                   </Text>
                 </div>
               </div>
@@ -894,6 +840,29 @@ export function ProductModal({
         </Upload>
       </Form.Item>
     </Form>
+  );
+
+  const renderColors = () => (
+    <div className="space-y-6">
+      <div>
+        <Title level={5}>Product Colors</Title>
+        <Text type="secondary">
+          Define color variations for this product. Each color can have its own sizes and raw materials.
+        </Text>
+      </div>
+
+      <ColorManagementPanel
+        colors={colors}
+        rawMaterials={rawMaterialsList}
+        onAddColor={handleAddColor}
+        onUpdateColor={handleUpdateColor}
+        onRemoveColor={handleRemoveColor}
+        onAddColorSize={handleAddColorSize}
+        onRemoveColorSize={handleRemoveColorSize}
+        onAddColorMaterial={handleAddColorMaterial}
+        onRemoveColorMaterial={handleRemoveColorMaterial}
+      />
+    </div>
   );
 
   const renderRawMaterials = () => (
@@ -917,12 +886,17 @@ export function ProductModal({
                 <Select
                   placeholder="Search and select material"
                   showSearch
+                  optionFilterProp="label"
                   filterOption={(input, option) =>
-                    option.children.toLowerCase().includes(input.toLowerCase())
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                   }
                 >
-                  {state.rawMaterials?.map(material => (
-                    <Option key={material.id} value={material.id}>
+                  {rawMaterialsList?.map(material => (
+                    <Option 
+                      key={material.id} 
+                      value={material.id} 
+                      label={`${material.name} ${material.category}`}
+                    >
                       <div>
                         <Text strong>{material.name}</Text>
                         <br />
@@ -1019,37 +993,65 @@ export function ProductModal({
             </Col>
           </Row>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-            {filteredRawMaterials.map(material => (
-              <Card 
-                key={material.id} 
-                size="small" 
-                className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => {
-                  addonsForm.setFieldsValue({
-                    materialId: material.id,
-                    quantity: 1
-                  });
-                }}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Icon name="category" className="text-blue-600" />
-                  </div>
-                  <div>
-                    <Text strong className="block">{material.name}</Text>
-                    <Text type="secondary" className="text-xs">
-                      LKR {material.unitPrice.toFixed(2)} per {material.unit}
-                    </Text>
-                    <br />
-                    <Text type="secondary" className="text-xs">
-                      Stock: {material.stockQuantity} {material.unit}
-                    </Text>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+          {rawMaterialsList?.length > 0 ? (
+            filteredRawMaterials.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                {filteredRawMaterials.map(material => (
+                  <Card 
+                    key={material.id} 
+                    size="small" 
+                    className={`cursor-pointer hover:shadow-md transition-shadow ${
+                      selectedMaterialId === material.id ? 'border-2 border-blue-500 bg-blue-50' : ''
+                    }`}
+                    onClick={() => {
+                      setSelectedMaterialId(material.id);
+                      addonsForm.setFieldsValue({
+                        materialId: material.id,
+                        quantity: 1
+                      });
+                    }}
+                    hoverable
+                    role="button"
+                    aria-label={`Select ${material.name} as add-on`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Icon name="category" className="text-blue-600" />
+                      </div>
+                      <div>
+                        <Text strong className="block">{material.name}</Text>
+                        <Text type="secondary" className="text-xs">
+                          LKR {material.unitPrice.toFixed(2)} per {material.unit}
+                        </Text>
+                        <br />
+                        <Text type="secondary" className="text-xs">
+                          Stock: {material.stockQuantity} {material.unit}
+                        </Text>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 bg-gray-50 rounded-lg">
+                <Icon name="search_off" className="text-4xl text-gray-300 mb-2" />
+                <Text type="secondary">No materials match your search</Text>
+                <br />
+                <Text type="secondary" className="text-sm">
+                  Try adjusting your search term to find available materials
+                </Text>
+              </div>
+            )
+          ) : (
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <Icon name="warning" className="text-4xl text-yellow-500 mb-2" />
+              <Text type="secondary">No raw materials available</Text>
+              <br />
+              <Text type="secondary" className="text-sm">
+                Please add raw materials to the system before creating add-ons
+              </Text>
+            </div>
+          )}
           
           <Row gutter={16}>
             <Col span={12}>
@@ -1058,15 +1060,27 @@ export function ProductModal({
                 label="Selected Add-on"
                 rules={[{ required: true, message: 'Please select an add-on' }]}
               >
+                
                 <Select
                   placeholder="Select add-on material"
                   showSearch
+                  optionFilterProp="label"
                   filterOption={(input, option) =>
-                    option.children.toLowerCase().includes(input.toLowerCase())
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                   }
+                  value={selectedMaterialId}
+                  onChange={(value) => {
+                    console.log('Select changed:', value);
+                    setSelectedMaterialId(value);
+                    addonsForm.setFieldsValue({ materialId: value });
+                  }}
                 >
-                  {state.rawMaterials?.map(material => (
-                    <Option key={material.id} value={material.id}>
+                  {rawMaterialsList?.map(material => (
+                    <Option 
+                      key={material.id} 
+                      value={material.id}
+                      label={`${material.name} (LKR ${material.unitPrice.toFixed(2)}/${material.unit})`}
+                    >
                       {material.name} (LKR {material.unitPrice.toFixed(2)}/{material.unit})
                     </Option>
                   ))}
@@ -1268,20 +1282,6 @@ export function ProductModal({
         </div>
       )}
     </div>
-  );
-
-  const renderVariants = () => (
-    <VariantManagementPanel
-      variants={variants}
-      rawMaterials={state.rawMaterials}
-      onAddVariant={handleAddVariant}
-      onUpdateVariant={handleUpdateVariant}
-      onRemoveVariant={handleRemoveVariant}
-      onAddVariantSize={handleAddVariantSize}
-      onRemoveVariantSize={handleRemoveVariantSize}
-      onAddVariantMaterial={handleAddVariantMaterial}
-      onRemoveVariantMaterial={handleRemoveVariantMaterial}
-    />
   );
 
   const steps = getSteps();

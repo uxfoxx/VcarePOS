@@ -5,36 +5,71 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "build": "tsc -b && vite build",
+    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --fix --report-unused-disable-directives",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "type-check": "tsc --noEmit",
+    "preview": "vite preview",
+    "serve:prod": "npx serve -s dist -p 3001",
+    "pm2:serve": "npx pm2 start \"npx serve -s dist -p 3001\" --name vcare-pos-frontend",
+    "pm2:start:config": "npx pm2 start ecosystem.config.mjs",
+    "pm2:stop": "npx pm2 stop vcare-pos-frontend",
+    "pm2:restart": "npx pm2 restart vcare-pos-frontend",
+    "pm2:status": "npx pm2 status vcare-pos-frontend",
+    "pm2:logs": "npx pm2 logs vcare-pos-frontend",
+    "pm2:delete": "npx pm2 delete vcare-pos-frontend",
+    "start:prod": "npm run build && npm run serve:prod"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.8.2",
     "antd": "^5.12.8",
     "dayjs": "^1.11.13",
     "html2canvas": "^1.4.1",
+    "jsbarcode": "^3.12.1",
     "jspdf": "^2.5.1",
     "node-cache": "^5.1.2",
+    "pm2": "^5.4.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-image-crop": "^11.0.10",
+    "react-redux": "^9.2.0",
     "react-router-dom": "^6.20.1",
-    "sass": "^1.69.5"
+    "redux-logger": "^3.0.6",
+    "redux-saga": "^1.3.0",
+    "sass": "^1.69.5",
+    "serve": "^14.2.1"
   },
   "devDependencies": {
+    "@babel/eslint-parser": "^7.28.0",
+    "@babel/preset-react": "^7.27.1",
+    "@eslint/compat": "^1.3.1",
     "@eslint/js": "^9.9.1",
-    "@types/react": "^18.3.5",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.1",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^14.3.1",
+    "@testing-library/user-event": "^14.6.1",
+    "@vitejs/plugin-react": "^5.0.1",
     "autoprefixer": "^10.4.18",
     "eslint": "^9.9.1",
+    "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.11",
     "globals": "^15.9.0",
+    "jsdom": "^22.1.0",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.3.0",
-    "vite": "^5.4.2"
+    "vite": "^5.4.2",
+    "vite-plugin-eslint": "^1.8.1",
+    "vitest": "^1.6.1"
+  },
+  "vitest": {
+    "globals": true,
+    "environment": "jsdom",
+    "setupFiles": [
+      "src/setupTests.js"
+    ]
   }
 }

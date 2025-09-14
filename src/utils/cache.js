@@ -117,7 +117,7 @@ const cache = new BrowserCache({ stdTTL: 600, checkperiod: 60 });
  * @param {number} ttl - Time to live in seconds (optional)
  * @returns {Promise<any>} - Cached or fetched data
  */
-export const getOrFetch = async (key, fetchFn, ttl = 600) => {
+export const getOrFetch = async (key, fetchFn, _ttl = 600) => {
   // Directly fetch data without caching
   const data = await fetchFn();
   return data;
@@ -127,7 +127,7 @@ export const getOrFetch = async (key, fetchFn, ttl = 600) => {
  * Invalidate a specific cache key
  * @param {string} key - Cache key to invalidate
  */
-export const invalidateCache = (key) => {
+export const invalidateCache = (_key) => {
   // No-op since caching is disabled
   return;
 };
@@ -136,7 +136,7 @@ export const invalidateCache = (key) => {
  * Invalidate multiple cache keys by prefix
  * @param {string} prefix - Prefix of cache keys to invalidate
  */
-export const invalidateCacheByPrefix = (prefix) => {
+export const invalidateCacheByPrefix = (_prefix) => {
   // No-op since caching is disabled
   return 0;
 };

@@ -1,51 +1,50 @@
 import React, { useState } from 'react';
-import { 
-  Card, 
-  Row, 
-  Col, 
-  Empty,
-  Modal,
-  Descriptions,
-  Image,
-  Tag,
-  Select,
-  Space,
+import {
+  Card,
+  Button,
   Typography,
+  Modal,
+  Row,
+  Col,
+  Space,
+  Tag,
+  Image,
+  Select,
   Input,
-  Button
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
-import { SearchInput } from '../common/SearchInput';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchProducts } from '../../features/products/productsSlice';
+import { fetchCategories } from '../../features/categories/categoriesSlice';
 import { ProductCard } from '../common/ProductCard';
-import { PageHeader } from '../common/PageHeader';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
-import { VariantSelectionModal } from './VariantSelectionModal';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { EmptyState } from '../common/EmptyState';
 import { CustomProductModal } from './CustomProductModal';
 import { ProductAddonsModal } from './ProductAddonsModal';
+import { ColorAndSizeSelectionModal } from './ColorAndSizeSelectionModal';
+import { addToCart } from '../../features/cart/cartSlice';
 
 const { Option } = Select;
 const { Text, Title } = Typography;
 const { Search } = Input;
 
 export function ProductGrid({ collapsed }) {
-  const { 
-    products = [],
-    categories = [],
-    loading = false,
-    addToCart,
-    dispatch
-  } = usePOS();
+  const dispatch = useDispatch();
+  const products = useSelector(state => state.products.productsList);
+  const categories = useSelector(state => state.categories.categoriesList);
+  const loading = useSelector(state => state.products.loading || state.categories.loading);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedSize, setSelectedSize] = useState(null);
-  const [showVariantModal, setShowVariantModal] = useState(false);
+  const [showColorSizeModal, setShowColorSizeModal] = useState(false);
   const [showCustomProductModal, setShowCustomProductModal] = useState(false);
   const [showAddonsModal, setShowAddonsModal] = useState(false);
+
+  React.useEffect(() => {
+    dispatch(fetchProducts());
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
   // Get categories from state, including only active ones
   const activeCategories = Array.isArray(categories) ? categories.filter(cat => cat?.isActive) : [];
@@ -63,78 +62,46 @@ export function ProductGrid({ collapsed }) {
     }) : [];
 
   const handleAddToCart = (product) => {
-    if (product.hasVariants) {
-      // Show variant selection modal
+    if (product.colors && product.colors.length > 0) {
+      // Show color and size selection modal
       setSelectedProduct(product);
-      setShowVariantModal(true);
-    } else if (product.hasSizes) {
-      // Show variant selection modal
-      setSelectedProduct(product);
-      setShowVariantModal(true);
-    } else if (product.hasSizes) {
-      // Show size selection modal
-      setSelectedProduct(product);
-      setSelectedSize(null);
-      setShowDetailModal(true);
+      setShowColorSizeModal(true);
     } else if (product.isCustom) {
-      // Add custom product directly
-      dispatch({ type: 'ADD_TO_CART', payload: product });
+      dispatch(addToCart({ product }));
     } else {
-      // Show addons modal for regular products
       setSelectedProduct(product);
       setShowAddonsModal(true);
     }
   };
 
-  const handleVariantSelected = (variant, size = null) => {
-    // Close variant modal
-    setShowVariantModal(false);
-    // Show addons modal for the selected variant
-    setSelectedProduct({...variant, selectedSize: size});
+  const handleColorAndSizeSelected = (selectedColor, selectedSize, selectedSizeData) => {
+    // Close color/size modal
+    setShowColorSizeModal(false);
+    
+    // Create product with selected color and size
+    const productWithColorAndSize = {
+      ...selectedProduct,
+      selectedColorId: selectedColor.id,
+      selectedColor: selectedColor,
+      selectedSize: selectedSize.name,
+      selectedSizeData: selectedSize,
+      // Use the raw materials from the selected color
+      rawMaterials: selectedSize?.rawMaterials || []
+    };
+    
+    // Show addons modal for the selected color/size combination
+    setSelectedProduct(productWithColorAndSize);
     setShowAddonsModal(true);
   };
 
   const handleAddToCartWithAddons = (productWithAddons, quantity = 1) => {
-    // Add to cart multiple times based on quantity
-    for (let i = 0; i < quantity; i++) {
-      addToCart(productWithAddons);
-    }
-  };
-
-  const handleProductClick = (product) => {
-    setSelectedProduct(product);
-    setSelectedSize(null);
-    setShowDetailModal(true);
-  };
-
-  const handleSizeChange = (sizeName) => {
-    setSelectedSize(sizeName);
-  };
-
-  const getSelectedSizeData = () => {
-    if (!selectedProduct || !selectedProduct.hasSizes || !selectedSize) {
-      return null;
-    }
-    
-    return selectedProduct.sizes.find(size => size.name === selectedSize);
-  };
-
-  const handleAddSelectedSizeToCart = () => {
-    const sizeData = getSelectedSizeData();
-    if (sizeData && sizeData.stock > 0) {
-      const productWithSize = {
-        ...selectedProduct,
-        price: sizeData.price,
-        selectedSize: selectedSize,
-        dimensions: sizeData.dimensions,
-        weight: sizeData.weight
-      };
-      
-      // Show addons modal for the selected size
-      setShowDetailModal(false);
-      setSelectedProduct(productWithSize);
-      setShowAddonsModal(true);
-    }
+    dispatch(addToCart({ 
+      product: productWithAddons, 
+      quantity,
+      selectedColorId: productWithAddons.selectedColorId,
+      selectedSize: productWithAddons.selectedSize,
+      addons: productWithAddons.addons
+    }));
   };
 
   const handleAddCustomProduct = (customProduct) => {
@@ -164,8 +131,6 @@ export function ProductGrid({ collapsed }) {
       </Card>
     );
   }
-
-  const selectedSizeData = getSelectedSizeData();
 
   return (
     <>
@@ -233,13 +198,13 @@ export function ProductGrid({ collapsed }) {
                   <ProductCard
                     product={{
                       ...product,
-                      price: product.price // Price is already in LKR
+                      price: product.price,
+                      hasColors: product.colors && product.colors.length > 0
                     }}
                     onAddToCart={handleAddToCart}
-                    hasVariants={product.hasVariants}
-                    onClick={handleProductClick}
+                    onClick={() => handleAddToCart(product)}
                     showDetails={true}
-                    showPriceRange={product.hasSizes && product.sizes?.length > 1}
+                    showPriceRange={false}
                   />
                 </Col>
               ))}
@@ -248,234 +213,13 @@ export function ProductGrid({ collapsed }) {
         </div>
       </Card>
 
-      {/* Variant Selection Modal */}
-      <VariantSelectionModal
-        open={showVariantModal}
-        onClose={() => setShowVariantModal(false)}
+      {/* Color and Size Selection Modal */}
+      <ColorAndSizeSelectionModal
+        open={showColorSizeModal}
+        onClose={() => setShowColorSizeModal(false)}
         product={selectedProduct}
-        onVariantSelected={handleVariantSelected}
+        onColorAndSizeSelected={handleColorAndSizeSelected}
       />
-
-      {/* Product Detail/Size Selection Modal */}
-      <Modal
-        title={null}
-        open={showDetailModal}
-        onCancel={() => {
-          setShowDetailModal(false);
-          setSelectedProduct(null);
-          setSelectedSize(null);
-        }}
-        width={700}
-        footer={null}
-        closable={true}
-        className="product-detail-modal"
-      >
-        {selectedProduct && (
-          <div className="space-y-6">
-            {/* Product Header */}
-            <div>
-              <Title level={3}>{selectedProduct.name}</Title>
-              <Text type="secondary" className="text-base">
-                {selectedProduct.description}
-              </Text>
-            </div>
-            
-            {/* Product Image and Basic Info */}
-            <div className="flex gap-6">
-              <div className="w-1/3">
-                <Image
-                  src={selectedProduct.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
-                  alt={selectedProduct.name}
-                  className="w-full h-auto object-cover rounded-lg"
-                  preview={false}
-                  style={{ aspectRatio: '4/3', objectFit: 'cover' }}
-                />
-              </div>
-              
-              <div className="w-2/3">
-                {/* Price and Stock */}
-                <div className="mb-6">
-                  <Title level={2} className="text-green-600 mb-2">
-                    {selectedSizeData 
-                      ? `LKR ${(selectedSizeData.price || 0).toFixed(2)}`
-                      : selectedProduct.hasSizes
-                        ? `From LKR ${Math.min(...(selectedProduct.sizes || []).map(s => s.price || 0) || [0]).toFixed(2)}`
-                        : `LKR ${(selectedProduct.price || 0).toFixed(2)}`
-                    }
-                  </Title>
-                  
-                  <Tag color={
-                    selectedSizeData
-                      ? selectedSizeData.stock > 0 ? 'green' : 'red'
-                      : selectedProduct.stock > 0 ? 'green' : 'red'
-                  } className="text-base px-3 py-1">
-                    {selectedSizeData
-                      ? `${selectedSizeData.stock} in stock`
-                      : `${selectedProduct.stock} in stock`
-                    }
-                  </Tag>
-                </div>
-                
-                {/* Size Selection */}
-                {selectedProduct.hasSizes && (
-                  <div className="mb-6">
-                    <Title level={5}>Select Size:</Title>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {selectedProduct.sizes?.map(size => (
-                        <Button
-                          key={size.id}
-                          type={selectedSize === size.name ? 'primary' : 'default'}
-                          onClick={() => handleSizeChange(size?.name)}
-                          disabled={size?.stock === 0}
-                          className={selectedSize === size.name ? 'bg-blue-600' : ''}
-                          size="large"
-                        >
-                          {size?.name || 'Size'}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Size Details */}
-                {selectedSizeData && (
-                  <div className="bg-blue-50 p-4 rounded-lg mb-6">
-                    <Title level={5} className="mb-3">Size Details:</Title>
-                    <Row gutter={16}>
-                      <Col span={12}>
-                        <div className="mb-2">
-                          <Text type="secondary">Price:</Text>
-                          <br />
-                          <Text strong>LKR {(selectedSizeData.price || 0).toFixed(2)}</Text>
-                        </div>
-                      </Col>
-                      <Col span={12}>
-                        <div className="mb-2">
-                          <Text type="secondary">Stock:</Text>
-                          <br />
-                          <Text strong>{selectedSizeData.stock} available</Text>
-                        </div>
-                      </Col>
-                      {selectedSizeData.dimensions && (
-                        <Col span={12}>
-                          <div className="mb-2">
-                            <Text type="secondary">Dimensions:</Text>
-                            <br />
-                            <Text strong>
-                              {selectedSizeData.dimensions.length}×{selectedSizeData.dimensions.width}×{selectedSizeData.dimensions.height} {selectedSizeData.dimensions.unit}
-                            </Text>
-                          </div>
-                        </Col>
-                      )}
-                      <Col span={12}>
-                        <div className="mb-2">
-                          <Text type="secondary">Weight:</Text>
-                          <br />
-                          <Text strong>{selectedSizeData.weight} kg</Text>
-                        </div>
-                      </Col>
-                    </Row>
-                  </div>
-                )}
-                
-                {/* Product Details for non-size products */}
-                {!selectedProduct.hasSizes && (
-                  <div className="mb-6">
-                    <Title level={5} className="mb-3">Product Details:</Title>
-                    <Row gutter={16}>
-                      <Col span={12}>
-                        <div className="mb-2">
-                          <Text type="secondary">SKU:</Text>
-                          <br />
-                          <Text strong>{selectedProduct.barcode || 'N/A'}</Text>
-                        </div>
-                      </Col>
-                      <Col span={12}>
-                        <div className="mb-2">
-                          <Text type="secondary">Category:</Text>
-                          <br />
-                          <Text strong>{selectedProduct.category}</Text>
-                        </div>
-                      </Col>
-                      {selectedProduct.dimensions && (
-                        <Col span={12}>
-                          <div className="mb-2">
-                            <Text type="secondary">Dimensions:</Text>
-                            <br />
-                            <Text strong>
-                              {selectedProduct.dimensions.length}×{selectedProduct.dimensions.width}×{selectedProduct.dimensions.height} {selectedProduct.dimensions.unit}
-                            </Text>
-                          </div>
-                        </Col>
-                      )}
-                      <Col span={12}>
-                        <div className="mb-2">
-                          <Text type="secondary">Weight:</Text>
-                          <br />
-                          <Text strong>{selectedProduct.weight} kg</Text>
-                        </div>
-                      </Col>
-                    </Row>
-                  </div>
-                )}
-                
-                {/* Action Buttons */}
-                <div className="flex justify-end space-x-3 mt-6">
-                  <Button 
-                    size="large"
-                    onClick={() => {
-                      setShowDetailModal(false);
-                      setSelectedProduct(null);
-                      setSelectedSize(null);
-                    }}
-                  >
-                    Close
-                  </Button>
-                  
-                  {selectedProduct.hasVariants ? (
-                    <Button
-                      type="primary"
-                      size="large"
-                      icon={<Icon name="style" />}
-                      onClick={() => {
-                        setShowDetailModal(false);
-                        setShowVariantModal(true);
-                      }}
-                    >
-                      Select Variant
-                    </Button>
-                  ) : selectedProduct.hasSizes ? (
-                    <Button
-                      type="primary"
-                      size="large"
-                      icon={<Icon name="style" />}
-                      onClick={() => {
-                        setShowDetailModal(false);
-                        setShowVariantModal(true);
-                      }}
-                    >
-                      Select Variant
-                    </Button>
-                  ) : (
-                    <Button
-                      type="primary"
-                      size="large"
-                      icon={<Icon name="add_shopping_cart" />}
-                      onClick={() => {
-                        handleAddToCart(selectedProduct);
-                        setShowDetailModal(false);
-                      }}
-                      disabled={selectedProduct?.stock === 0}
-                    >
-                      Add to Cart
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
 
       {/* Custom Product Modal */}
       <CustomProductModal

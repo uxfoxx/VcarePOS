@@ -1,41 +1,127 @@
-import React, { useState, useEffect } from 'react';
-import { ConfigProvider, Layout, theme, Button, message } from 'antd';
-import { Icon } from './components/common/Icon';
-import { AuthProvider, useAuth } from './contexts/AuthContext'; 
-import { POSProvider, usePOS } from './contexts/POSContext'; 
-import { NotificationProvider, useNotifications } from './contexts/NotificationContext'; 
+import { useState, useEffect, Suspense, lazy } from 'react';
+import { ConfigProvider, Layout, theme, Spin } from 'antd';
+import { AuthProvider } from './contexts/AuthContext'; 
 import { LoginPage } from './components/Auth/LoginPage';
 import { Header } from './components/Layout/Header';
 import { Sidebar } from './components/Layout/Sidebar';
-import { Footer } from './components/Layout/Footer';
 import { ProtectedRoute } from './components/Layout/ProtectedRoute';
-import { ProductGrid } from './components/POS/ProductGrid';
-import { Cart } from './components/POS/Cart';
-import { ProductManagement } from './components/Products/ProductManagement';
-import { RawMaterialManagement } from './components/RawMaterials/RawMaterialManagement';
-import { TransactionHistory } from './components/Transactions/TransactionHistory';
-import { ReportsOverview } from './components/Reports/ReportsOverview';
-import { SettingsPanel } from './components/Settings/SettingsPanel';
-import { CouponManagement } from './components/Coupons/CouponManagement';
-import { TaxManagement } from './components/Tax/TaxManagement';
-import { UserManagement } from './components/Users/UserManagement';
-import { AuditTrail } from './components/AuditTrail/AuditTrail';
-import { PurchaseOrderManagement } from './components/PurchaseOrders/PurchaseOrderManagement';
+import ReduxErrorNotification from './components/common/ReduxErrorNotification';
+import NotificationDisplay from './components/common/NotificationDisplay';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { useSelector, useDispatch } from 'react-redux';
+import { getCurrentUser } from './features/auth/authSlice';
+import { checkStockLevels } from './features/notifications/notificationsSlice';
+import { useReduxNotifications } from './hooks/useReduxNotifications';
+
+// Helper function to safely get branding values from localStorage
+const getBrandingValue = (key, defaultValue = null) => {
+  try {
+    const branding = localStorage.getItem('vcare_branding');
+    if (!branding) return defaultValue;
+    
+    const brandingData = JSON.parse(branding);
+    const value = brandingData[key];
+    
+    // If the value is an object (like Ant Design Color object), extract the hex string
+    if (value && typeof value === 'object') {
+      // Handle Ant Design ColorPicker objects
+      if (value.metaColor && value.metaColor.originalInput) {
+        return value.metaColor.originalInput;
+      }
+      // Handle other color objects that might have a hex property
+      if (value.hex) {
+        return value.hex;
+      }
+      // If it's an object but we can't extract a color, return default
+      return defaultValue;
+    }
+    
+    // If it's already a string, return it
+    return value || defaultValue;
+  } catch (error) {
+    console.warn('Error parsing branding data:', error);
+    return defaultValue;
+  }
+};
+
+// Lazy load heavy components
+const ProductGrid = lazy(() => import('./components/POS/ProductGrid').then(module => ({ default: module.ProductGrid })));
+const Cart = lazy(() => import('./components/POS/Cart').then(module => ({ default: module.Cart })));
+const ProductManagement = lazy(() => import('./components/Products/ProductManagement').then(module => ({ default: module.ProductManagement })));
+const RawMaterialManagement = lazy(() => import('./components/RawMaterials/RawMaterialManagement').then(module => ({ default: module.RawMaterialManagement })));
+const TransactionHistory = lazy(() => import('./components/Transactions/TransactionHistory').then(module => ({ default: module.TransactionHistory })));
+const ReportsOverview = lazy(() => import('./components/Reports/ReportsOverview').then(module => ({ default: module.ReportsOverview })));
+const SettingsPanel = lazy(() => import('./components/Settings/SettingsPanel').then(module => ({ default: module.SettingsPanel })));
+const CouponManagement = lazy(() => import('./components/Coupons/CouponManagement').then(module => ({ default: module.CouponManagement })));
+const TaxManagement = lazy(() => import('./components/Tax/TaxManagement').then(module => ({ default: module.TaxManagement })));
+const UserManagement = lazy(() => import('./components/Users/UserManagement').then(module => ({ default: module.UserManagement })));
+const AuditTrail = lazy(() => import('./components/AuditTrail/AuditTrail').then(module => ({ default: module.AuditTrail })));
+const PurchaseOrderManagement = lazy(() => import('./components/PurchaseOrders/PurchaseOrderManagement').then(module => ({ default: module.PurchaseOrderManagement })));
+
+// Loading component
+const ComponentLoader = () => (
+  <div style={{ 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    height: '300px' 
+  }}>
+    <Spin size="large" tip="Loading..." />
+  </div>
+);
 
 const { Sider, Content } = Layout;
 
-function AppContent() {
-  const { isAuthenticated, hasPermission } = useAuth();
-  const { checkStockLevels } = useNotifications(); 
-  const { refreshData } = usePOS();
-  const [activeTab, setActiveTab] = useState('pos'); 
-  const [collapsed, setCollapsed] = useState(false);
+/**
+ * Component that periodically checks token validity
+ */
+function TokenValidator() {
+  const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector(state => state.auth);
+  
+  useEffect(() => {
+    // Function to validate token
+    const validateToken = () => {
+      const token = localStorage.getItem('vcare_token');
+      if (token && isAuthenticated) {
+        // Check if token is expired
+        try {
+          const tokenData = JSON.parse(atob(token.split('.')[1]));
+          const expiry = tokenData.exp * 1000; // Convert to milliseconds
+          
+          // If token is expired or will expire in 5 minutes, refresh user data
+          if (Date.now() > expiry - 5 * 60 * 1000) {
+            dispatch(getCurrentUser());
+          }
+        } catch (error) {
+          console.error('Error validating token:', error);
+        }
+      }
+    };
 
-  // For development, always show the app
-  // In production, uncomment the following code to enable authentication
-  // if (!isAuthenticated) {
-  //   return <LoginPage />;
-  // }
+    // Check token validity immediately
+    validateToken();
+    
+    // Then check periodically (every 5 minutes)
+    const interval = setInterval(validateToken, 5 * 60 * 1000);
+    
+    // Cleanup on unmount
+    return () => clearInterval(interval);
+  }, [dispatch, isAuthenticated]);
+  
+  // This component doesn't render anything
+  return null;
+}
+
+function AppContent() {
+  const { isAuthenticated } = useSelector(state => state.auth);
+  const [activeTab, setActiveTab] = useState('pos'); 
+  const [collapsed, setCollapsed] = useState(true);
+
+  // If not authenticated, show login page
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   const renderContent = () => {
     const contentMap = {
@@ -43,63 +129,86 @@ function AppContent() {
         <ProtectedRoute module="pos" action="view">
           <div className="flex h-full gap-6">
             <div className="flex-1" data-tour="product-grid">
-              <ProductGrid collapsed={collapsed} />
+              <Suspense fallback={<ComponentLoader />}>
+                <ProductGrid collapsed={collapsed} />
+              </Suspense>
             </div>
             <div className="w-96" data-tour="cart">
-              <Cart />
+              <Suspense fallback={<ComponentLoader />}>
+                <Cart />
+              </Suspense>
             </div>
           </div>
         </ProtectedRoute>
       ),
       'products': (
         <ProtectedRoute module="products" action="view">
-          <ProductManagement />
+          <Suspense fallback={<ComponentLoader />}>
+            <ProductManagement />
+          </Suspense>
         </ProtectedRoute>
       ),
       'raw-materials': (
         <ProtectedRoute module="raw-materials" action="view">
-          <RawMaterialManagement />
+          <Suspense fallback={<ComponentLoader />}>
+            <RawMaterialManagement />
+          </Suspense>
         </ProtectedRoute>
       ),
       'transactions': (
         <ProtectedRoute module="transactions" action="view">
-          <TransactionHistory />
+          <Suspense fallback={<ComponentLoader />}>
+            <TransactionHistory />
+          </Suspense>
         </ProtectedRoute>
       ),
       'reports': (
         <ProtectedRoute module="reports" action="view">
-          <ReportsOverview />
+          <Suspense fallback={<ComponentLoader />}>
+            <ReportsOverview />
+          </Suspense>
         </ProtectedRoute>
       ),
       'coupons': (
         <ProtectedRoute module="coupons" action="view">
-          <CouponManagement />
+          <Suspense fallback={<ComponentLoader />}>
+            <CouponManagement />
+          </Suspense>
         </ProtectedRoute>
       ),
       'tax': (
         <ProtectedRoute module="tax" action="view">
-          <TaxManagement />
+          <Suspense fallback={<ComponentLoader />}>
+            <TaxManagement />
+          </Suspense>
         </ProtectedRoute>
       ),
       'purchase-orders': (
         <ProtectedRoute module="purchase-orders" action="view">
-          <PurchaseOrderManagement />
+          <Suspense fallback={<ComponentLoader />}>
+            <PurchaseOrderManagement />
+          </Suspense>
         </ProtectedRoute>
       ),
       'user-management': (
         <ProtectedRoute module="user-management" action="view">
-          <UserManagement />
+          <Suspense fallback={<ComponentLoader />}>
+            <UserManagement />
+          </Suspense>
         </ProtectedRoute>
       ),
       'audit-trail': (
         <ProtectedRoute module="audit-trail" action="view">
-          
-          <AuditTrail />
+          <Suspense fallback={<ComponentLoader />}>
+            <AuditTrail />
+          </Suspense>
         </ProtectedRoute>
       ),
       'settings': (
         <ProtectedRoute module="settings" action="view">
-          <SettingsPanel />
+          <Suspense fallback={<ComponentLoader />}>
+            <SettingsPanel />
+          </Suspense>
         </ProtectedRoute>
       ),
     };
@@ -160,20 +269,9 @@ function AppContent() {
     transition: 'all 0.2s',
   };
 
-  const footerStyle = {
-    background: '#ffffff',
-    borderTop: '1px solid #e5e7eb',
-    textAlign: 'center',
-    position: 'fixed',
-    width: contentWidth,
-    right: 0,
-    bottom: 0,
-    zIndex: 50,
-    transition: 'all 0.2s',
-  };
-
   return (
     <>
+      <TokenValidator />
       <Layout style={layoutStyle}>
         <Sider 
           width={siderWidth} 
@@ -201,7 +299,7 @@ function AppContent() {
           <Content style={contentStyle}>
             {renderContent()}
           </Content>
-          <Footer style={footerStyle} />
+          {/* <Footer style={footerStyle} /> */}
         </Layout>
       </Layout>
     </>
@@ -210,151 +308,140 @@ function AppContent() {
 
 function App() {
   const AppWithNotifications = () => {
-    const { rawMaterials, products } = usePOS();
-    const { checkStockLevels } = useNotifications();
+    const dispatch = useDispatch();
+    const { rawMaterialsList } = useSelector(state => state.rawMaterials);
+    const { productsList } = useSelector(state => state.products);
+    const { settings } = useReduxNotifications();
     
-    // Check stock levels periodically
+    // Check for existing token on app load and try to restore session
+    useEffect(() => {
+      const token = localStorage.getItem('vcare_token');
+      if (token) {
+        dispatch(getCurrentUser());
+      }
+    }, [dispatch]);
+    
+    // Check stock levels periodically using Redux
     useEffect(() => {
       // Initial check
-      checkStockLevels(rawMaterials, products);
+      dispatch(checkStockLevels());
       
-      // Set up interval for periodic checks (every 5 minutes)
+      // Set up interval for periodic checks
       const interval = setInterval(() => {
-        checkStockLevels(rawMaterials, products);
-      }, 5 * 60 * 1000);
+        dispatch(checkStockLevels());
+      }, settings.stockCheckInterval);
       
       return () => clearInterval(interval);
-    }, [rawMaterials, products, checkStockLevels]);
+    }, [dispatch, settings.stockCheckInterval]);
     
-    return <AppContent />;
+    // Also check stock levels when raw materials or products change
+    useEffect(() => {
+      if (rawMaterialsList.length > 0 || productsList.length > 0) {
+        dispatch(checkStockLevels());
+      }
+    }, [rawMaterialsList, productsList, dispatch]);
+    
+    // Wrap AppContent with ErrorBoundary to catch any rendering errors
+    return (
+      <ErrorBoundary showErrorDetails={import.meta.env.DEV}>
+        <NotificationDisplay />
+        <AppContent />
+      </ErrorBoundary>
+    );
   };
 
   return (
     <ConfigProvider
       theme={{
         algorithm: localStorage.getItem('vcare_branding') && 
-          JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+          getBrandingValue('darkModeSupport') ? 
           theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
-          colorPrimary: localStorage.getItem('vcare_branding') ? 
-            JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-            '#0E72BD',
-          colorPrimaryText: localStorage.getItem('vcare_branding') ? 
-            JSON.parse(localStorage.getItem('vcare_branding')).primaryTextColor || '#ffffff' : 
-            '#ffffff',
+          colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+          colorPrimaryText: getBrandingValue('primaryTextColor', '#ffffff'),
           borderRadius: 8,
           colorBgContainer: localStorage.getItem('vcare_branding') && 
-            JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+            getBrandingValue('darkModeSupport') ? 
             '#141414' : '#ffffff',
           colorBgLayout: localStorage.getItem('vcare_branding') && 
-            JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+            getBrandingValue('darkModeSupport') ? 
             '#000000' : '#f8fafc',
-          fontFamily: localStorage.getItem('vcare_branding') ? 
-            `"${JSON.parse(localStorage.getItem('vcare_branding')).fontFamily || 'Inter'}", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif` : 
-            '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: `"${getBrandingValue('fontFamily', 'Inter')}", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
           fontSize: 14,
           lineHeight: 1.5,
           colorText: localStorage.getItem('vcare_branding') && 
-            JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+            getBrandingValue('darkModeSupport') ? 
             '#ffffff' : '#1f2937',
           colorTextSecondary: localStorage.getItem('vcare_branding') && 
-            JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+            getBrandingValue('darkModeSupport') ? 
             '#a3a3a3' : '#6b7280',
           boxShadow: localStorage.getItem('vcare_branding') && 
-            JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+            getBrandingValue('darkModeSupport') ? 
             '0 1px 3px rgba(0, 0, 0, 0.3)' : '0 1px 3px rgba(0, 0, 0, 0.1)',
           boxShadowSecondary: localStorage.getItem('vcare_branding') && 
-            JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+            getBrandingValue('darkModeSupport') ? 
             '0 4px 6px rgba(0, 0, 0, 0.3)' : '0 4px 6px rgba(0, 0, 0, 0.1)',
-          colorSuccess: localStorage.getItem('vcare_branding') ? 
-            JSON.parse(localStorage.getItem('vcare_branding')).secondaryColor || '#52c41a' : 
-            '#52c41a',
-          colorSuccessText: localStorage.getItem('vcare_branding') ? 
-            JSON.parse(localStorage.getItem('vcare_branding')).secondaryTextColor || '#ffffff' : 
-            '#ffffff',
-          colorWarning: localStorage.getItem('vcare_branding') ? 
-            JSON.parse(localStorage.getItem('vcare_branding')).accentColor || '#fa8c16' : 
-            '#fa8c16',
-          colorWarningText: localStorage.getItem('vcare_branding') ? 
-            JSON.parse(localStorage.getItem('vcare_branding')).accentTextColor || '#ffffff' : 
-            '#ffffff',
+          colorSuccess: getBrandingValue('secondaryColor', '#52c41a'),
+          colorSuccessText: getBrandingValue('secondaryTextColor', '#ffffff'),
+          colorWarning: getBrandingValue('accentColor', '#fa8c16'),
+          colorWarningText: getBrandingValue('accentTextColor', '#ffffff'),
         },
         components: {
           Layout: {
             headerBg: localStorage.getItem('vcare_branding') && 
-              JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+              getBrandingValue('darkModeSupport') ? 
               '#141414' : '#ffffff',
             siderBg: localStorage.getItem('vcare_branding') && 
-              JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+              getBrandingValue('darkModeSupport') ? 
               '#141414' : '#ffffff',
             bodyBg: localStorage.getItem('vcare_branding') && 
-              JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+              getBrandingValue('darkModeSupport') ? 
               '#000000' : '#f8fafc',
             headerHeight: 64,
             footerBg: localStorage.getItem('vcare_branding') && 
-              JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+              getBrandingValue('darkModeSupport') ? 
               '#141414' : '#ffffff',
           },
           Card: {
             borderRadiusLG: 12,
             boxShadowTertiary: localStorage.getItem('vcare_branding') && 
-              JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+              getBrandingValue('darkModeSupport') ? 
               '0 1px 3px rgba(0, 0, 0, 0.3)' : '0 1px 3px rgba(0, 0, 0, 0.1)',
             colorBgContainer: localStorage.getItem('vcare_branding') && 
-              JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport ? 
+              getBrandingValue('darkModeSupport') ? 
               '#141414' : '#ffffff',
           },
           Button: {
             borderRadius: 8,
             controlHeight: 40,
             fontWeight: 500,
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
-             colorPrimaryActive: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}CC` : 
-               '#0E72BDCC',
-             colorPrimaryTextHover: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryTextColor || '#ffffff' : 
-               '#ffffff',
-             colorPrimaryTextActive: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryTextColor || '#ffffff' : 
-               '#ffffff',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+             colorPrimaryActive: `${getBrandingValue('primaryColor', '#0E72BD')}CC`,
+             colorPrimaryTextHover: getBrandingValue('primaryTextColor', '#ffffff'),
+             colorPrimaryTextActive: getBrandingValue('primaryTextColor', '#ffffff'),
           },
           Input: {
             borderRadius: 8,
             controlHeight: 40,
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
           },
           Select: {
             borderRadius: 8,
             controlHeight: 40,
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
           },
           Table: {
             borderRadiusLG: 12,
-            headerBg: localStorage.getItem('vcare_branding') ? 
-              `rgba(${parseInt(JSON.parse(localStorage.getItem('vcare_branding')).primaryColor?.slice(1, 3) || '0E', 16)}, 
-              ${parseInt(JSON.parse(localStorage.getItem('vcare_branding')).primaryColor?.slice(3, 5) || '72', 16)}, 
-              ${parseInt(JSON.parse(localStorage.getItem('vcare_branding')).primaryColor?.slice(5, 7) || 'BD', 16)}, 0.04)` : 
-              'rgba(14, 114, 189, 0.04)',
+            headerBg: (() => {
+              const primaryColor = getBrandingValue('primaryColor', '#0E72BD');
+              const r = parseInt(primaryColor.slice(1, 3), 16);
+              const g = parseInt(primaryColor.slice(3, 5), 16);
+              const b = parseInt(primaryColor.slice(5, 7), 16);
+              return `rgba(${r}, ${g}, ${b}, 0.04)`;
+            })(),
           },
           Modal: {
             borderRadiusLG: 16,
@@ -363,156 +450,80 @@ function App() {
             itemBorderRadius: 8,
             itemMarginInline: 4,
             itemMarginBlock: 2,
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
-             colorItemBgSelected: localStorage.getItem('vcare_branding') ? 
-               `rgba(${parseInt(JSON.parse(localStorage.getItem('vcare_branding')).primaryColor?.slice(1, 3) || '0E', 16)}, 
-               ${parseInt(JSON.parse(localStorage.getItem('vcare_branding')).primaryColor?.slice(3, 5) || '72', 16)}, 
-               ${parseInt(JSON.parse(localStorage.getItem('vcare_branding')).primaryColor?.slice(5, 7) || 'BD', 16)}, 0.1)` : 
-               'rgba(14, 114, 189, 0.1)',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+             colorItemBgSelected: (() => {
+               const primaryColor = getBrandingValue('primaryColor', '#0E72BD');
+               const r = parseInt(primaryColor.slice(1, 3), 16);
+               const g = parseInt(primaryColor.slice(3, 5), 16);
+               const b = parseInt(primaryColor.slice(5, 7), 16);
+               return `rgba(${r}, ${g}, ${b}, 0.1)`;
+             })(),
           },
            Checkbox: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryBorder: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
            },
            Radio: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
            },
            Switch: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
            },
            Slider: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryBorder: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
            },
            Tabs: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryActive: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}CC` : 
-               '#0E72BDCC',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryActive: `${getBrandingValue('primaryColor', '#0E72BD')}CC`,
            },
            Tag: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryBg: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}19` : 
-               '#0E72BD19',
-             colorPrimaryBorderHover: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryBg: `${getBrandingValue('primaryColor', '#0E72BD')}19`,
+             colorPrimaryBorderHover: getBrandingValue('primaryColor', '#0E72BD'),
            },
            Progress: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryBg: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}19` : 
-               '#0E72BD19',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryBg: `${getBrandingValue('primaryColor', '#0E72BD')}19`,
            },
            Pagination: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
-             colorPrimaryBorder: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
            },
            DatePicker: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
-             colorPrimaryBorder: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
            },
            TimePicker: {
-             colorPrimary: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
-             colorPrimaryHover: localStorage.getItem('vcare_branding') && 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor ? 
-               `${JSON.parse(localStorage.getItem('vcare_branding')).primaryColor}E6` : 
-               '#0E72BDE6',
-             colorPrimaryBorder: localStorage.getItem('vcare_branding') ? 
-               JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-               '#0E72BD',
+             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
            },
           Tooltip: {
-            colorBgDefault: localStorage.getItem('vcare_branding') ? 
-              JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-              '#0E72BD',
+            colorBgDefault: getBrandingValue('primaryColor', '#0E72BD'),
             colorTextLightSolid: '#ffffff',
           },
           Notification: {
-            colorBgSuccess: localStorage.getItem('vcare_branding') ? 
-              JSON.parse(localStorage.getItem('vcare_branding')).secondaryColor || '#52c41a' : 
-              '#52c41a',
-            colorBgInfo: localStorage.getItem('vcare_branding') ? 
-              JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-              '#0E72BD',
-            colorBgWarning: localStorage.getItem('vcare_branding') ? 
-              JSON.parse(localStorage.getItem('vcare_branding')).accentColor || '#fa8c16' : 
-              '#fa8c16',
+            colorBgSuccess: getBrandingValue('secondaryColor', '#52c41a'),
+            colorBgInfo: getBrandingValue('primaryColor', '#0E72BD'),
+            colorBgWarning: getBrandingValue('accentColor', '#fa8c16'),
           },
           Message: {
-            colorBgSuccess: localStorage.getItem('vcare_branding') ? 
-              JSON.parse(localStorage.getItem('vcare_branding')).secondaryColor || '#52c41a' : 
-              '#52c41a',
-            colorBgInfo: localStorage.getItem('vcare_branding') ? 
-              JSON.parse(localStorage.getItem('vcare_branding')).primaryColor || '#0E72BD' : 
-              '#0E72BD',
-            colorBgWarning: localStorage.getItem('vcare_branding') ? 
-              JSON.parse(localStorage.getItem('vcare_branding')).accentColor || '#fa8c16' : 
-              '#fa8c16',
+            colorBgSuccess: getBrandingValue('secondaryColor', '#52c41a'),
+            colorBgInfo: getBrandingValue('primaryColor', '#0E72BD'),
+            colorBgWarning: getBrandingValue('accentColor', '#fa8c16'),
           },
         },
       }}
     >
       <AuthProvider>
-        <NotificationProvider>
-          <POSProvider>
-            <AppWithNotifications />
-          </POSProvider>
-        </NotificationProvider>
+          <ReduxErrorNotification />
+          <AppWithNotifications />
       </AuthProvider>
     </ConfigProvider>
   );

@@ -17,6 +17,8 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
+import { useDispatch, useSelector } from 'react-redux';
+import { addUser, updateUser } from '../../features/users/usersSlice';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -74,9 +76,11 @@ const rolePermissions = {
 };
 
 export function UserModal({ open, onClose, editingUser }) {
-  const { addUser, updateUser, users, hasPermission } = useAuth();
+  const dispatch = useDispatch();
+  const users = useSelector(state => state.users.usersList);
+  const loading = useSelector(state => state.users.loading);
+  const { hasPermission } = useAuth();
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
   const [permissions, setPermissions] = useState({});
   const [selectedRole, setSelectedRole] = useState('cashier');
 
@@ -116,53 +120,42 @@ export function UserModal({ open, onClose, editingUser }) {
   };
 
   const handleSubmit = async (values) => {
-    setLoading(true);
     try {
       // Check for duplicate username
       const existingUser = users.find(u => 
         u.username === values.username && 
         u.id !== editingUser?.id
       );
-
       if (existingUser) {
         message.error('Username already exists');
-        setLoading(false);
         return;
       }
-
       // Check for duplicate email
       const existingEmail = users.find(u => 
         u.email === values.email && 
         u.id !== editingUser?.id
       );
-
       if (existingEmail) {
         message.error('Email already exists');
-        setLoading(false);
         return;
       }
-
       const userData = {
         ...values,
         permissions,
         isActive: values.isActive !== false
       };
-
       if (editingUser) {
-        updateUser({ ...editingUser, ...userData });
-        message.success('User updated successfully');
+        dispatch(updateUser({ id: editingUser.id, userData: { ...editingUser, ...userData } }));
+        message.success('User updated successfully'); // todo
       } else {
-        addUser(userData);
-        message.success('User created successfully');
+        dispatch(addUser({ userData }));
+        message.success('User created successfully'); // todo
       }
-
       onClose();
       form.resetFields();
       setPermissions({});
     } catch (error) {
       message.error('Please fill in all required fields');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -311,11 +304,11 @@ export function UserModal({ open, onClose, editingUser }) {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="isActive" valuePropName="checked" initialValue={true}>
-                <div className="flex items-center space-x-2 mt-8">
+              <Form.Item name="isActive" label="Active User" valuePropName="checked" initialValue={true}>
+                {/* <div className="flex items-center space-x-2 mt-8"> */}
                   <Switch />
-                  <Text>Active User</Text>
-                </div>
+                  {/* <Text>Active User</Text> */}
+                {/* </div> */}
               </Form.Item>
             </Col>
           </Row>

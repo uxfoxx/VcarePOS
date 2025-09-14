@@ -17,7 +17,7 @@ export const clearCache = () => {
  * @param {number} maxAge - Max age in seconds
  * @returns {Response} - Modified response with cache headers
  */
-export const setCacheHeaders = (response, maxAge = 300) => {
+export const setCacheHeaders = (response, _maxAge = 300) => {
   // Return original response since caching is disabled
   return response;
 };
@@ -29,7 +29,7 @@ export const setCacheHeaders = (response, maxAge = 300) => {
  * @param {number} maxAge - Max age in seconds
  * @returns {Promise<Response>} - Response with cache headers
  */
-export const fetchWithCache = async (url, options = {}, maxAge = 300) => {
+export const fetchWithCache = async (url, options = {}, _maxAge = 300) => {
   // Fetch without cache headers
   return fetch(url, options);
 };
@@ -39,7 +39,7 @@ export const fetchWithCache = async (url, options = {}, maxAge = 300) => {
  * @param {Response} response - The response to check
  * @returns {boolean} - Whether the response is cacheable
  */
-export const isCacheable = (response) => {
+export const isCacheable = (_response) => {
   // Always return false since caching is disabled
   return false;
 };

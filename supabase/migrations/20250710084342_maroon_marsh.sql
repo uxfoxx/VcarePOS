@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS transactions (
 CREATE TABLE IF NOT EXISTS transaction_items (
   id SERIAL PRIMARY KEY,
   transaction_id VARCHAR(50) REFERENCES transactions(id) ON DELETE CASCADE,
-  product_id VARCHAR(50) REFERENCES products(id),
+  product_id VARCHAR(50), -- Removed the REFERENCES products(id) constraint
   product_name VARCHAR(100) NOT NULL,
   product_price DECIMAL(10, 2) NOT NULL,
   product_barcode VARCHAR(50),

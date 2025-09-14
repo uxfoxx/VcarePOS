@@ -3,8 +3,176 @@ const { body, param, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { authenticate, authorize, hasPermission } = require('../middleware/auth');
 const { hashPassword } = require('../utils/auth');
+const { handleRouteError } = require('../utils/loggerUtils');
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * tags:
+ *   name: Users
+ *   description: User management
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           example: USER-123456
+ *         username:
+ *           type: string
+ *           example: johndoe
+ *         email:
+ *           type: string
+ *           example: johndoe@example.com
+ *         firstName:
+ *           type: string
+ *           example: John
+ *         lastName:
+ *           type: string
+ *           example: Doe
+ *         role:
+ *           type: string
+ *           enum: [admin, manager, cashier]
+ *           example: admin
+ *         isActive:
+ *           type: boolean
+ *           example: true
+ *         permissions:
+ *           type: object
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         lastLogin:
+ *           type: string
+ *           format: date-time
+ */
+
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Get all users
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
+ *   post:
+ *     summary: Create a new user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       201:
+ *         description: User created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Validation error
+ */
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   get:
+ *     summary: Get a user by ID
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       404:
+ *         description: User not found
+ *   put:
+ *     summary: Update a user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       200:
+ *         description: User updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: User not found
+ *   delete:
+ *     summary: Delete a user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: User deleted successfully
+ *       400:
+ *         description: Cannot delete own account
+ *       404:
+ *         description: User not found
+ */
 
 /**
  * @route   GET /api/users
@@ -38,8 +206,7 @@ router.get(
       
       res.json(users);
     } catch (error) {
-      console.error('Error fetching users:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Users - Fetching users:');
     }
   }
 );
@@ -83,8 +250,7 @@ router.get(
         lastLogin: user.last_login
       });
     } catch (error) {
-      console.error('Error fetching user:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Users - Fetching user:');
     }
   }
 );
@@ -190,8 +356,7 @@ router.post(
         createdAt: user.created_at
       });
     } catch (error) {
-      console.error('Error creating user:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Users - Creating user:');
     }
   }
 );
@@ -307,8 +472,7 @@ router.put(
         lastLogin: user.last_login
       });
     } catch (error) {
-      console.error('Error updating user:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Users - Updating user:');
     }
   }
 );
@@ -353,8 +517,7 @@ router.delete(
       
       res.json({ message: 'User deleted successfully' });
     } catch (error) {
-      console.error('Error deleting user:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'Users - Deleting user:');
     }
   }
 );

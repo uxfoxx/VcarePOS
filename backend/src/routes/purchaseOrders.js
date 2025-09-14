@@ -2,8 +2,337 @@ const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { authenticate, hasPermission } = require('../middleware/auth');
+const { handleRouteError } = require('../utils/loggerUtils');
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * tags:
+ *   name: PurchaseOrders
+ *   description: Purchase order management
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     PurchaseOrder:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           example: PO-123456
+ *         vendorId:
+ *           type: string
+ *           example: VENDOR-001
+ *         vendorName:
+ *           type: string
+ *           example: ABC Suppliers
+ *         vendorEmail:
+ *           type: string
+ *           example: vendor@example.com
+ *         vendorPhone:
+ *           type: string
+ *           example: '+94112223344'
+ *         vendorAddress:
+ *           type: string
+ *           example: '123 Main St, City'
+ *         orderDate:
+ *           type: string
+ *           format: date
+ *         expectedDeliveryDate:
+ *           type: string
+ *           format: date
+ *         shippingAddress:
+ *           type: string
+ *         paymentTerms:
+ *           type: string
+ *         shippingMethod:
+ *           type: string
+ *         notes:
+ *           type: string
+ *         total:
+ *           type: number
+ *           example: 1000.50
+ *         status:
+ *           type: string
+ *           example: pending
+ *         createdBy:
+ *           type: string
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *         items:
+ *           type: array
+ *           items:
+ *             type: object
+ *         timeline:
+ *           type: array
+ *           items:
+ *             type: object
+ *         goodsReceiveNotes:
+ *           type: array
+ *           items:
+ *             type: object
+ */
+
+/**
+ * @swagger
+ * /purchase-orders:
+ *   get:
+ *     summary: Get all purchase orders
+ *     tags: [PurchaseOrders]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of purchase orders
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/PurchaseOrder'
+ *   post:
+ *     summary: Create a new purchase order
+ *     tags: [PurchaseOrders]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PurchaseOrder'
+ *           example:
+ *             vendorId: "V001"
+ *             vendorName: "ABC Suppliers"
+ *             vendorEmail: "vendor@example.com"
+ *             vendorPhone: "+94112223344"
+ *             vendorAddress: "123 Main St, City"
+ *             orderDate: "2025-07-18"
+ *             expectedDeliveryDate: "2025-07-25"
+ *             shippingAddress: "456 Delivery Rd, City"
+ *             paymentTerms: "Net 30"
+ *             shippingMethod: "Standard"
+ *             notes: "Urgent delivery requested"
+ *             items:
+ *               - itemId: "PROD-001"
+ *                 type: "product"
+ *                 name: "Office Chair"
+ *                 sku: "CHAIR-001"
+ *                 category: "Furniture"
+ *                 unit: "pcs"
+ *                 quantity: 10
+ *                 unitPrice: 15000
+ *                 total: 150000
+ *               - itemId: "MAT-002"
+ *                 type: "material"
+ *                 name: "Wood Plank"
+ *                 sku: "WOOD-PLK-002"
+ *                 category: "Raw Material"
+ *                 unit: "ft"
+ *                 quantity: 50
+ *                 unitPrice: 500
+ *                 total: 25000
+ *             status: "pending"
+ *     responses:
+ *       201:
+ *         description: Purchase order created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PurchaseOrder'
+ *       400:
+ *         description: Validation error
+ */
+
+/**
+ * @swagger
+ * /purchase-orders/{id}:
+ *   get:
+ *     summary: Get a purchase order by ID
+ *     tags: [PurchaseOrders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Purchase order ID
+ *     responses:
+ *       200:
+ *         description: Purchase order found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PurchaseOrder'
+ *       404:
+ *         description: Purchase order not found
+ *   put:
+ *     summary: Update a purchase order
+ *     tags: [PurchaseOrders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Purchase order ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PurchaseOrder'
+ *     responses:
+ *       200:
+ *         description: Purchase order updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PurchaseOrder'
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Purchase order not found
+ *   delete:
+ *     summary: Delete a purchase order
+ *     tags: [PurchaseOrders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Purchase order ID
+ *     responses:
+ *       200:
+ *         description: Purchase order deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Purchase order deleted successfully
+ *       400:
+ *         description: Cannot delete purchase order that is not pending
+ *       404:
+ *         description: Purchase order not found
+ */
+
+/**
+ * @swagger
+ * /purchase-orders/{id}/status:
+ *   put:
+ *     summary: Update purchase order status
+ *     tags: [PurchaseOrders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Purchase order ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [pending, approved, ordered, received, completed, cancelled]
+ *                 example: approved
+ *               notes:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Purchase order status updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 status:
+ *                   type: string
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date-time
+ *                 timeline:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Purchase order not found
+ */
+
+/**
+ * @swagger
+ * /purchase-orders/{id}/receive:
+ *   post:
+ *     summary: Create a goods receive note for a purchase order
+ *     tags: [PurchaseOrders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Purchase order ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               receivedDate:
+ *                 type: string
+ *                 format: date
+ *               receivedBy:
+ *                 type: string
+ *               checkedBy:
+ *                 type: string
+ *               notes:
+ *                 type: string
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *     responses:
+ *       201:
+ *         description: Goods receive note created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Purchase order not found
+ */
 
 /**
  * @route   GET /api/purchase-orders
@@ -83,8 +412,7 @@ router.get('/', authenticate, hasPermission('purchase-orders', 'view'), async (r
     
     res.json(purchaseOrders);
   } catch (error) {
-    console.error('Error fetching purchase orders:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'PurchaseOrders - Fetching purchase orders:');
   }
 });
 
@@ -227,8 +555,7 @@ router.get('/:id', authenticate, hasPermission('purchase-orders', 'view'), async
     
     res.json(formattedOrder);
   } catch (error) {
-    console.error('Error fetching purchase order:', error);
-    res.status(500).json({ message: 'Server error' });
+    handleRouteError(error, req, res, 'PurchaseOrders - Fetching purchase order:');
   }
 });
 
@@ -283,6 +610,8 @@ router.post(
       
       // Generate purchase order ID
       const purchaseOrderId = req.body.id || `PO-${Date.now()}`;
+
+      console.log('Creating purchase order with ID:', purchaseOrderId);
       
       // Insert purchase order
       const orderResult = await client.query(`
@@ -376,8 +705,7 @@ router.post(
       });
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('Error creating purchase order:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'PurchaseOrders - Creating purchase order:');
     } finally {
       client.release();
     }
@@ -510,7 +838,21 @@ router.put(
           ]);
         }
       }
-      
+
+      if(status && status === "completed") { 
+        // for (const item of items) { 
+        //   if(item.type === 'product') {
+        //     await client.query(`UPDATE products SET stock = stock + $1 WHERE id = $2`,[item.quantity,item.itemId]);
+        //   }        
+        // }
+
+        for (const item of items) { 
+          if(item.type === 'material') {
+            await client.query(`UPDATE raw_materials SET stock_quantity = stock_quantity + $1 WHERE id = $2`,[item.quantity,item.itemId]);
+          }      
+        }
+      }
+
       // Add timeline event if status changed
       if (status && status !== existingOrder.status) {
         await client.query(`
@@ -561,7 +903,7 @@ router.put(
         notes: event.notes
       }));
       
-      client.release();
+      // client.release();
       
       res.json({
         id: order.id,
@@ -586,8 +928,7 @@ router.put(
       });
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('Error updating purchase order:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'PurchaseOrders - Updating purchase order:');
     } finally {
       client.release();
     }
@@ -640,8 +981,7 @@ router.delete(
       
       res.json({ message: 'Purchase order deleted successfully' });
     } catch (error) {
-      console.error('Error deleting purchase order:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'PurchaseOrders - Deleting purchase order:');
     }
   }
 );
@@ -724,8 +1064,7 @@ router.put(
         timeline
       });
     } catch (error) {
-      console.error('Error updating purchase order status:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'PurchaseOrders - Updating purchase order status:');
     }
   }
 );
@@ -902,8 +1241,7 @@ router.post(
       res.status(201).json(formattedGrn);
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('Error creating goods receive note:', error);
-      res.status(500).json({ message: 'Server error' });
+      handleRouteError(error, req, res, 'PurchaseOrders - Creating goods receive note:');
     } finally {
       client.release();
     }

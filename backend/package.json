@@ -6,13 +6,23 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "pm2:start": "pm2 start src/index.js --name vcare-pos",
+    "pm2:start:cluster": "pm2 start src/index.js --name vcare-pos-cluster -i max",
+    "pm2:start:config": "pm2 start ecosystem.config.js",
+    "pm2:start:prod": "pm2 start ecosystem.config.js --env production",
+    "pm2:stop": "pm2 stop vcare-pos",
+    "pm2:restart": "pm2 restart vcare-pos",
+    "pm2:status": "pm2 status vcare-pos",
+    "pm2:logs": "pm2 logs vcare-pos",
+    "pm2:delete": "pm2 delete vcare-pos",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "pm2": "^5.3.1"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -22,6 +32,11 @@
     "express-async-handler": "^1.2.0",
     "express-validator": "^7.2.1",
     "jsonwebtoken": "^9.0.2",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0"
   }
 }

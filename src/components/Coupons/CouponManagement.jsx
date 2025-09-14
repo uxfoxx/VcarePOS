@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
-  Card, 
   Button, 
   Input, 
   Space, 
@@ -18,32 +17,42 @@ import {
   Col,
   Tooltip
 } from 'antd';
-import { usePOS } from '../../contexts/POSContext';
+import { useSelector, useDispatch } from 'react-redux';
+import dayjs from 'dayjs';
+import {
+  addCoupon,
+  updateCoupon,
+  deleteCoupon,
+  fetchCoupons
+} from '../../features/coupons/couponsSlice';
 import { Icon } from '../common/Icon';
-import { SearchInput } from '../common/SearchInput';
 import { ActionButton } from '../common/ActionButton';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { DetailModal } from '../common/DetailModal';
-import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 const { RangePicker } = DatePicker;
 
 export function CouponManagement() {
-  const { state, dispatch } = usePOS();
-  const [searchTerm, setSearchTerm] = useState('');
+  const dispatch = useDispatch();
+  const coupons = useSelector(state => state.coupons.couponsList) || [];
+  const loading = useSelector(state => state.coupons.loading);
+  const categories = useSelector(state => state.categories.categoriesList) || [];
+  const [searchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState(null);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [discountType, setDiscountType] = useState('percentage');
 
-  const coupons = state.coupons || [];
+  useEffect(() => {
+    dispatch(fetchCoupons());
+  }, [dispatch]);
 
   const filteredCoupons = coupons.filter(coupon =>
     coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -52,7 +61,6 @@ export function CouponManagement() {
 
   const handleSubmit = async (values) => {
     try {
-      setLoading(true);
       const couponData = {
         id: editingCoupon?.id || `COUPON-${Date.now()}`,
         code: values.code.toUpperCase(),
@@ -72,25 +80,23 @@ export function CouponManagement() {
       };
 
       if (editingCoupon) {
-        dispatch({ type: 'UPDATE_COUPON', payload: couponData });
-        message.success('Coupon updated successfully');
+        dispatch(updateCoupon(couponData));
       } else {
-        dispatch({ type: 'ADD_COUPON', payload: couponData });
-        message.success('Coupon created successfully');
+        dispatch(addCoupon(couponData));
       }
 
       setShowModal(false);
       setEditingCoupon(null);
+      setDiscountType('percentage');
       form.resetFields();
-    } catch (error) {
+    } catch {
       message.error('Please fill in all required fields');
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleEdit = (coupon) => {
     setEditingCoupon(coupon);
+    setDiscountType(coupon.discountType || 'percentage');
     form.setFieldsValue({
       ...coupon,
       dateRange: coupon.validFrom && coupon.validTo ? [
@@ -102,22 +108,19 @@ export function CouponManagement() {
   };
 
   const handleDelete = (couponId) => {
-    dispatch({ type: 'DELETE_COUPON', payload: couponId });
-    message.success('Coupon deleted successfully');
+    dispatch(deleteCoupon({ id: couponId }));
   };
 
   const handleBulkDelete = (couponIds) => {
     couponIds.forEach(id => {
-      dispatch({ type: 'DELETE_COUPON', payload: id });
+      dispatch(deleteCoupon({ id }));
     });
-    message.success(`${couponIds.length} coupons deleted successfully`);
     setSelectedRowKeys([]);
   };
 
   const handleToggleStatus = (coupon) => {
     const updatedCoupon = { ...coupon, isActive: !coupon.isActive };
-    dispatch({ type: 'UPDATE_COUPON', payload: updatedCoupon });
-    message.success(`Coupon ${updatedCoupon.isActive ? 'activated' : 'deactivated'}`);
+    dispatch(updateCoupon(updatedCoupon));
   };
 
   const handleRowClick = (coupon) => {
@@ -307,6 +310,7 @@ export function CouponManagement() {
         rowKey="id"
         rowSelection={{
           type: 'checkbox',
+          selectedRowKeys,
           onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys)
         }}
         onDelete={handleBulkDelete}
@@ -334,6 +338,7 @@ export function CouponManagement() {
         onCancel={() => {
           setShowModal(false);
           setEditingCoupon(null);
+          setDiscountType('percentage');
           form.resetFields();
         }}
         footer={null}
@@ -374,7 +379,7 @@ export function CouponManagement() {
                 rules={[{ required: true, message: 'Please select discount type' }]}
                 initialValue="percentage"
               >
-                <Select>
+                <Select onChange={setDiscountType}>
                   <Option value="percentage">Percentage</Option>
                   <Option value="fixed">Fixed Amount</Option>
                 </Select>
@@ -383,42 +388,99 @@ export function CouponManagement() {
           </Row>
 
           <Row gutter={16}>
+            {discountType === 'percentage' && (
+              <Col span={8}>
+                <Form.Item
+                  name="discountPercent"
+                  label="Discount Percentage (%)"
+                  rules={[{ required: true, message: 'Please enter discount percentage' }]}
+                >
+                  <InputNumber
+                    min={0}
+                    max={100}
+                    step={1}
+                    placeholder="0"
+                    className="w-full"
+                  />
+                </Form.Item>
+              </Col>
+            )}
+            {discountType === 'fixed' && (
+              <Col span={8}>
+                <Form.Item
+                  name="discountAmount"
+                  label="Discount Amount (LKR)"
+                  rules={[
+                    { required: true, message: 'Please enter discount amount' },
+                    {
+                      validator: (_, value) => {
+                        const minimumAmount = form.getFieldValue('minimumAmount');
+                        if (value && minimumAmount && minimumAmount <= value) {
+                          return Promise.reject(new Error('Discount amount must be less than minimum order amount'));
+                        }
+                        return Promise.resolve();
+                      }
+                    }
+                  ]}
+                >
+                  <InputNumber
+                    min={0}
+                    step={10}
+                    placeholder="0.00"
+                    className="w-full"
+                    formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+                    onChange={() => {
+                      // Trigger validation on minimum amount field when discount amount changes
+                      form.validateFields(['minimumAmount']);
+                    }}
+                  />
+                </Form.Item>
+              </Col>
+            )}
+            {discountType === 'percentage' && (
+              <Col span={8}>
+                <Form.Item name="maxDiscount" label="Maximum Discount (LKR)">
+                  <InputNumber
+                    min={0}
+                    step={100}
+                    placeholder="0.00"
+                    className="w-full"
+                    formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+                  />
+                </Form.Item>
+              </Col>
+            )}
             <Col span={8}>
-              <Form.Item
-                name="discountPercent"
-                label="Discount Percentage (%)"
-                rules={[{ required: true, message: 'Please enter discount percentage' }]}
+              <Form.Item 
+                name="minimumAmount" 
+                label="Minimum Order Amount (LKR)"
+                rules={discountType === 'fixed' ? [
+                  {
+                    validator: (_, value) => {
+                      const discountAmount = form.getFieldValue('discountAmount');
+                      if (discountAmount && value && value <= discountAmount) {
+                        return Promise.reject(new Error('Minimum amount must be greater than discount amount'));
+                      }
+                      return Promise.resolve();
+                    }
+                  }
+                ] : []}
               >
                 <InputNumber
                   min={0}
-                  max={100}
-                  step={1}
-                  placeholder="0"
-                  className="w-full"
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="maxDiscount" label="Maximum Discount (LKR)">
-                <InputNumber
-                  min={0}
                   step={100}
                   placeholder="0.00"
                   className="w-full"
                   formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                   parser={value => value.replace(/LKR\s?|(,*)/g, '')}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="minimumAmount" label="Minimum Order Amount (LKR)">
-                <InputNumber
-                  min={0}
-                  step={100}
-                  placeholder="0.00"
-                  className="w-full"
-                  formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+                  onChange={() => {
+                    // Trigger validation on discount amount field when minimum amount changes
+                    if (discountType === 'fixed') {
+                      form.validateFields(['discountAmount']);
+                    }
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -447,7 +509,7 @@ export function CouponManagement() {
 
           <Form.Item name="applicableCategories" label="Applicable Categories">
             <Select mode="multiple" placeholder="Select categories (leave empty for all)">
-              {state.categories?.filter(cat => cat.isActive).map(cat => (
+              {categories.filter(cat => cat.isActive).map(cat => (
                 <Option key={cat.id} value={cat.name}>{cat.name}</Option>
               ))}
             </Select>
@@ -460,11 +522,8 @@ export function CouponManagement() {
             />
           </Form.Item>
 
-          <Form.Item name="isActive" valuePropName="checked" initialValue={true}>
-            <div className="flex items-center space-x-2">
+          <Form.Item name="isActive" label="Active" valuePropName="checked" initialValue={true}>
               <Switch />
-              <Text>Active</Text>
-            </div>
           </Form.Item>
 
           <div className="flex justify-end space-x-2 mt-6">

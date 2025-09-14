@@ -23,9 +23,9 @@ const TYPE_CODES = {
   'conference': 'C',
   
   // Chair types (C + number)
-  'office': '1',
-  'dining': '2',
-  'executive': 'E',
+  'office_chair': '1',
+  'dining_chair': '2',
+  'executive_chair': 'E',
   'accent': 'A',
   'bar': 'B',
   'lounge': 'L',
@@ -35,7 +35,7 @@ const TYPE_CODES = {
   'cabinet': '1',
   'shelf': '2',
   'wardrobe': '3',
-  'dresser': '4',
+  'dresser_storage': '4',
   'bookcase': '5',
   
   // Sofa types (F + number)
@@ -243,7 +243,7 @@ export function getSKUSuggestions(product, existingProducts = []) {
       description: describeSKU(primarySKU),
       confidence: 'high'
     });
-  } catch (error) {
+  } catch {
     // Handle case where max products reached
   }
   
@@ -261,7 +261,7 @@ export function getSKUSuggestions(product, existingProducts = []) {
         description: describeSKU(altSKU),
         confidence: 'medium'
       });
-    } catch (error) {
+    } catch {
       // Skip if error
     }
   });

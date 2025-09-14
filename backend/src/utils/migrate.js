@@ -26,7 +26,7 @@ async function runMigrations() {
     const appliedMigrations = appliedMigrationsResult.rows.map(row => row.name);
     
     // Get migration files
-    const migrationsDir = path.join(__dirname, '..', 'migrations');
+    const migrationsDir = path.join(__dirname, '..', '..', '..', 'supabase', 'migrations');
     if (!fs.existsSync(migrationsDir)) {
       fs.mkdirSync(migrationsDir);
     }

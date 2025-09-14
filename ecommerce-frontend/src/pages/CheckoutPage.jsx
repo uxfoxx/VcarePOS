@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { createOrder, uploadReceipt, clearError } from '../store/slices/ordersSlice';
+import { createOrder, clearError } from '../store/slices/ordersSlice';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
 
 const CheckoutPage = () => {

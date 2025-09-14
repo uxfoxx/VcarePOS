@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "generate-ssl": "node generate-ssl-cert.js",
     "pm2:start": "pm2 start src/index.js --name vcare-pos",
     "pm2:start:cluster": "pm2 start src/index.js --name vcare-pos-cluster -i max",
     "pm2:start:config": "pm2 start ecosystem.config.js",

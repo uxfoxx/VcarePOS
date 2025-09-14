@@ -42,23 +42,15 @@ const ordersSlice = createSlice({
       state.currentOrder = action.payload;
       state.error = null;
     },
-    // No specific success action for uploadReceipt as it's now part of createOrder
-    // The createOrderSuccess handles the order object update
-    
-    // Failure actions
     
     // Failure actions
     ordersFailure: (state, action) => {
       state.loading = false;
       state.error = action.payload;
     },
-    uploadReceiptFailure: (state, action) => {
-      // This action is no longer needed if uploadReceipt is removed
-    },
     
     clearError: (state) => {
       state.error = null;
-      state.uploadError = null;
     },
   },
 });
@@ -71,8 +63,6 @@ export const {
   fetchOrdersSuccess,
   fetchOrderByIdSuccess,
   ordersFailure,
-  uploadReceiptFailure,
-  clearCurrentOrder,
   clearError,
 } = ordersSlice.actions;
 

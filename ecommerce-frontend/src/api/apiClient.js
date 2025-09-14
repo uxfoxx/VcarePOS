@@ -81,22 +81,33 @@ export const productsApi = {
 // Orders API
 export const ordersApi = {
   create: async (orderData, receiptFile = null) => {
-    let options = {
-      method: 'POST',
-    };
-
     if (receiptFile) {
+      // Create FormData for file upload
       const formData = new FormData();
       formData.append('receipt', receiptFile);
-      for (const key in orderData) {
-        formData.append(key, JSON.stringify(orderData[key]));
-      }
-      options.body = formData;
+      
+      // Append order data as JSON strings
+      Object.keys(orderData).forEach(key => {
+        if (typeof orderData[key] === 'object') {
+          formData.append(key, JSON.stringify(orderData[key]));
+        } else {
+          formData.append(key, orderData[key]);
+        }
+      });
+      
+      return makeRequest('/ecommerce/orders', {
+        method: 'POST',
+        body: formData,
+      });
     } else {
-      options.body = JSON.stringify(orderData);
+      // Regular JSON request for cash on delivery
+      return makeRequest('/ecommerce/orders', {
+        method: 'POST',
+        body: JSON.stringify(orderData),
+      });
     }
-    return makeRequest('/ecommerce/orders', options);
   },
+  
   getCustomerOrders: async (customerId) => {
     return makeRequest(`/ecommerce/users/${customerId}/orders`);
   },

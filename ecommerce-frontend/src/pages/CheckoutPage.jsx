@@ -17,6 +17,8 @@ const CheckoutPage = () => {
     phone: '',
     address: '',
   });
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [receiptPreview, setReceiptPreview] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('cash_on_delivery');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -58,11 +60,6 @@ const CheckoutPage = () => {
   };
 
   const handlePlaceOrder = () => {
-    if (paymentMethod === 'bank_transfer' && !receiptFile) {
-      alert('Please upload your bank transfer receipt.');
-      return;
-    }
-
     const orderData = {
       customerName: customerInfo.name,
       customerEmail: customerInfo.email,
@@ -75,9 +72,41 @@ const CheckoutPage = () => {
         selectedSize: item.selectedSize,
         quantity: item.quantity,
       })),
-        receiptFile: paymentMethod === 'bank_transfer' ? receiptFile : null,
+      receiptFile: paymentMethod === 'bank_transfer' ? receiptFile : null,
     };
-      dispatch(createOrder(orderData));
+    
+    dispatch(createOrder(orderData));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB');
+        e.target.value = ''; // Clear the input
+        return;
+      }
+      
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Only JPEG, PNG, and PDF files are allowed');
+        e.target.value = ''; // Clear the input
+        return;
+      }
+      
+      setReceiptFile(file);
+      
+      // Create preview for images
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => setReceiptPreview(e.target.result);
+        reader.readAsDataURL(file);
+      } else {
+        setReceiptPreview(null);
+      }
+    }
   };
 
   const handleCloseSuccessModal = () => {
@@ -90,24 +119,6 @@ const CheckoutPage = () => {
       ...customerInfo,
       [e.target.name]: e.target.value,
     });
-  };
-
-  const [receiptFile, setReceiptFile] = useState(null); // Moved to top-level scope
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        alert('File size must be less than 5MB');
-        return;
-      }
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-      if (!allowedTypes.includes(file.type)) {
-        alert('Only JPEG, PNG, and PDF files are allowed');
-        return;
-      }
-      setReceiptFile(file);
-    }
   };
 
   const steps = [
@@ -296,19 +307,83 @@ const CheckoutPage = () => {
                   </div>
 
                   {paymentMethod === 'bank_transfer' && (
-                    <div className="mt-4">
+                    <div className="mt-6 space-y-4">
+                      {/* Bank Transfer Instructions */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 className="font-medium text-blue-900 mb-2">Bank Transfer Details</h4>
+                        <div className="text-sm text-blue-800 space-y-1">
+                          <p><strong>Bank:</strong> Commercial Bank of Ceylon</p>
+                          <p><strong>Account Name:</strong> VCare Furniture Store</p>
+                          <p><strong>Account Number:</strong> 8001234567</p>
+                          <p><strong>Branch:</strong> Colombo Main Branch</p>
+                          <p><strong>Amount:</strong> LKR {totalAmount.toFixed(2)}</p>
+                        </div>
+                        <p className="text-sm text-blue-700 mt-3">
+                          Please transfer the exact amount and upload your receipt below to complete the order.
+                        </p>
+                      </div>
+                      
+                      {/* Receipt Upload */}
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Upload Bank Receipt *
+                        Upload Bank Transfer Receipt *
                       </label>
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={handleFileChange}
-                        className="input-field"
-                        required
-                      />
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={handleFileChange}
+                          className="hidden"
+                          id="receipt-upload"
+                          required
+                        />
+                        <label htmlFor="receipt-upload" className="cursor-pointer">
+                          {receiptFile ? (
+                            <div className="space-y-2">
+                              {receiptPreview && (
+                                <img 
+                                  src={receiptPreview} 
+                                  alt="Receipt preview" 
+                                  className="w-32 h-32 object-cover mx-auto rounded border"
+                                />
+                              )}
+                              <div>
+                                <p className="text-sm font-medium text-green-600">
+                                  ✓ {receiptFile.name}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {(receiptFile.size / 1024).toFixed(1)} KB
+                                </p>
+                                <p className="text-xs text-blue-600 mt-2">
+                                  Click to change file
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <svg className="w-12 h-12 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                              </svg>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  Click to upload receipt
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  JPEG, PNG, or PDF (Max: 5MB)
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </label>
+                      </div>
                       {receiptFile && (
-                        <p className="text-sm text-gray-500 mt-1">Selected file: {receiptFile.name}</p>
+                        <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded">
+                          <p className="text-sm text-green-800">
+                            <strong>Receipt uploaded:</strong> {receiptFile.name}
+                          </p>
+                          <p className="text-xs text-green-600">
+                            You can now proceed to place your order
+                          </p>
+                        </div>
                       )}
                     </div>
                   )}
@@ -323,9 +398,13 @@ const CheckoutPage = () => {
                   </button>
                   <button
                     onClick={handleNextStep}
-                    className="btn-primary"
+                    disabled={paymentMethod === 'bank_transfer' && !receiptFile}
+                    className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Review Order
+                    {paymentMethod === 'bank_transfer' && !receiptFile 
+                      ? 'Upload Receipt to Continue' 
+                      : 'Review Order'
+                    }
                   </button>
                 </div>
               </div>
@@ -415,7 +494,7 @@ const CheckoutPage = () => {
                   </button>
                   <button
                     onClick={handlePlaceOrder}
-                    disabled={loading || (paymentMethod === 'bank_transfer' && !receiptFile)}
+                    disabled={loading}
                     className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (

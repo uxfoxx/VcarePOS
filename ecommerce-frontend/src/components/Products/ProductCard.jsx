@@ -1,20 +1,23 @@
-import { Link } from 'react-router-dom';
+
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '../../store/slices/cartSlice';
 
+
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     // For products with colors/sizes, redirect to product detail page
     if (product.colors && product.colors.length > 0) {
-      window.location.href = `/products/${product.id}`;
+      navigate(`/products/${product.id}`);
       return;
     }
-    
+
     // For simple products, add directly to cart
     dispatch(addToCart({
       product,

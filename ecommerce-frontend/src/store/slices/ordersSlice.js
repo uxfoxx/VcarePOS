@@ -4,9 +4,7 @@ const initialState = {
   orders: [],
   currentOrder: null,
   loading: false,
-  error: null,
-  uploadingReceipt: false,
-  uploadError: null,
+  error: null, // General error for orders
 };
 
 const ordersSlice = createSlice({
@@ -26,10 +24,6 @@ const ordersSlice = createSlice({
       state.loading = true;
       state.error = null;
     },
-    uploadReceipt: (state) => {
-      state.uploadingReceipt = true;
-      state.uploadError = null;
-    },
     
     // Success actions
     createOrderSuccess: (state, action) => {
@@ -48,19 +42,10 @@ const ordersSlice = createSlice({
       state.currentOrder = action.payload;
       state.error = null;
     },
-    uploadReceiptSuccess: (state, action) => {
-      state.uploadingReceipt = false;
-      state.uploadError = null;
-      // Update current order status if it matches
-      if (state.currentOrder && state.currentOrder.id === action.payload.orderId) {
-        state.currentOrder.orderStatus = action.payload.orderStatus;
-      }
-      // Update order in orders list
-      const orderIndex = state.orders.findIndex(order => order.id === action.payload.orderId);
-      if (orderIndex !== -1) {
-        state.orders[orderIndex].orderStatus = action.payload.orderStatus;
-      }
-    },
+    // No specific success action for uploadReceipt as it's now part of createOrder
+    // The createOrderSuccess handles the order object update
+    
+    // Failure actions
     
     // Failure actions
     ordersFailure: (state, action) => {
@@ -68,14 +53,9 @@ const ordersSlice = createSlice({
       state.error = action.payload;
     },
     uploadReceiptFailure: (state, action) => {
-      state.uploadingReceipt = false;
-      state.uploadError = action.payload;
+      // This action is no longer needed if uploadReceipt is removed
     },
     
-    // Clear actions
-    clearCurrentOrder: (state) => {
-      state.currentOrder = null;
-    },
     clearError: (state) => {
       state.error = null;
       state.uploadError = null;
@@ -87,11 +67,9 @@ export const {
   createOrder,
   fetchOrders,
   fetchOrderById,
-  uploadReceipt,
   createOrderSuccess,
   fetchOrdersSuccess,
   fetchOrderByIdSuccess,
-  uploadReceiptSuccess,
   ordersFailure,
   uploadReceiptFailure,
   clearCurrentOrder,

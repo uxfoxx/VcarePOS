@@ -2,8 +2,7 @@ import { takeLatest, call, put } from 'redux-saga/effects';
 import {
   createOrder,
   fetchOrders,
-  fetchOrderById,
-  uploadReceipt,
+  fetchOrderById, // Keep fetchOrderById
   createOrderSuccess,
   fetchOrdersSuccess,
   fetchOrderByIdSuccess,
@@ -16,7 +15,8 @@ import { ordersApi } from '../../api/apiClient';
 
 function* createOrderSaga(action) {
   try {
-    const order = yield call(ordersApi.create, action.payload);
+    const { receiptFile, ...orderData } = action.payload;
+    const order = yield call(ordersApi.create, orderData, receiptFile);
     yield put(createOrderSuccess(order));
     
     // Clear cart after successful order
@@ -44,21 +44,8 @@ function* fetchOrderByIdSaga(action) {
   }
 }
 
-function* uploadReceiptSaga(action) {
-  try {
-    const response = yield call(ordersApi.uploadReceipt, action.payload.orderId, action.payload.file);
-    yield put(uploadReceiptSuccess({
-      orderId: action.payload.orderId,
-      orderStatus: response.orderStatus
-    }));
-  } catch (error) {
-    yield put(uploadReceiptFailure(error.message || 'Failed to upload receipt'));
-  }
-}
-
 export default function* ordersSaga() {
   yield takeLatest(createOrder.type, createOrderSaga);
   yield takeLatest(fetchOrders.type, fetchOrdersSaga);
   yield takeLatest(fetchOrderById.type, fetchOrderByIdSaga);
-  yield takeLatest(uploadReceipt.type, uploadReceiptSaga);
 }

@@ -10,12 +10,21 @@ const makeRequest = async (endpoint, options = {}) => {
   const token = getAuthToken();
   
   const headers = {
-    'Content-Type': 'application/json',
+    // Only set Content-Type: application/json if body is JSON and not FormData
+    // Browser will set correct Content-Type for FormData automatically
+    ...(options.body && !(options.body instanceof FormData) && {
+      'Content-Type': 'application/json',
+    }),
     ...options.headers,
   };
   
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Remove Content-Type if it's FormData, as browser handles it with boundary
+  if (options.body instanceof FormData && headers['Content-Type']) {
+    delete headers['Content-Type'];
   }
   
   const response = await fetch(`${API_URL}${endpoint}`, {
@@ -71,48 +80,28 @@ export const productsApi = {
 
 // Orders API
 export const ordersApi = {
-  create: async (orderData) => {
-    return makeRequest('/ecommerce/orders', {
+  create: async (orderData, receiptFile = null) => {
+    let options = {
       method: 'POST',
-      body: JSON.stringify(orderData),
-    });
+    };
+
+    if (receiptFile) {
+      const formData = new FormData();
+      formData.append('receipt', receiptFile);
+      for (const key in orderData) {
+        formData.append(key, JSON.stringify(orderData[key]));
+      }
+      options.body = formData;
+    } else {
+      options.body = JSON.stringify(orderData);
+    }
+    return makeRequest('/ecommerce/orders', options);
   },
-  
   getCustomerOrders: async (customerId) => {
     return makeRequest(`/ecommerce/users/${customerId}/orders`);
   },
   
   getById: async (orderId) => {
     return makeRequest(`/ecommerce/orders/${orderId}`);
-  },
-  
-  uploadReceipt: async (orderId, file) => {
-    const formData = new FormData();
-    formData.append('receipt', file);
-    
-    const token = getAuthToken();
-    const headers = {};
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const response = await fetch(`${API_URL}/ecommerce/orders/${orderId}/receipt`, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
-    
-    if (response.status === 401) {
-      localStorage.removeItem('ecommerce_token');
-      throw new Error('Session expired. Please log in again.');
-    }
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-    }
-    
-    return response.json();
   },
 };

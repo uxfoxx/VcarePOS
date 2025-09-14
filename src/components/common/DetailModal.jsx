@@ -293,6 +293,110 @@ export function DetailModal({
     </div>
   );
 
+  const renderEcommerceOrderDetails = () => (
+    <div className="space-y-6">
+      {/* Order Header */}
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <Title level={4} className="mb-1">E-commerce Order #{data.id}</Title>
+            <Text type="secondary">
+              {new Date(data.createdAt).toLocaleString()}
+            </Text>
+          </div>
+          <div className="text-right">
+            <Title level={3} className="mb-0 text-blue-600">
+              LKR {data.totalAmount.toFixed(2)}
+            </Title>
+            <Tag color={
+              data.orderStatus === 'completed' ? 'green' :
+              data.orderStatus === 'processing' ? 'blue' :
+              data.orderStatus === 'pending_payment' ? 'orange' : 'default'
+            }>
+              {data.orderStatus.replace('_', ' ').toUpperCase()}
+            </Tag>
+          </div>
+        </div>
+      </div>
+
+      {/* Customer and Order Info */}
+      <Descriptions bordered column={2} size="small">
+        <Descriptions.Item label="Customer">
+          {data.customerName}
+        </Descriptions.Item>
+        <Descriptions.Item label="Email">
+          {data.customerEmail}
+        </Descriptions.Item>
+        <Descriptions.Item label="Phone">
+          {data.customerPhone || 'N/A'}
+        </Descriptions.Item>
+        <Descriptions.Item label="Payment Method">
+          <Tag color="blue">
+            {data.paymentMethod === 'cash_on_delivery' ? 'Cash on Delivery' : 'Bank Transfer'}
+          </Tag>
+        </Descriptions.Item>
+        <Descriptions.Item label="Delivery Address" span={2}>
+          {data.customerAddress}
+        </Descriptions.Item>
+        {data.bankReceipt && (
+          <Descriptions.Item label="Bank Receipt" span={2}>
+            <div className="flex items-center space-x-2">
+              <Tag color="green">Uploaded</Tag>
+              <Text className="text-sm">{data.bankReceipt.originalFilename}</Text>
+              <Text type="secondary" className="text-xs">
+                ({(data.bankReceipt.fileSize / 1024).toFixed(2)} KB)
+              </Text>
+            </div>
+          </Descriptions.Item>
+        )}
+      </Descriptions>
+
+      {/* Items List */}
+      <div className="mb-6">
+        <Title level={5} className="mb-4">Items Ordered</Title>
+        <div className="space-y-3">
+          {data.items.map((item, index) => (
+            <div key={index} className="border rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                    <Icon name="inventory_2" className="text-gray-400" />
+                  </div>
+                  <div className="flex-1">
+                    <Text strong className="block">{item.productName}</Text>
+                    <Text type="secondary" className="text-sm">
+                      Qty: {item.quantity}
+                      {item.selectedSize && ` | Size: ${item.selectedSize}`}
+                    </Text>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Text strong className="text-blue-600">
+                    LKR {item.totalPrice.toFixed(2)}
+                  </Text>
+                  <br />
+                  <Text type="secondary" className="text-sm">
+                    LKR {item.unitPrice.toFixed(2)} each
+                  </Text>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Order Total */}
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <div className="flex justify-between items-center">
+          <Text strong className="text-lg">Total Amount:</Text>
+          <Text strong className="text-lg text-blue-600">
+            LKR {data.totalAmount.toFixed(2)}
+          </Text>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderGenericDetails = () => (
     <div className="space-y-4">
       <Descriptions bordered column={2} size="small">
@@ -316,6 +420,8 @@ export function DetailModal({
         return renderTransactionDetails();
       case 'user':
         return renderUserDetails();
+      case 'ecommerceOrder':
+        return renderEcommerceOrderDetails();
       default:
         return renderGenericDetails();
     }

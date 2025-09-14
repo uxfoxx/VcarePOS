@@ -79,6 +79,12 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
       module: 'audit-trail'
     },
     {
+      key: 'ecommerce-orders',
+      icon: <Icon name="storefront" />,
+      label: 'E-commerce Orders',
+      module: 'ecommerce-orders'
+    },
+    {
       key: 'settings',
       icon: <Icon name="settings" />,
       label: 'Settings',

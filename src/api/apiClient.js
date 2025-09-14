@@ -512,3 +512,21 @@ export const vendorsApi = {
     });
   }
 };
+
+// E-commerce Orders API (for POS system)
+export const ecommerceOrdersApi = {
+  getAll: async () => {
+    return apiRequest('/ecommerce/orders');
+  },
+  
+  getById: async (orderId) => {
+    return apiRequest(`/ecommerce/orders/${orderId}`);
+  },
+  
+  updateStatus: async (orderId, status, notes) => {
+    return apiRequest(`/ecommerce/orders/${orderId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, notes })
+    });
+  }
+};

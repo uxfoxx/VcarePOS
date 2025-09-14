@@ -57,6 +57,7 @@ const TaxManagement = lazy(() => import('./components/Tax/TaxManagement').then(m
 const UserManagement = lazy(() => import('./components/Users/UserManagement').then(module => ({ default: module.UserManagement })));
 const AuditTrail = lazy(() => import('./components/AuditTrail/AuditTrail').then(module => ({ default: module.AuditTrail })));
 const PurchaseOrderManagement = lazy(() => import('./components/PurchaseOrders/PurchaseOrderManagement').then(module => ({ default: module.PurchaseOrderManagement })));
+const EcommerceOrderManagement = lazy(() => import('./components/EcommerceOrders/EcommerceOrderManagement').then(module => ({ default: module.EcommerceOrderManagement })));
 
 // Loading component
 const ComponentLoader = () => (
@@ -201,6 +202,13 @@ function AppContent() {
         <ProtectedRoute module="audit-trail" action="view">
           <Suspense fallback={<ComponentLoader />}>
             <AuditTrail />
+          </Suspense>
+        </ProtectedRoute>
+      ),
+      'ecommerce-orders': (
+        <ProtectedRoute module="ecommerce-orders" action="view">
+          <Suspense fallback={<ComponentLoader />}>
+            <EcommerceOrderManagement />
           </Suspense>
         </ProtectedRoute>
       ),

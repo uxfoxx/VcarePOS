@@ -12,6 +12,7 @@ import purchaseOrdersReducer from '../features/purchaseOrders/purchaseOrdersSlic
 import vendorsReducer from '../features/vendors/vendorsSlice';
 import cartReducer from '../features/cart/cartSlice';
 import notificationsReducer from '../features/notifications/notificationsSlice';
+import ecommerceOrdersReducer from '../features/ecommerceOrders/ecommerceOrdersSlice';
 
 
 const rootReducer = combineReducers({
@@ -28,6 +29,7 @@ const rootReducer = combineReducers({
   vendors: vendorsReducer,
   cart: cartReducer,
   notifications: notificationsReducer,
+  ecommerceOrders: ecommerceOrdersReducer,
 });
 
 export default rootReducer;

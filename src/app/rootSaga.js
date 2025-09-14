@@ -12,6 +12,7 @@ import auditSaga from '../features/audit/auditSaga';
 import purchaseOrdersSaga from '../features/purchaseOrders/purchaseOrdersSaga';
 import vendorsSaga from '../features/vendors/vendorsSaga';
 import notificationsSaga from '../features/notifications/notificationsSaga';
+import ecommerceOrdersSaga from '../features/ecommerceOrders/ecommerceOrdersSaga';
 
 
 export default function* rootSaga() {
@@ -28,5 +29,6 @@ export default function* rootSaga() {
     vendorsSaga(),
     categoriesSaga(),
     notificationsSaga(),
+    ecommerceOrdersSaga(),
   ]);
 }

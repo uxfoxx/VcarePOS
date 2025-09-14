@@ -53,6 +53,28 @@ app.use(requestLogger); // Add request logging before other middleware
 app.use(logAction);
 
 // Register API routes
+app.get('/', (req, res) => {
+  res.json({
+    message: 'VCare POS Backend API',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      products: '/api/products',
+      categories: '/api/categories',
+      users: '/api/users',
+      transactions: '/api/transactions',
+      vendors: '/api/vendors',
+      coupons: '/api/coupons',
+      taxes: '/api/taxes',
+      rawMaterials: '/api/rawMaterials',
+      purchaseOrders: '/api/purchaseOrders',
+      audit: '/api/audit',
+      system: '/api/system',
+      ecommerce: '/api/ecommerce'
+    }
+  });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/raw-materials', rawMaterialsRoutes);
@@ -111,18 +133,55 @@ const { logSystemMetrics } = require('./utils/loggerUtils');
 
 // Start server
 const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, () => {
-  logger.info(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-  logger.info(`API Documentation available at http://localhost:${PORT}/api/docs`);
+
+// Try to start HTTPS server, fallback to HTTP if SSL certificates are not available
+let server;
+
+try {
+  // Check if SSL certificates exist
+  const keyPath = path.join(__dirname, '../ssl/key.pem');
+  const certPath = path.join(__dirname, '../ssl/cert.pem');
   
-  // Log initial system metrics
-  logSystemMetrics(true);
+  if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+    // Start HTTPS server
+    const httpsOptions = {
+      key: fs.readFileSync(keyPath),
+      cert: fs.readFileSync(certPath)
+    };
+    
+    server = https.createServer(httpsOptions, app).listen(PORT, () => {
+      logger.info(`HTTPS Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+      logger.info(`API Documentation available at https://localhost:${PORT}/api/docs`);
+      
+      // Log initial system metrics
+      logSystemMetrics(true);
+      
+      // Schedule periodic system metrics logging (every 15 minutes)
+      setInterval(() => {
+        logSystemMetrics(false);
+      }, 15 * 60 * 1000);
+    });
+  } else {
+    throw new Error('SSL certificates not found');
+  }
+} catch (error) {
+  // Fallback to HTTP server
+  logger.warn('SSL certificates not found, starting HTTP server instead');
+  logger.warn('To enable HTTPS, run: node generate-ssl-cert.js');
   
-  // Schedule periodic system metrics logging (every 15 minutes)
-  setInterval(() => {
-    logSystemMetrics(false);
-  }, 15 * 60 * 1000);
-});
+  server = app.listen(PORT, () => {
+    logger.info(`HTTP Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+    logger.info(`API Documentation available at http://localhost:${PORT}/api/docs`);
+    
+    // Log initial system metrics
+    logSystemMetrics(true);
+    
+    // Schedule periodic system metrics logging (every 15 minutes)
+    setInterval(() => {
+      logSystemMetrics(false);
+    }, 15 * 60 * 1000);
+  });
+}
 
 // Graceful shutdown
 const gracefulShutdown = () => {

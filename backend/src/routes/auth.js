@@ -183,7 +183,7 @@ router.post(
       
       // Check password
       const isMatch = await comparePassword(password, user.password);
-      if (!isMatch && false) { // todo default to false db users have issue
+      if (!isMatch) {
         client.release();
         logger.warn('Login attempt with invalid password', { 
           userId: user.id,

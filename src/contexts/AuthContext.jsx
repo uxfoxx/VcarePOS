@@ -70,6 +70,12 @@ export function AuthProvider({ children }) {
 
   const hasPermission = (module, action = 'view') => {
     if (!currentUser) return false;
+    
+    // Admin role has all permissions - frontend failsafe
+    if (currentUser.role === 'admin') {
+      return true;
+    }
+    
     return currentUser.permissions && currentUser.permissions[module]?.[action] || false;
   };
 

@@ -33,7 +33,8 @@ const moduleLabels = {
   'tax': 'Tax Management',
   'settings': 'System Settings',
   'user-management': 'User Management',
-  'audit-trail': 'Audit Trail'
+  'audit-trail': 'Audit Trail',
+  'ecommerce-orders': 'E-commerce Orders'
 };
 
 const rolePermissions = {

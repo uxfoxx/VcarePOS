@@ -269,7 +269,7 @@ export function GoodsReceiveNote({
       key: 'name',
       render: (record) => (
         <div>
-          <Text strong>{record.name}</Text>
+          <Text strong>{record.name} {record.type === 'product' ? `| ${record.color.name} | ${record.size.name}`: ''}</Text>
           <br />
           <Text type="secondary" className="text-xs">
             SKU: {record.sku} | {record.category}

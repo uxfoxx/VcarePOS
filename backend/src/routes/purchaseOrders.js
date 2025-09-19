@@ -351,7 +351,16 @@ router.get('/', authenticate, hasPermission('purchase-orders', 'view'), async (r
     
     // Get all purchase order items
     const itemsResult = await client.query(`
-      SELECT * FROM purchase_order_items
+     select
+        poi.* ,
+        pc."name" as color_name,
+        ps."name" as size_name
+      from
+        purchase_order_items poi
+      left join product_colors pc on
+        poi.color_id = pc.id
+      left join product_sizes ps on
+        poi.size_id = ps.id;
     `);
     
     // Get all purchase order timeline events
@@ -374,6 +383,8 @@ router.get('/', authenticate, hasPermission('purchase-orders', 'view'), async (r
           category: item.category,
           unit: item.unit,
           quantity: parseFloat(item.quantity),
+          color: {id: item.color_id, name: item.color_name}, 
+          size: {id: item.size_id, name: item.size_name},
           unitPrice: parseFloat(item.unit_price),
           total: parseFloat(item.total)
         }));
@@ -441,7 +452,16 @@ router.get('/:id', authenticate, hasPermission('purchase-orders', 'view'), async
     
     // Get purchase order items
     const itemsResult = await client.query(`
-      SELECT * FROM purchase_order_items WHERE purchase_order_id = $1
+           select
+              poi.* ,
+              pc."name" as color_name,
+              ps."name" as size_name
+            from
+              purchase_order_items poi
+            left join product_colors pc on
+              poi.color_id = pc.id
+            left join product_sizes ps on
+              poi.size_id = ps.id WHERE poi.purchase_order_id = $1
     `, [id]);
     
     // Get purchase order timeline events
@@ -470,6 +490,8 @@ router.get('/:id', authenticate, hasPermission('purchase-orders', 'view'), async
       category: item.category,
       unit: item.unit,
       quantity: parseFloat(item.quantity),
+      color: {id: item.color_id, name: item.color_name}, 
+      size: {id: item.size_id, name: item.size_name},
       unitPrice: parseFloat(item.unit_price),
       total: parseFloat(item.total)
     }));
@@ -481,7 +503,7 @@ router.get('/:id', authenticate, hasPermission('purchase-orders', 'view'), async
       user: event.user_name,
       notes: event.notes
     }));
-    
+  
     // Format goods receive notes
     const goodsReceiveNotes = grnResult.rows.reduce((acc, row) => {
       // Find existing GRN or create new one
@@ -575,7 +597,9 @@ router.post(
     body('items').isArray().withMessage('Items must be an array'),
     body('items.*.name').notEmpty().withMessage('Item name is required'),
     body('items.*.quantity').isNumeric().withMessage('Item quantity must be a number'),
-    body('items.*.unitPrice').isNumeric().withMessage('Item unit price must be a number')
+    body('items.*.unitPrice').isNumeric().withMessage('Item unit price must be a number'),
+    body('items.*.color').notEmpty().withMessage('Item color is required'),
+    body('items.*.size').notEmpty().withMessage('Item size is required'),
   ],
   async (req, res) => {
     // Check for validation errors
@@ -644,8 +668,8 @@ router.post(
         await client.query(`
           INSERT INTO purchase_order_items (
             purchase_order_id, item_id, type, name, sku,
-            category, unit, quantity, unit_price, total
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            category, unit, quantity, unit_price, total, color_id, size_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         `, [
           purchaseOrderId,
           item.itemId,
@@ -656,7 +680,9 @@ router.post(
           item.unit,
           item.quantity,
           item.unitPrice,
-          item.quantity * item.unitPrice
+          item.quantity * item.unitPrice,
+          item.color.id,
+          item.size.id
         ]);
       }
       
@@ -849,7 +875,9 @@ router.put(
         for (const item of items) { 
           if(item.type === 'material') {
             await client.query(`UPDATE raw_materials SET stock_quantity = stock_quantity + $1 WHERE id = $2`,[item.quantity,item.itemId]);
-          }      
+          } else {
+            await client.query(`UPDATE product_sizes SET stock = stock + $1 WHERE id = $2`,[item.quantity,item.size.id]);
+          }     
         }
       }
 

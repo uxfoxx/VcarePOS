@@ -45,12 +45,16 @@ export function PurchaseOrderModal({
   const vendors = useSelector(state => state.vendors.vendorsList) || [];
   const vendorsLoading = useSelector(state => state.vendors.loading) || false;
   const vendorsError = useSelector(state => state.vendors.error) || null;
+  const purchaseOrderLoading = useSelector(state => state.purchaseOrders.loading) || false;
   const [form] = Form.useForm();
   const [itemsForm] = Form.useForm();
-  const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
   const [activeTab, setActiveTab] = useState('1');
   const [itemType, setItemType] = useState('product');
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedColor, setSelectedColor] = useState(null);
+  const [selectedSize, setSelectedSize] = useState(null);
+
 
   // Fetch vendors when modal opens
   useEffect(() => {
@@ -141,6 +145,8 @@ export function PurchaseOrderModal({
           itemId,
           type: 'product',
           name: product.name,
+          color:  {id : selectedColor.id, name: selectedColor.name},
+          size: {id: selectedSize.id, name: selectedSize.name},
           sku: product.barcode,
           category: product.category,
           quantity,
@@ -179,16 +185,33 @@ export function PurchaseOrderModal({
     message.success('Item removed');
   };
 
+  
+  const handleProductChange = (productId) => {
+    const product = products.find(p => p.id === productId);
+    setSelectedProduct(product);
+    setSelectedColor(null);
+    itemsForm.setFieldsValue({ colorId: null, sizeId: null });
+  };
+
+  const handleColorChange = (colorId) => {
+    const color = selectedProduct?.colors.find(c => c.id === colorId);
+    setSelectedColor(color);
+    itemsForm.setFieldsValue({ sizeId: null });
+  };
+
+  const handleSizeChange = (sizeId) => {
+    const size = selectedColor?.sizes.find(s => s.id === sizeId);
+    setSelectedSize(size);
+  };
+
+
   const handleSubmit = async () => {
     try {
-      setLoading(true);
-      
       // Validate form
       const values = await form.validateFields();
       
       if (items.length === 0) {
         message.error('Please add at least one item to the purchase order');
-        setLoading(false);
         return;
       }
       
@@ -206,17 +229,14 @@ export function PurchaseOrderModal({
       };
       
       // Submit order
-      const result = await onSubmit(orderData);
+      const result = onSubmit(orderData);
       
       if (result) {
         onClose();
       }
-    } catch (error) {
-      console.error('Error submitting purchase order:', error);
+    } catch {   
       message.error('Please fill in all required fields');
-    } finally {
-      setLoading(false);
-    }
+    } 
   };
 
   const itemColumns = [
@@ -237,10 +257,10 @@ export function PurchaseOrderModal({
       key: 'name',
       render: (text, record) => (
         <div>
-          <Text strong>{text}</Text>
+          <Text strong>{text} {record.type === 'product' ? `| ${record.color.name} | ${record.size.name}`: ''} </Text>
           <br />
           <Text type="secondary" className="text-xs">
-            SKU: {record.sku} | {record.category}
+            SKU: {record.sku} | {record.category} 
           </Text>
         </div>
       )
@@ -296,7 +316,7 @@ export function PurchaseOrderModal({
       }
       open={open}
       onCancel={onClose}
-      width={1000}
+      width={1100}
       footer={null}
       destroyOnClose
     >
@@ -519,15 +539,17 @@ export function PurchaseOrderModal({
                       </Select>
                     </Form.Item>
                   </Col>
-                  <Col span={10}>
+                  <Col span={9}>
                     <Form.Item
                       name="itemId"
                       label="Select Item"
+                      className="w-full "
                       rules={[{ required: true, message: 'Please select an item' }]}
                     >
                       <Select
                         placeholder={`Select ${itemType === 'product' ? 'product' : 'raw material'}`}
                         showSearch
+                        onChange={itemType === 'product' ? handleProductChange : undefined}
                         optionFilterProp="children"
                         filterOption={(input, option) =>
                           (option?.children?.toString() ?? "").toLowerCase().includes(input.toLowerCase())
@@ -548,6 +570,54 @@ export function PurchaseOrderModal({
                         )}
                       </Select>
                     </Form.Item>
+                    {itemType === 'product' && (
+                      <>
+                        <Form.Item
+                          name="colorId"
+                          label="Select Color"
+                          rules={[{ required: true, message: 'Please select a color' }]}
+                        >
+                          <Select
+                            placeholder="Select color"
+                            showSearch
+                            onChange={handleColorChange}
+                            disabled={!selectedProduct}
+                            optionFilterProp="children"
+                            filterOption={(input, option) =>
+                              (option?.children?.toString() ?? "").toLowerCase().includes(input.toLowerCase())
+                            }
+                          >
+                            {selectedProduct?.colors?.map(color => (
+                              <Option key={color.id} value={color.id}>
+                                {color.name} 
+                              </Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
+                        <Form.Item
+                          name="sizeId"
+                          label="Select Size"
+                          rules={[{ required: true, message: 'Please select a size' }]}
+                        >
+                          <Select
+                            placeholder="Select size"
+                            showSearch
+                            onChange={handleSizeChange}
+                            disabled={!selectedColor}
+                            optionFilterProp="children"
+                            filterOption={(input, option) =>
+                              (option?.children?.toString() ?? "").toLowerCase().includes(input.toLowerCase())
+                            }
+                          >
+                            {selectedColor?.sizes?.map(size => (
+                              <Option key={size.id} value={size.id}>
+                                {size.name} (Stock: {size.stock})
+                              </Option>
+                            ))}
+                          </Select>
+                        </Form.Item>  
+                      </>
+                    )}
                   </Col>
                   <Col span={4}>
                     <Form.Item
@@ -562,7 +632,7 @@ export function PurchaseOrderModal({
                       />
                     </Form.Item>
                   </Col>
-                  <Col span={4}>
+                  <Col span={5}>
                     <Form.Item
                       name="unitPrice"
                       label="Unit Price"
@@ -636,7 +706,7 @@ export function PurchaseOrderModal({
                 <Button 
                   type="primary" 
                   onClick={handleSubmit}
-                  loading={loading}
+                  loading={purchaseOrderLoading}
                   disabled={items.length === 0}
                   className="bg-blue-600"
                 >

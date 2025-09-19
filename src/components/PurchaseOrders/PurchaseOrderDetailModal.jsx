@@ -286,7 +286,7 @@ export function PurchaseOrderDetailModal({
       key: 'name',
       render: (text, record) => (
         <div>
-          <Text strong>{text}</Text>
+          <Text strong>{text} {record.type === 'product' ? `| ${record.color.name} | ${record.size.name}`: ''} </Text>
           <br />
           <Text type="secondary" className="text-xs">
             SKU: {record.sku} | {record.category}

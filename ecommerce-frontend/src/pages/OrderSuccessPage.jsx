@@ -124,10 +124,10 @@ const OrderSuccessPage = () => {
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-gray-900">
-                    LKR {item.totalPrice.toFixed(2)}
+                    LKR {Number(item.totalPrice).toFixed(2)}
                   </p>
                   <p className="text-sm text-gray-600">
-                    LKR {item.unitPrice.toFixed(2)} each
+                   LKR {Number(item.unitPrice).toFixed(2)} each
                   </p>
                 </div>
               </div>

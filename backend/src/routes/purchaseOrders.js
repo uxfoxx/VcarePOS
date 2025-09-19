@@ -598,8 +598,6 @@ router.post(
     body('items.*.name').notEmpty().withMessage('Item name is required'),
     body('items.*.quantity').isNumeric().withMessage('Item quantity must be a number'),
     body('items.*.unitPrice').isNumeric().withMessage('Item unit price must be a number'),
-    body('items.*.color').notEmpty().withMessage('Item color is required'),
-    body('items.*.size').notEmpty().withMessage('Item size is required'),
   ],
   async (req, res) => {
     // Check for validation errors
@@ -665,6 +663,9 @@ router.post(
       
       // Insert purchase order items
       for (const item of items) {
+        const colorId = item.color && item.color.id ? item.color.id : null;
+        const sizeId = item.size && item.size.id ? item.size.id : null;
+
         await client.query(`
           INSERT INTO purchase_order_items (
             purchase_order_id, item_id, type, name, sku,
@@ -681,8 +682,8 @@ router.post(
           item.quantity,
           item.unitPrice,
           item.quantity * item.unitPrice,
-          item.color.id,
-          item.size.id
+          colorId,
+          sizeId
         ]);
       }
       

@@ -33,6 +33,7 @@ const moduleLabels = {
   'tax': 'Tax Management',
   'settings': 'System Settings',
   'user-management': 'User Management',
+  'purchase-orders': 'Purchase Orders',
   'audit-trail': 'Audit Trail',
   'ecommerce-orders': 'E-commerce Orders'
 };
@@ -49,6 +50,7 @@ const rolePermissions = {
     'settings': { view: true, edit: true, delete: true },
     'user-management': { view: true, edit: true, delete: true },
     'audit-trail': { view: true, edit: true, delete: true },
+    'purchase-orders': { view: true, edit: true, delete: true },
     'ecommerce-orders': { view: true, edit: true, delete: true }
   },
   manager: {
@@ -62,6 +64,7 @@ const rolePermissions = {
     'settings': { view: true, edit: false, delete: false },
     'user-management': { view: true, edit: false, delete: false },
     'audit-trail': { view: true, edit: false, delete: false },
+    'purchase-orders': { view: true, edit: true, delete: true },
     'ecommerce-orders': { view: true, edit: true, delete: true }
   },
   cashier: {
@@ -75,6 +78,7 @@ const rolePermissions = {
     'settings': { view: false, edit: false, delete: false },
     'user-management': { view: false, edit: false, delete: false },
     'audit-trail': { view: false, edit: false, delete: false },
+    'purchase-orders': { view: true, edit: true, delete: true },
     'ecommerce-orders': { view: true, edit: true, delete: true }
   }
 };

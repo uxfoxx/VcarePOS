@@ -50,7 +50,7 @@ const ProductsPage = () => {
       const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            product.description?.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesCategory && matchesSearch && product.stock > 0;
+      return matchesCategory && matchesSearch; // Temporarily removed stock filter for debugging
     })
     .sort((a, b) => {
       let aValue = a[sortBy];

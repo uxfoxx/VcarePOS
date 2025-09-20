@@ -37,6 +37,12 @@ const ProductCard = ({ product }) => {
   };
 
   const getStockStatus = () => {
+    console.log('E-commerce ProductCard: Stock status calculation', {
+      productId: product.id,
+      stock: product.stock,
+      stockType: typeof product.stock
+    });
+    
     if (product.stock === 0) return { text: 'Out of Stock', color: 'text-red-600' };
     if (product.stock <= 5) return { text: 'Low Stock', color: 'text-orange-600' };
     return { text: 'In Stock', color: 'text-green-600' };

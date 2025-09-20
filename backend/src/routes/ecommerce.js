@@ -222,7 +222,7 @@ router.get('/products', async (req, res) => {
     
     // Get all active products with their colors and sizes
     const productsResult = await client.query(`
-      SELECT * FROM products 
+      SELECT * FROM products
       ORDER BY created_at DESC
     `);
     
@@ -310,9 +310,12 @@ router.get('/products', async (req, res) => {
         });
       
       // Calculate total stock from all color sizes
-      const totalStock = colors.reduce((total, color) => 
-        total + color.sizes.reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
-      );
+      // Use robust stock calculation: if no colors/sizes exist, use product.stock
+      const totalStock = colors.length > 0 
+        ? colors.reduce((total, color) => 
+            total + color.sizes.reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
+          )
+        : product.stock; // Fallback to main product stock if no variants
       
       logger.debug('Product stock calculation', { 
         productId: product.id,
@@ -327,7 +330,7 @@ router.get('/products', async (req, res) => {
         description: product.description,
         category: product.category,
         price: parseFloat(product.price),
-        stock: totalStock,
+        stock: totalStock || 0, // Ensure stock is never null/undefined
         barcode: product.barcode,
         image: product.image,
         colors,
@@ -386,7 +389,7 @@ router.get('/products/:id', async (req, res) => {
     
     // Get product
     const productResult = await client.query(`
-      SELECT * FROM products WHERE id = $1 AND stock > 0
+      SELECT * FROM products WHERE id = $1
     `, [id]);
     
     if (productResult.rows.length === 0) {
@@ -430,9 +433,12 @@ router.get('/products/:id', async (req, res) => {
       };
     });
     
-    const totalStock = colors.reduce((total, color) => 
-      total + color.sizes.reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
-    );
+    // Use robust stock calculation for single product view
+    const totalStock = colors.length > 0 
+      ? colors.reduce((total, color) => 
+          total + color.sizes.reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
+        )
+      : product.stock; // Fallback to main product stock if no variants
     
     const formattedProduct = {
       id: product.id,
@@ -440,7 +446,7 @@ router.get('/products/:id', async (req, res) => {
       description: product.description,
       category: product.category,
       price: parseFloat(product.price),
-      stock: totalStock,
+      stock: totalStock || 0, // Ensure stock is never null/undefined
       barcode: product.barcode,
       image: product.image,
       colors,

@@ -9,10 +9,10 @@ import JsBarcode from 'jsbarcode';
 const { Title, Text } = Typography;
 
 export function ProductDetailsSheet({ open, onClose, product }) {
+  if (!product) return null;
+
   const [loading, setLoading] = useState(false);
   const [barcodeGenerated, setBarcodeGenerated] = useState(false);
-
-  if (!product) return null;
 
   const handlePrint = async () => {
     const element = document.getElementById('product-sheet-content');

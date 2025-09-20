@@ -278,7 +278,13 @@ export function ProductGrid({ collapsed }) {
       {/* Product Addons Modal */}
       <ProductAddonsModal
         open={showAddonsModal}
-        onClose={() => setShowAddonsModal(false)}
+        onClose={() => {
+          setShowAddonsModal(false);
+          // Clear scanned product if modal is closed without adding to cart
+          if (scannedProduct) {
+            dispatch(clearScannedProduct());
+          }
+        }}
         product={selectedProduct}
         onAddToCart={handleAddToCartWithAddons}
       />

@@ -174,6 +174,11 @@ export function ProductDetailsSheet({ open, onClose, product }) {
       
       return () => clearTimeout(timer);
     }
+    
+    // Reset barcode generated state when modal closes
+    if (!open) {
+      setBarcodeGenerated(false);
+    }
   }, [product, open]);
 
   const generateBarcode = () => {

@@ -112,7 +112,6 @@ export const {
   failed,
   clearCurrentProduct,
   clearScannedProduct,
-  clearScannedProduct,
 } = productsSlice.actions;
 
 export default productsSlice.reducer;

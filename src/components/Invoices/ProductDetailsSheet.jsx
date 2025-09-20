@@ -227,7 +227,8 @@ export function ProductDetailsSheet({ open, onClose, product }) {
             .ant-modal-footer {
               display: none !important;
             }
-          `}
+          }
+        `}
       </style>
       <Modal
         title={
@@ -342,27 +343,29 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                       </Text>
                     </div>
                     <div>
-                  <div className="text-center">
-                    <canvas 
-                      id="product-barcode-canvas"
-                      className="mx-auto border rounded p-2 bg-white"
-                      style={{ maxWidth: '200px' }}
-                    />
-                    {!barcodeGenerated && product.barcode && (
-                      <div className="w-24 h-24 bg-gray-200 mx-auto flex items-center justify-center border rounded">
-                        <Text type="secondary">Loading Barcode...</Text>
+                      <div className="text-center">
+                        <canvas 
+                          id="product-barcode-canvas"
+                          className="mx-auto border rounded p-2 bg-white"
+                          style={{ maxWidth: '200px' }}
+                        />
+                        {!barcodeGenerated && product.barcode && (
+                          <div className="w-24 h-24 bg-gray-200 mx-auto flex items-center justify-center border rounded">
+                            <Text type="secondary">Loading Barcode...</Text>
+                          </div>
+                        )}
+                        {!product.barcode && (
+                          <div className="w-24 h-24 bg-gray-200 mx-auto flex items-center justify-center border rounded">
+                            <Text type="secondary">No SKU</Text>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    {!product.barcode && (
-                      <div className="w-24 h-24 bg-gray-200 mx-auto flex items-center justify-center border rounded">
-                        <Text type="secondary">No SKU</Text>
-                      </div>
-                    )}
+                      <Text type="secondary" className="text-xs mt-2 block">
+                        {product.barcode ? `SKU: ${product.barcode}` : 'No SKU available'}
+                      </Text>
+                      <Text type="secondary" className="text-xs">Scan to add to POS</Text>
                     </div>
-                  <Text type="secondary" className="text-xs mt-2 block">
-                    {product.barcode ? `SKU: ${product.barcode}` : 'No SKU available'}
-                  </Text>
-                  <Text type="secondary" className="text-xs">Scan to add to POS</Text>
+                  </div>
                 </div>
               </Col>
             </Row>
@@ -546,7 +549,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                     <Text strong className="block mb-2">Additional Information:</Text>
                     <Text type="secondary">
                       For more details, assembly videos, and customer reviews,
-                      scan the barcode with our POS system or visit our website at www.vcarefurniture.com
+                      scan the QR code or visit our website at www.vcarefurniture.com
                     </Text>
 
                     <div className="mt-4 space-y-1">
@@ -567,26 +570,12 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                 </Col>
                 <Col span={8}>
                   <div className="text-center">
-                    <Text strong className="block mb-2">Product Barcode</Text>
-                    <canvas 
-                      id="product-barcode-canvas"
-                      className="mx-auto border rounded p-2 bg-white"
-                      style={{ maxWidth: '200px' }}
-                    />
-                    {!barcodeGenerated && product.barcode && (
-                      <div className="w-24 h-24 bg-gray-200 mx-auto flex items-center justify-center border rounded">
-                        <Text type="secondary">Loading Barcode...</Text>
-                      </div>
-                    )}
-                    {!product.barcode && (
-                      <div className="w-24 h-24 bg-gray-200 mx-auto flex items-center justify-center border rounded">
-                        <Text type="secondary">No SKU</Text>
-                      </div>
-                    )}
+                    <div className="w-24 h-24 bg-gray-200 mx-auto flex items-center justify-center border rounded">
+                      <Text type="secondary">QR CODE</Text>
+                    </div>
                     <Text type="secondary" className="text-xs mt-2 block">
-                      {product.barcode ? `SKU: ${product.barcode}` : 'No SKU available'}
+                      Scan for product details
                     </Text>
-                    <Text type="secondary" className="text-xs">Scan to add to POS</Text>
 
                     <div className="mt-4 text-center">
                       <Text type="secondary" className="text-xs">

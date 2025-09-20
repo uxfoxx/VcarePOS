@@ -150,7 +150,7 @@ function AppContent() {
         
         if (barcodeBuffer.trim().length > 0) {
           // Dispatch action to fetch product by barcode
-          dispatch(productsSlice.fetchProductByBarcode({ barcode: barcodeBuffer.trim() }));
+          dispatch(productsSlice.fetchProductByBarcode(barcodeBuffer.trim()));
           setBarcodeBuffer('');
         }
         return;

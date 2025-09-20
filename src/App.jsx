@@ -1,5 +1,6 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
 import { ConfigProvider, Layout, theme, Spin } from 'antd';
+import { useDispatch, useSelector } from 'react-redux';
 import { AuthProvider } from './contexts/AuthContext'; 
 import { LoginPage } from './components/Auth/LoginPage';
 import { Header } from './components/Layout/Header';
@@ -8,8 +9,8 @@ import { ProtectedRoute } from './components/Layout/ProtectedRoute';
 import ReduxErrorNotification from './components/common/ReduxErrorNotification';
 import NotificationDisplay from './components/common/NotificationDisplay';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
-import { useSelector, useDispatch } from 'react-redux';
 import { getCurrentUser } from './features/auth/authSlice';
+import { fetchProductByBarcode } from './features/products/productsSlice';
 import { checkStockLevels } from './features/notifications/notificationsSlice';
 import { useReduxNotifications } from './hooks/useReduxNotifications';
 
@@ -115,10 +116,55 @@ function TokenValidator() {
 }
 
 function AppContent() {
+  const dispatch = useDispatch();
   const { isAuthenticated } = useSelector(state => state.auth);
   const [activeTab, setActiveTab] = useState('pos'); 
   const [collapsed, setCollapsed] = useState(true);
+  const [barcodeBuffer, setBarcodeBuffer] = useState('');
+  const [lastKeyTime, setLastKeyTime] = useState(0);
 
+  // Barcode scanning logic
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // Only process barcode scanning when on POS tab
+      if (activeTab !== 'pos') return;
+      
+      const currentTime = Date.now();
+      const timeDiff = currentTime - lastKeyTime;
+      
+      // If more than 100ms between keystrokes, reset buffer (new scan)
+      if (timeDiff > 100) {
+        setBarcodeBuffer('');
+      }
+      
+      setLastKeyTime(currentTime);
+      
+      // Handle Enter key (end of barcode scan)
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        
+        if (barcodeBuffer.trim().length > 0) {
+          // Dispatch action to fetch product by barcode
+          dispatch(fetchProductByBarcode({ barcode: barcodeBuffer.trim() }));
+          setBarcodeBuffer('');
+        }
+        return;
+      }
+      
+      // Accumulate characters for barcode (alphanumeric and common barcode characters)
+      if (/^[a-zA-Z0-9\-_]$/.test(event.key)) {
+        setBarcodeBuffer(prev => prev + event.key);
+      }
+    };
+
+    // Add event listener
+    document.addEventListener('keydown', handleKeyDown);
+    
+    // Cleanup
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [activeTab, barcodeBuffer, lastKeyTime, dispatch]);
   // If not authenticated, show login page
   if (!isAuthenticated) {
     return <LoginPage />;

@@ -4,11 +4,13 @@ import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import JsBarcode from 'jsbarcode';
 
 const { Title, Text } = Typography;
 
 export function ProductDetailsSheet({ open, onClose, product }) {
   const [loading, setLoading] = useState(false);
+  const [barcodeGenerated, setBarcodeGenerated] = useState(false);
 
   if (!product) return null;
 
@@ -163,6 +165,39 @@ export function ProductDetailsSheet({ open, onClose, product }) {
     }
   };
 
+  // Generate barcode when component mounts or product changes
+  React.useEffect(() => {
+    if (product && product.barcode && open) {
+      const timer = setTimeout(() => {
+        generateBarcode();
+      }, 100); // Small delay to ensure DOM is ready
+      
+      return () => clearTimeout(timer);
+    }
+  }, [product, open]);
+
+  const generateBarcode = () => {
+    try {
+      const canvas = document.getElementById('product-barcode-canvas');
+      if (canvas && product.barcode) {
+        JsBarcode(canvas, product.barcode, {
+          format: "CODE128",
+          width: 2,
+          height: 60,
+          displayValue: true,
+          fontSize: 14,
+          margin: 10,
+          background: "#ffffff",
+          lineColor: "#000000"
+        });
+        setBarcodeGenerated(true);
+      }
+    } catch (error) {
+      console.error('Error generating barcode:', error);
+      setBarcodeGenerated(false);
+    }
+  };
+
   return (
     <>
       <style>
@@ -192,7 +227,8 @@ export function ProductDetailsSheet({ open, onClose, product }) {
             .ant-modal-footer {
               display: none !important;
             }
-          `}
+          }
+        `}
       </style>
       <Modal
         title={
@@ -307,8 +343,27 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                       </Text>
                     </div>
                     <div>
-                      <Text strong className="block text-gray-600">Stock Available:</Text>
-                      <Text className="text-lg">{product.stock} units</Text>
+                      <div className="text-center">
+                        <canvas 
+                          id="product-barcode-canvas"
+                          className="mx-auto border rounded p-2 bg-white"
+                          style={{ maxWidth: '200px' }}
+                        />
+                        {!barcodeGenerated && product.barcode && (
+                          <div className="w-24 h-24 bg-gray-200 mx-auto flex items-center justify-center border rounded">
+                            <Text type="secondary">Loading Barcode...</Text>
+                          </div>
+                        )}
+                        {!product.barcode && (
+                          <div className="w-24 h-24 bg-gray-200 mx-auto flex items-center justify-center border rounded">
+                            <Text type="secondary">No SKU</Text>
+                          </div>
+                        )}
+                      </div>
+                      <Text type="secondary" className="text-xs mt-2 block">
+                        {product.barcode ? `SKU: ${product.barcode}` : 'No SKU available'}
+                      </Text>
+                      <Text type="secondary" className="text-xs">Scan to add to POS</Text>
                     </div>
                   </div>
                 </div>
@@ -494,7 +549,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                     <Text strong className="block mb-2">Additional Information:</Text>
                     <Text type="secondary">
                       For more details, assembly videos, and customer reviews,
-                      scan the QR code or visit our website at www.vcarefurniture.com
+                      scan the barcode with our POS system or visit our website at www.vcarefurniture.com
                     </Text>
 
                     <div className="mt-4 space-y-1">
@@ -515,12 +570,26 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                 </Col>
                 <Col span={8}>
                   <div className="text-center">
-                    <div className="w-24 h-24 bg-gray-200 mx-auto flex items-center justify-center border rounded">
-                      <Text type="secondary">QR CODE</Text>
-                    </div>
+                    <Text strong className="block mb-2">Product Barcode</Text>
+                    <canvas 
+                      id="product-barcode-canvas"
+                      className="mx-auto border rounded p-2 bg-white"
+                      style={{ maxWidth: '200px' }}
+                    />
+                    {!barcodeGenerated && product.barcode && (
+                      <div className="w-24 h-24 bg-gray-200 mx-auto flex items-center justify-center border rounded">
+                        <Text type="secondary">Loading Barcode...</Text>
+                      </div>
+                    )}
+                    {!product.barcode && (
+                      <div className="w-24 h-24 bg-gray-200 mx-auto flex items-center justify-center border rounded">
+                        <Text type="secondary">No SKU</Text>
+                      </div>
+                    )}
                     <Text type="secondary" className="text-xs mt-2 block">
-                      Scan for product details
+                      {product.barcode ? `SKU: ${product.barcode}` : 'No SKU available'}
                     </Text>
+                    <Text type="secondary" className="text-xs">Scan to add to POS</Text>
 
                     <div className="mt-4 text-center">
                       <Text type="secondary" className="text-xs">

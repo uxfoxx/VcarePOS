@@ -73,6 +73,7 @@ function* updateProductStockSaga(action) {
 export default function* productsSaga() {
   yield takeLatest(fetchProducts.type, fetchProductsSaga);
   yield takeLatest(fetchProductById.type, fetchProductByIdSaga);
+  yield takeLatest(fetchProductByBarcode.type, fetchProductByBarcodeSaga);
   yield takeLatest(addProduct.type, addProductSaga);
   yield takeLatest(updateProduct.type, updateProductSaga);
   yield takeLatest(deleteProducts.type, deleteProductsSaga);

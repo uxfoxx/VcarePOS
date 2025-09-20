@@ -112,7 +112,7 @@ export function ProductAddonsModal({ open, onClose, product }) {
         selectedSize: product.selectedSize
       };
       dispatch(addToCart({ product: productWithAddons, quantity }));
-      message.success('Product added to cart with addons');
+      message.success(`${product.name} added to cart${selectedAddons.length > 0 ? ' with add-ons' : ''}`);
       onClose();
     } catch (error) {
       message.error('Failed to add product to cart');

@@ -68,7 +68,7 @@ export function DetailModal({
           {data.weight ? `${data.weight} kg` : 'N/A'}
         </Descriptions.Item> */}
         <Descriptions.Item label="Material">
-          {data?.colors[0]?.sizes[0]?.rawMaterials.map((material)=> {
+          {data?.colors?.[0]?.sizes?.[0]?.rawMaterials?.map((material)=> {
             return <Tag key={material.rawMaterialId} color="blue">{material.name}</Tag>;
           }) || 'N/A'}
         </Descriptions.Item>

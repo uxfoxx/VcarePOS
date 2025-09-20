@@ -61,7 +61,18 @@ export const authApi = {
 // Products API
 export const productsApi = {
   getAll: async () => {
-    return makeRequest('/ecommerce/products');
+    console.log('E-commerce API: Making request to /ecommerce/products');
+    const result = await makeRequest('/ecommerce/products');
+    console.log('E-commerce API: Received products response', {
+      productCount: result.length,
+      sampleProduct: result[0] ? {
+        id: result[0].id,
+        name: result[0].name,
+        stock: result[0].stock,
+        colorsCount: result[0].colors?.length || 0
+      } : null
+    });
+    return result;
   },
   
   getById: async (productId) => {

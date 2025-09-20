@@ -7,6 +7,15 @@ import { addToCart } from '../../store/slices/cartSlice';
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  
+  // Debug logging for product card rendering
+  console.log('E-commerce ProductCard: Rendering product', {
+    productId: product.id,
+    productName: product.name,
+    stock: product.stock,
+    hasColors: product.colors && product.colors.length > 0,
+    colorsCount: product.colors?.length || 0
+  });
 
   const handleAddToCart = (e) => {
     e.preventDefault();

@@ -19,6 +19,19 @@ const ProductsPage = () => {
     if (products.length === 0) {
       dispatch(fetchProducts());
     }
+    
+    // Debug logging for products state
+    console.log('E-commerce ProductsPage: Products state updated', {
+      productsLength: products.length,
+      categoriesLength: categories.length,
+      loading,
+      sampleProducts: products.slice(0, 3).map(p => ({
+        id: p.id,
+        name: p.name,
+        stock: p.stock,
+        category: p.category
+      }))
+    });
   }, [dispatch, products.length]);
 
   // Update URL when category changes

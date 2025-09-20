@@ -212,32 +212,78 @@ const upload = multer({
  */
 router.get('/products', async (req, res) => {
   try {
+    logger.info('E-commerce products endpoint hit', { 
+      timestamp: new Date().toISOString(),
+      userAgent: req.get('User-Agent'),
+      ip: req.ip 
+    });
+    
     const client = await pool.connect();
     
     // Get all active products with their colors and sizes
     const productsResult = await client.query(`
       SELECT * FROM products 
-      WHERE stock > 0 
       ORDER BY created_at DESC
     `);
+    
+    logger.debug('Raw products from database', { 
+      productCount: productsResult.rows.length,
+      sampleProduct: productsResult.rows[0] ? {
+        id: productsResult.rows[0].id,
+        name: productsResult.rows[0].name,
+        stock: productsResult.rows[0].stock,
+        category: productsResult.rows[0].category
+      } : null
+    });
     
     // Get all product colors
     const colorsResult = await client.query(`
       SELECT * FROM product_colors
     `);
     
+    logger.debug('Product colors from database', { 
+      colorCount: colorsResult.rows.length,
+      sampleColor: colorsResult.rows[0] ? {
+        id: colorsResult.rows[0].id,
+        product_id: colorsResult.rows[0].product_id,
+        name: colorsResult.rows[0].name
+      } : null
+    });
+    
     // Get all product sizes
     const sizesResult = await client.query(`
       SELECT * FROM product_sizes
     `);
     
+    logger.debug('Product sizes from database', { 
+      sizeCount: sizesResult.rows.length,
+      sampleSize: sizesResult.rows[0] ? {
+        id: sizesResult.rows[0].id,
+        product_color_id: sizesResult.rows[0].product_color_id,
+        name: sizesResult.rows[0].name,
+        stock: sizesResult.rows[0].stock
+      } : null
+    });
+    
     client.release();
     
     // Map colors and sizes to their respective products
     const products = productsResult.rows.map(product => {
+      logger.debug('Processing product', { 
+        productId: product.id,
+        productName: product.name,
+        productStock: product.stock
+      });
+      
       const colors = colorsResult.rows
         .filter(color => color.product_id === product.id)
         .map(color => {
+          logger.debug('Processing color for product', { 
+            productId: product.id,
+            colorId: color.id,
+            colorName: color.name
+          });
+          
           const colorSizes = sizesResult.rows
             .filter(size => size.product_color_id === color.id)
             .map(size => ({
@@ -247,6 +293,12 @@ router.get('/products', async (req, res) => {
               dimensions: size.dimensions,
               weight: parseFloat(size.weight || 0)
             }));
+          
+          logger.debug('Color sizes mapped', { 
+            colorId: color.id,
+            sizesCount: colorSizes.length,
+            totalSizeStock: colorSizes.reduce((sum, s) => sum + (s.stock || 0), 0)
+          });
           
           return {
             id: color.id,
@@ -262,7 +314,14 @@ router.get('/products', async (req, res) => {
         total + color.sizes.reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
       );
       
-      return {
+      logger.debug('Product stock calculation', { 
+        productId: product.id,
+        originalStock: product.stock,
+        calculatedTotalStock: totalStock,
+        colorsCount: colors.length
+      });
+      
+      const formattedProduct = {
         id: product.id,
         name: product.name,
         description: product.description,
@@ -274,10 +333,29 @@ router.get('/products', async (req, res) => {
         colors,
         createdAt: product.created_at
       };
+      
+      logger.debug('Formatted product', { 
+        productId: formattedProduct.id,
+        finalStock: formattedProduct.stock,
+        hasColors: formattedProduct.colors.length > 0
+      });
+      
+      return formattedProduct;
+    });
+    
+    logger.info('E-commerce products response prepared', { 
+      totalProducts: products.length,
+      productsWithStock: products.filter(p => p.stock > 0).length,
+      productsWithColors: products.filter(p => p.colors.length > 0).length,
+      sampleProductIds: products.slice(0, 3).map(p => p.id)
     });
     
     res.json(products);
   } catch (error) {
+    logger.error('E-commerce products endpoint error', { 
+      error: error.message,
+      stack: error.stack
+    });
     handleRouteError(error, req, res, 'E-commerce - Fetch Products');
   }
 });

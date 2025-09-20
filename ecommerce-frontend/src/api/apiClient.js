@@ -71,22 +71,19 @@ export const productsApi = {
 
 // Orders API
 export const ordersApi = {
-  create: async (orderData) => {
+  create: async (orderData, receiptDetails = null) => {
+    const payload = { ...orderData };
+    if (receiptDetails) {
+      payload.receiptDetails = receiptDetails;
+    }
+    
     return makeRequest('/ecommerce/orders', {
       method: 'POST',
-      body: JSON.stringify(orderData),
+      body: JSON.stringify(payload),
     });
   },
   
-  getCustomerOrders: async (customerId) => {
-    return makeRequest(`/ecommerce/users/${customerId}/orders`);
-  },
-  
-  getById: async (orderId) => {
-    return makeRequest(`/ecommerce/orders/${orderId}`);
-  },
-  
-  uploadReceipt: async (orderId, file) => {
+  uploadTemporaryReceipt: async (file) => {
     const formData = new FormData();
     formData.append('receipt', file);
     
@@ -97,7 +94,7 @@ export const ordersApi = {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
-    const response = await fetch(`${API_URL}/ecommerce/orders/${orderId}/receipt`, {
+    const response = await fetch(`${API_URL}/ecommerce/receipts/temp-upload`, {
       method: 'POST',
       headers,
       body: formData,
@@ -114,5 +111,13 @@ export const ordersApi = {
     }
     
     return response.json();
+  },
+  
+  getCustomerOrders: async (customerId) => {
+    return makeRequest(`/ecommerce/users/${customerId}/orders`);
+  },
+  
+  getById: async (orderId) => {
+    return makeRequest(`/ecommerce/orders/${orderId}`);
   },
 };

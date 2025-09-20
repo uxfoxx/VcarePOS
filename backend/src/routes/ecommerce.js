@@ -10,7 +10,40 @@ const fs = require('fs');
 
 const router = express.Router();
 
-// Configure multer for file uploads
+// Configure multer for temporary receipt uploads
+const tempStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../../uploads/temp_receipts');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `temp-receipt-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+const tempUpload = multer({
+  storage: tempStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|pdf/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only JPEG, PNG, and PDF files are allowed'));
+    }
+  }
+});
+
+// Configure multer for permanent receipt uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, '../../uploads/receipts');
@@ -103,6 +136,65 @@ const upload = multer({
 // ============= PUBLIC ENDPOINTS (No Authentication Required) =============
 
 /**
+  * @swagger
+  * /ecommerce/receipts/temp-upload:
+  *   post:
+  *     summary: Upload bank transfer receipt temporarily
+  *     tags: [E-commerce]
+  *     security:
+  *       - bearerAuth: []
+  *     requestBody:
+  *       required: true
+  *       content:
+  *         multipart/form-data:
+  *           schema:
+  *             type: object
+  *             properties:
+  *               receipt:
+  *                 type: string
+  *                 format: binary
+  *     responses:
+  *       200:
+  *         description: Receipt uploaded successfully
+  *         content:
+  *           application/json:
+  *             schema:
+  *               type: object
+  *               properties:
+  *                 success:
+  *                   type: boolean
+  *                 filePath:
+  *                   type: string
+  *                 originalFilename:
+  *                   type: string
+  *                 fileSize:
+  *                   type: integer
+  *       400:
+  *         description: Invalid file or validation error
+  */
+ router.post('/receipts/temp-upload', authenticate, tempUpload.single('receipt'), async (req, res) => {
+   try {
+     if (req.user.role !== 'customer') {
+       return res.status(403).json({ message: 'Access denied' });
+     }
+     
+     if (!req.file) {
+       return res.status(400).json({ message: 'No file uploaded' });
+     }
+     
+     res.json({
+       success: true,
+       filePath: req.file.path,
+       originalFilename: req.file.originalname,
+       fileSize: req.file.size,
+       message: 'Receipt uploaded successfully'
+     });
+   } catch (error) {
+     handleRouteError(error, req, res, 'E-commerce - Temporary Receipt Upload');
+   }
+ });
+ 
+ /**
  * @swagger
  * /ecommerce/products:
  *   get:
@@ -575,7 +667,16 @@ router.post('/orders', [
   body('customerEmail').isEmail().withMessage('Valid email is required'),
   body('customerAddress').notEmpty().withMessage('Customer address is required'),
   body('paymentMethod').isIn(['cash_on_delivery', 'bank_transfer']).withMessage('Invalid payment method'),
-  body('items').isArray({ min: 1 }).withMessage('At least one item is required')
+  body('items').isArray({ min: 1 }).withMessage('At least one item is required'),
+  // Conditional validation for bank transfer receipt
+  body('receiptDetails').custom((value, { req }) => {
+    if (req.body.paymentMethod === 'bank_transfer') {
+      if (!value || !value.filePath || !value.originalFilename || !value.fileSize) {
+        throw new Error('Receipt details are required for bank transfer orders');
+      }
+    }
+    return true;
+  })
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -592,7 +693,8 @@ router.post('/orders', [
     customerPhone,
     customerAddress,
     paymentMethod,
-    items
+    items,
+    receiptDetails
   } = req.body;
 
   const client = await pool.connect();
@@ -672,8 +774,43 @@ router.post('/orders', [
       customerAddress,
       totalAmount,
       paymentMethod,
-      paymentMethod === 'cash_on_delivery' ? 'processing' : 'pending_payment'
+      paymentMethod === 'cash_on_delivery' ? 'processing' : 'pending_verification'
     ]);
+    
+    // Handle bank transfer receipt if provided
+    if (paymentMethod === 'bank_transfer' && receiptDetails) {
+      // Generate receipt ID
+      const receiptId = `RECEIPT-${Date.now()}`;
+      
+      // Move file from temp location to permanent location
+      const tempPath = receiptDetails.filePath;
+      const permanentDir = path.join(__dirname, '../../uploads/receipts');
+      if (!fs.existsSync(permanentDir)) {
+        fs.mkdirSync(permanentDir, { recursive: true });
+      }
+      
+      const permanentFilename = `receipt-${orderId}-${Date.now()}${path.extname(receiptDetails.originalFilename)}`;
+      const permanentPath = path.join(permanentDir, permanentFilename);
+      
+      // Move file from temp to permanent location
+      if (fs.existsSync(tempPath)) {
+        fs.renameSync(tempPath, permanentPath);
+      }
+      
+      // Insert receipt record
+      await client.query(`
+        INSERT INTO bank_receipts (
+          id, ecommerce_order_id, file_path, original_filename, file_size, status
+        ) VALUES ($1, $2, $3, $4, $5, $6)
+      `, [
+        receiptId,
+        orderId,
+        permanentPath,
+        receiptDetails.originalFilename,
+        receiptDetails.fileSize,
+        'pending_verification'
+      ]);
+    }
     
     // Insert order items
     for (const item of validatedItems) {
@@ -742,106 +879,21 @@ router.post('/orders', [
     });
   } catch (error) {
     await client.query('ROLLBACK');
+    
+    // Clean up temporary file if it exists
+    if (req.body.receiptDetails && req.body.receiptDetails.filePath) {
+      try {
+        if (fs.existsSync(req.body.receiptDetails.filePath)) {
+          fs.unlinkSync(req.body.receiptDetails.filePath);
+        }
+      } catch (cleanupError) {
+        console.error('Error cleaning up temporary file:', cleanupError);
+      }
+    }
+    
     handleRouteError(error, req, res, 'E-commerce - Create Order');
   } finally {
     client.release();
-  }
-});
-
-/**
- * @swagger
- * /ecommerce/orders/{orderId}/receipt:
- *   post:
- *     summary: Upload bank transfer receipt
- *     tags: [E-commerce]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: orderId
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               receipt:
- *                 type: string
- *                 format: binary
- *     responses:
- *       200:
- *         description: Receipt uploaded successfully
- *       400:
- *         description: Invalid file or order
- */
-router.post('/orders/:orderId/receipt', authenticate, upload.single('receipt'), async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    
-    if (req.user.role !== 'customer') {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-    
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
-    
-    const client = await pool.connect();
-    
-    // Verify order exists and belongs to customer
-    const orderResult = await client.query(
-      'SELECT * FROM ecommerce_orders WHERE id = $1 AND customer_id = $2',
-      [orderId, req.user.id]
-    );
-    
-    if (orderResult.rows.length === 0) {
-      client.release();
-      return res.status(404).json({ message: 'Order not found' });
-    }
-    
-    const order = orderResult.rows[0];
-    
-    if (order.payment_method !== 'bank_transfer') {
-      client.release();
-      return res.status(400).json({ message: 'Receipt upload only allowed for bank transfer orders' });
-    }
-    
-    // Generate receipt ID
-    const receiptId = `RECEIPT-${Date.now()}`;
-    
-    // Insert receipt record
-    await client.query(`
-      INSERT INTO bank_receipts (
-        id, ecommerce_order_id, file_path, original_filename, file_size
-      ) VALUES ($1, $2, $3, $4, $5)
-    `, [
-      receiptId,
-      orderId,
-      req.file.path,
-      req.file.originalname,
-      req.file.size
-    ]);
-    
-    // Update order status to processing
-    await client.query(
-      'UPDATE ecommerce_orders SET order_status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-      ['processing', orderId]
-    );
-    
-    client.release();
-    
-    res.json({
-      success: true,
-      message: 'Receipt uploaded successfully',
-      receiptId,
-      orderStatus: 'processing'
-    });
-  } catch (error) {
-    handleRouteError(error, req, res, 'E-commerce - Upload Receipt');
   }
 });
 

@@ -55,6 +55,7 @@ export function ProductGrid({ collapsed }) {
       if (scannedProduct.stock === 0) {
         message.error(`${scannedProduct.name} is out of stock`);
         dispatch(clearScannedProduct());
+        dispatch(clearScannedProduct());
         return;
       }
       
@@ -72,8 +73,6 @@ export function ProductGrid({ collapsed }) {
         setShowAddonsModal(true);
       }
       
-      // Clear scanned product from state
-      dispatch(clearScannedProduct());
     }
   }, [scannedProduct, dispatch]);
 
@@ -109,6 +108,9 @@ export function ProductGrid({ collapsed }) {
     // Close color/size modal
     setShowColorSizeModal(false);
     
+    // Clear scanned product from Redux state
+    dispatch(clearScannedProduct());
+    
     // Create product with selected color and size
     const productWithColorAndSize = {
       ...selectedProduct,
@@ -134,6 +136,9 @@ export function ProductGrid({ collapsed }) {
       selectedSize: productWithAddons.selectedSize,
       addons: productWithAddons.addons
     }));
+    
+    // Clear scanned product from Redux state after successful addition
+    dispatch(clearScannedProduct());
     
     // Show success message for scanned products
     if (productWithAddons.barcode) {

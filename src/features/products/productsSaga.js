@@ -2,12 +2,14 @@ import { takeLatest, call, put } from "redux-saga/effects";
 import {
   fetchProducts,
   fetchProductById,
+  fetchProductByBarcode,
   addProduct,
   updateProduct,
   deleteProducts,
   updateProductStock,
   fetchProductsSucceeded,
   fetchProductByIdSucceeded,
+  fetchProductByBarcodeSucceeded,
   addProductSucceeded,
   updateProductSucceeded,
   deleteProductsSucceeded,
@@ -29,6 +31,15 @@ function* fetchProductByIdSaga(action) {
   try {
     const data = yield call(productsApi.getById, action.payload.id);
     yield put(fetchProductByIdSucceeded(data));
+  } catch (error) {
+    yield put(failed(error.message));
+  }
+}
+
+function* fetchProductByBarcodeSaga(action) {
+  try {
+    const data = yield call(productsApi.getByBarcode, action.payload);
+    yield put(fetchProductByBarcodeSucceeded(data));
   } catch (error) {
     yield put(failed(error.message));
   }
@@ -73,7 +84,6 @@ function* updateProductStockSaga(action) {
 export default function* productsSaga() {
   yield takeLatest(fetchProducts.type, fetchProductsSaga);
   yield takeLatest(fetchProductById.type, fetchProductByIdSaga);
-  yield takeLatest(fetchProductByBarcode.type, fetchProductByBarcodeSaga);
   yield takeLatest(addProduct.type, addProductSaga);
   yield takeLatest(updateProduct.type, updateProductSaga);
   yield takeLatest(deleteProducts.type, deleteProductsSaga);

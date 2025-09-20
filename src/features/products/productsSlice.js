@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   productsList: [],
   currentProduct: null,
+  scannedProduct: null,
   loading: false,
   error: null,
 };
@@ -42,6 +43,10 @@ const productsSlice = createSlice({
     fetchProductByIdSucceeded(state, action) {
       state.loading = false;
       state.currentProduct = action.payload;
+    },
+    fetchProductByBarcodeSucceeded(state, action) {
+      state.loading = false;
+      state.scannedProduct = action.payload;
     },
     addProductSucceeded(state, action) {
       state.loading = false;
@@ -92,18 +97,21 @@ const productsSlice = createSlice({
 export const {
   fetchProducts,
   fetchProductById,
+  fetchProductByBarcode,
   addProduct,
   updateProduct,
   deleteProducts,
   updateProductStock,
   fetchProductsSucceeded,
   fetchProductByIdSucceeded,
+  fetchProductByBarcodeSucceeded,
   addProductSucceeded,
   updateProductSucceeded,
   deleteProductsSucceeded,
   updateProductStockSucceeded,
   failed,
   clearCurrentProduct,
+  clearScannedProduct,
 } = productsSlice.actions;
 
 export default productsSlice.reducer;

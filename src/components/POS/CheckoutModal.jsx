@@ -89,7 +89,7 @@ export function CheckoutModal({
     // Add addon prices if any
     if (item.product.addons) {
       const addonTotal = item.product.addons.reduce((addonSum, addon) => 
-        addonSum + addon.price*addon.quantity, 0);
+        addonSum + (addon.price * (addon.quantity || 1)), 0) * item.quantity;
       itemTotal += addonTotal;
     }
 

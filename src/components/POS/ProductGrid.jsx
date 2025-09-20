@@ -15,6 +15,7 @@ import {
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchProducts } from '../../features/products/productsSlice';
 import { fetchCategories } from '../../features/categories/categoriesSlice';
+import { clearScannedProduct } from '../../features/products/productsSlice';
 import { ProductCard } from '../common/ProductCard';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
@@ -23,7 +24,6 @@ import { EmptyState } from '../common/EmptyState';
 import { CustomProductModal } from './CustomProductModal';
 import { ProductAddonsModal } from './ProductAddonsModal';
 import { ColorAndSizeSelectionModal } from './ColorAndSizeSelectionModal';
-import { addToCart } from '../../features/cart/cartSlice';
 
 const { Option } = Select;
 const { Text, Title } = Typography;
@@ -32,8 +32,10 @@ const { Search } = Input;
 export function ProductGrid({ collapsed }) {
   const dispatch = useDispatch();
   const products = useSelector(state => state.products.productsList);
+  const scannedProduct = useSelector(state => state.products.scannedProduct);
+  const productsLoading = useSelector(state => state.products.loading);
   const categories = useSelector(state => state.categories.categoriesList);
-  const loading = useSelector(state => state.products.loading || state.categories.loading);
+  const loading = useSelector(state => state.categories.loading);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -45,6 +47,35 @@ export function ProductGrid({ collapsed }) {
     dispatch(fetchProducts());
     dispatch(fetchCategories());
   }, [dispatch]);
+
+  // Handle scanned product
+  React.useEffect(() => {
+    if (scannedProduct) {
+      // Check if product is out of stock
+      if (scannedProduct.stock === 0) {
+        message.error(`${scannedProduct.name} is out of stock`);
+        dispatch(clearScannedProduct());
+        return;
+      }
+      
+      // Show success message
+      message.success(`Product scanned: ${scannedProduct.name}`);
+      
+      // Handle product based on its structure
+      if (scannedProduct.colors && scannedProduct.colors.length > 0) {
+        // Product has color/size variations - show selection modal
+        setSelectedProduct(scannedProduct);
+        setShowColorSizeModal(true);
+      } else {
+        // Simple product - show addons modal
+        setSelectedProduct(scannedProduct);
+        setShowAddonsModal(true);
+      }
+      
+      // Clear scanned product from state
+      dispatch(clearScannedProduct());
+    }
+  }, [scannedProduct, dispatch]);
 
   // Get categories from state, including only active ones
   const activeCategories = Array.isArray(categories) ? categories.filter(cat => cat?.isActive) : [];
@@ -95,6 +126,7 @@ export function ProductGrid({ collapsed }) {
   };
 
   const handleAddToCartWithAddons = (productWithAddons, quantity = 1) => {
+    const { addToCart } = require('../../features/cart/cartSlice');
     dispatch(addToCart({ 
       product: productWithAddons, 
       quantity,
@@ -105,7 +137,8 @@ export function ProductGrid({ collapsed }) {
   };
 
   const handleAddCustomProduct = (customProduct) => {
-    addToCart(customProduct);
+    const { addToCart } = require('../../features/cart/cartSlice');
+    dispatch(addToCart({ product: customProduct }));
   };
 
   // Determine grid columns based on sidebar state
@@ -119,7 +152,7 @@ export function ProductGrid({ collapsed }) {
     }
   };
 
-  if (loading) {
+  if (loading || productsLoading) {
     return (
       <Card 
         className="h-full"
@@ -142,6 +175,10 @@ export function ProductGrid({ collapsed }) {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold m-0">Products</h2>
+              <Text type="secondary" className="text-sm flex items-center mt-1">
+                <Icon name="qr_code_scanner" className="mr-1" />
+                Barcode scanner active - scan any product to add to cart
+              </Text>
             </div>
             <Space>
               <Search

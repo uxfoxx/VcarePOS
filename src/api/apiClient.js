@@ -202,6 +202,10 @@ export const productsApi = {
       method: 'PUT',
       body: JSON.stringify({ quantity, operation, selectedSize })
     });
+  },
+  
+  getByBarcode: async (barcode) => {
+    return apiRequest(`/products/barcode/${encodeURIComponent(barcode)}`);
   }
 };
 

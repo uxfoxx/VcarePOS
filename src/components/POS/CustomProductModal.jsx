@@ -154,7 +154,7 @@ export function CustomProductModal({ open, onClose }) {
         isCustom: true
       };
       dispatch(addToCart({ product: customProduct }));
-      message.success('Custom product added to cart');
+      message.success(`${customName} added to cart`);
       onClose();
     } catch (error) {
       message.error('Failed to create custom product');

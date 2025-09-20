@@ -321,11 +321,24 @@ export function CheckoutModal({
                   {/* Show addons if any */}
                   {item.product.addons && item.product.addons.length > 0 && (
                     <div className="mt-1 pl-4 border-l-2 border-blue-200">
+                      <Text type="secondary" className="text-xs block mb-1">
+                        <Icon name="add_circle" className="mr-1" />
+                        Add-ons:
+                      </Text>
                       {item.product.addons.map((addon, idx) => (
-                        <Text key={idx} type="secondary" className="text-xs block">
-                          {addon.name} × {addon.quantity}: +LKR {addon.price.toFixed(2)}
-                        </Text>
+                        <div key={idx} className="flex justify-between text-xs mb-1 bg-blue-50 px-2 py-1 rounded">
+                          <Text type="secondary">
+                            <Icon name="fiber_manual_record" className="mr-1 text-xs" />
+                            {addon.name} × {addon.quantity || 1}
+                          </Text>
+                          <Text type="secondary" className="font-medium">
+                            +LKR {((addon.price || 0) * (addon.quantity || 1)).toFixed(2)}
+                          </Text>
+                        </div>
                       ))}
+                      <div className="text-xs text-blue-600 font-medium mt-1">
+                        Total Add-ons: +LKR {item.product.addons.reduce((sum, addon) => sum + ((addon.price || 0) * (addon.quantity || 1)), 0).toFixed(2)}
+                      </div>
                     </div>
                   )}
                   

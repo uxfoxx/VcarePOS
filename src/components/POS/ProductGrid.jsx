@@ -134,6 +134,11 @@ export function ProductGrid({ collapsed }) {
       selectedSize: productWithAddons.selectedSize,
       addons: productWithAddons.addons
     }));
+    
+    // Show success message for scanned products
+    if (productWithAddons.barcode) {
+      message.success(`${productWithAddons.name} added to cart`);
+    }
   };
 
   const handleAddCustomProduct = (customProduct) => {

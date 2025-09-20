@@ -50,6 +50,11 @@ export function ColorAndSizeSelectionModal({
     if (!selectedColor || !selectedSize) return;
     
     onColorAndSizeSelected(selectedColor, selectedSize);
+    
+    // Show success message for scanned products
+    if (product.barcode) {
+      message.success(`${product.name} (${selectedColor.name} - ${selectedSize.name}) will be added to cart`);
+    }
   };
 
   const getAvailableSizes = () => {

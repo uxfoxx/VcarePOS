@@ -91,6 +91,9 @@ const productsSlice = createSlice({
     clearCurrentProduct(state) {
       state.currentProduct = null;
     },
+    clearScannedProduct(state) {
+      state.scannedProduct = null;
+    },
   },
 });
 

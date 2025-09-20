@@ -15,7 +15,8 @@ import {
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchProducts } from '../../features/products/productsSlice';
 import { fetchCategories } from '../../features/categories/categoriesSlice';
-import { clearScannedProduct } from '../../features/products/productsSlice';
+import { addToCart } from '../../features/cart/cartSlice';
+import * as productsSlice from '../../features/products/productsSlice';
 import { ProductCard } from '../common/ProductCard';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
@@ -29,7 +30,7 @@ const { Option } = Select;
 const { Text, Title } = Typography;
 const { Search } = Input;
 
-export function ProductGrid({ collapsed }) {
+export function ProductGrid({ collapsed, isScanning, toggleScanning }) {
   const dispatch = useDispatch();
   const products = useSelector(state => state.products.productsList);
   const scannedProduct = useSelector(state => state.products.scannedProduct);
@@ -54,8 +55,8 @@ export function ProductGrid({ collapsed }) {
       // Check if product is out of stock
       if (scannedProduct.stock === 0) {
         message.error(`${scannedProduct.name} is out of stock`);
-        dispatch(clearScannedProduct());
-        dispatch(clearScannedProduct());
+        dispatch(productsSlice.clearScannedProduct());
+        toggleScanning(false);
         return;
       }
       
@@ -72,7 +73,6 @@ export function ProductGrid({ collapsed }) {
         setSelectedProduct(scannedProduct);
         setShowAddonsModal(true);
       }
-      
     }
   }, [scannedProduct, dispatch]);
 
@@ -108,9 +108,6 @@ export function ProductGrid({ collapsed }) {
     // Close color/size modal
     setShowColorSizeModal(false);
     
-    // Clear scanned product from Redux state
-    dispatch(clearScannedProduct());
-    
     // Create product with selected color and size
     const productWithColorAndSize = {
       ...selectedProduct,
@@ -128,7 +125,6 @@ export function ProductGrid({ collapsed }) {
   };
 
   const handleAddToCartWithAddons = (productWithAddons, quantity = 1) => {
-    const { addToCart } = require('../../features/cart/cartSlice');
     dispatch(addToCart({ 
       product: productWithAddons, 
       quantity,
@@ -138,7 +134,8 @@ export function ProductGrid({ collapsed }) {
     }));
     
     // Clear scanned product from Redux state after successful addition
-    dispatch(clearScannedProduct());
+    dispatch(productsSlice.clearScannedProduct());
+    toggleScanning(false);
     
     // Show success message for scanned products
     if (productWithAddons.barcode) {
@@ -147,7 +144,6 @@ export function ProductGrid({ collapsed }) {
   };
 
   const handleAddCustomProduct = (customProduct) => {
-    const { addToCart } = require('../../features/cart/cartSlice');
     dispatch(addToCart({ product: customProduct }));
   };
 
@@ -185,12 +181,23 @@ export function ProductGrid({ collapsed }) {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold m-0">Products</h2>
-              <Text type="secondary" className="text-sm flex items-center mt-1">
-                <Icon name="qr_code_scanner" className="mr-1" />
-                Barcode scanner active - scan any product to add to cart
-              </Text>
+              {isScanning && (
+                <Text type="secondary" className="text-sm flex items-center mt-1">
+                  <Icon name="qr_code_scanner" className="mr-1" />
+                  <span className="text-green-600 font-medium">Barcode scanner active - scan any product to add to cart</span>
+                </Text>
+              )}
             </div>
             <Space>
+              <ActionButton
+                size="large"
+                icon={isScanning ? "stop" : "qr_code_scanner"}
+                onClick={() => toggleScanning(!isScanning)}
+                type={isScanning ? "default" : "primary"}
+                className={isScanning ? "border-red-500 text-red-600" : ""}
+              >
+                {isScanning ? 'Stop Scanning' : 'Scan Barcode'}
+              </ActionButton>
               <Search
                 placeholder="Search by product name or SKU..."
                 value={searchTerm}
@@ -263,7 +270,14 @@ export function ProductGrid({ collapsed }) {
       {/* Color and Size Selection Modal */}
       <ColorAndSizeSelectionModal
         open={showColorSizeModal}
-        onClose={() => setShowColorSizeModal(false)}
+        onClose={() => {
+          setShowColorSizeModal(false);
+          // Clear scanned product if modal is closed without adding to cart
+          if (scannedProduct) {
+            dispatch(productsSlice.clearScannedProduct());
+            toggleScanning(false);
+          }
+        }}
         product={selectedProduct}
         onColorAndSizeSelected={handleColorAndSizeSelected}
       />
@@ -282,7 +296,8 @@ export function ProductGrid({ collapsed }) {
           setShowAddonsModal(false);
           // Clear scanned product if modal is closed without adding to cart
           if (scannedProduct) {
-            dispatch(clearScannedProduct());
+            dispatch(productsSlice.clearScannedProduct());
+            toggleScanning(false);
           }
         }}
         product={selectedProduct}

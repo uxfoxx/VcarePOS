@@ -13,6 +13,7 @@ import { getCurrentUser } from './features/auth/authSlice';
 import { fetchProductByBarcode } from './features/products/productsSlice';
 import { checkStockLevels } from './features/notifications/notificationsSlice';
 import { useReduxNotifications } from './hooks/useReduxNotifications';
+import * as productsSlice from './features/products/productsSlice';
 
 // Helper function to safely get branding values from localStorage
 const getBrandingValue = (key, defaultValue = null) => {
@@ -122,12 +123,16 @@ function AppContent() {
   const [collapsed, setCollapsed] = useState(true);
   const [barcodeBuffer, setBarcodeBuffer] = useState('');
   const [lastKeyTime, setLastKeyTime] = useState(0);
+  const [isScanning, setIsScanning] = useState(false);
 
   // Barcode scanning logic
   useEffect(() => {
+    // Only add event listener when scanning is active
+    if (!isScanning) return;
+    
     const handleKeyDown = (event) => {
       // Only process barcode scanning when on POS tab
-      if (activeTab !== 'pos') return;
+      if (activeTab !== 'pos' || !isScanning) return;
       
       const currentTime = Date.now();
       const timeDiff = currentTime - lastKeyTime;
@@ -145,7 +150,7 @@ function AppContent() {
         
         if (barcodeBuffer.trim().length > 0) {
           // Dispatch action to fetch product by barcode
-          dispatch(fetchProductByBarcode({ barcode: barcodeBuffer.trim() }));
+          dispatch(productsSlice.fetchProductByBarcode({ barcode: barcodeBuffer.trim() }));
           setBarcodeBuffer('');
         }
         return;
@@ -164,7 +169,16 @@ function AppContent() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [activeTab, barcodeBuffer, lastKeyTime, dispatch]);
+  }, [activeTab, barcodeBuffer, lastKeyTime, dispatch, isScanning]);
+  
+  const toggleScanning = (scanning) => {
+    setIsScanning(scanning);
+    if (scanning) {
+      setBarcodeBuffer('');
+      setLastKeyTime(0);
+    }
+  };
+  
   // If not authenticated, show login page
   if (!isAuthenticated) {
     return <LoginPage />;
@@ -177,7 +191,11 @@ function AppContent() {
           <div className="flex h-full gap-6">
             <div className="flex-1" data-tour="product-grid">
               <Suspense fallback={<ComponentLoader />}>
-                <ProductGrid collapsed={collapsed} />
+                <ProductGrid 
+                  collapsed={collapsed} 
+                  isScanning={isScanning}
+                  toggleScanning={toggleScanning}
+                />
               </Suspense>
             </div>
             <div className="w-96" data-tour="cart">

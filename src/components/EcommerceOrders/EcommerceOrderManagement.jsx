@@ -63,7 +63,6 @@ export function EcommerceOrderManagement() {
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending_payment': return 'orange';
-      case 'pending_verification': return 'yellow';
       case 'processing': return 'blue';
       case 'shipped': return 'purple';
       case 'completed': return 'green';
@@ -75,7 +74,6 @@ export function EcommerceOrderManagement() {
   const getStatusText = (status) => {
     switch (status) {
       case 'pending_payment': return 'Pending Payment';
-      case 'pending_verification': return 'Pending Verification';
       case 'processing': return 'Processing';
       case 'shipped': return 'Shipped';
       case 'completed': return 'Completed';
@@ -198,7 +196,6 @@ export function EcommerceOrderManagement() {
               style={{ width: '100%' }}
             >
               <Option value="pending_payment">Pending Payment</Option>
-              <Option value="pending_verification">Pending Verification</Option>
               <Option value="processing">Processing</Option>
               <Option value="shipped">Shipped</Option>
               <Option value="completed">Completed</Option>
@@ -209,7 +206,6 @@ export function EcommerceOrderManagement() {
       ),
       filters: [
         { text: 'Pending Payment', value: 'pending_payment' },
-        { text: 'Pending Verification', value: 'pending_verification' },
         { text: 'Processing', value: 'processing' },
         { text: 'Shipped', value: 'shipped' },
         { text: 'Completed', value: 'completed' },

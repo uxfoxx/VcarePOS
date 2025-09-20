@@ -573,8 +573,8 @@ const CheckoutPage = () => {
               {paymentMethod === 'bank_transfer' && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                   <p className="text-sm text-blue-800">
-                    Your bank transfer receipt has been uploaded and is being verified. 
-                    You will receive an email confirmation once your payment is verified.
+                    Your bank transfer receipt has been uploaded and your order is being processed. 
+                    You will receive an email confirmation once your payment is verified and your order is ready for delivery.
                   </p>
                 </div>
               )}

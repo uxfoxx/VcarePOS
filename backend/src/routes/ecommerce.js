@@ -774,7 +774,7 @@ router.post('/orders', [
       customerAddress,
       totalAmount,
       paymentMethod,
-      paymentMethod === 'cash_on_delivery' ? 'processing' : 'pending_verification'
+      paymentMethod === 'cash_on_delivery' ? 'processing' : 'processing'
     ]);
     
     // Handle bank transfer receipt if provided

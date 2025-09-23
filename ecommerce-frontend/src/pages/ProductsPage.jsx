@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 import { fetchProducts } from '../store/slices/productsSlice';
@@ -21,6 +21,21 @@ const ProductsPage = () => {
     }
   }, [dispatch, products.length]);
 
+  // Debug logging when products change
+  useEffect(() => {
+    console.log('E-commerce ProductsPage: Products state updated', {
+      productsLength: products.length,
+      categoriesLength: categories.length,
+      loading,
+      sampleProducts: products.slice(0, 3).map(p => ({
+        id: p.id,
+        name: p.name,
+        stock: p.stock,
+        category: p.category
+      }))
+    });
+  }, [products, categories, loading]);
+
   // Update URL when category changes
   useEffect(() => {
     if (selectedCategory === 'All') {
@@ -31,29 +46,39 @@ const ProductsPage = () => {
     setSearchParams(searchParams);
   }, [selectedCategory, searchParams, setSearchParams]);
 
-  // Filter and sort products
-  const filteredProducts = products
-    .filter(product => {
-      const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
-      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           product.description?.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesCategory && matchesSearch && product.stock > 0;
-    })
-    .sort((a, b) => {
-      let aValue = a[sortBy];
-      let bValue = b[sortBy];
-      
-      if (sortBy === 'price') {
-        aValue = parseFloat(aValue);
-        bValue = parseFloat(bValue);
-      }
-      
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
+  // Filter and sort products with memoization for performance
+  const filteredProducts = useMemo(() => {
+    if (!products || !Array.isArray(products)) return [];
+    
+    return products
+      .filter(product => {
+        if (!product) return false;
+        
+        const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
+        const searchLower = (searchTerm || '').toLowerCase();
+        const matchesSearch = 
+          product.name?.toLowerCase().includes(searchLower) ||
+          product.description?.toLowerCase().includes(searchLower);
+        const hasStock = product.stock > 0; // Only show products with stock available
+        
+        return matchesCategory && matchesSearch && hasStock;
+      })
+      .sort((a, b) => {
+        let aValue = a[sortBy];
+        let bValue = b[sortBy];
+        
+        if (sortBy === 'price') {
+          aValue = parseFloat(aValue) || 0;
+          bValue = parseFloat(bValue) || 0;
+        }
+        
+        if (sortOrder === 'asc') {
+          return aValue > bValue ? 1 : -1;
+        } else {
+          return aValue < bValue ? 1 : -1;
+        }
+      });
+  }, [products, selectedCategory, searchTerm, sortBy, sortOrder]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

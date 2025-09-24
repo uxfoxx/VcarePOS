@@ -120,25 +120,16 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
       {/* Logo Section */}
       <div className={`${collapsed ? 'p-4' : 'p-6'} border-b border-gray-200 transition-all duration-200`}>
         <div className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'}`}>
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+          <div className="w-full  rounded-xl flex items-center justify-center">
             <img 
               src={localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
                 ? JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
                 : "/VCARELogo 1.png"} 
               alt="VCare Logo" 
-              className="w-8 h-8 object-contain"
+              className="w-full  object-fill"
             />
           </div>
-          {!collapsed && (
-            <div>
-              <Title level={4} className="m-0 text-gray-900">
-                VCare POS
-              </Title>
-              <Text type="secondary" className="text-xs">
-                Furniture Store Management
-              </Text>
-            </div>
-          )}
+          
         </div>
       </div>
 
@@ -161,6 +152,7 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
           inlineCollapsed={collapsed}
           style={{
             fontSize: '14px',
+            border: 'none',
           }}
         />
       </div>

@@ -42,24 +42,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
   };
 
   const userMenuItems = [
-    {
-      key: 'profile',
-      icon: <Icon name="person" />,
-      label: 'Profile Settings',
-    },
-    {
-      key: 'preferences',
-      icon: <Icon name="tune" />,
-      label: 'Preferences',
-    },
-    {
-      type: 'divider',
-    },
-    {
-      key: 'help',
-      icon: <Icon name="help_outline" />,
-      label: 'Help & Support',
-    },
+   
     {
       key: 'logout',
       icon: <Icon name="logout" />,
@@ -193,7 +176,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
   };
 
   const notificationContent = (
-    <div className="w-80 max-h-96 overflow-y-auto">
+    <div className="w-80 shadow rounded bg-white">
       <div className="p-3 border-b flex justify-between items-center">
         <Title level={5} className="m-0">Notifications</Title>
         <Space size="small">
@@ -223,10 +206,11 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
         />
       ) : (
         <List
+        className=' overflow-y-auto max-h-96'
           dataSource={allNotifications}
           renderItem={item => (
             <List.Item 
-              className={`cursor-pointer hover:bg-gray-50 transition-colors ${item.read ? 'opacity-70' : ''}`}
+              className={`cursor-pointer  hover:bg-gray-50 transition-colors ${item.read ? 'opacity-70' : ''}`}
               onClick={() => handleNotificationClick(item)}
             >
               <div className="flex items-start p-2 w-full">
@@ -302,9 +286,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
         </div>
         
         <Space size="middle" className="flex items-center">
-          <Tooltip title="WiFi Connected">
-            <Icon name="wifi" className="text-green-500" />
-          </Tooltip>
+          
           
           {/* Help Tour Button */}
           <Tooltip title="Take a Tour">
@@ -346,7 +328,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
               >
                 {currentUser?.firstName?.[0]}{currentUser?.lastName?.[0]}
               </Avatar>
-              <div className="hidden sm:block text-left">
+              <div className="hidden sm:flex sm:flex-col text-left">
                 <Text strong className="text-gray-900 block text-sm">
                   {currentUser?.firstName} {currentUser?.lastName}
                 </Text>

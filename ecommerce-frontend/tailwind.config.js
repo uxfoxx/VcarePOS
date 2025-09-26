@@ -19,6 +19,11 @@ export default {
           800: '#1e40af',
           900: '#1e3a8a',
         },
+        error: '#dc2626',
+        info: '#2563eb',
+        success: '#16a34a',
+        warning: '#d97706',
+        loading: '#f59e0b',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

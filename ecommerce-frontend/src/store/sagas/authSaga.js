@@ -15,10 +15,10 @@ import { authApi } from '../../api/apiClient';
 function* registerSaga(action) {
   try {
     const response = yield call(authApi.register, action.payload);
-    
+
     // Store token in localStorage
     localStorage.setItem('ecommerce_token', response.token);
-    
+
     yield put(registerSuccess(response));
   } catch (error) {
     yield put(authFailure(error.message || 'Registration failed'));
@@ -28,10 +28,10 @@ function* registerSaga(action) {
 function* loginSaga(action) {
   try {
     const response = yield call(authApi.login, action.payload);
-    
+
     // Store token in localStorage
     localStorage.setItem('ecommerce_token', response.token);
-    
+
     yield put(loginSuccess(response));
   } catch (error) {
     yield put(authFailure(error.message || 'Login failed'));
@@ -42,10 +42,11 @@ function* logoutSaga() {
   try {
     // Clear token from localStorage
     localStorage.removeItem('ecommerce_token');
-    
+
     yield put(logoutSuccess());
   } catch (error) {
     // Even if logout fails, clear local state
+    console.log('Logout failed:', error);
     localStorage.removeItem('ecommerce_token');
     yield put(logoutSuccess());
   }

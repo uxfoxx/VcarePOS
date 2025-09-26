@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
-import { 
-  Card, 
-  Form, 
-  Input, 
-  Select, 
-  InputNumber, 
-  Typography, 
-  Space, 
-  Divider, 
-  List, 
-  Popconfirm, 
-  message, 
-  Button, 
-  Tabs, 
-  Table, 
-  Row, 
-  Col, 
+import {
+  Card,
+  Form,
+  Input,
+  Select,
+  InputNumber,
+  Typography,
+  Space,
+  Divider,
+  List,
+  Popconfirm,
+  message,
+  Button,
+  Tabs,
+  Table,
+  Row,
+  Col,
   Upload,
   Empty,
   Tag,
@@ -59,7 +59,7 @@ export function ColorManagementPanel({
       colorCode: '#000000',
       image: imagePreview || ''
     };
-    
+
     onAddColor(newColor);
     colorForm.resetFields();
     setImagePreview(null);
@@ -79,7 +79,7 @@ export function ColorManagementPanel({
       message.error('Please select a color first');
       return;
     }
-    
+
     const sizeData = {
       name: values.name,
       stock: values.stock || 0,
@@ -87,7 +87,7 @@ export function ColorManagementPanel({
       weight: values.weight || 0,
       rawMaterials: [] // Initialize empty raw materials array
     };
-    
+
     onAddColorSize(activeColorId, sizeData);
     sizeForm.resetFields();
   };
@@ -95,7 +95,7 @@ export function ColorManagementPanel({
   const handleUpdateSize = async (colorId, sizeId) => {
     try {
       const values = await sizeEditForm.validateFields();
-      
+
       const updatedSizeData = {
         name: values.name,
         stock: Number(values.stock) || 0,
@@ -107,11 +107,11 @@ export function ColorManagementPanel({
           unit: values.unit || 'cm'
         }
       };
-      
+
       if (onUpdateColorSize) {
         onUpdateColorSize(colorId, sizeId, updatedSizeData);
       }
-      
+
       setEditingSizeId(null);
       message.success('Size updated successfully');
     } catch (error) {
@@ -149,12 +149,12 @@ export function ColorManagementPanel({
     const color = colors.find(c => c.id === colorId);
     const size = color?.sizes?.find(s => s.id === sizeId);
     const existingMaterial = size?.rawMaterials?.find(m => m.rawMaterialId === values.materialId);
-    
+
     if (existingMaterial) {
       message.error('Material already added to this size');
       return;
     }
-    
+
     const materialData = {
       rawMaterialId: values.materialId,
       quantity: values.quantity,
@@ -162,7 +162,7 @@ export function ColorManagementPanel({
       unit: material.unit,
       unitPrice: material.unitPrice
     };
-    
+
     // Update the specific size's raw materials
     const updatedColors = colors.map(color => {
       if (color.id === colorId) {
@@ -181,7 +181,7 @@ export function ColorManagementPanel({
       }
       return color;
     });
-    
+
     // Call the parent update function
     onUpdateColor(colorId, { sizes: updatedColors.find(c => c.id === colorId).sizes });
     materialForm.resetFields();
@@ -206,7 +206,7 @@ export function ColorManagementPanel({
       }
       return color;
     });
-    
+
     // Call the parent update function
     onUpdateColor(colorId, { sizes: updatedColors.find(c => c.id === colorId).sizes });
     message.success('Material removed from size');
@@ -221,7 +221,7 @@ export function ColorManagementPanel({
     return color?.sizes?.find(s => s.id === activeSizeId);
   };
 
-  const filteredRawMaterials = rawMaterials.filter(material => 
+  const filteredRawMaterials = rawMaterials.filter(material =>
     material.name.toLowerCase().includes(materialSearchTerm.toLowerCase()) ||
     material.category.toLowerCase().includes(materialSearchTerm.toLowerCase())
   );
@@ -264,9 +264,9 @@ export function ColorManagementPanel({
                 {imagePreview ? (
                   <div className="space-y-2">
                     <div className="flex justify-center">
-                      <div 
+                      <div
                         className="w-8 h-8 rounded-full border-2 border-gray-300"
-                        style={{ 
+                        style={{
                           backgroundImage: `url(${imagePreview})`,
                           backgroundSize: 'cover',
                           backgroundPosition: 'center'
@@ -299,7 +299,7 @@ export function ColorManagementPanel({
 
       <div>
         <Title level={5} className="mb-4">Product Colors ({colors.length})</Title>
-        
+
         {colors.length === 0 ? (
           <Empty
             description="No colors added yet"
@@ -315,8 +315,8 @@ export function ColorManagementPanel({
                 onClick={() => setActiveColorId(color.id)}
                 actions={[
                   <Tooltip title="Manage Sizes" key="manage">
-                    <Button 
-                      type="text" 
+                    <Button
+                      type="text"
                       icon={<Icon name="straighten" />}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -352,9 +352,9 @@ export function ColorManagementPanel({
                 ]}
               >
                 <div className="flex items-center space-x-3">
-                  <div 
+                  <div
                     className="w-10 h-10 rounded-full border-2 border-gray-300 flex-shrink-0"
-                    style={{ 
+                    style={{
                       backgroundImage: color.image ? `url(${color.image})` : 'none',
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
@@ -370,15 +370,15 @@ export function ColorManagementPanel({
                   <div className="flex-1">
                     <Text strong className="block">{color.name}</Text>
                     <div className="flex space-x-2 mt-1">
-                      <Badge 
-                        count={color.sizes?.length || 0} 
-                        showZero 
+                      <Badge
+                        count={color.sizes?.length || 0}
+                        showZero
                         style={{ backgroundColor: '#722ed1' }}
                       />
                       <Text type="secondary" className="text-xs">sizes</Text>
-                      <Badge 
-                        count={color.sizes?.reduce((total, size) => total + (size.rawMaterials?.length || 0), 0) || 0} 
-                        showZero 
+                      <Badge
+                        count={color.sizes?.reduce((total, size) => total + (size.rawMaterials?.length || 0), 0) || 0}
+                        showZero
                         style={{ backgroundColor: '#fa8c16' }}
                       />
                       <Text type="secondary" className="text-xs">materials</Text>
@@ -398,7 +398,7 @@ export function ColorManagementPanel({
 
   const renderColorDetails = () => {
     const activeColor = getActiveColor();
-    
+
     if (!activeColor) {
       return (
         <div className="text-center py-12">
@@ -415,9 +415,9 @@ export function ColorManagementPanel({
         <Card size="small">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div 
+              <div
                 className="w-12 h-12 rounded-full border-2 border-gray-300"
-                style={{ 
+                style={{
                   backgroundImage: activeColor.image ? `url(${activeColor.image})` : 'none',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
@@ -433,15 +433,15 @@ export function ColorManagementPanel({
               <div>
                 <Title level={4} className="mb-1">{activeColor.name}</Title>
                 <Text type="secondary">
-                  {activeColor.sizes?.length || 0} size{(activeColor.sizes?.length || 0) !== 1 ? 's' : ''} • 
+                  {activeColor.sizes?.length || 0} size{(activeColor.sizes?.length || 0) !== 1 ? 's' : ''} •
                   {activeColor.sizes?.reduce((total, size) => total + (size.rawMaterials?.length || 0), 0) || 0} material{(activeColor.sizes?.reduce((total, size) => total + (size.rawMaterials?.length || 0), 0) || 0) !== 1 ? 's' : ''}
                 </Text>
               </div>
             </div>
-            <ActionButton 
-              onClick={() => setActiveColorId(null)}
+            <ActionButton
+              onClick={() => { setEditingSizeId(null); setActiveColorId(null) }}
               icon="arrow_back"
-                setEditingSizeId(null);
+            // setEditingSizeId(null);
             >
               Back to Colors
             </ActionButton>
@@ -495,14 +495,14 @@ export function ColorManagementPanel({
           <Title level={5} className="mb-4">
             Sizes for {activeColor.name} ({activeColor.sizes?.length || 0})
           </Title>
-          
+
           {!activeColor.sizes || activeColor.sizes.length === 0 ? (
             <Empty
               description="No sizes added yet"
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
           ) : (
-            <Collapse 
+            <Collapse
               accordion
               className="bg-white"
               expandIcon={({ isActive }) => <Icon name={isActive ? 'expand_less' : 'expand_more'} />}
@@ -523,9 +523,9 @@ export function ColorManagementPanel({
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Badge 
-                          count={size.rawMaterials?.length || 0} 
-                          showZero 
+                        <Badge
+                          count={size.rawMaterials?.length || 0}
+                          showZero
                           style={{ backgroundColor: '#fa8c16' }}
                         />
                         <Text type="secondary" className="text-xs">materials</Text>
@@ -604,7 +604,7 @@ export function ColorManagementPanel({
                               </Form.Item>
                             </Col>
                           </Row>
-                          
+
                           <Row gutter={16}>
                             <Col span={12}>
                               <Form.Item
@@ -632,7 +632,7 @@ export function ColorManagementPanel({
                               </Form.Item>
                             </Col>
                           </Row>
-                          
+
                           <Row gutter={16}>
                             <Col span={8}>
                               <Form.Item
@@ -674,13 +674,13 @@ export function ColorManagementPanel({
                               </Form.Item>
                             </Col>
                           </Row>
-                          
+
                           <div className="flex justify-end space-x-2">
                             <Button onClick={handleCancelEdit}>
                               Cancel
                             </Button>
-                            <Button 
-                              type="primary" 
+                            <Button
+                              type="primary"
                               onClick={() => handleUpdateSize(activeColorId, size.id)}
                               icon={<Icon name="save" />}
                             >
@@ -749,9 +749,9 @@ export function ColorManagementPanel({
                                   }
                                 >
                                   {rawMaterials?.map(material => (
-                                    <Option 
-                                      key={material.id} 
-                                      value={material.id} 
+                                    <Option
+                                      key={material.id}
+                                      value={material.id}
                                       label={`${material.name} ${material.category}`}
                                     >
                                       <div>
@@ -805,7 +805,7 @@ export function ColorManagementPanel({
                                     <Text strong>{material.name || 'Unknown Material'}</Text>
                                     <br />
                                     <Text type="secondary" className="text-sm">
-                                      {material.quantity} {material.unit || 'units'} • 
+                                      {material.quantity} {material.unit || 'units'} •
                                       LKR {((material.unitPrice || 0) * material.quantity).toFixed(2)} total cost
                                     </Text>
                                   </div>
@@ -819,13 +819,13 @@ export function ColorManagementPanel({
                               </div>
                             </div>
                           ))}
-                          
+
                           {/* Material Cost Summary */}
                           <div className="bg-green-50 p-3 rounded-lg border border-green-200">
                             <div className="flex justify-between items-center">
                               <Text strong>Total Material Cost for {size.name}:</Text>
                               <Text strong className="text-green-600 text-lg">
-                                LKR {(size.rawMaterials.reduce((sum, material) => 
+                                LKR {(size.rawMaterials.reduce((sum, material) =>
                                   sum + ((material.unitPrice || 0) * material.quantity), 0
                                 )).toFixed(2)}
                               </Text>
@@ -855,8 +855,8 @@ export function ColorManagementPanel({
 
   return (
     <div className="space-y-6">
-      <Tabs 
-        activeKey={activeColorId ? 'details' : 'colors'} 
+      <Tabs
+        activeKey={activeColorId ? 'details' : 'colors'}
         onChange={(key) => {
           if (key === 'colors') {
             setActiveColorId(null);
@@ -882,9 +882,9 @@ export function ColorManagementPanel({
                 <Icon name="straighten" />
                 <span>Sizes & Materials</span>
                 {activeColorId && (
-                  <Badge 
-                    count={getActiveColor()?.sizes?.length || 0} 
-                    size="small" 
+                  <Badge
+                    count={getActiveColor()?.sizes?.length || 0}
+                    size="small"
                     style={{ backgroundColor: '#722ed1' }}
                   />
                 )}

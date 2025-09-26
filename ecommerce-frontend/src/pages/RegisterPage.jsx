@@ -3,12 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { register, clearError } from '../store/slices/authSlice';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
+import { showToast } from '../components/Common/Toast';
 
 const RegisterPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error, isAuthenticated } = useSelector(state => state.auth);
-  
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -21,22 +22,35 @@ const RegisterPage = () => {
   const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/', { replace: true });
+    if (error) {
+      showToast({
+        message: error || 'Registration failed',
+        type: 'error',
+        toastId: 'register-error',
+      });
+      // clear after showing toast
+      dispatch(clearError());
     }
-  }, [isAuthenticated, navigate]);
+  }, [error, dispatch]);
 
   useEffect(() => {
-    // Clear any existing errors when component mounts
-    dispatch(clearError());
-  }, [dispatch]);
+    if (isAuthenticated) {
+      showToast({
+        message: 'Registration successful!',
+        subMessage: 'Welcome to VCare Furniture.',
+        type: 'success',
+        toastId: 'register-success',
+      });
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate, dispatch]);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
-    
+
     // Clear validation error for this field
     if (validationErrors[e.target.name]) {
       setValidationErrors({
@@ -45,48 +59,57 @@ const RegisterPage = () => {
       });
     }
   };
-
+  console.log("error", error)
   const validateForm = () => {
     const errors = {};
-    
+
     if (!formData.firstName.trim()) {
       errors.firstName = 'First name is required';
     }
-    
+
     if (!formData.lastName.trim()) {
       errors.lastName = 'Last name is required';
     }
-    
+
     if (!formData.email.trim()) {
       errors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = 'Email is invalid';
     }
-    
+
     if (!formData.password) {
       errors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       errors.password = 'Password must be at least 6 characters';
     }
-    
+
     if (formData.password !== formData.confirmPassword) {
       errors.confirmPassword = 'Passwords do not match';
     }
-    
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     const { confirmPassword, ...registrationData } = formData;
+    // dispatch(register(registrationData));
+    console.log(confirmPassword)
     dispatch(register(registrationData));
+
   };
+
+  // useEffect(() => {
+  //   if (error) {
+  //     showToast(error, 'error');
+  //   }
+  // }, [error]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -110,7 +133,7 @@ const RegisterPage = () => {
             </Link>
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-md p-4">
@@ -147,7 +170,7 @@ const RegisterPage = () => {
                   <p className="mt-1 text-sm text-red-600">{validationErrors.firstName}</p>
                 )}
               </div>
-              
+
               <div>
                 <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
                   Last name
@@ -167,7 +190,7 @@ const RegisterPage = () => {
                 )}
               </div>
             </div>
-            
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email address
@@ -187,7 +210,7 @@ const RegisterPage = () => {
                 <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
                 Phone number (optional)
@@ -202,7 +225,7 @@ const RegisterPage = () => {
                 placeholder="Enter your phone number"
               />
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
@@ -222,7 +245,7 @@ const RegisterPage = () => {
                 <p className="mt-1 text-sm text-red-600">{validationErrors.password}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                 Confirm password

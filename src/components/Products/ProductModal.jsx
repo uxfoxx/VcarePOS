@@ -428,6 +428,27 @@ export function ProductModal({
     message.success('Material removed from color');
   };
 
+  const handleUpdateColorSize = (colorId, sizeId, updatedSizeData) => {
+    setColors(colors.map(color => {
+      if (color.id === colorId) {
+        return {
+          ...color,
+          sizes: (color.sizes || []).map(size => {
+            if (size.id === sizeId) {
+              return {
+                ...size,
+                ...updatedSizeData
+              };
+            }
+            return size;
+          })
+        };
+      }
+      return color;
+    }));
+    message.success('Size updated successfully');
+  };
+
   const handleFormChange = (changedValues, allValues) => {
     setProductData(prev => ({ ...prev, ...allValues }));
   };
@@ -861,6 +882,7 @@ export function ProductModal({
         onRemoveColorSize={handleRemoveColorSize}
         onAddColorMaterial={handleAddColorMaterial}
         onRemoveColorMaterial={handleRemoveColorMaterial}
+        onUpdateColorSize={handleUpdateColorSize}
       />
     </div>
   );

@@ -40,13 +40,16 @@ export function ColorManagementPanel({
   onAddColorSize,
   onRemoveColorSize,
   onAddColorMaterial,
-  onRemoveColorMaterial
+  onRemoveColorMaterial,
+  onUpdateColorSize
 }) {
   const [colorForm] = Form.useForm();
   const [sizeForm] = Form.useForm();
   const [materialForm] = Form.useForm();
+  const [sizeEditForm] = Form.useForm();
   const [activeColorId, setActiveColorId] = useState(null);
   const [activeSizeId, setActiveSizeId] = useState(null);
+  const [editingSizeId, setEditingSizeId] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [materialSearchTerm, setMaterialSearchTerm] = useState('');
 
@@ -87,6 +90,52 @@ export function ColorManagementPanel({
     
     onAddColorSize(activeColorId, sizeData);
     sizeForm.resetFields();
+  };
+
+  const handleUpdateSize = async (colorId, sizeId) => {
+    try {
+      const values = await sizeEditForm.validateFields();
+      
+      const updatedSizeData = {
+        name: values.name,
+        stock: Number(values.stock) || 0,
+        weight: Number(values.weight) || 0,
+        dimensions: {
+          length: Number(values.length) || 0,
+          width: Number(values.width) || 0,
+          height: Number(values.height) || 0,
+          unit: values.unit || 'cm'
+        }
+      };
+      
+      if (onUpdateColorSize) {
+        onUpdateColorSize(colorId, sizeId, updatedSizeData);
+      }
+      
+      setEditingSizeId(null);
+      message.success('Size updated successfully');
+    } catch (error) {
+      console.error('Size update validation failed:', error);
+      message.error('Please fill in all required fields');
+    }
+  };
+
+  const handleEditSize = (size) => {
+    setEditingSizeId(size.id);
+    sizeEditForm.setFieldsValue({
+      name: size.name,
+      stock: size.stock,
+      weight: size.weight,
+      length: size.dimensions?.length || 0,
+      width: size.dimensions?.width || 0,
+      height: size.dimensions?.height || 0,
+      unit: size.dimensions?.unit || 'cm'
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSizeId(null);
+    sizeEditForm.resetFields();
   };
 
   const handleAddMaterialToSize = (colorId, sizeId, values) => {
@@ -287,6 +336,7 @@ export function ColorManagementPanel({
                       if (activeColorId === color.id) {
                         setActiveColorId(null);
                         setActiveSizeId(null);
+                        setEditingSizeId(null);
                       }
                     }}
                   >
@@ -391,6 +441,7 @@ export function ColorManagementPanel({
             <ActionButton 
               onClick={() => setActiveColorId(null)}
               icon="arrow_back"
+                setEditingSizeId(null);
             >
               Back to Colors
             </ActionButton>
@@ -478,6 +529,20 @@ export function ColorManagementPanel({
                           style={{ backgroundColor: '#fa8c16' }}
                         />
                         <Text type="secondary" className="text-xs">materials</Text>
+                        {editingSizeId !== size.id && (
+                          <Tooltip title="Edit Size">
+                            <Button
+                              type="text"
+                              icon={<Icon name="edit" />}
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditSize(size);
+                              }}
+                              className="text-blue-600"
+                            />
+                          </Tooltip>
+                        )}
                         <Popconfirm
                           title="Delete this size?"
                           description="This will also delete all raw materials for this size."
@@ -486,6 +551,9 @@ export function ColorManagementPanel({
                             onRemoveColorSize(activeColorId, size.id);
                             if (activeSizeId === size.id) {
                               setActiveSizeId(null);
+                            }
+                            if (editingSizeId === size.id) {
+                              setEditingSizeId(null);
                             }
                           }}
                         >
@@ -504,21 +572,152 @@ export function ColorManagementPanel({
                 >
                   <div className="space-y-4">
                     {/* Size Details */}
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <Title level={5} className="mb-3">Size Specifications</Title>
-                      <Row gutter={16}>
-                        <Col span={6}>
-                          <Text type="secondary">Stock:</Text>
-                          <br />
-                          <Text strong>{size.stock || 0} units</Text>
-                        </Col>
-                        <Col span={18}>
-                          <Text type="secondary">Size Details:</Text>
-                          <br />
-                          <Text strong>{size.name} - {size.stock || 0} units in stock</Text>
-                        </Col>
-                      </Row>
-                    </div>
+                    {editingSizeId === size.id ? (
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <Title level={5} className="mb-3">Edit Size Specifications</Title>
+                        <Form
+                          form={sizeEditForm}
+                          layout="vertical"
+                        >
+                          <Row gutter={16}>
+                            <Col span={12}>
+                              <Form.Item
+                                name="name"
+                                label="Size Name"
+                                rules={[{ required: true, message: 'Please enter size name' }]}
+                              >
+                                <Input placeholder="e.g., Small, Medium, Large" />
+                              </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                              <Form.Item
+                                name="stock"
+                                label="Stock Quantity"
+                                rules={[{ required: true, message: 'Please enter stock quantity' }]}
+                              >
+                                <InputNumber
+                                  min={0}
+                                  placeholder="0"
+                                  className="w-full"
+                                  step={1}
+                                />
+                              </Form.Item>
+                            </Col>
+                          </Row>
+                          
+                          <Row gutter={16}>
+                            <Col span={12}>
+                              <Form.Item
+                                name="weight"
+                                label="Weight (kg)"
+                              >
+                                <InputNumber
+                                  min={0}
+                                  step={0.1}
+                                  placeholder="0.0"
+                                  className="w-full"
+                                />
+                              </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                              <Form.Item label="Unit">
+                                <Form.Item name="unit" noStyle initialValue="cm">
+                                  <Select className="w-full">
+                                    <Option value="cm">cm</Option>
+                                    <Option value="inch">inch</Option>
+                                    <Option value="mm">mm</Option>
+                                    <Option value="ft">ft</Option>
+                                  </Select>
+                                </Form.Item>
+                              </Form.Item>
+                            </Col>
+                          </Row>
+                          
+                          <Row gutter={16}>
+                            <Col span={8}>
+                              <Form.Item
+                                name="length"
+                                label="Length"
+                              >
+                                <InputNumber
+                                  min={0}
+                                  placeholder="0"
+                                  className="w-full"
+                                  step={0.1}
+                                />
+                              </Form.Item>
+                            </Col>
+                            <Col span={8}>
+                              <Form.Item
+                                name="width"
+                                label="Width"
+                              >
+                                <InputNumber
+                                  min={0}
+                                  placeholder="0"
+                                  className="w-full"
+                                  step={0.1}
+                                />
+                              </Form.Item>
+                            </Col>
+                            <Col span={8}>
+                              <Form.Item
+                                name="height"
+                                label="Height"
+                              >
+                                <InputNumber
+                                  min={0}
+                                  placeholder="0"
+                                  className="w-full"
+                                  step={0.1}
+                                />
+                              </Form.Item>
+                            </Col>
+                          </Row>
+                          
+                          <div className="flex justify-end space-x-2">
+                            <Button onClick={handleCancelEdit}>
+                              Cancel
+                            </Button>
+                            <Button 
+                              type="primary" 
+                              onClick={() => handleUpdateSize(activeColorId, size.id)}
+                              icon={<Icon name="save" />}
+                            >
+                              Save Changes
+                            </Button>
+                          </div>
+                        </Form>
+                      </div>
+                    ) : (
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <Title level={5} className="mb-3">Size Specifications</Title>
+                        <Row gutter={16}>
+                          <Col span={6}>
+                            <Text type="secondary">Name:</Text>
+                            <br />
+                            <Text strong>{size.name}</Text>
+                          </Col>
+                          <Col span={6}>
+                            <Text type="secondary">Stock:</Text>
+                            <br />
+                            <Text strong>{size.stock || 0} units</Text>
+                          </Col>
+                          <Col span={6}>
+                            <Text type="secondary">Weight:</Text>
+                            <br />
+                            <Text strong>{size.weight || 0} kg</Text>
+                          </Col>
+                          <Col span={6}>
+                            <Text type="secondary">Dimensions:</Text>
+                            <br />
+                            <Text strong>
+                              {size.dimensions?.length || 0}×{size.dimensions?.width || 0}×{size.dimensions?.height || 0} {size.dimensions?.unit || 'cm'}
+                            </Text>
+                          </Col>
+                        </Row>
+                      </div>
+                    )}
 
                     {/* Raw Materials for this Size */}
                     <div>
@@ -662,6 +861,7 @@ export function ColorManagementPanel({
           if (key === 'colors') {
             setActiveColorId(null);
             setActiveSizeId(null);
+            setEditingSizeId(null);
           }
         }}
         items={[

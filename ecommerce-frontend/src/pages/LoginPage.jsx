@@ -15,21 +15,23 @@ const LoginPage = () => {
     email: '',
     password: '',
   });
-
+  console.log("location", location)
   const from = location.state?.from?.pathname || '/';
-
+  const state = location.state;
   // ✅ Handle success redirect + toast
   useEffect(() => {
     if (isAuthenticated) {
-      showToast({
-        message: 'Login successful!',
-        subMessage: 'Welcome back to VCare Furniture.',
-        type: 'success',
-        toastId: 'login-success',
-      });
+      if (state == null) {
+        showToast({
+          message: 'Login successful!',
+          subMessage: 'Welcome back to VCare Furniture.',
+          type: 'success',
+          toastId: 'login-success',
+        });
+      }
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, navigate, from]);
+  }, [isAuthenticated, navigate, from, state]);
 
   // ✅ Handle error toast + clear after
   useEffect(() => {

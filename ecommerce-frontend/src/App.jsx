@@ -24,7 +24,7 @@ import LoadingSpinner from './components/Common/LoadingSpinner';
 
 function App() {
   const dispatch = useDispatch();
-  const { isAuthenticated, loading: authLoading } = useSelector(state => state.auth);
+  const { loading: authLoading } = useSelector(state => state.auth);
   const { listLoading: productsLoading } = useSelector(state => state.products);
 
   useEffect(() => {
@@ -32,7 +32,7 @@ function App() {
     if (token) {
       dispatch(getCurrentCustomer());
     }
-  
+
     dispatch(fetchProducts());
   }, [dispatch]);
 
@@ -49,7 +49,7 @@ function App() {
       <Router>
         <div className="min-h-screen bg-gray-50 flex flex-col">
           <Header />
-          
+
           <main className="flex-1">
             <Routes>
               <Route path="/" element={<HomePage />} />
@@ -58,7 +58,7 @@ function App() {
               <Route path="/cart" element={<CartPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
-              
+
               {/* Protected Routes */}
               <Route path="/checkout" element={
                 <ProtectedRoute>
@@ -80,11 +80,11 @@ function App() {
                   <OrderSuccessPage />
                 </ProtectedRoute>
               } />
-              
+
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>
-          
+
           <Footer />
         </div>
       </Router>

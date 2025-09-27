@@ -8,7 +8,7 @@ export function ProductCard({
   product,
   onAddToCart,
   showDetails = true,
-  showPriceRange = false,
+  // showPriceRange = false,
   className = '',
   ...props
 }) {
@@ -17,11 +17,11 @@ export function ProductCard({
     onAddToCart?.(product);
   };
 
-  const getStockStatus = (stock) => {
-    if (stock === 0) return 'out-of-stock';
-    if (stock <= 5) return 'low-stock';
-    return 'in-stock';
-  };
+  // const getStockStatus = (stock) => {
+  //   if (stock === 0) return 'out-of-stock';
+  //   if (stock <= 5) return 'low-stock';
+  //   return 'in-stock';
+  // };
 
   const renderPrice = () => {
     // Price is now fixed for all variations
@@ -36,13 +36,18 @@ export function ProductCard({
         <div className="relative h-48 overflow-hidden">
           <Image
             alt={product.name}
-            src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
+            // src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
+            src={
+              product.media && Array.isArray(product.media) && product.media.length > 0
+                ? product.media[0]
+                : product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
+            }
             className="w-full h-full object-cover"
             preview={false}
             style={{ objectFit: 'cover', aspectRatio: '4/3' }}
           />
           <div className="absolute top-2 right-2">
-            <Badge 
+            <Badge
               count={renderPrice()}
               style={{ backgroundColor: '#0E72BD' }}
             />
@@ -52,6 +57,13 @@ export function ProductCard({
               {product.category}
             </Tag>
           </div>
+          {product.media && product.media.length > 1 && (
+            <div className="absolute bottom-2 left-2">
+              <Tag color="purple" size="small">
+                +{product.media.length - 1} more
+              </Tag>
+            </div>
+          )}
           {product.hasColors && (
             <div className="absolute bottom-2 right-2">
               <Tag color="purple" size="small">
@@ -82,7 +94,7 @@ export function ProductCard({
           )}
         </div>
       }
-      onClick={() => onClick?.(product)}
+      // onClick={() => onClick?.(product)}
       bodyStyle={{ padding: '16px' }}
       {...props}
     >
@@ -125,7 +137,7 @@ export function ProductCard({
             )}
           </div>
         )}
-        
+
         <Button
           type="primary"
           icon={<Icon name="add_shopping_cart" />}
@@ -135,8 +147,8 @@ export function ProductCard({
           disabled={product.stock === 0}
           className="bg-[#0E72BD] hover:bg-blue-700 font-semibold"
         >
-          {product.stock === 0 
-            ? 'Out of Stock' 
+          {product.stock === 0
+            ? 'Out of Stock'
             : product.hasColors
               ? 'Select Color & Size'
               : 'Add to Cart'

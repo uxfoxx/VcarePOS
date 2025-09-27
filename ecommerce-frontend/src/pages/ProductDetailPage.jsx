@@ -5,6 +5,7 @@ import { fetchProductById, clearCurrentProduct } from '../store/slices/productsS
 import { addToCart } from '../store/slices/cartSlice';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
 import { showToast } from '../components/Common/Toast';
+import { Image, Tag } from 'antd';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -181,8 +182,8 @@ const ProductDetailPage = () => {
                     key={color.id}
                     onClick={() => handleColorChange(color)}
                     className={`flex items-center space-x-2 p-3 border rounded-lg ${selectedColor?.id === color.id
-                        ? 'border-primary-600 bg-primary-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-primary-600 bg-primary-50'
+                      : 'border-gray-200 hover:border-gray-300'
                       }`}
                   >
                     <div
@@ -207,10 +208,10 @@ const ProductDetailPage = () => {
                     onClick={() => setSelectedSize(size)}
                     disabled={size.stock === 0}
                     className={`p-3 border rounded-lg text-center ${selectedSize?.id === size.id
-                        ? 'border-primary-600 bg-primary-50'
-                        : size.stock === 0
-                          ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-primary-600 bg-primary-50'
+                      : size.stock === 0
+                        ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'border-gray-200 hover:border-gray-300'
                       }`}
                   >
                     <div className="font-medium">{size.name}</div>
@@ -250,10 +251,10 @@ const ProductDetailPage = () => {
           {/* Stock Status */}
           <div className="mb-6">
             <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${maxQuantity === 0
-                ? 'bg-red-100 text-red-800'
-                : maxQuantity <= 5
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : 'bg-green-100 text-green-800'
+              ? 'bg-red-100 text-red-800'
+              : maxQuantity <= 5
+                ? 'bg-yellow-100 text-yellow-800'
+                : 'bg-green-100 text-green-800'
               }`}>
               {maxQuantity === 0
                 ? 'Out of Stock'
@@ -288,6 +289,54 @@ const ProductDetailPage = () => {
           {/* Product Details */}
           <div className="mt-8 border-t pt-8">
             <h3 className="text-lg font-semibold mb-4">Product Details</h3>
+            {/* Other Media */}
+            {currentProduct.media && Array.isArray(currentProduct.media) && currentProduct.media.length > 0 ? (
+              <div className="mb-4">
+                <h4 className="text-md font-medium mb-2">Media</h4>
+                <div className="grid grid-cols-3 gap-4">
+                  {currentProduct.media.map((mediaUrl, index) => {
+                    const isVideo = mediaUrl.startsWith('data:video/') ||
+                      mediaUrl.toLowerCase().includes('.mp4') ||
+                      mediaUrl.toLowerCase().includes('.webm') ||
+                      mediaUrl.toLowerCase().includes('.mov');
+
+                    return (
+                      <div key={index + 1} className="relative w-full h-full bg-gray-100 rounded overflow-hidden">
+                        {isVideo ? (
+                          <video
+                            src={mediaUrl}
+                            width={200}
+                            height={150}
+                            className="object-cover rounded-lg"
+                            controls
+                            style={{ aspectRatio: '4/3', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          <Image
+                            src={mediaUrl}
+                            alt={`${currentProduct.name} ${index + 2}`}
+                            className="object-cover"
+                            preview={true}
+                            style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <Image
+                src={currentProduct.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
+                alt={currentProduct.name}
+                width={200}
+                height={150}
+                className="object-cover rounded-lg"
+                preview={false}
+                style={{ aspectRatio: '4/3', objectFit: 'cover' }}
+              />
+            )}
+
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">SKU:</span>

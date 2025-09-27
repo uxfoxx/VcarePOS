@@ -282,22 +282,22 @@ const router = express.Router();
 router.get('/', authenticate, hasPermission('products', 'view'), async (req, res) => {
   try {
     const client = await pool.connect();
-    
+
     // Get all products
     const productsResult = await client.query(`
       SELECT * FROM products ORDER BY created_at DESC
     `);
-    
+
     // Get all product colors
     const colorsResult = await client.query(`
       SELECT * FROM product_colors
     `);
-    
+
     // Get all product sizes (now linked to colors)
     const sizesResult = await client.query(`
       SELECT * FROM product_sizes
     `);
-    
+
     // Get all product raw materials (now linked to sizes)
     const materialsResult = await client.query(`
       SELECT prm.*, rm.name, rm.unit, rm.unit_price, ps.id as size_id
@@ -305,14 +305,14 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
       JOIN raw_materials rm ON prm.raw_material_id = rm.id
       JOIN product_sizes ps ON prm.product_size_id = ps.id
     `);
-    
+
     // Get all product addons
     const addonsResult = await client.query(`
       SELECT * FROM product_addons
     `);
-    
+
     client.release();
-    
+
     // Map colors, sizes, materials, and addons to their respective products
     const products = productsResult.rows.map(product => {
       // Get colors for this product
@@ -333,7 +333,7 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
                   unit: material.unit,
                   unitPrice: parseFloat(material.unit_price)
                 }));
-              
+
               return {
                 id: size.id,
                 name: size.name,
@@ -343,7 +343,7 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
                 rawMaterials: sizeMaterials
               };
             });
-          
+
           return {
             id: color.id,
             name: color.name,
@@ -352,12 +352,12 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
             sizes: colorSizes
           };
         });
-      
+
       // Calculate total stock from all color sizes
-      const totalStock = colors.reduce((total, color) => 
+      const totalStock = colors.reduce((total, color) =>
         total + color.sizes.reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
       );
-      
+
       const addons = addonsResult.rows
         .filter(addon => addon.product_id === product.id)
         .map(addon => ({
@@ -366,7 +366,7 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
           quantity: parseFloat(addon.quantity),
           price: parseFloat(addon.price)
         }));
-      
+
       return {
         id: product.id,
         name: product.name,
@@ -379,13 +379,14 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
         color: product.color,
         material: product.material,
         hasAddons: product.has_addons,
+        media: Array.isArray(product.media) ? product.media : [],
         colors,
         addons,
         createdAt: product.created_at,
         updatedAt: product.updated_at
       };
     });
-    
+
     res.json(products);
   } catch (error) {
     handleRouteError(error, req, res, 'Products - Fetch All');
@@ -400,26 +401,26 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
 router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const client = await pool.connect();
-    
+
     // Get product
     const productResult = await client.query(`
       SELECT * FROM products WHERE id = $1
     `, [id]);
-    
+
     if (productResult.rows.length === 0) {
       client.release();
       return res.status(404).json({ message: 'Product not found' });
     }
-    
+
     const product = productResult.rows[0];
-    
+
     // Get product colors
     const colorsResult = await client.query(`
       SELECT * FROM product_colors WHERE product_id = $1
     `, [id]);
-    
+
     // Get all sizes for this product's colors
     const sizesResult = await client.query(`
       SELECT ps.*, pc.id as color_id, pc.product_id
@@ -427,7 +428,7 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
       JOIN product_colors pc ON ps.product_color_id = pc.id
       WHERE pc.product_id = $1
     `, [id]);
-    
+
     // Get all raw materials for this product's sizes
     const materialsResult = await client.query(`
       SELECT prm.*, rm.name, rm.unit, rm.unit_price, ps.id as size_id
@@ -437,14 +438,14 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
       JOIN product_colors pc ON ps.product_color_id = pc.id
       WHERE pc.product_id = $1
     `, [id]);
-    
+
     // Get product addons
     const addonsResult = await client.query(`
       SELECT * FROM product_addons WHERE product_id = $1
     `, [id]);
-    
+
     client.release();
-    
+
     // Build colors with their sizes and materials
     const colors = colorsResult.rows.map(color => {
       const colorSizes = sizesResult.rows
@@ -460,7 +461,7 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
               unit: material.unit,
               unitPrice: parseFloat(material.unit_price)
             }));
-          
+
           return {
             id: size.id,
             name: size.name,
@@ -470,7 +471,7 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
             rawMaterials: sizeMaterials
           };
         });
-      
+
       return {
         id: color.id,
         name: color.name,
@@ -479,12 +480,12 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
         sizes: colorSizes
       };
     });
-    
+
     // Calculate total stock from all color sizes
-    const totalStock = colors.reduce((total, color) => 
+    const totalStock = colors.reduce((total, color) =>
       total + color.sizes.reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
     );
-    
+
     // Format response with new structure
     const formattedProduct = {
       id: product.id,
@@ -497,8 +498,9 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
       image: product.image,
       color: product.color,
       material: product.material,
-       hasAddons: product.has_addons,
+      hasAddons: product.has_addons,
       colors,
+      media: Array.isArray(product.media) ? product.media : [],
       addons: addonsResult.rows.map(addon => ({
         id: addon.raw_material_id,
         name: addon.name,
@@ -508,7 +510,7 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
       createdAt: product.created_at,
       updatedAt: product.updated_at
     };
-    
+
     res.json(formattedProduct);
   } catch (error) {
     handleRouteError(error, req, res, 'Products - Fetch By ID');
@@ -537,10 +539,10 @@ router.post(
     }
 
     const client = await pool.connect();
-    
+
     try {
       await client.query('BEGIN');
-      
+
       const {
         name,
         description,
@@ -552,26 +554,28 @@ router.post(
         material,
         hasAddons,
         colors,
-        addons
+        addons,
+        media
       } = req.body;
-      
+
       // Generate product ID if not provided
       const productId = req.body.id || `PROD-${Date.now()}`;
-      
+
       // Insert product
+      const mediaData = Array.isArray(media) ? media : [];
       const productResult = await client.query(`
         INSERT INTO products (
           id, name, description, category, price, stock, barcode, image, 
-          color, material, has_addons
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          color, material, has_addons, media
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `, [
         productId, name, description, category, price, 0, barcode, image,
-        color, material, hasAddons
+        color, material, hasAddons, JSON.stringify(mediaData)
       ]);
-      
+
       const product = productResult.rows[0];
-      
+
       // Insert colors and their associated sizes and materials
       let totalStock = 0;
       if (colors && colors.length > 0) {
@@ -589,9 +593,9 @@ router.post(
             color.colorCode,
             color.image
           ]);
-          
+
           const insertedColor = colorResult.rows[0];
-          
+
           // Insert sizes for this color
           if (color.sizes && color.sizes.length > 0) {
             for (const size of color.sizes) {
@@ -608,10 +612,10 @@ router.post(
                 size.weight,
                 JSON.stringify(size.dimensions)
               ]);
-              
+
               const insertedSize = sizeResult.rows[0];
               totalStock += size.stock || 0;
-              
+
               // Insert raw materials for this size
               if (size.rawMaterials && size.rawMaterials.length > 0) {
                 for (const material of size.rawMaterials) {
@@ -630,12 +634,12 @@ router.post(
           }
         }
       }
-      
+
       // Update total stock in products table
       await client.query(`
         UPDATE products SET stock = $1 WHERE id = $2
       `, [totalStock, productId]);
-      
+
       // Insert addons (now always available)
       if (hasAddons && addons && addons.length > 0) {
         for (const addon of addons) {
@@ -652,9 +656,10 @@ router.post(
           ]);
         }
       }
-      
+
       await client.query('COMMIT');
-      
+
+
       // Return the created product with all related data
       res.status(201).json({
         id: product.id,
@@ -670,6 +675,7 @@ router.post(
         hasAddons: product.has_addons,
         colors,
         addons,
+        media: Array.isArray(product.media) ? product.media : [],
         createdAt: product.created_at,
         updatedAt: product.updated_at
       });
@@ -706,22 +712,22 @@ router.put(
 
     const { id } = req.params;
     const client = await pool.connect();
-    
+
     try {
       await client.query('BEGIN');
-      
+
       // Check if product exists
       const checkResult = await client.query(
         'SELECT * FROM products WHERE id = $1',
         [id]
       );
-      
+
       if (checkResult.rows.length === 0) {
         await client.query('ROLLBACK');
         client.release();
         return res.status(404).json({ message: 'Product not found' });
       }
-      
+
       const {
         name,
         description,
@@ -735,7 +741,7 @@ router.put(
         colors,
         addons
       } = req.body;
-      
+
       // Update product
       const productResult = await client.query(`
         UPDATE products SET
@@ -756,15 +762,15 @@ router.put(
         color, material, hasAddons,
         id
       ]);
-      
+
       const product = productResult.rows[0];
-      
+
       // Update colors, sizes, and materials
       let totalStock = 0;
       if (colors) {
         // Delete existing colors (cascade will delete sizes and materials)
         await client.query('DELETE FROM product_colors WHERE product_id = $1', [id]);
-        
+
         // Insert new colors
         for (const color of colors) {
           // Insert color
@@ -780,9 +786,9 @@ router.put(
             color.colorCode,
             color.image
           ]);
-          
+
           const insertedColor = colorResult.rows[0];
-          
+
           // Insert sizes for this color
           if (color.sizes && color.sizes.length > 0) {
             for (const size of color.sizes) {
@@ -799,10 +805,10 @@ router.put(
                 size.weight,
                 JSON.stringify(size.dimensions)
               ]);
-              
+
               const insertedSize = sizeResult.rows[0];
               totalStock += size.stock || 0;
-              
+
               // Insert raw materials for this size
               if (size.rawMaterials && size.rawMaterials.length > 0) {
                 for (const material of size.rawMaterials) {
@@ -821,17 +827,17 @@ router.put(
           }
         }
       }
-      
+
       // Update total stock in products table
       await client.query(`
         UPDATE products SET stock = $1 WHERE id = $2
       `, [totalStock, id]);
-      
+
       // Update addons
       if (hasAddons && addons) {
         // Delete existing addons
         await client.query('DELETE FROM product_addons WHERE product_id = $1', [id]);
-        
+
         // Insert new addons
         for (const addon of addons) {
           await client.query(`
@@ -850,9 +856,9 @@ router.put(
         // If product no longer has addons, delete all addons
         await client.query('DELETE FROM product_addons WHERE product_id = $1', [id]);
       }
-      
+
       await client.query('COMMIT');
-      
+
       // Return the updated product
       res.json({
         id: product.id,
@@ -866,6 +872,7 @@ router.put(
         color: product.color,
         material: product.material,
         hasAddons: product.has_addons,
+        media: Array.isArray(product.media) ? product.media : [],
         colors,
         addons,
         createdAt: product.created_at,
@@ -894,26 +901,26 @@ router.delete(
   ],
   async (req, res) => {
     const { id } = req.params;
-    
+
     try {
       const client = await pool.connect();
-      
+
       // Check if product exists
       const checkResult = await client.query(
         'SELECT * FROM products WHERE id = $1',
         [id]
       );
-      
+
       if (checkResult.rows.length === 0) {
         client.release();
         return res.status(404).json({ message: 'Product not found' });
       }
-      
+
       // Delete product (cascade will delete related sizes, raw materials, and addons)
       await client.query('DELETE FROM products WHERE id = $1', [id]);
-      
+
       client.release();
-      
+
       res.json({ message: 'Product deleted successfully' });
     } catch (error) {
       handleRouteError(error, req, res, 'Products - Delete');
@@ -946,45 +953,45 @@ router.put(
 
     const { id } = req.params;
     const { quantity, operation, selectedColorId, selectedSize } = req.body;
-    
+
     try {
       const client = await pool.connect();
-      
+
       // Check if product exists
       const checkResult = await client.query(
         'SELECT * FROM products WHERE id = $1',
         [id]
       );
-      
+
       if (checkResult.rows.length === 0) {
         client.release();
         return res.status(404).json({ message: 'Product not found' });
       }
-      
+
       const product = checkResult.rows[0];
-      
+
       // Update specific color/size stock
       const sizeResult = await client.query(`
         SELECT ps.*, pc.product_id FROM product_sizes ps
         JOIN product_colors pc ON ps.product_color_id = pc.id
         WHERE pc.id = $1 AND ps.name = $2
       `, [selectedColorId, selectedSize]);
-      
+
       if (sizeResult.rows.length === 0) {
         client.release();
         return res.status(404).json({ message: 'Color/Size combination not found' });
       }
-      
+
       const size = sizeResult.rows[0];
-      const newStock = operation === 'add' 
-        ? size.stock + quantity 
+      const newStock = operation === 'add'
+        ? size.stock + quantity
         : Math.max(0, size.stock - quantity);
-      
+
       await client.query(
         'UPDATE product_sizes SET stock = $1 WHERE id = $2',
         [newStock, size.id]
       );
-      
+
       // Update total product stock (sum of all sizes across all colors)
       const totalStockResult = await client.query(`
         SELECT SUM(ps.stock) as total_stock 
@@ -992,32 +999,32 @@ router.put(
         JOIN product_colors pc ON ps.product_color_id = pc.id
         WHERE pc.product_id = $1
       `, [id]);
-      
+
       const totalStock = parseInt(totalStockResult.rows[0].total_stock) || 0;
-      
+
       await client.query(
         'UPDATE products SET stock = $1 WHERE id = $2',
         [totalStock, id]
       );
-      
+
       // Get updated product
       const updatedResult = await client.query(
         'SELECT * FROM products WHERE id = $1',
         [id]
       );
-      
+
       const updatedProduct = updatedResult.rows[0];
-      
+
       // Get updated colors with sizes
       const colorsResult = await client.query(`
         SELECT * FROM product_colors WHERE product_id = $1
       `, [id]);
-      
+
       const colors = await Promise.all(colorsResult.rows.map(async (color) => {
         const sizesResult = await client.query(`
           SELECT * FROM product_sizes WHERE product_color_id = $1
         `, [color.id]);
-        
+
         return {
           id: color.id,
           name: color.name,
@@ -1032,9 +1039,9 @@ router.put(
           }))
         };
       }));
-      
+
       client.release();
-      
+
       res.json({
         id: updatedProduct.id,
         name: updatedProduct.name,

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
-  Modal, 
-  Form, 
-  Input, 
-  Select, 
-  InputNumber, 
+import {
+  Modal,
+  Form,
+  Input,
+  Select,
+  InputNumber,
   Typography,
   Row,
   Col,
@@ -33,11 +33,11 @@ const { Option } = Select;
 const { TextArea } = Input;
 const { TabPane } = Tabs;
 
-export function ProductModal({ 
-  open, 
-  onClose, 
-  onSubmit, 
-  editingProduct = null 
+export function ProductModal({
+  open,
+  onClose,
+  onSubmit,
+  editingProduct = null
 }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [productForm] = Form.useForm();
@@ -53,6 +53,8 @@ export function ProductModal({
   const [hasAddons, setHasAddons] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [mediaFiles, setMediaFiles] = useState([]);
+  const [mediaPreviews, setMediaPreviews] = useState([]);
   const [productData, setProductData] = useState({});
   const [colors, setColors] = useState([]);
   const [materialSearchTerm, setMaterialSearchTerm] = useState('');
@@ -64,28 +66,28 @@ export function ProductModal({
   const generateSKU = () => {
     const currentValues = productForm.getFieldsValue();
     const category = currentValues.category;
-    
+
     if (!category) {
       message.warning('Please select a category first');
       return;
     }
-    
+
     // Get category initials
     const categoryInitials = category
       .split(' ')
       .map(word => word.charAt(0).toUpperCase())
       .join('');
-    
-   // Generate unique number (timestamp-based) 
+
+    // Generate unique number (timestamp-based) 
     const uniqueNumber = Date.now().toString().slice(-6);
 
     // Create SKU
     const generatedSKU = `${categoryInitials}${uniqueNumber}`;
-    
+
     // Set the SKU in the form
     productForm.setFieldsValue({ barcode: generatedSKU });
     setProductData(prev => ({ ...prev, barcode: generatedSKU }));
-    
+
     message.success('SKU generated successfully');
   };
 
@@ -101,19 +103,19 @@ export function ProductModal({
         description: editingProduct.description || '',
         color: editingProduct.color || '',
       };
-      
+
       productForm.setFieldsValue(formData);
       setProductData(formData);
       setHasSizes(editingProduct.hasSizes || false);
       setHasAddons(editingProduct.hasAddons || false);
-      
+
       // Set colors from editing product 
       if (editingProduct.colors) {
         setColors(editingProduct.colors);
       } else {
         setColors([]);
       }
-      
+
       const enrichedMaterials = (editingProduct.rawMaterials || []).map(rawMat => {
         const fullMaterial = rawMaterialsList?.find(m => m.id === rawMat.rawMaterialId);
         if (fullMaterial) {
@@ -135,9 +137,9 @@ export function ProductModal({
           totalCost: 0
         };
       });
-      
+
       setSelectedMaterials(enrichedMaterials);
-      
+
       // Set addons if any (always available now)
       if (editingProduct.addons) {
         setSelectedAddons(editingProduct.addons.map(addon => {
@@ -153,7 +155,7 @@ export function ProductModal({
       } else {
         setSelectedAddons([]);
       }
-      
+
       setImagePreview(editingProduct.image);
       setCurrentStep(0);
     } else if (open && !editingProduct) {
@@ -165,7 +167,7 @@ export function ProductModal({
         description: '',
         color: '',
       };
-      
+
       productForm.resetFields();
       setProductData(initialData);
       setSelectedMaterials([]);
@@ -189,14 +191,14 @@ export function ProductModal({
         content: renderProductDetails
       }
     ];
-    
+
     baseSteps.push({
       title: 'Colors & Variations',
       description: 'Color variations',
       icon: 'palette',
       content: renderColors
     });
-    
+
     if (hasAddons) {
       baseSteps.push({
         title: 'Add-ons',
@@ -205,56 +207,120 @@ export function ProductModal({
         content: renderAddons
       });
     }
-    
+
     return baseSteps;
   };
 
-  const handleImageUpload = (file) => {
-     // Define validation constraints
-    const maxSizeMB = 5; // Maximum file size in MB
-    const maxSizeBytes = maxSizeMB * 1024 * 1024; // Convert to bytes
-    const maxDimensions = { width: 2000, height: 2000 }; // Maximum image dimensions
+  // Helper function to validate media file
+  const validateMediaFile = (file, mediaPreviews) => {
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
 
-    // Validate file size
+    const maxSizeMB = 5;
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+    const maxDimensions = { width: 2000, height: 2000 };
+
+    // Validate type
+    if (!isImage && !isVideo) {
+      message.error('Please upload only image or video files.');
+      return false;
+    }
+
+    // Validate size
     if (file.size > maxSizeBytes) {
-      message.error(`Image size exceeds ${maxSizeMB}MB. Please upload a smaller image.`);
-      return false; // Prevent further processing
+      message.error(`File size exceeds ${maxSizeMB}MB. Please upload a smaller file.`);
+      return false;
     }
 
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    if (!allowedTypes.includes(file.type)) {
-      message.error('Invalid file type. Please upload a JPG, PNG, or GIF image.');
-      return false; // Prevent further processing
+    // Allowed types
+    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/ogg'];
+
+    if (isImage && !allowedImageTypes.includes(file.type)) {
+      message.error('Invalid image type. Please upload a JPG, PNG, or GIF image.');
+      return false;
+    }
+    if (isVideo && !allowedVideoTypes.includes(file.type)) {
+      message.error('Invalid video type. Please upload an MP4, WebM, or OGG video.');
+      return false;
     }
 
-    // Validate image dimensions
-    const img = new Image();
-    const objectUrl = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl); // Clean up
-      if (img.width > maxDimensions.width || img.height > maxDimensions.height) {
-        message.error(
-          `Image dimensions exceed ${maxDimensions.width}x${maxDimensions.height} pixels. Please upload a smaller image.`
-        );
-        return;
-      }
+    // Validate count
+    if (mediaPreviews.length >= 5) {
+      message.error('Maximum 5 media files allowed.');
+      return false;
+    }
 
-       // If all validations pass, process the image
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target.result);
-        setProductData((prev) => ({ ...prev, image: e.target.result }));
+    return { isImage, isVideo, maxDimensions };
+  };
+
+  // Main upload handler
+  const handleMediaUpload = (file) => {
+    const validation = validateMediaFile(file, mediaPreviews);
+    if (!validation) return false;
+
+    const { isImage, maxDimensions } = validation;
+
+    if (isImage) {
+      // Check dimensions only for images
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = () => {
+        if (img.width > maxDimensions.width || img.height > maxDimensions.height) {
+          message.error(
+            `Image dimensions exceed ${maxDimensions.width}x${maxDimensions.height} pixels. Please upload a smaller image.`
+          );
+          URL.revokeObjectURL(objectUrl);
+          return;
+        }
+        URL.revokeObjectURL(objectUrl);
+        processFile(file);
       };
-      reader.readAsDataURL(file);
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl); // Clean up
-      message.error('Failed to process image. Please try another file.');
-    };
-    img.src = objectUrl;
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        message.error('Failed to process image. Please try another file.');
+      };
+
+      img.src = objectUrl;
+    } else {
+      // For videos → directly process (convert to Base64 as well)
+      processFile(file);
+    }
 
     return false; // Prevent default upload behavior
+  };
+
+  // Convert file (image or video) to Base64
+  const processFile = (file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const newMediaUrl = e.target.result; // Base64 string (image/video)
+      setImagePreview(newMediaUrl);
+      setMediaPreviews((prev) => [...prev, newMediaUrl]);
+      setMediaFiles((prev) => [...prev, file]);
+      setProductData((prev) => ({
+        ...prev,
+        image: prev.image || newMediaUrl, // first one becomes primary
+        media: [...(prev.media || []), newMediaUrl],
+      }));
+    };
+    reader.readAsDataURL(file); // Works for both images and videos
+  };
+  console.log("sadasdasdsadasd", {
+    imagePreview,
+    mediaPreviews,
+  })
+
+  const handleRemoveMedia = (index) => {
+    setMediaPreviews(prev => prev.filter((_, i) => i !== index));
+    setMediaFiles(prev => prev.filter((_, i) => i !== index));
+    setProductData(prev => ({
+      ...prev,
+      media: (prev.media || []).filter((_, i) => i !== index)
+    }));
+    message.success('Media file removed');
   };
 
   const handleAddMaterial = (values) => {
@@ -356,13 +422,13 @@ export function ProductModal({
       sizes: [],
       rawMaterials: []
     };
-    
+
     setColors([...colors, newColor]);
     message.success('Color added successfully');
   };
 
   const handleUpdateColor = (colorId, updatedData) => {
-    setColors(colors.map(color => 
+    setColors(colors.map(color =>
       color.id === colorId ? { ...color, ...updatedData } : color
     ));
     message.success('Color updated successfully');
@@ -455,7 +521,7 @@ export function ProductModal({
 
   const handleNext = async () => {
     setStepError('');
-    
+
     if (currentStep === 0) {
       try {
         const values = await productForm.validateFields();
@@ -477,7 +543,7 @@ export function ProductModal({
             };
             return fieldLabels[fieldName] || fieldName;
           });
-          
+
           setStepError(`Please fill in the following required fields: ${missingFields.join(', ')}`);
         } else {
           setStepError('Please fill in all required product details');
@@ -497,12 +563,12 @@ export function ProductModal({
     try {
       setLoading(true);
       setStepError('');
-      
+
       const currentFormValues = productForm.getFieldsValue();
       const finalProductData = { ...productData, ...currentFormValues };
-      
+
       const requiredFields = ['name', 'category', 'price'];
-      
+
       const missingFields = [];
       requiredFields.forEach(field => {
         const value = finalProductData[field];
@@ -530,7 +596,7 @@ export function ProductModal({
         setCurrentStep(1); // Colors step
         return;
       }
-      
+
       // Validate that each color has at least one size
       const colorsWithoutSizes = colors.filter(color => !color.sizes || color.sizes.length === 0);
       if (colorsWithoutSizes.length > 0) {
@@ -545,21 +611,25 @@ export function ProductModal({
         category: finalProductData.category,
         description: finalProductData.description || '',
         image: imagePreview || finalProductData.image || '',
+        // image: mediaPreviews.length > 0 ? mediaPreviews[0] : (imagePreview || finalProductData.image || ''),
         hasAddons: hasAddons,
-        
+
         // Fixed price for the product
         price: Number(finalProductData.price) || 0,
         // Calculate total stock from all color sizes
-        stock: colors.reduce((total, color) => 
+        stock: colors.reduce((total, color) =>
           total + (color.sizes || []).reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
         ),
         barcode: finalProductData.barcode || '',
         color: finalProductData.color || '',
         material: finalProductData.material || '',
-        
+
         // New color-based structure
         colors: colors,
-        
+
+        // Media array instead of single image
+        media: mediaPreviews.length > 0 ? mediaPreviews : [],
+
         addons: hasAddons ? selectedAddons : []
       };
 
@@ -587,6 +657,8 @@ export function ProductModal({
     setHasAddons(false);
     setImageFile(null);
     setImagePreview(null);
+    setMediaFiles([]);
+    setMediaPreviews([]);
     setProductData({});
     setSelectedMaterialId(null);
     onClose();
@@ -709,15 +781,15 @@ export function ProductModal({
   ];
 
   // Filter raw materials for addons
-  const filteredRawMaterials = rawMaterialsList.filter(material => 
+  const filteredRawMaterials = rawMaterialsList.filter(material =>
     material.name.toLowerCase().includes(materialSearchTerm.toLowerCase()) ||
     material.category.toLowerCase().includes(materialSearchTerm.toLowerCase())
   );
 
   const renderProductDetails = () => (
-    <Form 
-      form={productForm} 
-      layout="vertical" 
+    <Form
+      form={productForm}
+      layout="vertical"
       className="space-y-4"
       onValuesChange={handleFormChange}
       preserve={true}
@@ -799,11 +871,11 @@ export function ProductModal({
       <Row gutter={16}>
         <Col span={16}>
           <Form.Item name="barcode" label="SKU/Barcode">
-            <Input 
-              placeholder="Enter SKU or barcode" 
+            <Input
+              placeholder="Enter SKU or barcode"
               addonAfter={
-                <Button 
-                  type="text" 
+                <Button
+                  type="text"
                   size="small"
                   onClick={generateSKU}
                   icon={<Icon name="auto_awesome" />}
@@ -824,41 +896,116 @@ export function ProductModal({
         />
       </Form.Item>
 
-      <Form.Item label="Product Image">
-        <Upload
-          accept="image/*"
-          beforeUpload={handleImageUpload}
-          showUploadList={false}
-          maxCount={1}
-        >
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer">
-            {imagePreview ? (
-              <div className="space-y-2">
-                <img 
-                  src={imagePreview} 
-                  alt="Preview" 
-                  className="w-32 h-32 object-cover mx-auto rounded"
-                />
-                <div>
-                  <Button icon={<Icon name="upload" />} size="small">
-                    Change Image
-                  </Button>
-                </div>
-              </div>
-            ) : (
+      <Form.Item label="Product Media (Images & Videos)">
+        <div className="space-y-4">
+          <Upload
+            accept="image/*,video/*"
+            beforeUpload={handleMediaUpload}
+            showUploadList={false}
+            multiple={true}
+          >
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer">
               <div className="space-y-2">
                 <Icon name="cloud_upload" className="text-4xl text-gray-400" />
                 <div>
-                  <Text>Click to upload product image</Text>
+                  <Text>Click to upload media files</Text>
                   <br />
                   <Text type="secondary" className="text-sm">
-                    Supports: JPG, PNG, GIF (Max: 5MB, 2000x2000 pixels)
+                    Supports: Images (JPG, PNG, GIF) and Videos (MP4, WebM, MOV)
+                  </Text>
+                  <br />
+                  <Text type="secondary" className="text-xs">
+                    (Max: 5MB, 2000x2000 pixels) per file, 5 files total ({mediaPreviews.length}/5 used)
                   </Text>
                 </div>
               </div>
-            )}
-          </div>
-        </Upload>
+            </div>
+          </Upload>
+
+          {/* Media Previews */}
+          {mediaPreviews.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Text strong>Media Files ({mediaPreviews.length}/5)</Text>
+                <Button
+                  size="small"
+                  danger
+                  onClick={() => {
+                    setMediaPreviews([]);
+                    setMediaFiles([]);
+                    setProductData(prev => ({ ...prev, media: [] }));
+                    message.success('All media files removed');
+                  }}
+                >
+                  Remove All
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-80 overflow-y-auto overflow-x-clip">
+                {mediaPreviews.map((mediaUrl, index) => {
+                  const isVideo = mediaUrl.startsWith('data:video/') ||
+                    mediaUrl.toLowerCase().includes('.mp4') ||
+                    mediaUrl.toLowerCase().includes('.webm') ||
+                    mediaUrl.toLowerCase().includes('.mov');
+
+                  return (
+                    <div key={index} className="relative group">
+                      <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
+                        {isVideo ? (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-200 aspect-square">
+                            <Icon name="play_circle" className="text-2xl text-gray-500" />
+                            <video
+                              src={mediaUrl}
+                              className="absolute inset-0 w-full h-full object-cover opacity-50"
+                              muted
+                            />
+                          </div>
+                        ) : (
+                          <img
+                            src={mediaUrl}
+                            alt={`Media ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+
+                      {/* Remove button */}
+                      <Button
+                        type="text"
+                        danger
+                        size="small"
+                        icon={<Icon name="close" />}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleRemoveMedia(index)}
+                      />
+
+                      {/* Media type indicator */}
+                      <div className="absolute bottom-1 left-1">
+                        <Tag size="small" color={isVideo ? 'purple' : 'blue'}>
+                          {isVideo ? 'Video' : 'Image'}
+                        </Tag>
+                      </div>
+
+                      {/* Primary indicator */}
+                      {index === 0 && (
+                        <div className="absolute top-1 left-1">
+                          <Tag size="small" color="gold">
+                            Primary
+                          </Tag>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <Text type="secondary" className="text-xs">
+                The first media file will be used as the primary image in product listings.
+                Drag and drop to reorder (coming soon).
+              </Text>
+            </div>
+          )}
+        </div>
       </Form.Item>
     </Form>
   );
@@ -914,9 +1061,9 @@ export function ProductModal({
                   }
                 >
                   {rawMaterialsList?.map(material => (
-                    <Option 
-                      key={material.id} 
-                      value={material.id} 
+                    <Option
+                      key={material.id}
+                      value={material.id}
                       label={`${material.name} ${material.category}`}
                     >
                       <div>
@@ -1014,17 +1161,16 @@ export function ProductModal({
               />
             </Col>
           </Row>
-          
+
           {rawMaterialsList?.length > 0 ? (
             filteredRawMaterials.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                 {filteredRawMaterials.map(material => (
-                  <Card 
-                    key={material.id} 
-                    size="small" 
-                    className={`cursor-pointer hover:shadow-md transition-shadow ${
-                      selectedMaterialId === material.id ? 'border-2 border-blue-500 bg-blue-50' : ''
-                    }`}
+                  <Card
+                    key={material.id}
+                    size="small"
+                    className={`cursor-pointer hover:shadow-md transition-shadow ${selectedMaterialId === material.id ? 'border-2 border-blue-500 bg-blue-50' : ''
+                      }`}
                     onClick={() => {
                       setSelectedMaterialId(material.id);
                       addonsForm.setFieldsValue({
@@ -1074,7 +1220,7 @@ export function ProductModal({
               </Text>
             </div>
           )}
-          
+
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -1082,7 +1228,7 @@ export function ProductModal({
                 label="Selected Add-on"
                 rules={[{ required: true, message: 'Please select an add-on' }]}
               >
-                
+
                 <Select
                   placeholder="Select add-on material"
                   showSearch
@@ -1098,8 +1244,8 @@ export function ProductModal({
                   }}
                 >
                   {rawMaterialsList?.map(material => (
-                    <Option 
-                      key={material.id} 
+                    <Option
+                      key={material.id}
                       value={material.id}
                       label={`${material.name} (LKR ${material.unitPrice.toFixed(2)}/${material.unit})`}
                     >
@@ -1324,7 +1470,7 @@ export function ProductModal({
           status={stepError ? 'error' : 'process'}
           errorMessage={stepError}
         />
-        
+
         <div className="min-h-[500px]">
           {loading ? (
             <div className="flex items-center justify-center h-full">
@@ -1349,19 +1495,19 @@ export function ProductModal({
               </ActionButton>
             )}
           </div>
-          
+
           <div className="space-x-2">
             <ActionButton onClick={handleClose}>
               Cancel
             </ActionButton>
-            
+
             {currentStep < steps.length - 1 ? (
               <ActionButton.Primary onClick={handleNext}>
                 Next
                 <Icon name="arrow_forward" className="ml-2" />
               </ActionButton.Primary>
             ) : (
-              <ActionButton.Primary 
+              <ActionButton.Primary
                 onClick={handleSubmit}
                 loading={loading}
                 icon="check"
@@ -1372,6 +1518,6 @@ export function ProductModal({
           </div>
         </div>
       </div>
-    </Modal>
+    </Modal >
   );
 }

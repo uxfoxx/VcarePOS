@@ -603,6 +603,36 @@ router.put('/orders/:orderId/status', [
   try {
     const client = await pool.connect();
 
+    //  SELECT * FROM bank_receipts.status verified if paymentMethod is 'bank_transfer'
+    // status === 'pending_payment' = bank_receipts status must be 'pending_payment'
+    // status === 'processing' = bank_receipts status must be 'verified' 
+    // status === 'cancelled' = bank_receipts status can be rejected
+    let updatedBankStatus = status;
+    if (status === 'pending_payment') {
+      updatedBankStatus = 'pending_verification';
+    } else if (status === 'processing') {
+      updatedBankStatus = 'verified';
+    } else if (status === 'cancelled') {
+      updatedBankStatus = 'rejected';
+    }
+    if (['pending_payment', 'processing', 'cancelled'].includes(status)) {
+      const receiptResult = await client.query(
+        'SELECT * FROM bank_receipts WHERE ecommerce_order_id = $1',
+        [orderId]
+      );
+      if (receiptResult.rows.length > 0) {
+        await client.query(
+          'UPDATE bank_receipts SET status = $1 WHERE ecommerce_order_id = $2',
+          [updatedBankStatus, orderId]
+        );
+      } else if (status !== 'cancelled') {
+        client.release();
+        return res.status(400).json({ message: 'Cannot update to this status without a bank receipt' });
+      }
+    }
+
+
+
     // Check if order exists
     const checkResult = await client.query(
       'SELECT * FROM ecommerce_orders WHERE id = $1',

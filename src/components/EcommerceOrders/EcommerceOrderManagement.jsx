@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  Space, 
-  Typography, 
-  Tag, 
+import {
+  Card,
+  Space,
+  Typography,
+  Tag,
   Image,
   Modal,
   Row,
@@ -21,7 +21,7 @@ import { DetailModal } from '../common/DetailModal';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { EmptyState } from '../common/EmptyState';
 import { AuthenticatedFile } from '../common/AuthenticatedFile';
-import { 
+import {
   fetchEcommerceOrders,
   updateEcommerceOrderStatus,
   fetchEcommerceOrderById
@@ -34,7 +34,7 @@ export function EcommerceOrderManagement() {
   const dispatch = useDispatch();
   const ecommerceOrders = useSelector(state => state.ecommerceOrders?.ordersList || []);
   const loading = useSelector(state => state.ecommerceOrders?.loading || false);
-  
+
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
@@ -51,6 +51,9 @@ export function EcommerceOrderManagement() {
 
   const handleStatusUpdate = (orderId, newStatus) => {
     dispatch(updateEcommerceOrderStatus({ orderId, status: newStatus }));
+    setTimeout(() => {
+      dispatch(fetchEcommerceOrders());
+    }, 500); // Slight delay to ensure backend has processed the update
     message.success(`Order status updated to ${newStatus}`);
   };
 
@@ -320,8 +323,8 @@ export function EcommerceOrderManagement() {
         type="ecommerceOrder"
         actions={[
           selectedOrder?.bankReceipt && (
-            <ActionButton 
-              key="receipt" 
+            <ActionButton
+              key="receipt"
               icon="receipt"
               onClick={() => {
                 setShowDetailModal(false);
@@ -382,7 +385,7 @@ export function EcommerceOrderManagement() {
                 </Col>
               </Row>
             </div>
-            
+
             <div className="text-center">
               <AuthenticatedFile
                 receiptId={selectedOrder.bankReceipt.id}

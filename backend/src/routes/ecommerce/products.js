@@ -23,21 +23,21 @@ const router = express.Router();
  */
 router.get('/products', async (req, res) => {
   try {
-    logger.info('E-commerce products endpoint hit', { 
+    logger.info('E-commerce products endpoint hit', {
       timestamp: new Date().toISOString(),
       userAgent: req.get('User-Agent'),
-      ip: req.ip 
+      ip: req.ip
     });
-    
+
     const client = await pool.connect();
-    
+
     // Get all active products with their colors and sizes
     const productsResult = await client.query(`
       SELECT * FROM products
       ORDER BY created_at DESC
     `);
-    
-    logger.debug('Raw products from database', { 
+
+    logger.debug('Raw products from database', {
       productCount: productsResult.rows.length,
       sampleProduct: productsResult.rows[0] ? {
         id: productsResult.rows[0].id,
@@ -46,13 +46,13 @@ router.get('/products', async (req, res) => {
         category: productsResult.rows[0].category
       } : null
     });
-    
+
     // Get all product colors
     const colorsResult = await client.query(`
       SELECT * FROM product_colors
     `);
-    
-    logger.debug('Product colors from database', { 
+
+    logger.debug('Product colors from database', {
       colorCount: colorsResult.rows.length,
       sampleColor: colorsResult.rows[0] ? {
         id: colorsResult.rows[0].id,
@@ -60,13 +60,13 @@ router.get('/products', async (req, res) => {
         name: colorsResult.rows[0].name
       } : null
     });
-    
+
     // Get all product sizes
     const sizesResult = await client.query(`
       SELECT * FROM product_sizes
     `);
-    
-    logger.debug('Product sizes from database', { 
+
+    logger.debug('Product sizes from database', {
       sizeCount: sizesResult.rows.length,
       sampleSize: sizesResult.rows[0] ? {
         id: sizesResult.rows[0].id,
@@ -75,26 +75,26 @@ router.get('/products', async (req, res) => {
         stock: sizesResult.rows[0].stock
       } : null
     });
-    
+
     client.release();
-    
+
     // Map colors and sizes to their respective products
     const products = productsResult.rows.map(product => {
-      logger.debug('Processing product', { 
+      logger.debug('Processing product', {
         productId: product.id,
         productName: product.name,
         productStock: product.stock
       });
-      
+
       const colors = colorsResult.rows
         .filter(color => color.product_id === product.id)
         .map(color => {
-          logger.debug('Processing color for product', { 
+          logger.debug('Processing color for product', {
             productId: product.id,
             colorId: color.id,
             colorName: color.name
           });
-          
+
           const colorSizes = sizesResult.rows
             .filter(size => size.product_color_id === color.id)
             .map(size => ({
@@ -104,13 +104,13 @@ router.get('/products', async (req, res) => {
               dimensions: size.dimensions,
               weight: parseFloat(size.weight || 0)
             }));
-          
-          logger.debug('Color sizes mapped', { 
+
+          logger.debug('Color sizes mapped', {
             colorId: color.id,
             sizesCount: colorSizes.length,
             totalSizeStock: colorSizes.reduce((sum, s) => sum + (s.stock || 0), 0)
           });
-          
+
           return {
             id: color.id,
             name: color.name,
@@ -119,22 +119,22 @@ router.get('/products', async (req, res) => {
             sizes: colorSizes
           };
         });
-      
+
       // Calculate total stock from all color sizes
       // Use robust stock calculation: if no colors/sizes exist, use product.stock
-      const totalStock = colors.length > 0 
-        ? colors.reduce((total, color) => 
-            total + color.sizes.reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
-          )
+      const totalStock = colors.length > 0
+        ? colors.reduce((total, color) =>
+          total + color.sizes.reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
+        )
         : product.stock; // Fallback to main product stock if no variants
-      
-      logger.debug('Product stock calculation', { 
+
+      logger.debug('Product stock calculation', {
         productId: product.id,
         originalStock: product.stock,
         calculatedTotalStock: totalStock,
         colorsCount: colors.length
       });
-      
+
       const formattedProduct = {
         id: product.id,
         name: product.name,
@@ -144,29 +144,30 @@ router.get('/products', async (req, res) => {
         stock: totalStock || 0, // Ensure stock is never null/undefined
         barcode: product.barcode,
         image: product.image,
+        media: Array.isArray(product.media) ? product.media : [],
         colors,
         createdAt: product.created_at
       };
-      
-      logger.debug('Formatted product', { 
+
+      logger.debug('Formatted product', {
         productId: formattedProduct.id,
         finalStock: formattedProduct.stock,
         hasColors: formattedProduct.colors.length > 0
       });
-      
+
       return formattedProduct;
     });
-    
-    logger.info('E-commerce products response prepared', { 
+
+    logger.info('E-commerce products response prepared', {
       totalProducts: products.length,
       productsWithStock: products.filter(p => p.stock > 0).length,
       productsWithColors: products.filter(p => p.colors.length > 0).length,
       sampleProductIds: products.slice(0, 3).map(p => p.id)
     });
-    
+
     res.json(products);
   } catch (error) {
-    logger.error('E-commerce products endpoint error', { 
+    logger.error('E-commerce products endpoint error', {
       error: error.message,
       stack: error.stack
     });
@@ -195,35 +196,35 @@ router.get('/products', async (req, res) => {
 router.get('/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const client = await pool.connect();
-    
+
     // Get product
     const productResult = await client.query(`
       SELECT * FROM products WHERE id = $1
     `, [id]);
-    
+
     if (productResult.rows.length === 0) {
       client.release();
       return res.status(404).json({ message: 'Product not found' });
     }
-    
+
     const product = productResult.rows[0];
-    
+
     // Get product colors and sizes (same logic as above)
     const colorsResult = await client.query(`
       SELECT * FROM product_colors WHERE product_id = $1
     `, [id]);
-    
+
     const sizesResult = await client.query(`
       SELECT ps.*, pc.id as color_id
       FROM product_sizes ps
       JOIN product_colors pc ON ps.product_color_id = pc.id
       WHERE pc.product_id = $1
     `, [id]);
-    
+
     client.release();
-    
+
     const colors = colorsResult.rows.map(color => {
       const colorSizes = sizesResult.rows
         .filter(size => size.color_id === color.id)
@@ -234,7 +235,7 @@ router.get('/products/:id', async (req, res) => {
           dimensions: size.dimensions,
           weight: parseFloat(size.weight || 0)
         }));
-      
+
       return {
         id: color.id,
         name: color.name,
@@ -243,14 +244,14 @@ router.get('/products/:id', async (req, res) => {
         sizes: colorSizes
       };
     });
-    
+
     // Use robust stock calculation for single product view
-    const totalStock = colors.length > 0 
-      ? colors.reduce((total, color) => 
-          total + color.sizes.reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
-        )
+    const totalStock = colors.length > 0
+      ? colors.reduce((total, color) =>
+        total + color.sizes.reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
+      )
       : product.stock; // Fallback to main product stock if no variants
-    
+
     const formattedProduct = {
       id: product.id,
       name: product.name,
@@ -260,10 +261,11 @@ router.get('/products/:id', async (req, res) => {
       stock: totalStock || 0, // Ensure stock is never null/undefined
       barcode: product.barcode,
       image: product.image,
+      media: Array.isArray(product.media) ? product.media : [],
       colors,
       createdAt: product.created_at
     };
-    
+
     res.json(formattedProduct);
   } catch (error) {
     handleRouteError(error, req, res, 'E-commerce - Fetch Product Details');

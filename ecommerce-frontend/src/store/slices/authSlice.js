@@ -13,6 +13,14 @@ const initialState = {
   otpError: null,
   otpEmail: null,
   resendTimer: 0,
+  // Forgot Password state
+  forgotPasswordLoading: false,
+  forgotPasswordError: null,
+  forgotPasswordSuccess: false,
+  // Change Password state
+  changePasswordLoading: false,
+  changePasswordError: null,
+  changePasswordSuccess: false,
 };
 
 const authSlice = createSlice({
@@ -88,15 +96,12 @@ const authSlice = createSlice({
       state.otpEmail = action.payload.email;
     },
     sendOtpSuccess: (state, action) => {
-      console.log("action.payload", action.payload);
       state.otpLoading = false;
       state.otpSent = true;
       state.otpError = null;
       state.resendTimer = action.payload || 60;
     },
     sendOtpFailure: (state, action) => {
-      // If action.payload is object { message, remainingTime }
-      console.log("action.payload", action.payload);
       if (typeof action.payload === 'object') {
         state.otpError = action.payload.message;
         state.resendTimer = action.payload.remainingTime || 0;
@@ -133,6 +138,44 @@ const authSlice = createSlice({
       state.otpEmail = null;
       state.resendTimer = 0;
     },
+    // Forgot Password Reducers
+    forgotPasswordStart: (state) => {
+      state.forgotPasswordLoading = true;
+      state.forgotPasswordError = null;
+      state.forgotPasswordSuccess = false;
+    },
+    forgotPasswordSuccess: (state) => {
+      state.forgotPasswordLoading = false;
+      state.forgotPasswordSuccess = true;
+    },
+    forgotPasswordFailure: (state, action) => {
+      state.forgotPasswordLoading = false;
+      state.forgotPasswordError = action.payload;
+    },
+    clearForgotPasswordState: (state) => {
+      state.forgotPasswordLoading = false;
+      state.forgotPasswordError = null;
+      state.forgotPasswordSuccess = false;
+    },
+    // Change Password Reducers
+    changePasswordStart: (state) => {
+      state.changePasswordLoading = true;
+      state.changePasswordError = null;
+      state.changePasswordSuccess = false;
+    },
+    changePasswordSuccess: (state) => {
+      state.changePasswordLoading = false;
+      state.changePasswordSuccess = true;
+    },
+    changePasswordFailure: (state, action) => {
+      state.changePasswordLoading = false;
+      state.changePasswordError = action.payload;
+    },
+    clearChangePasswordState: (state) => {
+      state.changePasswordLoading = false;
+      state.changePasswordError = null;
+      state.changePasswordSuccess = false;
+    },
   },
 });
 
@@ -155,6 +198,14 @@ export const {
   verifyOtpFailure,
   decrementResendTimer,
   resetOtpState,
+  forgotPasswordStart,
+  forgotPasswordSuccess,
+  forgotPasswordFailure,
+  clearForgotPasswordState,
+  changePasswordStart,
+  changePasswordSuccess,
+  changePasswordFailure,
+  clearChangePasswordState,
 } = authSlice.actions;
 
 export default authSlice.reducer;

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Modal, 
-  Form, 
-  Checkbox, 
-  Typography, 
-  Space, 
-  Divider, 
-  List, 
+import {
+  Modal,
+  Form,
+  Checkbox,
+  Typography,
+  Space,
+  Divider,
+  List,
   Tag,
   InputNumber,
   message,
@@ -35,9 +35,9 @@ export function ProductAddonsModal({ open, onClose, product }) {
   const [quantity, setQuantity] = useState(1);
   const [totalPrice, setTotalPrice] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Filter raw materials that can be used as addons (only those with enough stock)
-  const availableAddons = (rawMaterials || []).filter(material => 
+  const availableAddons = (rawMaterials || []).filter(material =>
     product?.addons?.some(addon => addon.id === material.id) &&
     material.stockQuantity > 0 &&
     material.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -56,17 +56,17 @@ export function ProductAddonsModal({ open, onClose, product }) {
   // Calculate total price whenever selected addons or quantity changes
   useEffect(() => {
     if (!product) return;
-    
+
     const basePrice = product.price;
     const addonsTotalPrice = selectedAddons.reduce((sum, addon) => {
       const material = (rawMaterials || []).find(m => m.id === addon.id);
       return sum + (material ? material.unitPrice * addon.quantity : 0);
     }, 0);
-    
+
     const calculatedTotal = (basePrice + addonsTotalPrice) * quantity;
     setTotalPrice(calculatedTotal);
     setEditablePrice(basePrice * quantity);
-    
+
     // Only set editable price initially or when it's 0
     // if (editablePrice === 0) {
     //   setEditablePrice(calculatedTotal);
@@ -87,7 +87,7 @@ export function ProductAddonsModal({ open, onClose, product }) {
   };
 
   const handleAddonQuantityChange = (addonId, value) => {
-    setSelectedAddons(selectedAddons.map(addon => 
+    setSelectedAddons(selectedAddons.map(addon =>
       addon.id === addonId ? { ...addon, quantity: value } : addon
     ));
   };
@@ -143,7 +143,12 @@ export function ProductAddonsModal({ open, onClose, product }) {
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
               <Image
-                src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
+                // src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
+                src={
+                  product.media && Array.isArray(product.media) && product.media.length > 0
+                    ? product.media[0]
+                    : product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
+                }
                 alt={product.name}
                 width={80}
                 height={80}
@@ -163,7 +168,7 @@ export function ProductAddonsModal({ open, onClose, product }) {
                   </Tag>
                 </div>
               </div>
-            </div> 
+            </div>
             <div className="text-right">
               <Text strong className="text-xl text-blue-600">LKR {(product.price || 0).toFixed(2)}</Text>
               <div className="mt-2">
@@ -192,7 +197,7 @@ export function ProductAddonsModal({ open, onClose, product }) {
               allowClear
             />
           </div>
-          
+
           {availableAddons.length === 0 ? (
             <div className="text-center py-4 bg-gray-50 rounded-lg">
               <Icon name="category" className="text-gray-300 text-2xl mb-2" />
@@ -229,7 +234,7 @@ export function ProductAddonsModal({ open, onClose, product }) {
                           </div>
                         </div>
                       </div>
-                      
+
                       {isSelected && (
                         <div>
                           <InputNumber
@@ -262,7 +267,7 @@ export function ProductAddonsModal({ open, onClose, product }) {
               renderItem={addon => {
                 const material = (rawMaterials || []).find(m => m.id === addon.id);
                 if (!material) return null;
-                
+
                 return (
                   <List.Item
                     key={addon.id}
@@ -291,7 +296,7 @@ export function ProductAddonsModal({ open, onClose, product }) {
               <Text>Base Price:</Text>
               <Text>LKR {(product.price || 0).toFixed(2)} × {quantity}</Text>
             </div>
-            
+
             {selectedAddons.length > 0 && (
               <>
                 <div className="flex justify-between">
@@ -328,7 +333,7 @@ export function ProductAddonsModal({ open, onClose, product }) {
             </Text>
 
             <Divider className="my-2" />
-            
+
             <div className="flex justify-between">
               <Text strong>Total:</Text>
               <Text strong className="text-blue-600 text-lg">LKR {totalPrice.toFixed(2)}</Text>
@@ -341,7 +346,7 @@ export function ProductAddonsModal({ open, onClose, product }) {
           <ActionButton onClick={onClose}>
             Cancel
           </ActionButton>
-          <ActionButton.Primary 
+          <ActionButton.Primary
             onClick={handleSubmit}
             loading={loading}
             icon="add_shopping_cart"

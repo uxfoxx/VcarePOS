@@ -1,24 +1,36 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { login, clearError } from '../store/slices/authSlice';
+import { login, clearError, forgotPasswordStart, clearForgotPasswordState } from '../store/slices/authSlice';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
 import { showToast } from '../components/Common/Toast';
+import { Modal } from 'antd';
+import { Mail } from 'lucide-react';
 
 const LoginPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { loading, error, isAuthenticated } = useSelector(state => state.auth);
+  const {
+    loading,
+    error,
+    isAuthenticated,
+    forgotPasswordLoading,
+    forgotPasswordError,
+    forgotPasswordSuccess
+  } = useSelector(state => state.auth);
 
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
-  console.log("location", location)
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+
   const from = location.state?.from?.pathname || '/';
   const state = location.state;
-  // ✅ Handle success redirect + toast
+
+  // Handle success redirect + toast
   useEffect(() => {
     if (isAuthenticated) {
       if (state == null) {
@@ -33,7 +45,7 @@ const LoginPage = () => {
     }
   }, [isAuthenticated, navigate, from, state]);
 
-  // ✅ Handle error toast + clear after
+  // Handle login error toast + clear after
   useEffect(() => {
     if (error) {
       showToast({
@@ -41,10 +53,31 @@ const LoginPage = () => {
         type: 'error',
         toastId: 'login-error',
       });
-      // clear after showing toast
       dispatch(clearError());
     }
   }, [error, dispatch]);
+
+  // Handle forgot password success/error toasts
+  useEffect(() => {
+    if (forgotPasswordSuccess) {
+      showToast({
+        message: 'Temporary password sent!',
+        subMessage: 'Please check your email for a temporary password.',
+        type: 'success',
+        toastId: 'forgot-password-success',
+      });
+      setShowForgotPasswordModal(false);
+      dispatch(clearForgotPasswordState());
+    }
+    if (forgotPasswordError) {
+      showToast({
+        message: forgotPasswordError || 'Failed to send temporary password',
+        type: 'error',
+        toastId: 'forgot-password-error',
+      });
+      dispatch(clearForgotPasswordState());
+    }
+  }, [forgotPasswordSuccess, forgotPasswordError, dispatch]);
 
   const handleChange = (e) => {
     setFormData({
@@ -58,6 +91,17 @@ const LoginPage = () => {
     dispatch(login(formData));
   };
 
+  const handleForgotPasswordSubmit = () => {
+    if (!forgotPasswordEmail.trim() || !/\S+@\S+\.\S+/.test(forgotPasswordEmail)) {
+      showToast({
+        message: 'Please enter a valid email address',
+        type: 'error',
+        toastId: 'forgot-password-validation-error',
+      });
+      return;
+    }
+    dispatch(forgotPasswordStart({ email: forgotPasswordEmail }));
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -134,6 +178,18 @@ const LoginPage = () => {
             </div>
           </div>
 
+          <div className="flex items-center justify-end">
+            <div className="text-sm">
+              <button
+                type="button"
+                onClick={() => setShowForgotPasswordModal(true)}
+                className="font-medium text-primary-600 hover:text-primary-500"
+              >
+                Forgot password?
+              </button>
+            </div>
+          </div>
+
           <div>
             <button
               type="submit"
@@ -149,6 +205,67 @@ const LoginPage = () => {
           </div>
         </form>
       </div>
+
+      {/* Forgot Password Modal */}
+      <Modal
+        title={
+          <div className="flex items-center space-x-2">
+            <Mail className="h-6 w-6 text-primary-600" />
+            <h3 className="text-xl font-semibold">Forgot Password</h3>
+          </div>
+        }
+        open={showForgotPasswordModal}
+        onCancel={() => {
+          setShowForgotPasswordModal(false);
+          setForgotPasswordEmail('');
+          dispatch(clearForgotPasswordState());
+        }}
+        footer={[
+          <button
+            key="back"
+            onClick={() => {
+              setShowForgotPasswordModal(false);
+              setForgotPasswordEmail('');
+              dispatch(clearForgotPasswordState());
+            }}
+            className="btn-secondary mr-2"
+          >
+            Cancel
+          </button>,
+          <button
+            key="submit"
+            onClick={handleForgotPasswordSubmit}
+            disabled={forgotPasswordLoading}
+            className="btn-primary"
+          >
+            {forgotPasswordLoading ? (
+              <LoadingSpinner size="small" />
+            ) : (
+              'Send Temporary Password'
+            )}
+          </button>,
+        ]}
+      >
+        <div className="py-4">
+          <p className="text-gray-600 mb-4">
+            Enter your email address and we'll send you a temporary password.
+          </p>
+          <label htmlFor="forgot-password-email" className="block text-sm font-medium text-gray-700 mb-2">
+            Email address
+          </label>
+          <input
+            id="forgot-password-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={forgotPasswordEmail}
+            onChange={(e) => setForgotPasswordEmail(e.target.value)}
+            className="input-field"
+            placeholder="Enter your email"
+          />
+        </div>
+      </Modal>
     </div>
   );
 };

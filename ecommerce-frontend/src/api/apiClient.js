@@ -95,6 +95,20 @@ export const authApi = {
   getCurrentCustomer: async () => {
     return makeRequest('/ecommerce/auth/me');
   },
+
+  forgotPassword: async (email) => {
+    return makeRequest('/ecommerce/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  changePassword: async (currentPassword, newPassword) => {
+    return makeRequest('/ecommerce/auth/change-password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  },
 };
 
 // Products API

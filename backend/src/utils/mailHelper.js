@@ -153,9 +153,72 @@ function generateOrderStatusEmailBody(name = '', status, notes = '', updatedAt =
   `;
 }
 
+function generateForgotPasswordEmailBody(tempPassword, name = '') {
+  return `
+  <div style="font-family: Arial, sans-serif; max-width:600px;margin:auto;padding:20px;background-color:#f7f7f7;border-radius:8px;">
+    <div style="text-align:center;padding-bottom:20px;">
+      <h1 style="color:#2e86de;margin:0;">VCare Furniture</h1>
+    </div>
+
+    <div style="background:#fff;padding:30px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+      <h2 style="color:#333;">Hello ${name || 'Customer'},</h2>
+      <p style="color:#555;font-size:16px;">
+        We received a request to reset your password. A temporary password has been created for you.
+      </p>
+
+      <div style="background:#f0f3f9;padding:15px;text-align:center;font-size:20px;font-weight:bold;color:#2e86de;border-radius:6px;margin:20px 0;">
+        ${tempPassword}
+      </div>
+
+      <p style="color:#555;font-size:16px;">
+        Please use this password to log in, then change it immediately in your account settings for security.
+      </p>
+
+      <div style="text-align:center;margin-top:30px;">
+        <a href="${`${process.env.APP_URL}/login` || '#'}" 
+           style="background:#2e86de;color:#fff;text-decoration:none;padding:12px 30px;border-radius:6px;font-weight:bold;">
+           Go to Login
+        </a>
+      </div>
+    </div>
+
+    <div style="text-align:center;color:#777;font-size:12px;margin-top:20px;">
+      &copy; ${new Date().getFullYear()} VCare Furniture. All rights reserved.
+    </div>
+  </div>
+  `;
+}
+
+function generatePasswordChangeEmailBody(name = '', updatedAt = null) {
+  return `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #f7f7f7; border-radius: 8px;">
+    <div style="text-align: center; padding-bottom: 20px;">
+      <h1 style="color: #2e86de; margin: 0;">VCare Furniture</h1>
+    </div>
+
+    <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+      <h2 style="color: #333333;">Hello ${name || 'Customer'},</h2>
+      <p style="color: #555555; font-size: 16px;">
+        Your password was successfully changed on <strong>${updatedAt ? new Date(updatedAt).toLocaleString() : new Date().toLocaleString()}</strong>.
+      </p>
+      <p style="color: #555555; font-size: 16px;">
+        If you did not make this change, please reset your password immediately and contact our support team.
+      </p>
+    </div>
+
+    <div style="text-align: center; color: #777777; font-size: 12px; margin-top: 20px;">
+      &copy; ${new Date().getFullYear()} VCare Furniture. All rights reserved.
+    </div>
+  </div>
+  `;
+}
+
+
 module.exports = {
   generateOtpEmailBody,
   generateWelcomeEmailBody,
   generateLoginNotificationEmailBody,
-  generateOrderStatusEmailBody
+  generateOrderStatusEmailBody,
+  generateForgotPasswordEmailBody,
+  generatePasswordChangeEmailBody
 };

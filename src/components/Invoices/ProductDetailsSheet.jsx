@@ -75,7 +75,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
         height: element.scrollHeight
       });
 
-       // Calculate PDF dimensions
+      // Calculate PDF dimensions
       const imgWidth = 210; // A4 width in mm
       const pageHeight = 295; // A4 height in mm
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -85,7 +85,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
       const pdf = new jsPDF('p', 'mm', 'a4');
       let position = 0;
 
-     // Add first page 
+      // Add first page 
       pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
 
@@ -97,7 +97,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
         heightLeft -= pageHeight;
       }
 
-       // Open PDF in new tab
+      // Open PDF in new tab
       const pdfBlob = pdf.output('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
       window.open(pdfUrl, '_blank');
@@ -209,26 +209,26 @@ export function ProductDetailsSheet({ open, onClose, product }) {
           <ActionButton key="close" onClick={onClose}>
             Close
           </ActionButton>,
-          <ActionButton 
-          key="view" 
-          icon="visibility" 
-          onClick={handleView} 
-          loading={loading}
+          <ActionButton
+            key="view"
+            icon="visibility"
+            onClick={handleView}
+            loading={loading}
           >
             View PDF
           </ActionButton>,
-          <ActionButton 
-          key="download" 
-          icon="download" 
-          onClick={handleDownload} 
-          loading={loading}
+          <ActionButton
+            key="download"
+            icon="download"
+            onClick={handleDownload}
+            loading={loading}
           >
             Download PDF
           </ActionButton>,
-          <ActionButton.Primary 
-          key="print" 
-          icon="print" 
-          onClick={handlePrint}
+          <ActionButton.Primary
+            key="print"
+            icon="print"
+            onClick={handlePrint}
           >
             Print
           </ActionButton.Primary>
@@ -323,7 +323,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                   <Icon name="straighten" className="mr-2" />
                   Available Sizes
                 </Title>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {product.sizes.map((size, index) => (
                     <div key={index} className="border rounded-lg p-4">
@@ -361,7 +361,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                 <Icon name="info" className="mr-2" />
                 Detailed Specifications
               </Title>
-              
+
               <div className="grid grid-cols-2 gap-6">
                 {/* Physical Specifications */}
                 <div className="border rounded-lg p-4">
@@ -388,8 +388,8 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                     </div>
                   </div>
                 </div>
-                
-                 {/* Product Features */}
+
+                {/* Product Features */}
                 <div className="border rounded-lg p-4">
                   <Title level={5} className="mb-3 text-gray-700">
                     <Icon name="star" className="mr-2" />
@@ -421,13 +421,13 @@ export function ProductDetailsSheet({ open, onClose, product }) {
               </div>
             </div>
 
-             {/* Care Instructions */}
+            {/* Care Instructions */}
             <div className="mb-8">
               <Title level={4} className="mb-4 text-blue-600">
                 <Icon name="cleaning_services" className="mr-2" />
                 Care & Maintenance Instructions
               </Title>
-              
+
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -452,22 +452,22 @@ export function ProductDetailsSheet({ open, onClose, product }) {
               </div>
             </div>
 
-             {/* Assembly Information */}
+            {/* Assembly Information */}
             <div className="mb-8">
               <Title level={4} className="mb-4 text-blue-600">
                 <Icon name="build" className="mr-2" />
                 Assembly Information
               </Title>
-              
+
               <Row gutter={16}>
                 <Col span={12}>
                   <div className="border rounded-lg p-4">
                     <Text strong className="block mb-2">Assembly Required:</Text>
                     <Text>Yes - Detailed instructions included</Text>
-                    
+
                     <Text strong className="block mb-2 mt-3">Estimated Time:</Text>
                     <Text>30-60 minutes</Text>
-                    
+
                     <Text strong className="block mb-2 mt-3">Tools Required:</Text>
                     <Text>Phillips screwdriver, Allen wrench (included)</Text>
                   </div>
@@ -476,10 +476,10 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                   <div className="border rounded-lg p-4">
                     <Text strong className="block mb-2">Professional Assembly:</Text>
                     <Text>Available for additional LKR 5,000</Text>
-                    
+
                     <Text strong className="block mb-2 mt-3">Delivery Options:</Text>
                     <Text>Standard delivery, White glove service</Text>
-                    
+
                     <Text strong className="block mb-2 mt-3">Return Policy:</Text>
                     <Text>30-day return policy applies</Text>
                   </div>
@@ -487,7 +487,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
               </Row>
             </div>
 
-           {/* Barcode and Additional Info */} 
+            {/* Barcode and Additional Info */}
             <div className="border-t pt-6">
               <Row gutter={32}>
                 <Col span={product.barcode && BarcodePresets.large(product.barcode) ? 12 : 24}>
@@ -495,7 +495,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                     <Text strong className="block mb-2">Additional Information:</Text>
                     <Text type="secondary">
                       For more details, assembly videos, and customer reviews,
-                      {product.barcode && BarcodePresets.large(product.barcode) 
+                      {product.barcode && BarcodePresets.large(product.barcode)
                         ? ' scan the barcode or visit our website.'
                         : ' visit our website at www.vcarefurniture.com'
                       }
@@ -525,8 +525,8 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                         return (
                           <>
                             <div className="w-40 h-12 mx-auto flex items-center justify-center">
-                              <img 
-                                src={barcodeData.dataUrl} 
+                              <img
+                                src={barcodeData.dataUrl}
                                 alt="Product Barcode"
                                 className="max-w-full h-full object-contain"
                                 style={{ width: barcodeData.width, height: barcodeData.height }}
@@ -561,7 +561,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
               <Text type="secondary" className="text-sm">
                 {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).address
                   ? JSON.parse(localStorage.getItem('vcare_branding')).address
-                  : "123 Main Street, City, State 12345"} | 
+                  : "123 Main Street, City, State 12345"} |
                 {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).website
                   ? JSON.parse(localStorage.getItem('vcare_branding')).website
                   : "www.vcarefurniture.com"}

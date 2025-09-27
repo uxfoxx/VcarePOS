@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Helper function to get auth token
 const getAuthToken = () => {
@@ -9,38 +9,56 @@ const getAuthToken = () => {
 const makeRequest = async (endpoint, options = {}) => {
   const token = getAuthToken();
 
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
+  const config = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    },
+    ...options,
   };
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  const errorData = await response.json().catch(() => ({}));
-
-  if (response.status === 401) {
-    if (token) {
-      // If token exists → session expired
+    // Handle 401 Unauthorized
+    if (response.status === 401) {
       localStorage.removeItem('ecommerce_token');
-      throw new Error('Session expired. Please log in again.');
-    } else {
-      // If no token → invalid login/register credentials
-      throw new Error(errorData.message || 'Invalid credentials.');
+      window.location.href = '/login';
+      throw new Error('Session expired. Please login again.');
     }
-  }
 
-  if (!response.ok) {
-    throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-  }
+    const data = await response.json();
 
-  return errorData;
+    // if (!response.ok) {
+    //   throw new Error(data.message || 'Request failed');
+    // }
+    if (!response.ok) {
+      // Throw the full response data plus status
+      const err = new Error(data.message || 'Request failed');
+      err.status = response.status;
+      err.data = data; // <--- keep remainingTime
+
+      console.log("API request failed", {
+        endpoint,
+        status: response.status,
+        statusText: response.statusText,
+        responseData: data,
+        response,
+        err
+      });
+
+      throw err;
+    }
+
+
+    return data;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      throw new Error('Network error. Please check your connection.');
+    }
+    throw error;
+  }
 };
 
 
@@ -57,6 +75,20 @@ export const authApi = {
     return makeRequest('/ecommerce/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
+    });
+  },
+
+  sendOtp: async (email) => {
+    return makeRequest('/ecommerce/auth/otp/send', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  verifyOtp: async (email, otp) => {
+    return makeRequest('/ecommerce/auth/otp/verify', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
     });
   },
 
@@ -112,7 +144,7 @@ export const ordersApi = {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_URL}/ecommerce/receipts/temp-upload`, {
+    const response = await fetch(`${API_BASE_URL}/ecommerce/receipts/temp-upload`, {
       method: 'POST',
       headers,
       body: formData,

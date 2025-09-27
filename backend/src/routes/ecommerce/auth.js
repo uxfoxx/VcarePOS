@@ -355,7 +355,7 @@ router.post('/auth/otp/verify', [
 
     if (record.otp !== otp) {
       client.release();
-      return res.status(400).json({ message: 'Invalid OTP.' });
+      return res.status(400).json({ message: 'Invalid OTP. Please try again.' });
     }
 
     // Mark OTP as verified

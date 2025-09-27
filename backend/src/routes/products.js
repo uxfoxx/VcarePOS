@@ -739,8 +739,11 @@ router.put(
         material,
         hasAddons,
         colors,
-        addons
+        addons,
+        media
       } = req.body;
+
+      const mediaData = Array.isArray(media) ? media : [];
 
       // Update product
       const productResult = await client.query(`
@@ -754,12 +757,13 @@ router.put(
           color = $7,
           material = $8,
           has_addons = $9,
+          media = $10,
           updated_at = CURRENT_TIMESTAMP
-        WHERE id = $10
+        WHERE id = $11
         RETURNING *
       `, [
         name, description, category, price, barcode, image,
-        color, material, hasAddons,
+        color, material, hasAddons, JSON.stringify(mediaData),
         id
       ]);
 

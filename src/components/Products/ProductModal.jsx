@@ -157,6 +157,9 @@ export function ProductModal({
       }
 
       setImagePreview(editingProduct.image);
+      if (editingProduct.media) {
+        setMediaPreviews(editingProduct.media);
+      }
       setCurrentStep(0);
     } else if (open && !editingProduct) {
       const initialData = {
@@ -179,6 +182,8 @@ export function ProductModal({
       setImagePreview(null);
       setCurrentStep(0);
       setSelectedMaterialId(null);
+      setMediaFiles([]);
+      setMediaPreviews([]);
     }
   }, [editingProduct, open, productForm, rawMaterialsList]);
 

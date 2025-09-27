@@ -5,6 +5,8 @@ const { handleRouteError } = require('../../utils/loggerUtils');
 const { pool } = require('../../utils/db');
 const path = require('path');
 const fs = require('fs');
+const { sendEmail } = require('../../helper/mail.helper');
+const { generateOrderStatusEmailBody } = require('../../utils/mailHelper');
 
 const router = express.Router();
 
@@ -80,27 +82,27 @@ router.post('/orders', [
   } = req.body;
 
   const client = await pool.connect();
-  
+
   try {
     await client.query('BEGIN');
-    
+
     // Calculate total amount
     let totalAmount = 0;
     const validatedItems = [];
-    
+
     for (const item of items) {
       // Validate product exists and has stock
       const productResult = await client.query(
         'SELECT * FROM products WHERE id = $1',
         [item.productId]
       );
-      
+
       if (productResult.rows.length === 0) {
         throw new Error(`Product ${item.productId} not found`);
       }
-      
+
       const product = productResult.rows[0];
-      
+
       // Check stock availability
       if (item.selectedColorId && item.selectedSize) {
         const sizeResult = await client.query(`
@@ -108,11 +110,11 @@ router.post('/orders', [
           JOIN product_colors pc ON ps.product_color_id = pc.id
           WHERE pc.id = $1 AND ps.name = $2
         `, [item.selectedColorId, item.selectedSize]);
-        
+
         if (sizeResult.rows.length === 0) {
           throw new Error(`Size ${item.selectedSize} not found for product ${product.name}`);
         }
-        
+
         const size = sizeResult.rows[0];
         if (size.stock < item.quantity) {
           throw new Error(`Insufficient stock for ${product.name} - ${item.selectedSize}`);
@@ -122,10 +124,10 @@ router.post('/orders', [
           throw new Error(`Insufficient stock for ${product.name}`);
         }
       }
-      
+
       const itemTotal = product.price * item.quantity;
       totalAmount += itemTotal;
-      
+
       validatedItems.push({
         productId: item.productId,
         productName: product.name,
@@ -136,10 +138,10 @@ router.post('/orders', [
         totalPrice: itemTotal
       });
     }
-    
+
     // Generate order ID
     const orderId = `ECOM-${Date.now()}`;
-    
+
     // Insert order
     const orderResult = await client.query(`
       INSERT INTO ecommerce_orders (
@@ -158,27 +160,27 @@ router.post('/orders', [
       paymentMethod,
       paymentMethod === 'cash_on_delivery' ? 'processing' : 'processing'
     ]);
-    
+
     // Handle bank transfer receipt if provided
     if (paymentMethod === 'bank_transfer' && receiptDetails) {
       // Generate receipt ID
       const receiptId = `RECEIPT-${Date.now()}`;
-      
+
       // Move file from temp location to permanent location
       const tempPath = receiptDetails.filePath;
       const permanentDir = path.join(__dirname, '../../../uploads/receipts');
       if (!fs.existsSync(permanentDir)) {
         fs.mkdirSync(permanentDir, { recursive: true });
       }
-      
+
       const permanentFilename = `receipt-${orderId}-${Date.now()}${path.extname(receiptDetails.originalFilename)}`;
       const permanentPath = path.join(permanentDir, permanentFilename);
-      
+
       // Move file from temp to permanent location
       if (fs.existsSync(tempPath)) {
         fs.renameSync(tempPath, permanentPath);
       }
-      
+
       // Insert receipt record
       await client.query(`
         INSERT INTO bank_receipts (
@@ -193,7 +195,7 @@ router.post('/orders', [
         'pending_verification'
       ]);
     }
-    
+
     // Insert order items
     for (const item of validatedItems) {
       await client.query(`
@@ -211,7 +213,7 @@ router.post('/orders', [
         item.unitPrice,
         item.totalPrice
       ]);
-      
+
       // Update product stock
       if (item.selectedColorId && item.selectedSize) {
         await client.query(`
@@ -224,7 +226,7 @@ router.post('/orders', [
             WHERE pc.id = $2 AND ps.name = $3
           )
         `, [item.quantity, item.selectedColorId, item.selectedSize]);
-        
+
         // Update total product stock
         await client.query(`
           UPDATE products
@@ -244,11 +246,11 @@ router.post('/orders', [
         `, [item.quantity, item.productId]);
       }
     }
-    
+
     await client.query('COMMIT');
-    
+
     const order = orderResult.rows[0];
-    
+
     res.status(201).json({
       id: order.id,
       customerName: order.customer_name,
@@ -261,7 +263,7 @@ router.post('/orders', [
     });
   } catch (error) {
     await client.query('ROLLBACK');
-    
+
     // Clean up temporary file if it exists
     if (req.body.receiptDetails && req.body.receiptDetails.filePath) {
       try {
@@ -272,7 +274,7 @@ router.post('/orders', [
         console.error('Error cleaning up temporary file:', cleanupError);
       }
     }
-    
+
     handleRouteError(error, req, res, 'E-commerce - Create Order');
   } finally {
     client.release();
@@ -302,21 +304,21 @@ router.post('/orders', [
 router.get('/users/:userId/orders', authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
-    
+
     // Ensure customer can only view their own orders
     if (req.user.role === 'customer' && req.user.id !== userId) {
       return res.status(403).json({ message: 'Access denied' });
     }
-    
+
     const client = await pool.connect();
-    
+
     // Get customer orders
     const ordersResult = await client.query(`
       SELECT * FROM ecommerce_orders 
       WHERE customer_id = $1 
       ORDER BY created_at DESC
     `, [userId]);
-    
+
     // Get order items
     const itemsResult = await client.query(`
       SELECT * FROM ecommerce_order_items 
@@ -324,9 +326,9 @@ router.get('/users/:userId/orders', authenticate, async (req, res) => {
         SELECT id FROM ecommerce_orders WHERE customer_id = $1
       )
     `, [userId]);
-    
+
     client.release();
-    
+
     // Map items to orders
     const orders = ordersResult.rows.map(order => {
       const orderItems = itemsResult.rows
@@ -340,7 +342,7 @@ router.get('/users/:userId/orders', authenticate, async (req, res) => {
           unitPrice: parseFloat(item.unit_price),
           totalPrice: parseFloat(item.total_price)
         }));
-      
+
       return {
         id: order.id,
         customerName: order.customer_name,
@@ -355,7 +357,7 @@ router.get('/users/:userId/orders', authenticate, async (req, res) => {
         items: orderItems
       };
     });
-    
+
     res.json(orders);
   } catch (error) {
     handleRouteError(error, req, res, 'E-commerce - Get Customer Orders');
@@ -379,25 +381,25 @@ router.get('/users/:userId/orders', authenticate, async (req, res) => {
 router.get('/orders', authenticate, hasPermission('ecommerce-orders', 'view'), async (req, res) => {
   try {
     const client = await pool.connect();
-    
+
     // Get all e-commerce orders
     const ordersResult = await client.query(`
       SELECT * FROM ecommerce_orders 
       ORDER BY created_at DESC
     `);
-    
+
     // Get all order items
     const itemsResult = await client.query(`
       SELECT * FROM ecommerce_order_items
     `);
-    
+
     // Get all bank receipts
     const receiptsResult = await client.query(`
       SELECT * FROM bank_receipts
     `);
-    
+
     client.release();
-    
+
     // Map items and receipts to orders
     const orders = ordersResult.rows.map(order => {
       const orderItems = itemsResult.rows
@@ -411,9 +413,9 @@ router.get('/orders', authenticate, hasPermission('ecommerce-orders', 'view'), a
           unitPrice: parseFloat(item.unit_price),
           totalPrice: parseFloat(item.total_price)
         }));
-      
+
       const bankReceipt = receiptsResult.rows.find(receipt => receipt.ecommerce_order_id === order.id);
-      
+
       return {
         id: order.id,
         customerId: order.customer_id,
@@ -437,7 +439,7 @@ router.get('/orders', authenticate, hasPermission('ecommerce-orders', 'view'), a
         } : null
       };
     });
-    
+
     res.json(orders);
   } catch (error) {
     handleRouteError(error, req, res, 'E-commerce - Get All Orders (POS)');
@@ -467,33 +469,33 @@ router.get('/orders', authenticate, hasPermission('ecommerce-orders', 'view'), a
 router.get('/orders/:orderId', authenticate, hasPermission('ecommerce-orders', 'view'), async (req, res) => {
   try {
     const { orderId } = req.params;
-    
+
     const client = await pool.connect();
-    
+
     // Get order
     const orderResult = await client.query(`
       SELECT * FROM ecommerce_orders WHERE id = $1
     `, [orderId]);
-    
+
     if (orderResult.rows.length === 0) {
       client.release();
       return res.status(404).json({ message: 'Order not found' });
     }
-    
+
     const order = orderResult.rows[0];
-    
+
     // Get order items
     const itemsResult = await client.query(`
       SELECT * FROM ecommerce_order_items WHERE ecommerce_order_id = $1
     `, [orderId]);
-    
+
     // Get bank receipt if exists
     const receiptResult = await client.query(`
       SELECT * FROM bank_receipts WHERE ecommerce_order_id = $1
     `, [orderId]);
-    
+
     client.release();
-    
+
     const orderItems = itemsResult.rows.map(item => ({
       productId: item.product_id,
       productName: item.product_name,
@@ -503,7 +505,7 @@ router.get('/orders/:orderId', authenticate, hasPermission('ecommerce-orders', '
       unitPrice: parseFloat(item.unit_price),
       totalPrice: parseFloat(item.total_price)
     }));
-    
+
     const bankReceipt = receiptResult.rows.length > 0 ? {
       id: receiptResult.rows[0].id,
       filePath: receiptResult.rows[0].file_path,
@@ -512,7 +514,7 @@ router.get('/orders/:orderId', authenticate, hasPermission('ecommerce-orders', '
       uploadedAt: receiptResult.rows[0].uploaded_at,
       status: receiptResult.rows[0].status
     } : null;
-    
+
     res.json({
       id: order.id,
       customerId: order.customer_id,
@@ -564,6 +566,7 @@ router.get('/orders/:orderId', authenticate, hasPermission('ecommerce-orders', '
  *       404:
  *         description: Order not found
  */
+
 router.put('/orders/:orderId/status', [
   authenticate,
   hasPermission('ecommerce-orders', 'edit'),
@@ -577,39 +580,58 @@ router.put('/orders/:orderId/status', [
 
   const { orderId } = req.params;
   const { status, notes } = req.body;
-  
+
   try {
     const client = await pool.connect();
-    
+
     // Check if order exists
     const checkResult = await client.query(
       'SELECT * FROM ecommerce_orders WHERE id = $1',
       [orderId]
     );
-    
+
     if (checkResult.rows.length === 0) {
       client.release();
       return res.status(404).json({ message: 'Order not found' });
     }
-    
+
+    const order = checkResult.rows[0];
+
     // Update order status
     const result = await client.query(
       'UPDATE ecommerce_orders SET order_status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
       [status, orderId]
     );
-    
+
+    // // Optional: insert into timeline table
+    // await client.query(
+    //   'INSERT INTO ecommerce_order_timeline (order_id, status, notes, updated_by, timestamp) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)',
+    //   [orderId, status, notes || null, req.user.id]
+    // );
+
     client.release();
-    
-    const order = result.rows[0];
-    
+
+    const updatedOrder = result.rows[0];
+
+    // Send email to customer
+    const emailBody = generateOrderStatusEmailBody(
+      order.customer_name,
+      updatedOrder.order_status,
+      notes,
+      updatedOrder.updated_at
+    );
+    await sendEmail(order.customer_email, `Your Order #${order.id} Status Updated`, emailBody);
+
     res.json({
-      id: order.id,
-      orderStatus: order.order_status,
-      updatedAt: order.updated_at
+      id: updatedOrder.id,
+      orderStatus: updatedOrder.order_status,
+      updatedAt: updatedOrder.updated_at
     });
+
   } catch (error) {
     handleRouteError(error, req, res, 'E-commerce - Update Order Status');
   }
 });
+
 
 module.exports = router;

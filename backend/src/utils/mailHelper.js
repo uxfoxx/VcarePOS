@@ -96,4 +96,66 @@ function generateLoginNotificationEmailBody(name = '', lastLogin = null) {
   `;
 };
 
-module.exports = { generateOtpEmailBody, generateWelcomeEmailBody, generateLoginNotificationEmailBody };
+function generateOrderStatusEmailBody(name = '', status, notes = '', updatedAt = null) {
+  // Pick a color for the current status
+  const statusColors = {
+    pending_payment: '#f39c12', // orange
+    processing: '#3498db',      // blue
+    shipped: '#9b59b6',         // purple
+    completed: '#27ae60',       // green
+    cancelled: '#e74c3c'        // red
+  };
+
+  const color = statusColors[status] || '#2e86de';
+
+  return `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #f7f7f7; border-radius: 8px;">
+    
+    <div style="text-align: center; padding-bottom: 20px;">
+      <h1 style="color: #2e86de; margin: 0;">VCare Furniture</h1>
+    </div>
+
+    <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+      <h2 style="color: #333333;">Hello ${name || 'Customer'},</h2>
+      <p style="color: #555555; font-size: 16px; margin-bottom: 25px;">
+        Your order status has been updated. See the timeline below:
+      </p>
+
+      <!-- Timeline -->
+      <div style="border-left: 3px solid #ddd; margin-left: 20px; padding-left: 20px;">
+        
+        <div style="position: relative; margin-bottom: 20px;">
+          <span style="position: absolute; left: -33px; top: 0; width: 16px; height: 16px; background-color: ${color}; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 2px ${color};"></span>
+          <p style="margin: 0; font-size: 16px; color: ${color}; font-weight: bold;">
+            ${status.charAt(0).toUpperCase() + status.slice(1)}
+          </p>
+          <p style="margin: 5px 0; color: #555555; font-size: 14px;">
+            ${updatedAt ? new Date(updatedAt).toLocaleString() : new Date().toLocaleString()}
+          </p>
+          ${notes ? `<p style="margin: 0; color: #777777; font-size: 14px;"><em>${notes}</em></p>` : ''}
+        </div>
+
+      </div>
+      <!--   
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${process.env.APP_URL || '#'}" 
+           style="background-color: ${color}; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold;">
+           View Order
+        </a>
+      </div>
+      -->
+    </div>
+
+    <div style="text-align: center; color: #777777; font-size: 12px; margin-top: 20px;">
+      &copy; ${new Date().getFullYear()} VCare Furniture. All rights reserved.
+    </div>
+  </div>
+  `;
+}
+
+module.exports = {
+  generateOtpEmailBody,
+  generateWelcomeEmailBody,
+  generateLoginNotificationEmailBody,
+  generateOrderStatusEmailBody
+};

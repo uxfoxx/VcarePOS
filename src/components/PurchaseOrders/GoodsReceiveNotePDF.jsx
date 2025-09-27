@@ -16,13 +16,13 @@ export function GoodsReceiveNotePDF({ order, grnData, id }) {
       {/* Header */}
       <div className="text-center mb-8">
         <div className="flex items-center justify-center space-x-4 mb-4">
-          <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center">
+          <div className=" rounded-xl flex items-center justify-center">
             <img 
               src={localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
                 ? JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
                 : "/VCARELogo 1.png"} 
               alt="VCare Logo" 
-              className="w-10 h-10 object-contain"
+              className="h-10 object-contain"
             />
           </div>
           <div>

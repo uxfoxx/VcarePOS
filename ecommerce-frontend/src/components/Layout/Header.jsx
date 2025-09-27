@@ -17,14 +17,14 @@ const Header = () => {
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className=" mx-auto sm:px-6 lg:px-[100px]">
+        <div className="flex justify-between items-center h-[90px] px-4 sm:px-0">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">VC</span>
+            <div className="">
+              <img src="/VCARELogo 1.png" alt="VCare Logo" class="w-full h-[40px] object-fill"/>
             </div>
-            <span className="text-xl font-bold text-gray-900">VCare Furniture</span>
+            
           </Link>
 
           {/* Navigation */}
@@ -85,7 +85,7 @@ const Header = () => {
                         handleLogout();
                         setIsMenuOpen(false);
                       }}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="block w-full text-left px-4 py-2 text-sm font-bold hover:text-primary-600 transition-colors"
                     >
                       Logout
                     </button>
@@ -96,13 +96,13 @@ const Header = () => {
               <div className="flex items-center space-x-4">
                 <Link
                   to="/login"
-                  className="text-gray-700 hover:text-primary-600 transition-colors"
+                  className="font-medium text-gray-700 hover:text-primary-600 transition-colors hidden sm:block"
                 >
                   Login
                 </Link>
                 <Link
                   to="/register"
-                  className="btn-primary"
+                  className="font-bold hover:text-primary-600 transition-colors hidden sm:block"
                 >
                   Sign Up
                 </Link>

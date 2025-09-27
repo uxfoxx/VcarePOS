@@ -238,36 +238,25 @@ export function ProductDetailsSheet({ open, onClose, product }) {
         <div className="max-h-[70vh] overflow-y-auto">
           <div id="product-sheet-content" className="p-8 bg-white" style={{ fontFamily: 'Arial, sans-serif' }}>
             {/* Header */}
-            <div className="text-center mb-8">
+            {/* <div className="text-center mb-8">
               <div className="flex items-center justify-center space-x-4 mb-4">
-                <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center">
+                <div className="rounded-xl flex items-center justify-center">
                   <img
                     src={localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview
                       ? JSON.parse(localStorage.getItem('vcare_branding')).logoPreview
                       : "/VCARELogo 1.png"}
                     alt="VCare Logo"
-                    className="w-10 h-10 object-contain"
+                    className=" h-10 object-contain"
                   />
                 </div>
-                <div>
-                  <Title level={2} className="m-0 text-blue-600">
-                    {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName
-                      ? JSON.parse(localStorage.getItem('vcare_branding')).businessName
-                      : "VCare Furniture Store"}
-                  </Title>
-                  <Text type="secondary">
-                    {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).tagline
-                      ? JSON.parse(localStorage.getItem('vcare_branding')).tagline
-                      : "Premium Furniture Solutions"}
-                  </Text>
-                </div>
+                
               </div>
               <Divider />
               <Title level={3} className="text-gray-800">PRODUCT SPECIFICATION SHEET</Title>
-            </div>
+            </div> */}
 
             {/* Product Image and Basic Info */}
-            <Row gutter={32} className="mb-8">
+            {/* <Row gutter={32} className="mb-8">
               <Col span={10}>
                 <div className="text-center">
                   <Image
@@ -314,10 +303,10 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                   </div>
                 </div>
               </Col>
-            </Row>
+            </Row> */}
 
             {/* Size Variations */}
-            {product.hasSizes && product.sizes && product.sizes.length > 0 && (
+            {/* {product.hasSizes && product.sizes && product.sizes.length > 0 && (
               <div className="mb-8">
                 <Title level={4} className="mb-4 text-blue-600">
                   <Icon name="straighten" className="mr-2" />
@@ -353,107 +342,11 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
 
-            {/* Detailed Specifications */}
-            <div className="mb-8">
-              <Title level={4} className="mb-4 text-blue-600">
-                <Icon name="info" className="mr-2" />
-                Detailed Specifications
-              </Title>
-              
-              <div className="grid grid-cols-2 gap-6">
-                {/* Physical Specifications */}
-                <div className="border rounded-lg p-4">
-                  <Title level={5} className="mb-3 text-gray-700">
-                    <Icon name="straighten" className="mr-2" />
-                    Physical Specifications
-                  </Title>
-                  <div className="space-y-3">
-                    {product.material && (
-                      <div className="flex justify-between border-b pb-2">
-                        <Text strong>Material:</Text>
-                        <Text>{product.material}</Text>
-                      </div>
-                    )}
-                    {product.color && (
-                      <div className="flex justify-between">
-                        <Text strong>Color:</Text>
-                        <Text>{product.color}</Text>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <Text strong>Available Sizes:</Text>
-                      <Text>{product.colors?.reduce((total, color) => total + (color.sizes?.length || 0), 0) || 0}</Text>
-                    </div>
-                  </div>
-                </div>
-                
-                 {/* Product Features */}
-                <div className="border rounded-lg p-4">
-                  <Title level={5} className="mb-3 text-gray-700">
-                    <Icon name="star" className="mr-2" />
-                    Product Features
-                  </Title>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Icon name="check_circle" className="text-green-500" size="text-sm" />
-                      <Text>Premium Quality Construction</Text>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Icon name="check_circle" className="text-green-500" size="text-sm" />
-                      <Text>Durable and Long-lasting</Text>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Icon name="check_circle" className="text-green-500" size="text-sm" />
-                      <Text>Easy Assembly Instructions</Text>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Icon name="check_circle" className="text-green-500" size="text-sm" />
-                      <Text>1 Year Warranty Included</Text>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Icon name="check_circle" className="text-green-500" size="text-sm" />
-                      <Text>Professional Delivery Available</Text>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-             {/* Care Instructions */}
-            <div className="mb-8">
-              <Title level={4} className="mb-4 text-blue-600">
-                <Icon name="cleaning_services" className="mr-2" />
-                Care & Maintenance Instructions
-              </Title>
-              
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Text strong className="block mb-2">Daily Care:</Text>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
-                      <li>Dust regularly with a soft, dry cloth</li>
-                      <li>Avoid direct sunlight exposure</li>
-                      <li>Keep away from heat sources</li>
-                      <li>Use coasters for drinks and placemats for dining</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <Text strong className="block mb-2">Deep Cleaning:</Text>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
-                      <li>Use mild soap solution for cleaning</li>
-                      <li>Wipe dry immediately after cleaning</li>
-                      <li>Apply furniture polish monthly</li>
-                      <li>Check and tighten screws periodically</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
 
              {/* Assembly Information */}
-            <div className="mb-8">
+            {/* <div className="mb-8">
               <Title level={4} className="mb-4 text-blue-600">
                 <Icon name="build" className="mr-2" />
                 Assembly Information
@@ -485,12 +378,12 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                   </div>
                 </Col>
               </Row>
-            </div>
+            </div> */}
 
            {/* Barcode and Additional Info */} 
-            <div className="border-t pt-6">
+            <div className=" pt-6">
               <Row gutter={32}>
-                <Col span={product.barcode && BarcodePresets.large(product.barcode) ? 12 : 24}>
+                {/* <Col span={product.barcode && BarcodePresets.large(product.barcode) ? 12 : 24}>
                   <div>
                     <Text strong className="block mb-2">Additional Information:</Text>
                     <Text type="secondary">
@@ -516,7 +409,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                       </Text>
                     </div>
                   </div>
-                </Col>
+                </Col> */}
                 {product.barcode && BarcodePresets.large(product.barcode) && (
                   <Col span={12}>
                     <div className="text-center">
@@ -532,15 +425,15 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                                 style={{ width: barcodeData.width, height: barcodeData.height }}
                               />
                             </div>
-                            <Text type="secondary" className="text-xs mt-2 block">
+                            <Text type="secondary" className="text-xs  block">
                               {barcodeData.value}
                             </Text>
 
-                            <div className="mt-4 text-center">
+                            {/* <div className="mt-4 text-center">
                               <Text type="secondary" className="text-xs">
                                 Generated on: {new Date().toLocaleDateString()}
                               </Text>
-                            </div>
+                            </div> */}
                           </>
                         );
                       })()}
@@ -551,7 +444,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
             </div>
 
             {/* Footer */}
-            <div className="mt-8 pt-6 border-t text-center">
+            {/* <div className="mt-8 pt-6 border-t text-center">
               <Text type="secondary" className="text-sm">
                 {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName
                   ? JSON.parse(localStorage.getItem('vcare_branding')).businessName
@@ -566,7 +459,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                   ? JSON.parse(localStorage.getItem('vcare_branding')).website
                   : "www.vcarefurniture.com"}
               </Text>
-            </div>
+            </div> */}
           </div>
         </div>
       </Modal>

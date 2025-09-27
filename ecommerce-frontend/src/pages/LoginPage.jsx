@@ -6,6 +6,8 @@ import LoadingSpinner from '../components/Common/LoadingSpinner';
 import { showToast } from '../components/Common/Toast';
 import { Modal } from 'antd';
 import { Mail } from 'lucide-react';
+import { EyeTwoTone, EyeInvisibleOutlined } from "@ant-design/icons";
+import { Input } from "antd";
 
 const LoginPage = () => {
   const dispatch = useDispatch();
@@ -147,7 +149,7 @@ const LoginPage = () => {
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email address
               </label>
-              <input
+              <Input
                 id="email"
                 name="email"
                 type="email"
@@ -164,7 +166,7 @@ const LoginPage = () => {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
-              <input
+              <Input.Password
                 id="password"
                 name="password"
                 type="password"
@@ -174,6 +176,7 @@ const LoginPage = () => {
                 onChange={handleChange}
                 className="input-field mt-1"
                 placeholder="Enter your password"
+                
               />
             </div>
           </div>

@@ -19,10 +19,7 @@ const Footer = () => {
           {/* Company Info */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">VC</span>
-              </div>
-              <span className="text-xl font-bold">VCare Furniture</span>
+              <img alt="VCare Logo" class=" h-[40px] object-fill" src="/VCARELogo 1.png"/>
             </div>
             <p className="text-gray-300 mb-4">
               Premium furniture solutions for your home and office. Quality craftsmanship,

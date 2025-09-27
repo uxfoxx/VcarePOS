@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Modal, Typography, Divider, Row, Col, Space, Image } from 'antd';
+import { Modal, Typography, Row, Col, Space, } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { BarcodePresets } from '../../utils/barcodeGenerator';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export function ProductDetailsSheet({ open, onClose, product }) {
   const [loading, setLoading] = useState(false);
@@ -75,7 +75,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
         height: element.scrollHeight
       });
 
-       // Calculate PDF dimensions
+      // Calculate PDF dimensions
       const imgWidth = 210; // A4 width in mm
       const pageHeight = 295; // A4 height in mm
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -85,7 +85,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
       const pdf = new jsPDF('p', 'mm', 'a4');
       let position = 0;
 
-     // Add first page 
+      // Add first page 
       pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
 
@@ -97,7 +97,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
         heightLeft -= pageHeight;
       }
 
-       // Open PDF in new tab
+      // Open PDF in new tab
       const pdfBlob = pdf.output('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
       window.open(pdfUrl, '_blank');
@@ -209,26 +209,26 @@ export function ProductDetailsSheet({ open, onClose, product }) {
           <ActionButton key="close" onClick={onClose}>
             Close
           </ActionButton>,
-          <ActionButton 
-          key="view" 
-          icon="visibility" 
-          onClick={handleView} 
-          loading={loading}
+          <ActionButton
+            key="view"
+            icon="visibility"
+            onClick={handleView}
+            loading={loading}
           >
             View PDF
           </ActionButton>,
-          <ActionButton 
-          key="download" 
-          icon="download" 
-          onClick={handleDownload} 
-          loading={loading}
+          <ActionButton
+            key="download"
+            icon="download"
+            onClick={handleDownload}
+            loading={loading}
           >
             Download PDF
           </ActionButton>,
-          <ActionButton.Primary 
-          key="print" 
-          icon="print" 
-          onClick={handlePrint}
+          <ActionButton.Primary
+            key="print"
+            icon="print"
+            onClick={handlePrint}
           >
             Print
           </ActionButton.Primary>
@@ -345,7 +345,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
             )} */}
 
 
-             {/* Assembly Information */}
+            {/* Assembly Information */}
             {/* <div className="mb-8">
               <Title level={4} className="mb-4 text-blue-600">
                 <Icon name="build" className="mr-2" />
@@ -380,7 +380,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
               </Row>
             </div> */}
 
-           {/* Barcode and Additional Info */} 
+            {/* Barcode and Additional Info */}
             <div className=" pt-6">
               <Row gutter={32}>
                 {/* <Col span={product.barcode && BarcodePresets.large(product.barcode) ? 12 : 24}>
@@ -418,8 +418,8 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                         return (
                           <>
                             <div className="w-40 h-12 mx-auto flex items-center justify-center">
-                              <img 
-                                src={barcodeData.dataUrl} 
+                              <img
+                                src={barcodeData.dataUrl}
                                 alt="Product Barcode"
                                 className="max-w-full h-full object-contain"
                                 style={{ width: barcodeData.width, height: barcodeData.height }}

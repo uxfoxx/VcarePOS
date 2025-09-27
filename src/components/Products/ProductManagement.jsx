@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
-  Card, 
-  Space, 
+import {
+  Card,
+  Space,
   Typography,
   Tag,
   Image,
@@ -30,7 +30,7 @@ import { EnhancedTable } from '../common/EnhancedTable';
 import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { fetchProducts, deleteProducts, updateProduct, addProduct } from '../../features/products/productsSlice';
-import { fetchRawMaterials} from '../../features/rawMaterials/rawMaterialsSlice';
+import { fetchRawMaterials } from '../../features/rawMaterials/rawMaterialsSlice';
 import { fetchCategories } from '../../features/categories/categoriesSlice';
 
 const { Title, Text } = Typography;
@@ -47,12 +47,13 @@ export function ProductManagement() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('products');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const {productsList, error} = useSelector(state => state.products);
+  const { productsList, error } = useSelector(state => state.products);
 
-  useEffect(() => { dispatch(fetchProducts());
+  useEffect(() => {
+    dispatch(fetchProducts());
     dispatch(fetchRawMaterials());
     dispatch(fetchCategories());
-   }, [dispatch]);
+  }, [dispatch]);
 
   const filteredProducts = productsList.filter(product =>
     (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -91,14 +92,14 @@ export function ProductManagement() {
   };
 
   const handleDelete = (productId) => {
-    dispatch(deleteProducts({productId}));
+    dispatch(deleteProducts({ productId }));
     // dispatch({ type: 'DELETE_PRODUCT', payload: productId });
     // message.success('Product deleted successfully');
   };
 
   const handleBulkDelete = (productIds) => {
     productIds.forEach(id => {
-      dispatch(deleteProducts({productId: id}));
+      dispatch(deleteProducts({ productId: id }));
     });
     message.success(`${productIds.length} products deleted successfully`);
     setSelectedRowKeys([]);
@@ -124,7 +125,12 @@ export function ProductManagement() {
       render: (text, record) => (
         <div className="flex items-center space-x-3">
           <Image
-            src={record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=100'}
+            src={
+              record.media && Array.isArray(record.media) && record.media.length > 0
+                ? record.media[0]
+                : record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
+            }
+            // src={record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=100'}
             alt={record.name}
             width={50}
             height={50}
@@ -186,7 +192,7 @@ export function ProductManagement() {
       ],
       onFilter: (value, record) => {
         const stock = record.stock;
-          
+
         if (value === 'in-stock') return stock > 10;
         if (value === 'low-stock') return stock > 0 && stock <= 10;
         if (value === 'out-of-stock') return stock === 0;
@@ -307,7 +313,7 @@ export function ProductManagement() {
         }}
         onDelete={handleBulkDelete}
         extra={
-          <ActionButton.Primary 
+          <ActionButton.Primary
             icon="add"
             onClick={() => setShowModal(true)}
           >
@@ -367,7 +373,7 @@ export function ProductManagement() {
         render: (stock, record) => {
           let color = 'green';
           let status = 'In Stock';
-          
+
           if (stock === 0) {
             color = 'red';
             status = 'Out of Stock';
@@ -378,7 +384,7 @@ export function ProductManagement() {
             color = 'yellow';
             status = 'Almost Low';
           }
-          
+
           return (
             <div>
               <Text strong className={`text-${color === 'red' ? 'red' : color === 'orange' ? 'orange' : color === 'yellow' ? 'yellow' : 'green'}-600`}>
@@ -493,17 +499,16 @@ export function ProductManagement() {
             rowKey="id"
             onRow={(record) => ({
               onClick: () => handleRowClick(record),
-              className: `cursor-pointer hover:bg-blue-50 ${
-                record.alertType === 'out-of-stock' ? 'bg-red-50' : 
-                record.alertType === 'low-stock' ? 'bg-orange-50' : 
-                'bg-yellow-50'
-              }`
+              className: `cursor-pointer hover:bg-blue-50 ${record.alertType === 'out-of-stock' ? 'bg-red-50' :
+                  record.alertType === 'low-stock' ? 'bg-orange-50' :
+                    'bg-yellow-50'
+                }`
             })}
             searchFields={['name', 'category', 'barcode']}
             searchPlaceholder="Search products with stock issues..."
             showSearch={true}
             extra={
-              <ActionButton.Primary 
+              <ActionButton.Primary
                 icon="add"
                 onClick={() => setShowModal(true)}
               >
@@ -602,8 +607,8 @@ export function ProductManagement() {
         data={selectedProduct}
         type="product"
         actions={[
-          <ActionButton 
-            key="edit" 
+          <ActionButton
+            key="edit"
             icon="edit"
             onClick={() => {
               setShowDetailModal(false);
@@ -612,8 +617,8 @@ export function ProductManagement() {
           >
             Edit Product
           </ActionButton>,
-          <ActionButton 
-            key="print" 
+          <ActionButton
+            key="print"
             icon="print"
             onClick={() => {
               setShowDetailModal(false);

@@ -5,12 +5,12 @@ import { ActionButton } from './ActionButton';
 
 const { Title, Text } = Typography;
 
-export function DetailModal({ 
-  open, 
-  onClose, 
-  title, 
-  icon, 
-  data, 
+export function DetailModal({
+  open,
+  onClose,
+  title,
+  icon,
+  data,
   type = 'generic',
   actions = []
 }) {
@@ -20,15 +20,90 @@ export function DetailModal({
       {/* Product Image and Basic Info */}
       <div className="flex gap-6">
         <div className="flex-shrink-0">
-          <Image
-            src={data.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
-            alt={data.name}
-            width={200}
-            height={150}
-            className="object-cover rounded-lg"
-            preview={false}
-            style={{ aspectRatio: '4/3', objectFit: 'cover' }}
-          />
+          {data.media && Array.isArray(data.media) && data.media.length > 0 ? (
+            <div className="space-y-3">
+              {/* Primary Media */}
+              <div className="relative">
+                {data.media[0].startsWith('data:video/') ||
+                  data.media[0].toLowerCase().includes('.mp4') ||
+                  data.media[0].toLowerCase().includes('.webm') ||
+                  data.media[0].toLowerCase().includes('.mov') ? (
+                  <video
+                    src={data.media[0]}
+                    width={200}
+                    height={150}
+                    className="object-cover rounded-lg"
+                    controls
+                    style={{ aspectRatio: '4/3', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <Image
+                    src={data.media[0]}
+                    alt={data.name}
+                    width={200}
+                    height={150}
+                    className="object-cover rounded-lg"
+                    preview={true}
+                    style={{ aspectRatio: '4/3', objectFit: 'cover' }}
+                  />
+                )}
+                {data.media.length > 1 && (
+                  <div className="absolute top-2 right-2">
+                    <Tag color="purple" size="small">
+                      +{data.media.length - 1} more
+                    </Tag>
+                  </div>
+                )}
+              </div>
+
+              {/* Additional Media Thumbnails */}
+              {data.media.length > 1 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {data.media.slice(1, 5).map((mediaUrl, index) => {
+                    const isVideo = mediaUrl.startsWith('data:video/') ||
+                      mediaUrl.toLowerCase().includes('.mp4') ||
+                      mediaUrl.toLowerCase().includes('.webm') ||
+                      mediaUrl.toLowerCase().includes('.mov');
+
+                    return (
+                      <div key={index + 1} className="relative w-12 h-12 bg-gray-100 rounded overflow-hidden">
+                        {isVideo ? (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                            <Icon name="play_circle" className="text-gray-500 text-sm" />
+                          </div>
+                        ) : (
+                          <Image
+                            src={mediaUrl}
+                            alt={`${data.name} ${index + 2}`}
+                            width={48}
+                            height={48}
+                            className="object-cover"
+                            preview={true}
+                            style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                  {data.media.length > 5 && (
+                    <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
+                      <Text className="text-xs">+{data.media.length - 5}</Text>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <Image
+              src={data.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
+              alt={data.name}
+              width={200}
+              height={150}
+              className="object-cover rounded-lg"
+              preview={false}
+              style={{ aspectRatio: '4/3', objectFit: 'cover' }}
+            />
+          )}
         </div>
         <div className="flex-1">
           <Title level={3} className="mb-2">{data.name}</Title>
@@ -68,7 +143,7 @@ export function DetailModal({
           {data.weight ? `${data.weight} kg` : 'N/A'}
         </Descriptions.Item> */}
         <Descriptions.Item label="Material">
-          {data?.colors[0]?.sizes[0]?.rawMaterials.map((material)=> {
+          {data?.colors[0]?.sizes[0]?.rawMaterials.map((material) => {
             return <Tag key={material.rawMaterialId} color="blue">{material.name}</Tag>;
           }) || 'N/A'}
         </Descriptions.Item>
@@ -310,8 +385,8 @@ export function DetailModal({
             </Title>
             <Tag color={
               data.orderStatus === 'completed' ? 'green' :
-              data.orderStatus === 'processing' ? 'blue' :
-              data.orderStatus === 'pending_payment' ? 'orange' : 'default'
+                data.orderStatus === 'processing' ? 'blue' :
+                  data.orderStatus === 'pending_payment' ? 'orange' : 'default'
             }>
               {data.orderStatus.replace('_', ' ').toUpperCase()}
             </Tag>
@@ -338,14 +413,14 @@ export function DetailModal({
         <Descriptions.Item label="Order Status">
           <Tag color={
             data.orderStatus === 'completed' ? 'green' :
-            data.orderStatus === 'processing' ? 'blue' :
-            data.orderStatus === 'pending_verification' ? 'yellow' :
-            data.orderStatus === 'pending_payment' ? 'orange' : 'default'
+              data.orderStatus === 'processing' ? 'blue' :
+                data.orderStatus === 'pending_verification' ? 'yellow' :
+                  data.orderStatus === 'pending_payment' ? 'orange' : 'default'
           }>
             {data.orderStatus === 'pending_payment' ? 'Pending Payment' :
-             data.orderStatus === 'pending_verification' ? 'Pending Verification' :
-             data.orderStatus === 'processing' ? 'Processing' :
-             data.orderStatus.replace('_', ' ').toUpperCase()}
+              data.orderStatus === 'pending_verification' ? 'Pending Verification' :
+                data.orderStatus === 'processing' ? 'Processing' :
+                  data.orderStatus.replace('_', ' ').toUpperCase()}
           </Tag>
         </Descriptions.Item>
         <Descriptions.Item label="Delivery Address" span={2}>

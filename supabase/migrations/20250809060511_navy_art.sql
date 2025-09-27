@@ -275,6 +275,17 @@ BEGIN
   ) THEN
     ALTER TABLE products ADD COLUMN default_color_id VARCHAR(50);
   END IF;
+END $$; 
+
+-- Add media column to products table
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'products' AND column_name = 'media'
+  ) THEN 
+    ALTER TABLE products ADD COLUMN media JSONB;
+  END IF;
 END $$;
 
 -- Add foreign key constraint for default_color_id

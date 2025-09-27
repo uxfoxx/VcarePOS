@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Modal, 
-  Typography, 
-  Row, 
-  Col, 
-  Card, 
-  Tag, 
-  Button, 
-  Empty, 
+import {
+  Modal,
+  Typography,
+  Row,
+  Col,
+  Card,
+  Tag,
+  Button,
+  Empty,
   Image,
   Space,
   Badge
@@ -16,10 +16,10 @@ import { Icon } from '../common/Icon';
 
 const { Text, Title } = Typography;
 
-export function ColorAndSizeSelectionModal({ 
-  open, 
-  onClose, 
-  product, 
+export function ColorAndSizeSelectionModal({
+  open,
+  onClose,
+  product,
   onColorAndSizeSelected
 }) {
   const [selectedColor, setSelectedColor] = useState(null);
@@ -48,7 +48,7 @@ export function ColorAndSizeSelectionModal({
 
   const handleAddToCart = () => {
     if (!selectedColor || !selectedSize) return;
-    
+
     onColorAndSizeSelected(selectedColor, selectedSize);
   };
 
@@ -84,10 +84,10 @@ export function ColorAndSizeSelectionModal({
           onClick={handleAddToCart}
           icon={<Icon name="add_shopping_cart" />}
         >
-          {!selectedColor 
-            ? 'Select a Color' 
-            : !selectedSize 
-              ? 'Select a Size' 
+          {!selectedColor
+            ? 'Select a Color'
+            : !selectedSize
+              ? 'Select a Size'
               : `Add to Cart - LKR ${(product.price || 0).toFixed(2)}`
           }
         </Button>
@@ -97,15 +97,90 @@ export function ColorAndSizeSelectionModal({
         {/* Product Info */}
         <div className="bg-blue-50 p-4 rounded-lg">
           <div className="flex items-center space-x-4">
-            <Image
-              src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
-              alt={product.name}
-              width={80}
-              height={80}
-              className="object-cover rounded"
-              preview={false}
-              style={{ aspectRatio: '1/1', objectFit: 'cover' }}
-            />
+            {product.media && Array.isArray(product.media) && product.media.length > 0 ? (
+              <div className="space-y-3">
+                {/* Primary Media */}
+                <div className="relative">
+                  {product.media[0].startsWith('product:video/') ||
+                    product.media[0].toLowerCase().includes('.mp4') ||
+                    product.media[0].toLowerCase().includes('.webm') ||
+                    product.media[0].toLowerCase().includes('.mov') ? (
+                    <video
+                      src={product.media[0]}
+                      width={200}
+                      height={150}
+                      className="object-cover rounded-lg"
+                      controls
+                      style={{ aspectRatio: '4/3', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <Image
+                      src={product.media[0]}
+                      alt={product.name}
+                      width={200}
+                      height={150}
+                      className="object-cover rounded-lg"
+                      preview={true}
+                      style={{ aspectRatio: '4/3', objectFit: 'cover' }}
+                    />
+                  )}
+                  {product.media.length > 1 && (
+                    <div className="absolute top-2 right-2">
+                      <Tag color="purple" size="small">
+                        +{product.media.length - 1} more
+                      </Tag>
+                    </div>
+                  )}
+                </div>
+
+                {/* Additional Media Thumbnails */}
+                {product.media.length > 1 && (
+                  <div className="grid grid-cols-4 gap-2">
+                    {product.media.slice(1, 5).map((mediaUrl, index) => {
+                      const isVideo = mediaUrl.startsWith('product:video/') ||
+                        mediaUrl.toLowerCase().includes('.mp4') ||
+                        mediaUrl.toLowerCase().includes('.webm') ||
+                        mediaUrl.toLowerCase().includes('.mov');
+
+                      return (
+                        <div key={index + 1} className="relative w-12 h-12 bg-gray-100 rounded overflow-hidden">
+                          {isVideo ? (
+                            <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                              <Icon name="play_circle" className="text-gray-500 text-sm" />
+                            </div>
+                          ) : (
+                            <Image
+                              src={mediaUrl}
+                              alt={`${product.name} ${index + 2}`}
+                              width={48}
+                              height={48}
+                              className="object-cover"
+                              preview={true}
+                              style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                    {product.media.length > 5 && (
+                      <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
+                        <Text className="text-xs">+{product.media.length - 5}</Text>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Image
+                src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
+                alt={product.name}
+                width={80}
+                height={80}
+                className="object-cover rounded"
+                preview={false}
+                style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+              />
+            )}
             <div className="flex-1">
               <Title level={4} className="mb-1">{product.name}</Title>
               <Text type="secondary">{product.description}</Text>
@@ -138,9 +213,9 @@ export function ColorAndSizeSelectionModal({
                       {/* Color Image Circle */}
                       <div className="flex justify-center">
                         <div className="relative">
-                          <div 
+                          <div
                             className="w-12 h-12 rounded-full border-2 border-gray-300 overflow-hidden"
-                            style={{ 
+                            style={{
                               backgroundImage: color.image ? `url(${color.image})` : 'none',
                               backgroundSize: 'cover',
                               backgroundPosition: 'center',
@@ -160,13 +235,13 @@ export function ColorAndSizeSelectionModal({
                           )}
                         </div>
                       </div>
-                      
+
                       {/* Color Name */}
                       <div>
                         <Text strong className="block">{color.name}</Text>
-                        <Badge 
-                          count={getTotalStock(color)} 
-                          showZero 
+                        <Badge
+                          count={getTotalStock(color)}
+                          showZero
                           style={{ backgroundColor: getTotalStock(color) > 0 ? '#52c41a' : '#ff4d4f' }}
                         />
                         <Text type="secondary" className="text-xs block mt-1">
@@ -208,13 +283,13 @@ export function ColorAndSizeSelectionModal({
                             </div>
                           )}
                         </div>
-                        
+
                         <div>
                           <Tag color={size.stock > 0 ? 'green' : 'red'} className="text-sm">
                             {size.stock} in stock
                           </Tag>
                         </div>
-                        
+
                         {size.dimensions && (
                           <Text type="secondary" className="text-xs block">
                             {size.dimensions.length}×{size.dimensions.width}×{size.dimensions.height} {size.dimensions.unit}
@@ -246,9 +321,9 @@ export function ColorAndSizeSelectionModal({
                 <div className="flex items-center justify-between">
                   <Text>Color:</Text>
                   <div className="flex items-center space-x-2">
-                    <div 
+                    <div
                       className="w-4 h-4 rounded-full border"
-                      style={{ 
+                      style={{
                         backgroundImage: selectedColor.image ? `url(${selectedColor.image})` : 'none',
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',

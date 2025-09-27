@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect } from 'react';
-import { message } from 'antd';
+// import { message } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
+import {
   login as loginAction,
   logout as logoutAction,
   getCurrentUser as getCurrentUserAction,
@@ -12,15 +12,15 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const dispatch = useDispatch();
-  
+
   // Get auth state from Redux
-  const { 
-    user: currentUser, 
-    isAuthenticated, 
-    loading, 
-    error 
+  const {
+    user: currentUser,
+    isAuthenticated,
+    loading,
+    error
   } = useSelector(state => state.auth);
-  
+
   const { usersList: users } = useSelector(state => state.users);
   const { auditList: auditTrail } = useSelector(state => state.audit);
 
@@ -34,7 +34,7 @@ export function AuthProvider({ children }) {
   // Show error messages
   useEffect(() => {
     if (error) {
-      message.error(error);
+      // message.error(error);
       // Clear the error to prevent showing it multiple times
       dispatch(clearAuthError());
     }
@@ -74,7 +74,7 @@ export function AuthProvider({ children }) {
   };
 
   // This function is kept for backward compatibility
-  const logAction = () => {};
+  const logAction = () => { };
 
   const getAuditTrail = async () => {
     try {

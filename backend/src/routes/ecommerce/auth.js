@@ -5,7 +5,7 @@ const { authenticate } = require('../../middleware/auth');
 const { generateToken, hashPassword, comparePassword } = require('../../utils/auth');
 const { handleRouteError } = require('../../utils/loggerUtils');
 const crypto = require('crypto');
-const generateOtpEmailBody = require('../../utils/mailHelper.js'); // or separate file if needed
+const { generateOtpEmailBody, generateWelcomeEmailBody, generateLoginNotificationEmailBody } = require('../../utils/mailHelper.js'); // or separate file if needed
 const { sendEmail } = require('../../helper/mail.helper.js');
 
 const router = express.Router();
@@ -46,9 +46,7 @@ router.post('/auth/register', [
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
 ], async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
   const { firstName, lastName, email, password, phone } = req.body;
 
@@ -102,6 +100,11 @@ router.post('/auth/register', [
     // Generate JWT token
     const token = generateToken(customer);
 
+    // Send welcome email
+    const subject = 'Welcome to VCare Furniture!';
+    const emailBody = generateWelcomeEmailBody(firstName);
+    await sendEmail(email, subject, emailBody);
+
     res.status(201).json({
       success: true,
       token,
@@ -142,6 +145,7 @@ router.post('/auth/register', [
  *       401:
  *         description: Invalid credentials
  */
+
 router.post('/auth/login', [
   body('email').isEmail().withMessage('Valid email is required'),
   body('password').notEmpty().withMessage('Password is required')
@@ -182,6 +186,9 @@ router.post('/auth/login', [
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Capture last login before updating
+    const lastLoginTime = customer.last_login || null;
+
     // Update last login
     await client.query(
       'UPDATE users SET last_login = $1 WHERE id = $2',
@@ -192,6 +199,10 @@ router.post('/auth/login', [
 
     // Generate JWT token
     const token = generateToken(customer);
+    console.log("asdasdasd", customer)
+    // Send login notification email
+    const emailBody = generateLoginNotificationEmailBody(customer.first_name, lastLoginTime);
+    await sendEmail(customer.email, 'New Login Notification', emailBody);
 
     res.json({
       success: true,
@@ -209,6 +220,7 @@ router.post('/auth/login', [
     handleRouteError(error, req, res, 'E-commerce - Customer Login');
   }
 });
+
 
 /**
  * @swagger

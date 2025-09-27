@@ -354,7 +354,7 @@ const ProductDetailPage = () => {
                   </span>
                 </div>
               )}
-              {selectedSize && selectedSize.weight && (
+              {selectedSize > 0 && selectedSize.weight && (
                 <div className="flex justify-between">
                   <span className="text-gray-600">Weight:</span>
                   <span className="font-medium">{selectedSize.weight} kg</span>

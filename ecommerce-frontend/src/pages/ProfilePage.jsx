@@ -1,14 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../store/slices/authSlice';
+import { logout, changePasswordStart, clearChangePasswordState } from '../store/slices/authSlice';
 import { Link } from 'react-router-dom';
 import { fetchOrders } from '../store/slices/ordersSlice';
+import { Modal } from 'antd';
+import { Key, CheckCircle } from 'lucide-react';
+import { showToast } from '../components/Common/Toast';
+import LoadingSpinner from '../components/Common/LoadingSpinner';
 
 const ProfilePage = () => {
   const dispatch = useDispatch();
-  const { customer } = useSelector(state => state.auth);
+  const { customer, changePasswordLoading, changePasswordError, changePasswordSuccess } = useSelector(state => state.auth);
   const { orders } = useSelector(state => state.orders);
   const [activeTab, setActiveTab] = useState('profile');
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmNewPassword: '',
+  });
+  const [passwordFormErrors, setPasswordFormErrors] = useState({});
 
   useEffect(() => {
     if (customer) {
@@ -16,8 +27,70 @@ const ProfilePage = () => {
     }
   }, [dispatch, customer]);
 
+  // Handle change password success/error toasts
+  useEffect(() => {
+    if (changePasswordSuccess) {
+      showToast({
+        message: 'Password changed successfully!',
+        subMessage: 'Your password has been updated.',
+        type: 'success',
+        toastId: 'change-password-success',
+      });
+      setShowChangePasswordModal(false);
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
+      setPasswordFormErrors({});
+      dispatch(clearChangePasswordState());
+    }
+    if (changePasswordError) {
+      showToast({
+        message: changePasswordError || 'Failed to change password',
+        type: 'error',
+        toastId: 'change-password-error',
+      });
+      dispatch(clearChangePasswordState());
+    }
+  }, [changePasswordSuccess, changePasswordError, dispatch]);
+
   const handleLogout = () => {
     dispatch(logout());
+  };
+
+  const handlePasswordFormChange = (e) => {
+    setPasswordForm({
+      ...passwordForm,
+      [e.target.name]: e.target.value,
+    });
+    if (passwordFormErrors[e.target.name]) {
+      setPasswordFormErrors(prev => ({ ...prev, [e.target.name]: '' }));
+    }
+  };
+
+  const validatePasswordForm = () => {
+    const errors = {};
+    if (!passwordForm.currentPassword) {
+      errors.currentPassword = 'Current password is required';
+    }
+    if (!passwordForm.newPassword) {
+      errors.newPassword = 'New password is required';
+    } else if (passwordForm.newPassword.length < 6) {
+      errors.newPassword = 'New password must be at least 6 characters';
+    }
+    if (!passwordForm.confirmNewPassword) {
+      errors.confirmNewPassword = 'Confirm new password is required';
+    } else if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
+      errors.confirmNewPassword = 'New passwords do not match';
+    }
+    setPasswordFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleChangePasswordSubmit = () => {
+    if (validatePasswordForm()) {
+      dispatch(changePasswordStart({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      }));
+    }
   };
 
   const recentOrders = orders.slice(0, 5);
@@ -62,6 +135,12 @@ const ProfilePage = () => {
                   }`}
               >
                 Order History
+              </button>
+              <button
+                onClick={() => setShowChangePasswordModal(true)}
+                className="w-full text-left px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                Change Password
               </button>
               <button
                 onClick={handleLogout}
@@ -187,6 +266,111 @@ const ProfilePage = () => {
           )}
         </div>
       </div>
+
+      {/* Change Password Modal */}
+      <Modal
+        title={
+          <div className="flex items-center space-x-2">
+            <Key className="h-6 w-6 text-primary-600" />
+            <h3 className="text-xl font-semibold">Change Password</h3>
+          </div>
+        }
+        open={showChangePasswordModal}
+        onCancel={() => {
+          setShowChangePasswordModal(false);
+          setPasswordForm({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
+          setPasswordFormErrors({});
+          dispatch(clearChangePasswordState());
+        }}
+        footer={[
+          <button
+            key="back"
+            onClick={() => {
+              setShowChangePasswordModal(false);
+              setPasswordForm({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
+              setPasswordFormErrors({});
+              dispatch(clearChangePasswordState());
+            }}
+            className="btn-secondary mr-2"
+          >
+            Cancel
+          </button>,
+          <button
+            key="submit"
+            onClick={handleChangePasswordSubmit}
+            disabled={changePasswordLoading}
+            className="btn-primary"
+          >
+            {changePasswordLoading ? (
+              <LoadingSpinner size="small" />
+            ) : (
+              'Change Password'
+            )}
+          </button>,
+        ]}
+      >
+        <div className="py-4">
+          <p className="text-gray-600 mb-4">
+            Enter your current password and new password to update your account.
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                Current Password
+              </label>
+              <input
+                id="currentPassword"
+                name="currentPassword"
+                type="password"
+                required
+                value={passwordForm.currentPassword}
+                onChange={handlePasswordFormChange}
+                className="input-field"
+                placeholder="Enter current password"
+              />
+              {passwordFormErrors.currentPassword && (
+                <p className="text-red-500 text-xs mt-1">{passwordFormErrors.currentPassword}</p>
+              )}
+            </div>
+            <div>
+              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                New Password
+              </label>
+              <input
+                id="newPassword"
+                name="newPassword"
+                type="password"
+                required
+                value={passwordForm.newPassword}
+                onChange={handlePasswordFormChange}
+                className="input-field"
+                placeholder="Enter new password"
+              />
+              {passwordFormErrors.newPassword && (
+                <p className="text-red-500 text-xs mt-1">{passwordFormErrors.newPassword}</p>
+              )}
+            </div>
+            <div>
+              <label htmlFor="confirmNewPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                Confirm New Password
+              </label>
+              <input
+                id="confirmNewPassword"
+                name="confirmNewPassword"
+                type="password"
+                required
+                value={passwordForm.confirmNewPassword}
+                onChange={handlePasswordFormChange}
+                className="input-field"
+                placeholder="Confirm new password"
+              />
+              {passwordFormErrors.confirmNewPassword && (
+                <p className="text-red-500 text-xs mt-1">{passwordFormErrors.confirmNewPassword}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

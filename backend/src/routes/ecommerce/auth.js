@@ -5,7 +5,7 @@ const { authenticate } = require('../../middleware/auth');
 const { generateToken, hashPassword, comparePassword } = require('../../utils/auth');
 const { handleRouteError } = require('../../utils/loggerUtils');
 const crypto = require('crypto');
-const { generateOtpEmailBody, generateWelcomeEmailBody, generateLoginNotificationEmailBody } = require('../../utils/mailHelper.js'); // or separate file if needed
+const { generateOtpEmailBody, generateWelcomeEmailBody, generateLoginNotificationEmailBody, generateForgotPasswordEmailBody, generatePasswordChangeEmailBody } = require('../../utils/mailHelper.js'); // or separate file if needed
 const { sendEmail } = require('../../helper/mail.helper.js');
 
 const router = express.Router();
@@ -381,6 +381,114 @@ router.post('/auth/otp/verify', [
     res.json({ success: true, message: 'OTP verified successfully' });
   } catch (error) {
     handleRouteError(error, req, res, 'E-commerce - Verify OTP');
+  }
+});
+
+router.post('/auth/forgot-password', [
+  body('email').isEmail().withMessage('Valid email is required')
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+  const { email } = req.body;
+
+  try {
+    const client = await pool.connect();
+
+    // Check if user exists
+    const result = await client.query(
+      'SELECT id, first_name, last_name FROM users WHERE email = $1 AND role = $2',
+      [email, 'customer']
+    );
+
+    if (result.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ message: 'No account found with this email.' });
+    }
+
+    const user = result.rows[0];
+
+    // Generate temporary password
+    const tempPassword = crypto.randomBytes(4).toString('hex'); // 8 chars
+    const hashedTempPassword = await hashPassword(tempPassword);
+
+    // Update password
+    await client.query(
+      'UPDATE users SET password = $1 WHERE id = $2',
+      [hashedTempPassword, user.id]
+    );
+
+    client.release();
+
+    // Send email with temp password
+    const subject = 'Your Temporary Password - VCare Furniture';
+    const emailBody = generateForgotPasswordEmailBody(tempPassword, user.first_name);
+    await sendEmail(email, subject, emailBody);
+
+    res.json({ success: true, message: 'Temporary password sent to your email.' });
+  } catch (error) {
+    handleRouteError(error, req, res, 'E-commerce - Forgot Password');
+  }
+});
+
+router.put('/auth/change-password', [
+  authenticate,
+  body('currentPassword').notEmpty().withMessage('Current password is required'),
+  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters')
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+  const { currentPassword, newPassword } = req.body;
+
+  try {
+    const client = await pool.connect();
+
+    // Get user from DB
+    const result = await client.query(
+      'SELECT id, email, first_name, password FROM users WHERE id = $1',
+      [req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const user = result.rows[0];
+
+    // Verify current password
+    const isMatch = await comparePassword(currentPassword, user.password);
+    if (!isMatch) {
+      client.release();
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    // Hash new password
+    const hashedNewPassword = await hashPassword(newPassword);
+
+    // Update DB
+    // const updated = await client.query(
+    //   'UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING updated_at',
+    //   [hashedNewPassword, user.id]
+    // );
+    await client.query(
+      'UPDATE users SET password = $1 WHERE id = $2',
+      [hashedNewPassword, user.id]
+    );
+
+    client.release();
+
+    // Send success email
+    // const updatedAt = updated.rows[0].updated_at;
+    const updatedAt = new Date(); // use app timestamp
+    const emailBody = generatePasswordChangeEmailBody(user.first_name, updatedAt);
+
+    await sendEmail(user.email, 'Your Password Has Been Changed', emailBody);
+
+    res.json({ success: true, message: 'Password changed successfully' });
+  } catch (error) {
+    handleRouteError(error, req, res, 'E-commerce - Change Password');
   }
 });
 

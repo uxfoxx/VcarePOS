@@ -6,8 +6,6 @@ import { fetchProducts } from './store/slices/productsSlice';
 import ErrorBoundary from './components/Common/ErrorBoundary';
 
 // Components
-import Header from './components/Layout/Header';
-import Footer from './components/Layout/Footer';
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
@@ -21,6 +19,7 @@ import OrderSuccessPage from './pages/OrderSuccessPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import LoadingSpinner from './components/Common/LoadingSpinner';
+import MainLayout from './components/Layout/MainLayout';
 
 function App() {
   const dispatch = useDispatch();
@@ -47,8 +46,9 @@ function App() {
   return (
     <ErrorBoundary>
       <Router>
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-          <Header />
+        <MainLayout>
+
+
 
           <main className="flex-1">
             <Routes>
@@ -85,8 +85,8 @@ function App() {
             </Routes>
           </main>
 
-          <Footer />
-        </div>
+
+        </MainLayout>
       </Router>
     </ErrorBoundary>
   );

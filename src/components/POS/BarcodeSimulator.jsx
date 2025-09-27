@@ -102,6 +102,24 @@ export function BarcodeSimulator({ visible, onClose, onScan }) {
             <Col span={8}>
               <Text strong>Last Scanned:</Text>
               <div className="text-sm text-gray-600">
+          <Row gutter={16} className="mt-4">
+            <Col span={8}>
+              <Text strong>Audio Feedback:</Text>
+              <div className="text-lg">
+                {BARCODE_SCANNER_CONFIG.AUDIO_FEEDBACK?.SUCCESS_SOUND ? 'Enabled' : 'Disabled'}
+              </div>
+            </Col>
+            <Col span={8}>
+              <Text strong>End Keys:</Text>
+              <div className="text-sm">{BARCODE_SCANNER_CONFIG.END_KEYS.join(', ')}</div>
+            </Col>
+            <Col span={8}>
+              <Text strong>Allow in Inputs:</Text>
+              <div className="text-lg">
+                {BARCODE_SCANNER_CONFIG.ALLOW_IN_INPUTS ? 'Yes' : 'No'}
+              </div>
+            </Col>
+          </Row>
                 {stats.lastScannedCode || 'None'}
               </div>
             </Col>

@@ -9,7 +9,7 @@ const authenticate = async (req, res, next) => {
   try {
     // Get token from header
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       logger.warn('Authentication failed: No token provided', {
         path: req.path,
@@ -18,22 +18,22 @@ const authenticate = async (req, res, next) => {
       });
       return res.status(401).json({ message: 'No token provided, authorization denied' });
     }
-    
+
     const token = authHeader.split(' ')[1];
-    
+
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+
     // Add user to request
     req.user = decoded;
-    
+
     // Log successful authentication at debug level
     logger.debug('Authentication successful', {
       userId: decoded.id,
       path: req.path,
       method: req.method
     });
-    
+
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
@@ -45,7 +45,7 @@ const authenticate = async (req, res, next) => {
       });
       return res.status(401).json({ message: 'Token expired' });
     }
-    
+
     logger.warn('Authentication failed: Invalid token', {
       path: req.path,
       method: req.method,
@@ -65,11 +65,11 @@ const authorize = (roles = []) => {
     if (!req.user) {
       return res.status(401).json({ message: 'Not authenticated' });
     }
-    
+
     if (roles.length && !roles.includes(req.user.role)) {
       return res.status(403).json({ message: 'Not authorized to access this resource' });
     }
-    
+
     next();
   };
 };
@@ -85,12 +85,12 @@ const hasPermission = (module, action) => {
       if (!req.user) {
         return res.status(401).json({ message: 'Not authenticated' });
       }
-      
+
       // Admin role has all permissions
       if (req.user.role === 'admin') {
         return next();
       }
-      
+
       // Check user permissions in database
       const client = await pool.connect();
       const result = await client.query(
@@ -98,19 +98,27 @@ const hasPermission = (module, action) => {
         [req.user.id]
       );
       client.release();
-      
+
       if (result.rows.length === 0) {
         return res.status(404).json({ message: 'User not found' });
       }
-      
+
       const permissions = result.rows[0].permissions;
-      
+
+      // console.log("User Permissions:", {
+      //   user: req.user,
+      //   result: result.rows[0] ? result.rows[0].permissions : null,
+      //   permissions,
+      //   module,
+      //   action
+      // });
       if (!permissions || !permissions[module] || !permissions[module][action]) {
-        return res.status(403).json({ 
-          message: `You don't have permission to ${action} ${module}` 
+        return res.status(403).json({
+          message: `You don't have permission to ${action} ${module}`
         });
       }
-      
+
+
       next();
     } catch (error) {
       console.error('Permission check error:', error);
@@ -124,15 +132,15 @@ const hasPermission = (module, action) => {
  */
 const logAction = async (req, res, next) => {
   const originalSend = res.send;
-  
-  res.send = async function(data) {
+
+  res.send = async function (data) {
     res.send = originalSend;
-    
+
     // Only log successful actions
     if (res.statusCode >= 200 && res.statusCode < 300 && req.user) {
       const action = getActionType(req.method);
       const module = getModuleFromPath(req.path);
-      
+
       if (action && module) {
         const auditEntry = {
           user_id: req.user.id,
@@ -147,7 +155,7 @@ const logAction = async (req, res, next) => {
           }),
           ip_address: req.ip
         };
-        
+
         // Log to our Winston logger
         logger.info(`User Action: ${auditEntry.action} on ${auditEntry.module}`, {
           userId: auditEntry.user_id,
@@ -159,7 +167,7 @@ const logAction = async (req, res, next) => {
           method: req.method,
           path: req.path
         });
-        
+
         try {
           const client = await pool.connect();
           await client.query(
@@ -188,10 +196,10 @@ const logAction = async (req, res, next) => {
         }
       }
     }
-    
+
     return res.send(data);
   };
-  
+
   next();
 };
 
@@ -218,7 +226,7 @@ function getModuleFromPath(path) {
 function getDescription(action, module, req) {
   const resourceId = req.params.id;
   const resourceName = req.body.name || req.body.code || resourceId;
-  
+
   switch (action) {
     case 'CREATE':
       return `Created new ${module.slice(0, -1)}: ${resourceName}`;

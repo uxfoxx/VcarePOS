@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { 
-  createOrder, 
-  uploadTemporaryReceipt, 
-  clearError, 
-  clearUploadedReceipt 
+import {
+  createOrder,
+  uploadTemporaryReceipt,
+  clearError,
+  clearUploadedReceipt,
+  clearCurrentOrder
 } from '../store/slices/ordersSlice';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
 
@@ -14,15 +15,15 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
   const { items, totalAmount } = useSelector(state => state.cart);
   const { customer } = useSelector(state => state.auth);
-  const { 
-    loading, 
-    error, 
-    currentOrder, 
-    uploadingTempReceipt, 
+  const {
+    loading,
+    error,
+    currentOrder,
+    uploadingTempReceipt,
     tempReceiptError,
-    uploadedReceiptDetails 
+    uploadedReceiptDetails
   } = useSelector(state => state.orders);
-  
+
   const [currentStep, setCurrentStep] = useState(1);
   const [customerInfo, setCustomerInfo] = useState({
     name: customer ? `${customer.firstName} ${customer.lastName}` : '',
@@ -36,15 +37,16 @@ const CheckoutPage = () => {
 
   useEffect(() => {
     // Redirect if cart is empty
-    if (items.length === 0) {
+    if (items.length === 0 && !loading && !currentOrder) {
       navigate('/cart');
     }
-  }, [items.length, navigate]);
+  }, [currentOrder, items.length, loading, navigate]);
 
   useEffect(() => {
     // Clear errors when component mounts
     dispatch(clearError());
     dispatch(clearUploadedReceipt());
+    dispatch(clearCurrentOrder())
   }, [dispatch]);
 
   useEffect(() => {
@@ -60,7 +62,7 @@ const CheckoutPage = () => {
       [e.target.name]: e.target.value,
     });
   };
-
+  console.log("currentOrder", currentOrder)
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -69,14 +71,14 @@ const CheckoutPage = () => {
         alert('File size must be less than 5MB');
         return;
       }
-      
+
       // Validate file type
       const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
       if (!allowedTypes.includes(file.type)) {
         alert('Only JPEG, PNG, and PDF files are allowed');
         return;
       }
-      
+
       setTempReceiptFile(file);
     }
   };
@@ -88,9 +90,9 @@ const CheckoutPage = () => {
   };
 
   const validateStep1 = () => {
-    return customerInfo.name.trim() && 
-           customerInfo.email.trim() && 
-           customerInfo.address.trim();
+    return customerInfo.name.trim() &&
+      customerInfo.email.trim() &&
+      customerInfo.address.trim();
   };
 
   const handleNextStep = () => {
@@ -111,7 +113,7 @@ const CheckoutPage = () => {
       alert('Please upload your bank transfer receipt before placing the order');
       return;
     }
-    
+
     const orderData = {
       customerName: customerInfo.name,
       customerEmail: customerInfo.email,
@@ -125,12 +127,12 @@ const CheckoutPage = () => {
         quantity: item.quantity,
       })),
     };
-    
+
     // Include receipt details if bank transfer
     if (paymentMethod === 'bank_transfer' && uploadedReceiptDetails) {
       orderData.receiptDetails = uploadedReceiptDetails;
     }
-    
+
     dispatch(createOrder(orderData));
   };
 
@@ -148,17 +150,16 @@ const CheckoutPage = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
-      
+
       {/* Progress Steps */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
           {steps.map((step, index) => (
             <div key={step.number} className="flex items-center">
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                currentStep >= step.number
-                  ? 'bg-primary-600 border-primary-600 text-white'
-                  : 'border-gray-300 text-gray-500'
-              }`}>
+              <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${currentStep >= step.number
+                ? 'bg-primary-600 border-primary-600 text-white'
+                : 'border-gray-300 text-gray-500'
+                }`}>
                 {step.completed ? (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -167,15 +168,13 @@ const CheckoutPage = () => {
                   step.number
                 )}
               </div>
-              <span className={`ml-2 text-sm font-medium ${
-                currentStep >= step.number ? 'text-primary-600' : 'text-gray-500'
-              }`}>
+              <span className={`ml-2 text-sm font-medium ${currentStep >= step.number ? 'text-primary-600' : 'text-gray-500'
+                }`}>
                 {step.title}
               </span>
               {index < steps.length - 1 && (
-                <div className={`w-16 h-0.5 mx-4 ${
-                  currentStep > step.number ? 'bg-primary-600' : 'bg-gray-300'
-                }`} />
+                <div className={`w-16 h-0.5 mx-4 ${currentStep > step.number ? 'bg-primary-600' : 'bg-gray-300'
+                  }`} />
               )}
             </div>
           ))}
@@ -190,13 +189,13 @@ const CheckoutPage = () => {
             {currentStep === 1 && (
               <div>
                 <h2 className="text-xl font-semibold mb-6">Customer Information</h2>
-                
+
                 {error && (
                   <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
                     <p className="text-sm text-red-800">{error}</p>
                   </div>
                 )}
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -212,7 +211,7 @@ const CheckoutPage = () => {
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Email Address *
@@ -227,7 +226,7 @@ const CheckoutPage = () => {
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Phone Number
@@ -241,7 +240,7 @@ const CheckoutPage = () => {
                       placeholder="Enter your phone number"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Delivery Address *
@@ -257,7 +256,7 @@ const CheckoutPage = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div className="mt-6 flex justify-end">
                   <button
                     onClick={handleNextStep}
@@ -274,7 +273,7 @@ const CheckoutPage = () => {
             {currentStep === 2 && (
               <div>
                 <h2 className="text-xl font-semibold mb-6">Payment Method</h2>
-                
+
                 <div className="space-y-4">
                   <div className="border border-gray-200 rounded-lg p-4">
                     <label className="flex items-center space-x-3 cursor-pointer">
@@ -299,7 +298,7 @@ const CheckoutPage = () => {
                       </div>
                     </label>
                   </div>
-                  
+
                   <div className="border border-gray-200 rounded-lg p-4">
                     <label className="flex items-center space-x-3 cursor-pointer">
                       <input
@@ -324,7 +323,7 @@ const CheckoutPage = () => {
                     </label>
                   </div>
                 </div>
-                
+
                 <div className="mt-6 flex justify-between">
                   <button
                     onClick={handlePrevStep}
@@ -346,13 +345,13 @@ const CheckoutPage = () => {
             {currentStep === 3 && (
               <div>
                 <h2 className="text-xl font-semibold mb-6">Review Your Order</h2>
-                
+
                 {error && (
                   <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
                     <p className="text-sm text-red-800">{error}</p>
                   </div>
                 )}
-                
+
                 {/* Customer Info Review */}
                 <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                   <h3 className="font-semibold mb-2">Delivery Information</h3>
@@ -367,14 +366,14 @@ const CheckoutPage = () => {
                     <strong>Address:</strong> {customerInfo.address}
                   </p>
                 </div>
-                
+
                 {/* Payment Method Review */}
                 <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                   <h3 className="font-semibold mb-2">Payment Method</h3>
                   <p className="text-sm text-gray-600">
                     {paymentMethod === 'cash_on_delivery' ? 'Cash on Delivery' : 'Bank Transfer'}
                   </p>
-                  
+
                   {paymentMethod === 'bank_transfer' && (
                     <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                       <h4 className="font-medium text-blue-900 mb-2">Bank Transfer Details</h4>
@@ -390,18 +389,18 @@ const CheckoutPage = () => {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Bank Transfer Receipt Upload */}
                 {paymentMethod === 'bank_transfer' && (
                   <div className="mb-6">
                     <h3 className="font-semibold mb-4">Upload Bank Transfer Receipt</h3>
-                    
+
                     {tempReceiptError && (
                       <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
                         <p className="text-sm text-red-800">{tempReceiptError}</p>
                       </div>
                     )}
-                    
+
                     {uploadedReceiptDetails ? (
                       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                         <div className="flex items-center space-x-2">
@@ -440,7 +439,7 @@ const CheckoutPage = () => {
                             Supported formats: JPEG, PNG, PDF (Max 5MB)
                           </p>
                         </div>
-                        
+
                         <button
                           onClick={handleUploadReceipt}
                           disabled={!tempReceiptFile || uploadingTempReceipt}
@@ -459,7 +458,7 @@ const CheckoutPage = () => {
                     )}
                   </div>
                 )}
-                
+
                 {/* Items Review */}
                 <div className="mb-6">
                   <h3 className="font-semibold mb-4">Order Items</h3>
@@ -485,7 +484,7 @@ const CheckoutPage = () => {
                     ))}
                   </div>
                 </div>
-                
+
                 <div className="flex justify-between">
                   <button
                     onClick={handlePrevStep}
@@ -519,7 +518,7 @@ const CheckoutPage = () => {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
             <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
-            
+
             <div className="space-y-3 mb-4">
               {items.map(item => (
                 <div key={item.id} className="flex justify-between text-sm">
@@ -532,7 +531,7 @@ const CheckoutPage = () => {
                 </div>
               ))}
             </div>
-            
+
             <div className="border-t pt-3 space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal</span>
@@ -561,24 +560,24 @@ const CheckoutPage = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              
+
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Order Placed Successfully!
               </h3>
-              
+
               <p className="text-gray-600 mb-4">
                 Your order #{currentOrder.id} has been placed successfully.
               </p>
-              
+
               {paymentMethod === 'bank_transfer' && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                   <p className="text-sm text-blue-800">
-                    Your bank transfer receipt has been uploaded and your order is being processed. 
+                    Your bank transfer receipt has been uploaded and your order is being processed.
                     You will receive an email confirmation once your payment is verified and your order is ready for delivery.
                   </p>
                 </div>
               )}
-              
+
               <button
                 onClick={handleCloseSuccessModal}
                 className="w-full btn-primary"

@@ -4,13 +4,14 @@ import { useSelector, useDispatch } from 'react-redux';
 import { fetchProductById, clearCurrentProduct } from '../store/slices/productsSlice';
 import { addToCart } from '../store/slices/cartSlice';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
+import { showToast } from '../components/Common/Toast';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { currentProduct, detailLoading } = useSelector(state => state.products);
-  
+
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -18,7 +19,7 @@ const ProductDetailPage = () => {
 
   useEffect(() => {
     dispatch(fetchProductById(id));
-    
+
     return () => {
       dispatch(clearCurrentProduct());
     };
@@ -49,14 +50,14 @@ const ProductDetailPage = () => {
 
   const handleAddToCart = () => {
     if (!currentProduct) return;
-    
+
     // Check if product has colors/sizes and selections are made
     if (currentProduct.colors && currentProduct.colors.length > 0) {
       if (!selectedColor || !selectedSize) {
         alert('Please select color and size');
         return;
       }
-      
+
       // Check stock for selected size
       if (selectedSize.stock < quantity) {
         alert('Insufficient stock for selected size');
@@ -69,16 +70,20 @@ const ProductDetailPage = () => {
         return;
       }
     }
-    
+
     dispatch(addToCart({
       product: currentProduct,
       quantity,
       selectedColorId: selectedColor?.id,
       selectedSize: selectedSize?.name
     }));
-    
+
     // Show success message or redirect to cart
-    alert('Product added to cart!');
+    showToast({
+      message: 'Product added to cart',
+      type: 'success',
+      toastId: `add-to-cart-${currentProduct.id}`
+    })
   };
 
   if (detailLoading) {
@@ -125,16 +130,15 @@ const ProductDetailPage = () => {
               className="w-full h-96 object-cover rounded-lg"
             />
           </div>
-          
+
           {images.length > 1 && (
             <div className="flex space-x-2">
               {images.map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
-                  className={`w-20 h-20 rounded-lg overflow-hidden border-2 ${
-                    selectedImage === index ? 'border-primary-600' : 'border-gray-200'
-                  }`}
+                  className={`w-20 h-20 rounded-lg overflow-hidden border-2 ${selectedImage === index ? 'border-primary-600' : 'border-gray-200'
+                    }`}
                 >
                   <img
                     src={image}
@@ -176,11 +180,10 @@ const ProductDetailPage = () => {
                   <button
                     key={color.id}
                     onClick={() => handleColorChange(color)}
-                    className={`flex items-center space-x-2 p-3 border rounded-lg ${
-                      selectedColor?.id === color.id
+                    className={`flex items-center space-x-2 p-3 border rounded-lg ${selectedColor?.id === color.id
                         ? 'border-primary-600 bg-primary-50'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <div
                       className="w-6 h-6 rounded-full border border-gray-300"
@@ -203,13 +206,12 @@ const ProductDetailPage = () => {
                     key={size.id}
                     onClick={() => setSelectedSize(size)}
                     disabled={size.stock === 0}
-                    className={`p-3 border rounded-lg text-center ${
-                      selectedSize?.id === size.id
+                    className={`p-3 border rounded-lg text-center ${selectedSize?.id === size.id
                         ? 'border-primary-600 bg-primary-50'
                         : size.stock === 0
                           ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
                           : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <div className="font-medium">{size.name}</div>
                     <div className="text-xs text-gray-600">
@@ -247,13 +249,12 @@ const ProductDetailPage = () => {
 
           {/* Stock Status */}
           <div className="mb-6">
-            <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-              maxQuantity === 0
+            <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${maxQuantity === 0
                 ? 'bg-red-100 text-red-800'
                 : maxQuantity <= 5
                   ? 'bg-yellow-100 text-yellow-800'
                   : 'bg-green-100 text-green-800'
-            }`}>
+              }`}>
               {maxQuantity === 0
                 ? 'Out of Stock'
                 : maxQuantity <= 5
@@ -275,7 +276,7 @@ const ProductDetailPage = () => {
                 : 'Add to Cart'
               }
             </button>
-            
+
             <button
               onClick={() => navigate('/products')}
               className="w-full btn-secondary py-3"

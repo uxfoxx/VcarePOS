@@ -466,11 +466,30 @@ router.get('/orders', authenticate, hasPermission('ecommerce-orders', 'view'), a
  *       404:
  *         description: Order not found
  */
-router.get('/orders/:orderId', authenticate, hasPermission('ecommerce-orders', 'view'), async (req, res) => {
+router.get('/orders/:orderId', authenticate, hasPermission('ecommerce', 'view'), async (req, res) => {
   try {
     const { orderId } = req.params;
 
     const client = await pool.connect();
+
+    // if req.user.role === customer and req.user.id !== order.customer_id, return 403
+    if (req.user.role === 'customer') {
+      const orderCheckResult = await client.query(`
+        SELECT * FROM ecommerce_orders WHERE id = $1
+      `, [orderId]);
+
+      if (orderCheckResult.rows.length === 0) {
+        client.release();
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      const order = orderCheckResult.rows[0];
+      if (order.customer_id !== req.user.id) {
+        client.release();
+        return res.status(403).json({ message: 'Access denied' });
+      }
+    }
+
 
     // Get order
     const orderResult = await client.query(`

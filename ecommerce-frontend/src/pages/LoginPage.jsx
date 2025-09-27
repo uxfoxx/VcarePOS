@@ -3,13 +3,14 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { login, clearError } from '../store/slices/authSlice';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
+import { showToast } from '../components/Common/Toast';
 
 const LoginPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const { loading, error, isAuthenticated } = useSelector(state => state.auth);
-  
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -17,16 +18,31 @@ const LoginPage = () => {
 
   const from = location.state?.from?.pathname || '/';
 
+  // ✅ Handle success redirect + toast
   useEffect(() => {
     if (isAuthenticated) {
+      showToast({
+        message: 'Login successful!',
+        subMessage: 'Welcome back to VCare Furniture.',
+        type: 'success',
+        toastId: 'login-success',
+      });
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, navigate, from]);
 
+  // ✅ Handle error toast + clear after
   useEffect(() => {
-    // Clear any existing errors when component mounts
-    dispatch(clearError());
-  }, [dispatch]);
+    if (error) {
+      showToast({
+        message: error || 'Login failed',
+        type: 'error',
+        toastId: 'login-error',
+      });
+      // clear after showing toast
+      dispatch(clearError());
+    }
+  }, [error, dispatch]);
 
   const handleChange = (e) => {
     setFormData({
@@ -39,6 +55,7 @@ const LoginPage = () => {
     e.preventDefault();
     dispatch(login(formData));
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -62,7 +79,7 @@ const LoginPage = () => {
             </Link>
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-md p-4">
@@ -96,7 +113,7 @@ const LoginPage = () => {
                 placeholder="Enter your email"
               />
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password

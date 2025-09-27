@@ -8,34 +8,41 @@ const getAuthToken = () => {
 // Helper function to make authenticated requests
 const makeRequest = async (endpoint, options = {}) => {
   const token = getAuthToken();
-  
+
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
-  
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-  
+
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
   });
-  
+
+  const errorData = await response.json().catch(() => ({}));
+
   if (response.status === 401) {
-    // Clear token if unauthorized
-    localStorage.removeItem('ecommerce_token');
-    throw new Error('Session expired. Please log in again.');
+    if (token) {
+      // If token exists → session expired
+      localStorage.removeItem('ecommerce_token');
+      throw new Error('Session expired. Please log in again.');
+    } else {
+      // If no token → invalid login/register credentials
+      throw new Error(errorData.message || 'Invalid credentials.');
+    }
   }
-  
+
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
   }
-  
-  return response.json();
+
+  return errorData;
 };
+
 
 // Auth API
 export const authApi = {
@@ -45,14 +52,14 @@ export const authApi = {
       body: JSON.stringify(userData),
     });
   },
-  
+
   login: async (credentials) => {
     return makeRequest('/ecommerce/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
   },
-  
+
   getCurrentCustomer: async () => {
     return makeRequest('/ecommerce/auth/me');
   },
@@ -74,7 +81,7 @@ export const productsApi = {
     });
     return result;
   },
-  
+
   getById: async (productId) => {
     return makeRequest(`/ecommerce/products/${productId}`);
   },
@@ -87,47 +94,47 @@ export const ordersApi = {
     if (receiptDetails) {
       payload.receiptDetails = receiptDetails;
     }
-    
+
     return makeRequest('/ecommerce/orders', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
   },
-  
+
   uploadTemporaryReceipt: async (file) => {
     const formData = new FormData();
     formData.append('receipt', file);
-    
+
     const token = getAuthToken();
     const headers = {};
-    
+
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     const response = await fetch(`${API_URL}/ecommerce/receipts/temp-upload`, {
       method: 'POST',
       headers,
       body: formData,
     });
-    
+
     if (response.status === 401) {
       localStorage.removeItem('ecommerce_token');
       throw new Error('Session expired. Please log in again.');
     }
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
     }
-    
+
     return response.json();
   },
-  
+
   getCustomerOrders: async (customerId) => {
     return makeRequest(`/ecommerce/users/${customerId}/orders`);
   },
-  
+
   getById: async (orderId) => {
     return makeRequest(`/ecommerce/orders/${orderId}`);
   },

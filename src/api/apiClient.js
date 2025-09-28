@@ -4,7 +4,7 @@
  */
 
 // Configuration
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://vcarepos-api.nimesha.dev/api';
 const API_TIMEOUT = 50000; // 50 seconds
 
 /**

@@ -10,7 +10,7 @@ const options = {
       description: 'API documentation for VcarePOS backend',
     },
     servers: [
-      { url: 'http://localhost:3000/api/' },
+      { url: 'https://vcarepos-api.nimesha.dev/api/' },
       { url: 'https://vcarepos-api.nimesha.dev/api/' }
     ],
   },

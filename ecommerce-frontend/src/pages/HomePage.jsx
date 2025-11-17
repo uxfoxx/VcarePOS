@@ -7,25 +7,20 @@ import LoadingSpinner from '../components/Common/LoadingSpinner';
 import Accordion from '../components/Common/Accordion';
 import TestimonialCard from '../components/Common/TestimonialCard';
 import YouTubeEmbed from '../components/Common/YouTubeEmbed';
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Award, Leaf, Hammer, Shield, Sparkles, TrendingUp } from "lucide-react";
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const AUTOPLAY_DELAY = 5000;
-
 const HomePage = () => {
   const dispatch = useDispatch();
   const { products, loading } = useSelector(state => state.products);
 
-  const [current, setCurrent] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const [activeFeature, setActiveFeature] = useState(0);
 
   const heroRef = useRef(null);
-  const carouselRef = useRef(null);
-  const carouselImageRef = useRef(null);
-  const carouselTextRef = useRef(null);
+  const qualityRef = useRef(null);
   const faqRef = useRef(null);
   const faqHeadingRef = useRef(null);
   const testimonialsRef = useRef(null);
@@ -36,13 +31,40 @@ const HomePage = () => {
   const featuredHeadingRef = useRef(null);
   const whyChooseRef = useRef(null);
   const ctaRef = useRef(null);
-  const autoplayRef = useRef(null);
-  const carouselTimeline = useRef(null);
 
-  const carouselImages = [
-    "https://images.pexels.com/photos/667838/pexels-photo-667838.jpeg",
-    "https://images.pexels.com/photos/245032/pexels-photo-245032.jpeg",
-    "https://images.pexels.com/photos/374074/pexels-photo-374074.jpeg"
+  const qualityFeatures = [
+    {
+      icon: Hammer,
+      title: "Handcrafted Excellence",
+      description: "Each piece is meticulously crafted by skilled artisans with over 20 years of experience",
+      stat: "20+",
+      statLabel: "Years Experience",
+      image: "https://images.pexels.com/photos/5974401/pexels-photo-5974401.jpeg"
+    },
+    {
+      icon: Leaf,
+      title: "Sustainable Materials",
+      description: "100% solid wood from responsibly managed forests, certified by FSC and PEFC standards",
+      stat: "100%",
+      statLabel: "Sustainable Wood",
+      image: "https://images.pexels.com/photos/667838/pexels-photo-667838.jpeg"
+    },
+    {
+      icon: Award,
+      title: "Award-Winning Design",
+      description: "Recognized by leading design institutes for innovation, functionality, and aesthetics",
+      stat: "15+",
+      statLabel: "Design Awards",
+      image: "https://images.pexels.com/photos/245032/pexels-photo-245032.jpeg"
+    },
+    {
+      icon: Shield,
+      title: "Built to Last",
+      description: "Reinforced joints, premium hardware, and stress-tested construction for generations of use",
+      stat: "50+",
+      statLabel: "Year Lifespan",
+      image: "https://images.pexels.com/photos/374074/pexels-photo-374074.jpeg"
+    }
   ];
 
   const faqData = [
@@ -149,47 +171,120 @@ const HomePage = () => {
       );
     }
 
-    if (carouselRef.current && carouselTextRef.current) {
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: carouselRef.current,
-          start: 'top 75%',
-          once: true
-        }
-      });
+    if (qualityRef.current) {
+      const heading = qualityRef.current.querySelector('.quality-heading');
+      const subtitle = qualityRef.current.querySelector('.quality-subtitle');
+      const featureCards = qualityRef.current.querySelectorAll('.quality-feature-card');
+      const mainImage = qualityRef.current.querySelector('.quality-main-image');
 
-      tl.fromTo(
-        carouselTextRef.current.querySelector('h2'),
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }
-      ).fromTo(
-        carouselTextRef.current.querySelector('p'),
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' },
-        '-=0.4'
-      ).fromTo(
-        carouselTextRef.current.querySelector('.carousel-controls'),
-        { opacity: 0, x: -20 },
-        { opacity: 1, x: 0, duration: 0.6, ease: 'power2.out' },
-        '-=0.3'
-      );
-
-      gsap.fromTo(
-        carouselImageRef.current?.parentElement,
-        { opacity: 0, scale: 0.95, rotateY: -5 },
-        {
-          opacity: 1,
-          scale: 1,
-          rotateY: 0,
-          duration: 1,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: carouselRef.current,
-            start: 'top 75%',
-            once: true
+      if (heading) {
+        gsap.fromTo(
+          heading,
+          { opacity: 0, y: 40 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.9,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: qualityRef.current,
+              start: 'top 75%',
+              once: true
+            }
           }
-        }
-      );
+        );
+      }
+
+      if (subtitle) {
+        gsap.fromTo(
+          subtitle,
+          { opacity: 0, y: 20 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.7,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: qualityRef.current,
+              start: 'top 75%',
+              once: true
+            }
+          }
+        );
+      }
+
+      if (featureCards.length > 0) {
+        gsap.fromTo(
+          featureCards,
+          {
+            opacity: 0,
+            y: 50,
+            scale: 0.9
+          },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.8,
+            stagger: 0.15,
+            ease: 'back.out(1.4)',
+            scrollTrigger: {
+              trigger: qualityRef.current,
+              start: 'top 70%',
+              once: true
+            }
+          }
+        );
+
+        featureCards.forEach(card => {
+          const icon = card.querySelector('.feature-icon');
+          if (icon) {
+            gsap.to(icon, {
+              rotation: 360,
+              duration: 20,
+              ease: 'none',
+              repeat: -1
+            });
+          }
+
+          card.addEventListener('mouseenter', function() {
+            gsap.to(this, {
+              y: -8,
+              scale: 1.03,
+              duration: 0.3,
+              ease: 'power2.out'
+            });
+          });
+
+          card.addEventListener('mouseleave', function() {
+            gsap.to(this, {
+              y: 0,
+              scale: 1,
+              duration: 0.3,
+              ease: 'power2.out'
+            });
+          });
+        });
+      }
+
+      if (mainImage) {
+        gsap.fromTo(
+          mainImage,
+          { opacity: 0, scale: 0.95, x: 50 },
+          {
+            opacity: 1,
+            scale: 1,
+            x: 0,
+            duration: 1.2,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: qualityRef.current,
+              start: 'top 70%',
+              once: true
+            }
+          }
+        );
+      }
     }
 
     if (faqRef.current && faqHeadingRef.current) {
@@ -529,82 +624,6 @@ const HomePage = () => {
     };
   }, [products]);
 
-  useEffect(() => {
-    if (!isPaused) {
-      autoplayRef.current = setInterval(() => {
-        nextSlide();
-      }, AUTOPLAY_DELAY);
-    }
-
-    return () => {
-      if (autoplayRef.current) {
-        clearInterval(autoplayRef.current);
-      }
-    };
-  }, [current, isPaused]);
-
-  const nextSlide = () => {
-    setCurrent((prev) => (prev + 1) % carouselImages.length);
-    animateCarousel();
-  };
-
-  const prevSlide = () => {
-    setCurrent((prev) => (prev - 1 + carouselImages.length) % carouselImages.length);
-    animateCarousel();
-  };
-
-  const animateCarousel = () => {
-    if (carouselImageRef.current) {
-      if (carouselTimeline.current) {
-        carouselTimeline.current.kill();
-      }
-
-      carouselTimeline.current = gsap.timeline();
-
-      carouselTimeline.current
-        .fromTo(
-          carouselImageRef.current,
-          {
-            opacity: 0,
-            scale: 1.15,
-            filter: 'blur(8px)'
-          },
-          {
-            opacity: 1,
-            scale: 1.05,
-            filter: 'blur(0px)',
-            duration: 0.8,
-            ease: 'power3.out'
-          }
-        )
-        .to(
-          carouselImageRef.current,
-          {
-            scale: 1,
-            duration: AUTOPLAY_DELAY / 1000 - 0.8,
-            ease: 'none'
-          }
-        );
-    }
-  };
-
-  const handleCarouselMouseEnter = () => {
-    setIsPaused(true);
-    if (autoplayRef.current) {
-      clearInterval(autoplayRef.current);
-    }
-    if (carouselTimeline.current) {
-      carouselTimeline.current.pause();
-    }
-  };
-
-  const handleCarouselMouseLeave = () => {
-    setIsPaused(false);
-    if (carouselTimeline.current) {
-      carouselTimeline.current.play();
-    }
-  };
-
   const featuredProducts = products.slice(0, 8);
 
   return (
@@ -638,60 +657,116 @@ const HomePage = () => {
       </section>
 
       <section
-        ref={carouselRef}
-        className="max-w-[1400px] mx-auto py-16 px-4 sm:px-6 lg:px-8"
+        ref={qualityRef}
+        className="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-100 overflow-hidden"
       >
-        <div className="grid md:grid-cols-2 items-center gap-12">
-          <div ref={carouselTextRef}>
-            <h2 className="text-4xl font-bold mb-4 text-gray-900">
-              Our Desks Are Built Different
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="quality-heading text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">
+              Crafted With <span className="text-primary-600">Excellence</span>
             </h2>
-            <p className="text-gray-600 mb-6 text-lg leading-relaxed">
-              From full solid wood tops to motors that are quieter and more
-              powerful, our award-winning desks come with quality you can feel.
+            <p className="quality-subtitle text-lg text-gray-600 max-w-2xl mx-auto">
+              Discover what makes our furniture stand apart from the rest
             </p>
+          </div>
 
-            <div className="carousel-controls flex items-center space-x-4">
-              <button
-                onClick={prevSlide}
-                className="w-12 h-12 flex items-center justify-center rounded-full border-2 border-gray-300 hover:bg-primary-600 hover:border-primary-600 hover:text-white transition-all duration-200"
-                aria-label="Previous slide"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-              <button
-                onClick={nextSlide}
-                className="w-12 h-12 flex items-center justify-center rounded-full border-2 border-gray-300 hover:bg-primary-600 hover:border-primary-600 hover:text-white transition-all duration-200"
-                aria-label="Next slide"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
-              <div className="flex space-x-2">
-                {carouselImages.map((_, index) => (
-                  <button
+          <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+            <div className="space-y-6">
+              {qualityFeatures.map((feature, index) => {
+                const Icon = feature.icon;
+                return (
+                  <div
                     key={index}
-                    onClick={() => setCurrent(index)}
-                    className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                      current === index ? 'bg-primary-600 w-8' : 'bg-gray-300'
+                    className={`quality-feature-card group cursor-pointer p-6 rounded-2xl transition-all duration-300 ${
+                      activeFeature === index
+                        ? 'bg-white shadow-2xl border-2 border-primary-600'
+                        : 'bg-white/60 shadow-md hover:shadow-lg border-2 border-transparent'
                     }`}
-                    aria-label={`Go to slide ${index + 1}`}
-                  />
-                ))}
+                    onMouseEnter={() => setActiveFeature(index)}
+                    onClick={() => setActiveFeature(index)}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className={`feature-icon flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                        activeFeature === index
+                          ? 'bg-primary-600 text-white scale-110'
+                          : 'bg-primary-100 text-primary-600 group-hover:bg-primary-200'
+                      }`}>
+                        <Icon className="w-7 h-7" strokeWidth={2.5} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-xl font-bold text-gray-900">
+                            {feature.title}
+                          </h3>
+                          <div className="text-right">
+                            <div className={`text-2xl font-extrabold transition-colors duration-300 ${
+                              activeFeature === index ? 'text-primary-600' : 'text-gray-400'
+                            }`}>
+                              {feature.stat}
+                            </div>
+                            <div className="text-xs text-gray-500 font-medium">
+                              {feature.statLabel}
+                            </div>
+                          </div>
+                        </div>
+                        <p className={`text-sm leading-relaxed transition-colors duration-300 ${
+                          activeFeature === index ? 'text-gray-700' : 'text-gray-600'
+                        }`}>
+                          {feature.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="relative">
+              <div className="quality-main-image relative rounded-2xl overflow-hidden shadow-2xl">
+                <img
+                  src={qualityFeatures[activeFeature].image}
+                  alt={qualityFeatures[activeFeature].title}
+                  className="w-full h-[600px] object-cover transition-all duration-700 ease-in-out"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Sparkles className="w-6 h-6" />
+                    <span className="text-sm font-semibold uppercase tracking-wider">Featured Quality</span>
+                  </div>
+                  <h3 className="text-3xl font-bold mb-2">
+                    {qualityFeatures[activeFeature].title}
+                  </h3>
+                  <div className="flex items-center gap-2 text-primary-300">
+                    <TrendingUp className="w-5 h-5" />
+                    <span className="text-lg font-semibold">
+                      {qualityFeatures[activeFeature].stat} {qualityFeatures[activeFeature].statLabel}
+                    </span>
+                  </div>
+                </div>
               </div>
+
+              <div className="absolute -z-10 top-8 right-8 w-full h-full bg-primary-200 rounded-2xl" />
             </div>
           </div>
 
-          <div
-            className="overflow-hidden rounded-2xl shadow-2xl"
-            onMouseEnter={handleCarouselMouseEnter}
-            onMouseLeave={handleCarouselMouseLeave}
-          >
-            <img
-              ref={carouselImageRef}
-              src={carouselImages[current]}
-              alt={`Furniture showcase ${current + 1}`}
-              className="w-full h-[500px] object-cover"
-            />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-12">
+            <div className="text-center p-6 bg-white rounded-xl shadow-md">
+              <div className="text-4xl font-extrabold text-primary-600 mb-2">98%</div>
+              <div className="text-sm text-gray-600 font-medium">Customer Satisfaction</div>
+            </div>
+            <div className="text-center p-6 bg-white rounded-xl shadow-md">
+              <div className="text-4xl font-extrabold text-primary-600 mb-2">10K+</div>
+              <div className="text-sm text-gray-600 font-medium">Happy Customers</div>
+            </div>
+            <div className="text-center p-6 bg-white rounded-xl shadow-md">
+              <div className="text-4xl font-extrabold text-primary-600 mb-2">5★</div>
+              <div className="text-sm text-gray-600 font-medium">Average Rating</div>
+            </div>
+            <div className="text-center p-6 bg-white rounded-xl shadow-md">
+              <div className="text-4xl font-extrabold text-primary-600 mb-2">100%</div>
+              <div className="text-sm text-gray-600 font-medium">Eco-Friendly</div>
+            </div>
           </div>
         </div>
       </section>

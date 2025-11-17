@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { 
-  Card, 
-  List, 
-  InputNumber, 
-  Typography, 
-  Divider, 
+import {
+  Card,
+  List,
+  InputNumber,
+  Typography,
+  Divider,
   Badge,
   Popconfirm,
   message,
@@ -12,7 +12,9 @@ import {
   Button,
   Alert,
   Tag,
-  Empty
+  Empty,
+  Modal,
+  Space
 } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import { removeFromCart, updateQuantity, clearCart } from '../../features/cart/cartSlice';

@@ -227,10 +227,11 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
           minHeight: '297mm',
           position: 'relative',
           padding: '10mm',
+          paddingBottom: '25mm',
           boxSizing: 'border-box'
         }}
       >
-        <div style={{ minHeight: 'calc(297mm - 60px)', paddingBottom: '20px' }}>
+        <div style={{ minHeight: 'calc(297mm - 80px)', paddingBottom: '20px' }}>
           <InvoiceHeader
             businessName={businessName}
             logoPreview={logoPreview}

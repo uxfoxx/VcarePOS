@@ -106,7 +106,7 @@ export function ColorAndSizeSelectionModal({
                     product.media[0].toLowerCase().includes('.webm') ||
                     product.media[0].toLowerCase().includes('.mov') ? (
                     <video
-                      src={product.media[0]}
+                      src={`${import.meta.env.VITE_API_URL}${product.media[0]}`}
                       width={200}
                       height={150}
                       className="object-cover rounded-lg"
@@ -115,7 +115,7 @@ export function ColorAndSizeSelectionModal({
                     />
                   ) : (
                     <Image
-                      src={product.media[0]}
+                      src={`${import.meta.env.VITE_API_URL}${product.media[0]}`}
                       alt={product.name}
                       width={200}
                       height={150}
@@ -150,7 +150,7 @@ export function ColorAndSizeSelectionModal({
                             </div>
                           ) : (
                             <Image
-                              src={mediaUrl}
+                              src={`${import.meta.env.VITE_API_URL}${mediaUrl}`}
                               alt={`${product.name} ${index + 2}`}
                               width={48}
                               height={48}

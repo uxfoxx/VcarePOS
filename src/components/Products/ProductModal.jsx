@@ -154,7 +154,8 @@ export function ProductModal({
 
       setImagePreview(editingProduct.image);
       if (editingProduct.media) {
-        setMediaPreviews(editingProduct.media);
+        // `${import.meta.env.VITE_API_URL}${product.media[0]}`
+        setMediaPreviews(editingProduct.media.map(mediaUrl => `${import.meta.env.VITE_API_URL}${mediaUrl}`));
       }
       setCurrentStep(0);
     } else if (open && !editingProduct) {

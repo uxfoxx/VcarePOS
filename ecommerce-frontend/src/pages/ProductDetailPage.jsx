@@ -304,7 +304,7 @@ const ProductDetailPage = () => {
                       <div key={index + 1} className="relative w-full h-full bg-gray-100 rounded overflow-hidden">
                         {isVideo ? (
                           <video
-                            src={mediaUrl}
+                            src={`${import.meta.env.VITE_API_URL}${mediaUrl}`}
                             width={200}
                             height={150}
                             className="object-cover rounded-lg"
@@ -313,7 +313,7 @@ const ProductDetailPage = () => {
                           />
                         ) : (
                           <Image
-                            src={mediaUrl}
+                            src={`${import.meta.env.VITE_API_URL}${mediaUrl}`}
                             alt={`${currentProduct.name} ${index + 2}`}
                             className="object-cover"
                             preview={true}

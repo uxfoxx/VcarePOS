@@ -127,7 +127,7 @@ export function ProductManagement() {
           <Image
             src={
               record.media && Array.isArray(record.media) && record.media.length > 0
-                ? record.media[0]
+                ? `${import.meta.env.VITE_API_URL}${record.media[0]}`
                 : record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
             }
             // src={record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=100'}
@@ -500,8 +500,8 @@ export function ProductManagement() {
             onRow={(record) => ({
               onClick: () => handleRowClick(record),
               className: `cursor-pointer hover:bg-blue-50 ${record.alertType === 'out-of-stock' ? 'bg-red-50' :
-                  record.alertType === 'low-stock' ? 'bg-orange-50' :
-                    'bg-yellow-50'
+                record.alertType === 'low-stock' ? 'bg-orange-50' :
+                  'bg-yellow-50'
                 }`
             })}
             searchFields={['name', 'category', 'barcode']}

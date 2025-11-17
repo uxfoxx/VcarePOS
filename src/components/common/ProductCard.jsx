@@ -27,7 +27,7 @@ export function ProductCard({
     // Price is now fixed for all variations
     return `LKR ${(product.price || 0).toFixed(2) || '0.00'}`;
   };
-
+  console.log("sssssdfsddsfdsf", product.media[0] && `${import.meta.env.VITE_API_URL}${product.media[0]}`)
   return (
     <Card
       hoverable
@@ -39,11 +39,12 @@ export function ProductCard({
             // src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
             src={
               product.media && Array.isArray(product.media) && product.media.length > 0
-                ? product.media[0]
+                ? `${import.meta.env.VITE_API_URL}${product.media[0]}`
                 : product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
             }
             className="w-full h-full object-cover"
             preview={false}
+            crossOrigin="anonymous"
             style={{ objectFit: 'cover', aspectRatio: '4/3' }}
           />
           <div className="absolute top-2 right-2">

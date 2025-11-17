@@ -15,6 +15,7 @@ export function DetailModal({
   actions = []
 }) {
   if (!data) return null;
+  console.log("sssssdfsddsfdsf", `${import.meta.env.VITE_API_URL}${data.media[0]}`)
   const renderProductDetails = () => (
     <div className="space-y-6">
       {/* Product Image and Basic Info */}
@@ -29,7 +30,7 @@ export function DetailModal({
                   data.media[0].toLowerCase().includes('.webm') ||
                   data.media[0].toLowerCase().includes('.mov') ? (
                   <video
-                    src={data.media[0]}
+                    src={`${import.meta.env.VITE_API_URL}${data.media[0]}`}
                     width={200}
                     height={150}
                     className="object-cover rounded-lg"
@@ -38,7 +39,7 @@ export function DetailModal({
                   />
                 ) : (
                   <Image
-                    src={data.media[0]}
+                    src={`${import.meta.env.VITE_API_URL}${data.media[0]}`}
                     alt={data.name}
                     width={200}
                     height={150}

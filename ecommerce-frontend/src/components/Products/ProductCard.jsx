@@ -56,7 +56,7 @@ const ProductCard = ({ product }) => {
         <img
           src={
             product.media && Array.isArray(product.media) && product.media.length > 0
-              ? product.media[0]
+              ? `${import.meta.env.VITE_API_URL}${product.media[0]}`
               : product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
           }
           // src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=400'}

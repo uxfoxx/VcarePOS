@@ -181,20 +181,22 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
   };
 
   const renderDetailedInvoice = () => {
+    const savedBranding = localStorage.getItem('vcare_branding') ? JSON.parse(localStorage.getItem('vcare_branding')) : null;
+
     const businessName = invoiceConfig?.settings?.business_name ||
-      (localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName) ||
+      savedBranding?.businessName ||
       'VCare Furniture Store';
 
     const businessAddress = invoiceConfig?.settings?.business_address ||
-      (localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).address) ||
+      savedBranding?.address ||
       '1100/1, Pannipitiya Road, Battaramulla, Sri Lanka';
 
     const phoneNumber = invoiceConfig?.settings?.phone_number ||
-      (localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).phoneNumber) ||
+      savedBranding?.phoneNumber ||
       '+94 76 767 5044';
 
     const logoPreview = invoiceConfig?.settings?.logo_url ||
-      (localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview) ||
+      savedBranding?.logoPreview ||
       '/VCARELogo 1.png';
 
     return (

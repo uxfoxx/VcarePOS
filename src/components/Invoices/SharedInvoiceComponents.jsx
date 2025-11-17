@@ -8,9 +8,7 @@ export const InvoiceHeader = ({ businessName, businessAddress, phoneNumber, logo
     <div className="flex items-start justify-between">
       <div className="flex items-center space-x-4">
         <img
-          src={logoPreview || localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview
-            ? JSON.parse(localStorage.getItem('vcare_branding')).logoPreview
-            : "/VCARELogo 1.png"}
+          src={logoPreview || (localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview) || "/VCARELogo 1.png"}
           alt="Business Logo"
           className="h-16 object-contain"
         />

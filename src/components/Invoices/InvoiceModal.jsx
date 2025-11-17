@@ -225,13 +225,13 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
           fontFamily: 'Arial, sans-serif',
           width: '210mm',
           minHeight: '297mm',
-          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
           padding: '10mm',
-          paddingBottom: '25mm',
           boxSizing: 'border-box'
         }}
       >
-        <div style={{ minHeight: 'calc(297mm - 80px)', paddingBottom: '20px' }}>
+        <div style={{ flex: '1', paddingBottom: '20px' }}>
           <InvoiceHeader
             businessName={businessName}
             logoPreview={logoPreview}

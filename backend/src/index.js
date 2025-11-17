@@ -32,7 +32,11 @@ dotenv.config();
 
 // Initialize express app
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
+// Serve uploads folder
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // Middleware
 app.use(cors({
   origin: '*',
@@ -42,7 +46,7 @@ app.use(cors({
 }));
 
 
-app.use(express.json({ 
+app.use(express.json({
   limit: '50mb',
   verify: (req, res, buf) => {
     req.rawBody = buf.toString();
@@ -89,6 +93,9 @@ app.use('/logs', (req, res, next) => {
   }
 });
 
+// Serve the uploads folder
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Global exception handler for uncaught exceptions
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', { error: error.stack || error.toString() });
@@ -100,7 +107,7 @@ process.on('uncaughtException', (error) => {
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection:', { 
+  logger.error('Unhandled Rejection:', {
     reason: reason.stack || reason.toString(),
     promise: promise.toString()
   });
@@ -114,10 +121,10 @@ const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
   logger.info(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
   logger.info(`API Documentation available at http://localhost:${PORT}/api/docs`);
-  
+
   // Log initial system metrics
   logSystemMetrics(true);
-  
+
   // Schedule periodic system metrics logging (every 15 minutes)
   setInterval(() => {
     logSystemMetrics(false);
@@ -131,7 +138,7 @@ const gracefulShutdown = () => {
     logger.info('Server closed successfully');
     process.exit(0);
   });
-  
+
   // Force close if graceful shutdown takes too long
   setTimeout(() => {
     logger.error('Forcing server shutdown after timeout');

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+/* eslint-disable no-unused-vars */
+import { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import {
   Modal,
   Form,
@@ -11,7 +12,6 @@ import {
   Col,
   Upload,
   Button,
-  Space,
   Table,
   Popconfirm,
   message,
@@ -19,9 +19,6 @@ import {
   Divider,
   Switch,
   Tag,
-  Alert,
-  Steps,
-  Tabs
 } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
@@ -31,7 +28,6 @@ import { EnhancedStepper } from '../common/EnhancedStepper';
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
-const { TabPane } = Tabs;
 
 export function ProductModal({
   open,
@@ -59,7 +55,7 @@ export function ProductModal({
   const [colors, setColors] = useState([]);
   const [materialSearchTerm, setMaterialSearchTerm] = useState('');
   const [selectedMaterialId, setSelectedMaterialId] = useState(null); // Track selected card
-  const { rawMaterialsList, error } = useSelector(state => state.rawMaterials);
+  const { rawMaterialsList, } = useSelector(state => state.rawMaterials);
   const { categoriesList } = useSelector(state => state.categories);
 
   // Generate SKU based on category
@@ -163,6 +159,7 @@ export function ProductModal({
       setCurrentStep(0);
     } else if (open && !editingProduct) {
       const initialData = {
+        id: `PROD-${Date.now()}`,
         name: '',
         category: '',
         price: 0,
@@ -259,7 +256,40 @@ export function ProductModal({
     return { isImage, isVideo, maxDimensions };
   };
 
-  // Main upload handler
+  const uploadProductMedia = async (productId) => {
+    if (!mediaFiles.length) return [];
+
+    const formData = new FormData();
+    mediaFiles.forEach(file => formData.append('media', file));
+
+    try {
+      const token = localStorage.getItem('vcare_token');
+      const API_URL = import.meta.env.VITE_API_URL || 'https://vcaresl.com/api';
+
+      const response = await fetch(`${API_URL}/products/media`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        return data.media.map(f => f.file_path); // return file paths from backend
+      } else {
+        message.error(data.message || 'Media upload failed');
+        return [];
+      }
+    } catch (error) {
+      console.error(error);
+      message.error('Failed to upload media.');
+      return [];
+    }
+  };
+
+
   const handleMediaUpload = (file) => {
     const validation = validateMediaFile(file, mediaPreviews);
     if (!validation) return false;
@@ -267,20 +297,21 @@ export function ProductModal({
     const { isImage, maxDimensions } = validation;
 
     if (isImage) {
-      // Check dimensions only for images
       const img = new Image();
       const objectUrl = URL.createObjectURL(file);
 
       img.onload = () => {
         if (img.width > maxDimensions.width || img.height > maxDimensions.height) {
           message.error(
-            `Image dimensions exceed ${maxDimensions.width}x${maxDimensions.height} pixels. Please upload a smaller image.`
+            `Image dimensions exceed ${maxDimensions.width}x${maxDimensions.height} pixels.`
           );
           URL.revokeObjectURL(objectUrl);
           return;
         }
-        URL.revokeObjectURL(objectUrl);
-        processFile(file);
+
+        // Add file to state
+        setMediaFiles(prev => [...prev, file]);
+        setMediaPreviews(prev => [...prev, objectUrl]); // optional UI preview
       };
 
       img.onerror = () => {
@@ -289,13 +320,17 @@ export function ProductModal({
       };
 
       img.src = objectUrl;
+
     } else {
-      // For videos → directly process (convert to Base64 as well)
-      processFile(file);
+      // For videos → directly add to state
+      setMediaFiles(prev => [...prev, file]);
+      const videoUrl = URL.createObjectURL(file);
+      setMediaPreviews(prev => [...prev, videoUrl]); // optional preview
     }
 
-    return false; // Prevent default upload behavior
+    return false; // prevent default upload behavior
   };
+
 
   // Convert file (image or video) to Base64
   const processFile = (file) => {
@@ -328,37 +363,37 @@ export function ProductModal({
     message.success('Media file removed');
   };
 
-  const handleAddMaterial = (values) => {
-    const material = rawMaterialsList.find(m => m.id === values.materialId);
-    if (!material) {
-      message.error('Material not found');
-      return;
-    }
+  // const handleAddMaterial = (values) => {
+  //   const material = rawMaterialsList.find(m => m.id === values.materialId);
+  //   if (!material) {
+  //     message.error('Material not found');
+  //     return;
+  //   }
 
-    const existingMaterial = selectedMaterials.find(m => m.rawMaterialId === values.materialId);
-    if (existingMaterial) {
-      message.error('Material already added');
-      return;
-    }
+  //   const existingMaterial = selectedMaterials.find(m => m.rawMaterialId === values.materialId);
+  //   if (existingMaterial) {
+  //     message.error('Material already added');
+  //     return;
+  //   }
 
-    const newMaterial = {
-      rawMaterialId: values.materialId,
-      name: material.name,
-      unit: material.unit,
-      quantity: values.quantity,
-      unitPrice: material.unitPrice || 0,
-      totalCost: (material.unitPrice || 0) * values.quantity
-    };
+  //   const newMaterial = {
+  //     rawMaterialId: values.materialId,
+  //     name: material.name,
+  //     unit: material.unit,
+  //     quantity: values.quantity,
+  //     unitPrice: material.unitPrice || 0,
+  //     totalCost: (material.unitPrice || 0) * values.quantity
+  //   };
 
-    setSelectedMaterials([...selectedMaterials, newMaterial]);
-    materialsForm.resetFields();
-    message.success('Material added successfully');
-  };
+  //   setSelectedMaterials([...selectedMaterials, newMaterial]);
+  //   materialsForm.resetFields();
+  //   message.success('Material added successfully');
+  // };
 
-  const handleRemoveMaterial = (materialId) => {
-    setSelectedMaterials(selectedMaterials.filter(m => m.rawMaterialId !== materialId));
-    message.success('Material removed');
-  };
+  // const handleRemoveMaterial = (materialId) => {
+  //   setSelectedMaterials(selectedMaterials.filter(m => m.rawMaterialId !== materialId));
+  //   message.success('Material removed');
+  // };
 
   const handleAddAddon = (values) => {
     const material = rawMaterialsList.find(m => m.id === values.materialId);
@@ -392,31 +427,31 @@ export function ProductModal({
     message.success('Add-on removed');
   };
 
-  const handleAddSize = (values) => {
-    const existingSize = sizes.find(s => s.name === values.name);
-    if (existingSize) {
-      message.error('Size name already exists');
-      return;
-    }
+  // const handleAddSize = (values) => {
+  //   const existingSize = sizes.find(s => s.name === values.name);
+  //   if (existingSize) {
+  //     message.error('Size name already exists');
+  //     return;
+  //   }
 
-    const newSize = {
-      id: `SIZE-${Date.now()}`,
-      name: values.name,
-      price: values.price,
-      stock: values.stock,
-      dimensions: values.dimensions || {},
-      weight: values.weight || 0
-    };
+  //   const newSize = {
+  //     id: `SIZE-${Date.now()}`,
+  //     name: values.name,
+  //     price: values.price,
+  //     stock: values.stock,
+  //     dimensions: values.dimensions || {},
+  //     weight: values.weight || 0
+  //   };
 
-    setSizes([...sizes, newSize]);
-    sizesForm.resetFields();
-    message.success('Size added successfully');
-  };
+  //   setSizes([...sizes, newSize]);
+  //   sizesForm.resetFields();
+  //   message.success('Size added successfully');
+  // };
 
-  const handleRemoveSize = (sizeId) => {
-    setSizes(sizes.filter(s => s.id !== sizeId));
-    message.success('Size removed');
-  };
+  // const handleRemoveSize = (sizeId) => {
+  //   setSizes(sizes.filter(s => s.id !== sizeId));
+  //   message.success('Size removed');
+  // };
 
   const handleAddColor = (colorData) => {
     const newColor = {
@@ -609,9 +644,12 @@ export function ProductModal({
         setCurrentStep(1); // Colors step
         return;
       }
+      // Step 2a: Upload media first
+      const uploadedMediaPaths = await uploadProductMedia(productData.id);
 
+      console.log("uploadedMediaPaths", uploadedMediaPaths)
       const productSubmissionData = {
-        id: editingProduct?.id || `PROD-${Date.now()}`,
+        id: editingProduct?.id || productData.id,
         name: finalProductData.name,
         category: finalProductData.category,
         description: finalProductData.description || '',
@@ -633,11 +671,12 @@ export function ProductModal({
         colors: colors,
 
         // Media array instead of single image
-        media: mediaPreviews.length > 0 ? mediaPreviews : [],
+        media: uploadedMediaPaths.length > 0 ? uploadedMediaPaths : [],
 
         addons: hasAddons ? selectedAddons : []
       };
 
+      console.log("productSubmissionData", productSubmissionData)
       await onSubmit(productSubmissionData);
       handleClose();
     } catch (error) {
@@ -669,42 +708,42 @@ export function ProductModal({
     onClose();
   };
 
-  const materialColumns = [
-    {
-      title: 'Material',
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: 'Quantity',
-      key: 'quantity',
-      render: (record) => `${record.quantity || 0} ${record.unit || 'unit'}`,
-    },
-    {
-      title: 'Unit Cost',
-      dataIndex: 'unitPrice',
-      key: 'unitPrice',
-      render: (price) => `LKR ${(price || 0).toFixed(2)}`,
-    },
-    {
-      title: 'Total Cost',
-      dataIndex: 'totalCost',
-      key: 'totalCost',
-      render: (cost) => `LKR ${(cost || 0).toFixed(2)}`,
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (record) => (
-        <Popconfirm
-          title="Remove this material?"
-          onConfirm={() => handleRemoveMaterial(record.rawMaterialId)}
-        >
-          <Button type="text" danger icon={<Icon name="delete" />} size="small" />
-        </Popconfirm>
-      ),
-    },
-  ];
+  // const materialColumns = [
+  //   {
+  //     title: 'Material',
+  //     dataIndex: 'name',
+  //     key: 'name',
+  //   },
+  //   {
+  //     title: 'Quantity',
+  //     key: 'quantity',
+  //     render: (record) => `${record.quantity || 0} ${record.unit || 'unit'}`,
+  //   },
+  //   {
+  //     title: 'Unit Cost',
+  //     dataIndex: 'unitPrice',
+  //     key: 'unitPrice',
+  //     render: (price) => `LKR ${(price || 0).toFixed(2)}`,
+  //   },
+  //   {
+  //     title: 'Total Cost',
+  //     dataIndex: 'totalCost',
+  //     key: 'totalCost',
+  //     render: (cost) => `LKR ${(cost || 0).toFixed(2)}`,
+  //   },
+  //   {
+  //     title: 'Actions',
+  //     key: 'actions',
+  //     render: (record) => (
+  //       <Popconfirm
+  //         title="Remove this material?"
+  //         onConfirm={() => handleRemoveMaterial(record.rawMaterialId)}
+  //       >
+  //         <Button type="text" danger icon={<Icon name="delete" />} size="small" />
+  //       </Popconfirm>
+  //     ),
+  //   },
+  // ];
 
   const addonColumns = [
     {
@@ -737,53 +776,53 @@ export function ProductModal({
     },
   ];
 
-  const sizeColumns = [
-    {
-      title: 'Size Name',
-      dataIndex: 'name',
-      key: 'name',
-      render: (text) => <Text strong>{text}</Text>,
-    },
-    {
-      title: 'Price',
-      dataIndex: 'price',
-      key: 'price',
-      render: (price) => `LKR ${(price || 0).toFixed(2)}`,
-    },
-    {
-      title: 'Stock',
-      dataIndex: 'stock',
-      key: 'stock',
-    },
-    {
-      title: 'Dimensions',
-      key: 'dimensions',
-      render: (record) => {
-        if (record.dimensions && record.dimensions.length) {
-          return `${record.dimensions.length}×${record.dimensions.width}×${record.dimensions.height} ${record.dimensions.unit}`;
-        }
-        return '-';
-      },
-    },
-    {
-      title: 'Weight',
-      dataIndex: 'weight',
-      key: 'weight',
-      render: (weight) => weight ? `${weight} kg` : '-',
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (record) => (
-        <Popconfirm
-          title="Remove this size?"
-          onConfirm={() => handleRemoveSize(record.id)}
-        >
-          <Button type="text" danger icon={<Icon name="delete" />} size="small" />
-        </Popconfirm>
-      ),
-    },
-  ];
+  // const sizeColumns = [
+  //   {
+  //     title: 'Size Name',
+  //     dataIndex: 'name',
+  //     key: 'name',
+  //     render: (text) => <Text strong>{text}</Text>,
+  //   },
+  //   {
+  //     title: 'Price',
+  //     dataIndex: 'price',
+  //     key: 'price',
+  //     render: (price) => `LKR ${(price || 0).toFixed(2)}`,
+  //   },
+  //   {
+  //     title: 'Stock',
+  //     dataIndex: 'stock',
+  //     key: 'stock',
+  //   },
+  //   {
+  //     title: 'Dimensions',
+  //     key: 'dimensions',
+  //     render: (record) => {
+  //       if (record.dimensions && record.dimensions.length) {
+  //         return `${record.dimensions.length}×${record.dimensions.width}×${record.dimensions.height} ${record.dimensions.unit}`;
+  //       }
+  //       return '-';
+  //     },
+  //   },
+  //   {
+  //     title: 'Weight',
+  //     dataIndex: 'weight',
+  //     key: 'weight',
+  //     render: (weight) => weight ? `${weight} kg` : '-',
+  //   },
+  //   {
+  //     title: 'Actions',
+  //     key: 'actions',
+  //     render: (record) => (
+  //       <Popconfirm
+  //         title="Remove this size?"
+  //         onConfirm={() => handleRemoveSize(record.id)}
+  //       >
+  //         <Button type="text" danger icon={<Icon name="delete" />} size="small" />
+  //       </Popconfirm>
+  //     ),
+  //   },
+  // ];
 
   // Filter raw materials for addons
   const filteredRawMaterials = rawMaterialsList.filter(material =>
@@ -1039,112 +1078,112 @@ export function ProductModal({
     </div>
   );
 
-  const renderRawMaterials = () => (
-    <div className="space-y-6">
-      <div>
-        <Title level={5}>Raw Materials</Title>
-        <Text type="secondary">
-          Specify the raw materials used to manufacture this product
-        </Text>
-      </div>
+  // const renderRawMaterials = () => (
+  //   <div className="space-y-6">
+  //     <div>
+  //       <Title level={5}>Raw Materials</Title>
+  //       <Text type="secondary">
+  //         Specify the raw materials used to manufacture this product
+  //       </Text>
+  //     </div>
 
-      <Card size="small">
-        <Form form={materialsForm} onFinish={handleAddMaterial} layout="vertical">
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="materialId"
-                label="Raw Material"
-                rules={[{ required: true, message: 'Please select a material' }]}
-              >
-                <Select
-                  placeholder="Search and select material"
-                  showSearch
-                  optionFilterProp="label"
-                  filterOption={(input, option) =>
-                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                  }
-                >
-                  {rawMaterialsList?.map(material => (
-                    <Option
-                      key={material.id}
-                      value={material.id}
-                      label={`${material.name} ${material.category}`}
-                    >
-                      <div>
-                        <Text strong>{material.name}</Text>
-                        <br />
-                        <Text type="secondary" className="text-xs">
-                          {material.category} • LKR {material.unitPrice}/{material.unit} • Stock: {material.stockQuantity}
-                        </Text>
-                      </div>
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                name="quantity"
-                label="Quantity Required"
-                rules={[{ required: true, message: 'Please enter quantity' }]}
-              >
-                <InputNumber
-                  min={0.01}
-                  step={0.01}
-                  placeholder="0.00"
-                  className="w-full"
-                />
-              </Form.Item>
-            </Col>
-            <Col span={4}>
-              <Form.Item label=" ">
-                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
-                  Add
-                </Button>
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form>
-      </Card>
+  //     <Card size="small">
+  //       <Form form={materialsForm} onFinish={handleAddMaterial} layout="vertical">
+  //         <Row gutter={16}>
+  //           <Col span={12}>
+  //             <Form.Item
+  //               name="materialId"
+  //               label="Raw Material"
+  //               rules={[{ required: true, message: 'Please select a material' }]}
+  //             >
+  //               <Select
+  //                 placeholder="Search and select material"
+  //                 showSearch
+  //                 optionFilterProp="label"
+  //                 filterOption={(input, option) =>
+  //                   (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+  //                 }
+  //               >
+  //                 {rawMaterialsList?.map(material => (
+  //                   <Option
+  //                     key={material.id}
+  //                     value={material.id}
+  //                     label={`${material.name} ${material.category}`}
+  //                   >
+  //                     <div>
+  //                       <Text strong>{material.name}</Text>
+  //                       <br />
+  //                       <Text type="secondary" className="text-xs">
+  //                         {material.category} • LKR {material.unitPrice}/{material.unit} • Stock: {material.stockQuantity}
+  //                       </Text>
+  //                     </div>
+  //                   </Option>
+  //                 ))}
+  //               </Select>
+  //             </Form.Item>
+  //           </Col>
+  //           <Col span={8}>
+  //             <Form.Item
+  //               name="quantity"
+  //               label="Quantity Required"
+  //               rules={[{ required: true, message: 'Please enter quantity' }]}
+  //             >
+  //               <InputNumber
+  //                 min={0.01}
+  //                 step={0.01}
+  //                 placeholder="0.00"
+  //                 className="w-full"
+  //               />
+  //             </Form.Item>
+  //           </Col>
+  //           <Col span={4}>
+  //             <Form.Item label=" ">
+  //               <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
+  //                 Add
+  //               </Button>
+  //             </Form.Item>
+  //           </Col>
+  //         </Row>
+  //       </Form>
+  //     </Card>
 
-      {selectedMaterials.length > 0 ? (
-        <div>
-          <Title level={5}>Selected Materials</Title>
-          <Table
-            columns={materialColumns}
-            dataSource={selectedMaterials}
-            rowKey="rawMaterialId"
-            pagination={false}
-            size="small"
-            summary={(pageData) => {
-              const totalCost = pageData.reduce((sum, record) => sum + (record.totalCost || 0), 0);
-              return (
-                <Table.Summary.Row>
-                  <Table.Summary.Cell colSpan={3}>
-                    <Text strong>Total Material Cost</Text>
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell>
-                    <Text strong>LKR {totalCost.toFixed(2)}</Text>
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell />
-                </Table.Summary.Row>
-              );
-            }}
-          />
-        </div>
-      ) : (
-        <div className="text-center py-8 bg-gray-50 rounded-lg">
-          <Icon name="category" className="text-4xl text-gray-300 mb-2" />
-          <Text type="secondary">No materials added yet</Text>
-          <br />
-          <Text type="secondary" className="text-sm">
-            Add raw materials used in manufacturing this product
-          </Text>
-        </div>
-      )}
-    </div>
-  );
+  //     {selectedMaterials.length > 0 ? (
+  //       <div>
+  //         <Title level={5}>Selected Materials</Title>
+  //         <Table
+  //           columns={materialColumns}
+  //           dataSource={selectedMaterials}
+  //           rowKey="rawMaterialId"
+  //           pagination={false}
+  //           size="small"
+  //           summary={(pageData) => {
+  //             const totalCost = pageData.reduce((sum, record) => sum + (record.totalCost || 0), 0);
+  //             return (
+  //               <Table.Summary.Row>
+  //                 <Table.Summary.Cell colSpan={3}>
+  //                   <Text strong>Total Material Cost</Text>
+  //                 </Table.Summary.Cell>
+  //                 <Table.Summary.Cell>
+  //                   <Text strong>LKR {totalCost.toFixed(2)}</Text>
+  //                 </Table.Summary.Cell>
+  //                 <Table.Summary.Cell />
+  //               </Table.Summary.Row>
+  //             );
+  //           }}
+  //         />
+  //       </div>
+  //     ) : (
+  //       <div className="text-center py-8 bg-gray-50 rounded-lg">
+  //         <Icon name="category" className="text-4xl text-gray-300 mb-2" />
+  //         <Text type="secondary">No materials added yet</Text>
+  //         <br />
+  //         <Text type="secondary" className="text-sm">
+  //           Add raw materials used in manufacturing this product
+  //         </Text>
+  //       </div>
+  //     )}
+  //   </div>
+  // );
 
   const renderAddons = () => (
     <div className="space-y-6">
@@ -1324,138 +1363,138 @@ export function ProductModal({
     </div>
   );
 
-  const renderSizes = () => (
-    <div className="space-y-6">
-      <div>
-        <Title level={5}>Product Sizes</Title>
-        <Text type="secondary">
-          Create different sizes of this product with unique prices and specifications
-        </Text>
-      </div>
+  // const renderSizes = () => (
+  //   <div className="space-y-6">
+  //     <div>
+  //       <Title level={5}>Product Sizes</Title>
+  //       <Text type="secondary">
+  //         Create different sizes of this product with unique prices and specifications
+  //       </Text>
+  //     </div>
 
-      {hasSizes ? (
-        <>
-          <Card size="small">
-            <Form form={sizesForm} onFinish={handleAddSize} layout="vertical">
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item
-                    name="name"
-                    label="Size Name"
-                    rules={[{ required: true, message: 'Please enter size name' }]}
-                  >
-                    <Input placeholder="e.g., Small, Medium, Large" />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item
-                    name="price"
-                    label="Price (LKR)"
-                    rules={[{ required: true, message: 'Please enter price' }]}
-                  >
-                    <InputNumber
-                      min={0.01}
-                      step={100}
-                      placeholder="0.00"
-                      className="w-full"
-                      formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                      parser={value => value.replace(/LKR\s?|(,*)/g, '')}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item
-                    name="stock"
-                    label="Stock"
-                    rules={[{ required: true, message: 'Please enter stock' }]}
-                  >
-                    <InputNumber
-                      min={0}
-                      placeholder="0"
-                      className="w-full"
-                      step={1}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
+  //     {hasSizes ? (
+  //       <>
+  //         <Card size="small">
+  //           <Form form={sizesForm} onFinish={handleAddSize} layout="vertical">
+  //             <Row gutter={16}>
+  //               <Col span={8}>
+  //                 <Form.Item
+  //                   name="name"
+  //                   label="Size Name"
+  //                   rules={[{ required: true, message: 'Please enter size name' }]}
+  //                 >
+  //                   <Input placeholder="e.g., Small, Medium, Large" />
+  //                 </Form.Item>
+  //               </Col>
+  //               <Col span={8}>
+  //                 <Form.Item
+  //                   name="price"
+  //                   label="Price (LKR)"
+  //                   rules={[{ required: true, message: 'Please enter price' }]}
+  //                 >
+  //                   <InputNumber
+  //                     min={0.01}
+  //                     step={100}
+  //                     placeholder="0.00"
+  //                     className="w-full"
+  //                     formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+  //                     parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+  //                   />
+  //                 </Form.Item>
+  //               </Col>
+  //               <Col span={8}>
+  //                 <Form.Item
+  //                   name="stock"
+  //                   label="Stock"
+  //                   rules={[{ required: true, message: 'Please enter stock' }]}
+  //                 >
+  //                   <InputNumber
+  //                     min={0}
+  //                     placeholder="0"
+  //                     className="w-full"
+  //                     step={1}
+  //                   />
+  //                 </Form.Item>
+  //               </Col>
+  //             </Row>
 
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="weight" label="Weight (kg)">
-                    <InputNumber
-                      min={0}
-                      step={0.1}
-                      placeholder="0.0"
-                      className="w-full"
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item label="Dimensions">
-                    <Input.Group compact>
-                      <Form.Item name={['dimensions', 'length']} noStyle>
-                        <InputNumber placeholder="L" className="w-1/4" min={0} />
-                      </Form.Item>
-                      <Form.Item name={['dimensions', 'width']} noStyle>
-                        <InputNumber placeholder="W" className="w-1/4" min={0} />
-                      </Form.Item>
-                      <Form.Item name={['dimensions', 'height']} noStyle>
-                        <InputNumber placeholder="H" className="w-1/4" min={0} />
-                      </Form.Item>
-                      <Form.Item name={['dimensions', 'unit']} noStyle initialValue="cm">
-                        <Select className="w-1/4">
-                          <Option value="cm">cm</Option>
-                          <Option value="inch">inch</Option>
-                        </Select>
-                      </Form.Item>
-                    </Input.Group>
-                  </Form.Item>
-                </Col>
-              </Row>
+  //             <Row gutter={16}>
+  //               <Col span={12}>
+  //                 <Form.Item name="weight" label="Weight (kg)">
+  //                   <InputNumber
+  //                     min={0}
+  //                     step={0.1}
+  //                     placeholder="0.0"
+  //                     className="w-full"
+  //                   />
+  //                 </Form.Item>
+  //               </Col>
+  //               <Col span={12}>
+  //                 <Form.Item label="Dimensions">
+  //                   <Input.Group compact>
+  //                     <Form.Item name={['dimensions', 'length']} noStyle>
+  //                       <InputNumber placeholder="L" className="w-1/4" min={0} />
+  //                     </Form.Item>
+  //                     <Form.Item name={['dimensions', 'width']} noStyle>
+  //                       <InputNumber placeholder="W" className="w-1/4" min={0} />
+  //                     </Form.Item>
+  //                     <Form.Item name={['dimensions', 'height']} noStyle>
+  //                       <InputNumber placeholder="H" className="w-1/4" min={0} />
+  //                     </Form.Item>
+  //                     <Form.Item name={['dimensions', 'unit']} noStyle initialValue="cm">
+  //                       <Select className="w-1/4">
+  //                         <Option value="cm">cm</Option>
+  //                         <Option value="inch">inch</Option>
+  //                       </Select>
+  //                     </Form.Item>
+  //                   </Input.Group>
+  //                 </Form.Item>
+  //               </Col>
+  //             </Row>
 
-              <Form.Item>
-                <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
-                  Add Size
-                </Button>
-              </Form.Item>
-            </Form>
-          </Card>
+  //             <Form.Item>
+  //               <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
+  //                 Add Size
+  //               </Button>
+  //             </Form.Item>
+  //           </Form>
+  //         </Card>
 
-          {sizes.length > 0 ? (
-            <div>
-              <Title level={5}>Product Sizes ({sizes.length})</Title>
-              <Table
-                columns={sizeColumns}
-                dataSource={sizes}
-                rowKey="id"
-                pagination={false}
-                size="small"
-              />
-            </div>
-          ) : (
-            <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <Icon name="straighten" className="text-4xl text-gray-300 mb-2" />
-              <Text type="secondary">No sizes added yet</Text>
-              <br />
-              <Text type="secondary" className="text-sm">
-                Add sizes to create different options for this product
-              </Text>
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <Icon name="info" className="text-4xl text-gray-300 mb-4" />
-          <Title level={4} type="secondary">Product Sizes Disabled</Title>
-          <Text type="secondary">
-            This product is set as a single product without size variations.
-            <br />
-            Go back to Product Details to enable sizes if needed.
-          </Text>
-        </div>
-      )}
-    </div>
-  );
+  //         {sizes.length > 0 ? (
+  //           <div>
+  //             <Title level={5}>Product Sizes ({sizes.length})</Title>
+  //             <Table
+  //               columns={sizeColumns}
+  //               dataSource={sizes}
+  //               rowKey="id"
+  //               pagination={false}
+  //               size="small"
+  //             />
+  //           </div>
+  //         ) : (
+  //           <div className="text-center py-8 bg-gray-50 rounded-lg">
+  //             <Icon name="straighten" className="text-4xl text-gray-300 mb-2" />
+  //             <Text type="secondary">No sizes added yet</Text>
+  //             <br />
+  //             <Text type="secondary" className="text-sm">
+  //               Add sizes to create different options for this product
+  //             </Text>
+  //           </div>
+  //         )}
+  //       </>
+  //     ) : (
+  //       <div className="text-center py-12 bg-gray-50 rounded-lg">
+  //         <Icon name="info" className="text-4xl text-gray-300 mb-4" />
+  //         <Title level={4} type="secondary">Product Sizes Disabled</Title>
+  //         <Text type="secondary">
+  //           This product is set as a single product without size variations.
+  //           <br />
+  //           Go back to Product Details to enable sizes if needed.
+  //         </Text>
+  //       </div>
+  //     )}
+  //   </div>
+  // );
 
   const steps = getSteps();
 

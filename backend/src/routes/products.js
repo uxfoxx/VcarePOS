@@ -3,6 +3,7 @@ const { body, param, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { authenticate, hasPermission, logAction } = require('../middleware/auth');
 const { handleRouteError, asyncHandler, logDatabaseOperation } = require('../utils/loggerUtils');
+const upload = require('../utils/productUpload');
 
 const router = express.Router();
 
@@ -1109,5 +1110,55 @@ router.put(
  *       500:
  *         description: Server error
  */
+
+
+/**
+ * @route POST /api/products/media
+ * @desc  Upload media files (without product association)
+ */
+router.post('/media', authenticate, hasPermission('products', 'edit'), upload.array('media', 20), async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const insertedFiles = [];
+
+    for (const file of req.files) {
+      const mediaType = file.mimetype.startsWith('image') ? 'image' : 'video';
+      const newId = `MEDIA-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
+      const result = await client.query(`
+        INSERT INTO product_media_files (id, product_id, file_path, media_type, file_name, file_size)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+      `, [
+        newId,
+        null, // no product_id yet
+        `/uploads/products/${file.filename}`,
+        mediaType,
+        file.originalname,
+        file.size
+      ]);
+
+      insertedFiles.push(result.rows[0]);
+    }
+
+    await client.query('COMMIT');
+
+    res.json({ success: true, media: insertedFiles });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to upload media' });
+  } finally {
+    client.release();
+  }
+});
+
+
+
+
+
 
 module.exports = router;

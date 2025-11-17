@@ -1,7 +1,39 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Plus, Minus } from 'lucide-react';
+import gsap from 'gsap';
 
 const AccordionItem = ({ question, answer, isOpen, onToggle }) => {
+  const contentRef = useRef(null);
+  const iconRef = useRef(null);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      if (isOpen) {
+        gsap.to(contentRef.current, {
+          height: 'auto',
+          opacity: 1,
+          duration: 0.4,
+          ease: 'power2.out'
+        });
+      } else {
+        gsap.to(contentRef.current, {
+          height: 0,
+          opacity: 0,
+          duration: 0.3,
+          ease: 'power2.in'
+        });
+      }
+    }
+
+    if (iconRef.current) {
+      gsap.to(iconRef.current, {
+        rotation: isOpen ? 180 : 0,
+        duration: 0.3,
+        ease: 'power2.out'
+      });
+    }
+  }, [isOpen]);
+
   return (
     <div className="border-b border-gray-200 last:border-b-0">
       <button
@@ -10,14 +42,14 @@ const AccordionItem = ({ question, answer, isOpen, onToggle }) => {
         aria-expanded={isOpen}
       >
         <span className="text-lg font-semibold text-gray-900 pr-8">{question}</span>
-        <span className="flex-shrink-0 text-primary-600">
+        <span ref={iconRef} className="flex-shrink-0 text-primary-600">
           {isOpen ? <Minus className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
         </span>
       </button>
       <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-        }`}
+        ref={contentRef}
+        className="overflow-hidden"
+        style={{ height: 0, opacity: 0 }}
       >
         <div className="px-6 pb-6 text-gray-600 leading-relaxed">
           {answer}

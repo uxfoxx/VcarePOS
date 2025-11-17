@@ -13,6 +13,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
+const AUTOPLAY_DELAY = 5000;
+
 const HomePage = () => {
   const dispatch = useDispatch();
   const { products, loading } = useSelector(state => state.products);
@@ -23,12 +25,19 @@ const HomePage = () => {
   const heroRef = useRef(null);
   const carouselRef = useRef(null);
   const carouselImageRef = useRef(null);
+  const carouselTextRef = useRef(null);
   const faqRef = useRef(null);
+  const faqHeadingRef = useRef(null);
   const testimonialsRef = useRef(null);
   const storyRef = useRef(null);
+  const storyTextRef = useRef(null);
+  const storyVideoRef = useRef(null);
   const featuredRef = useRef(null);
+  const featuredHeadingRef = useRef(null);
   const whyChooseRef = useRef(null);
+  const ctaRef = useRef(null);
   const autoplayRef = useRef(null);
+  const carouselTimeline = useRef(null);
 
   const carouselImages = [
     "https://images.pexels.com/photos/667838/pexels-photo-667838.jpeg",
@@ -140,55 +149,42 @@ const HomePage = () => {
       );
     }
 
-    if (faqRef.current) {
-      gsap.fromTo(
-        faqRef.current.querySelectorAll('.faq-item'),
+    if (carouselRef.current && carouselTextRef.current) {
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: carouselRef.current,
+          start: 'top 75%',
+          once: true
+        }
+      });
+
+      tl.fromTo(
+        carouselTextRef.current.querySelector('h2'),
         { opacity: 0, y: 30 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          stagger: 0.1,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: faqRef.current,
-            start: 'top 80%',
-            once: true
-          }
-        }
+        { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }
+      ).fromTo(
+        carouselTextRef.current.querySelector('p'),
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' },
+        '-=0.4'
+      ).fromTo(
+        carouselTextRef.current.querySelector('.carousel-controls'),
+        { opacity: 0, x: -20 },
+        { opacity: 1, x: 0, duration: 0.6, ease: 'power2.out' },
+        '-=0.3'
       );
-    }
 
-    if (testimonialsRef.current) {
       gsap.fromTo(
-        testimonialsRef.current.querySelectorAll('.testimonial-card'),
-        { opacity: 0, x: (index) => (index % 2 === 0 ? -50 : 50) },
+        carouselImageRef.current?.parentElement,
+        { opacity: 0, scale: 0.95, rotateY: -5 },
         {
           opacity: 1,
-          x: 0,
-          duration: 0.8,
-          stagger: 0.15,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: testimonialsRef.current,
-            start: 'top 80%',
-            once: true
-          }
-        }
-      );
-    }
-
-    if (storyRef.current) {
-      gsap.fromTo(
-        storyRef.current,
-        { opacity: 0, y: 40 },
-        {
-          opacity: 1,
-          y: 0,
+          scale: 1,
+          rotateY: 0,
           duration: 1,
-          ease: 'power2.out',
+          ease: 'power3.out',
           scrollTrigger: {
-            trigger: storyRef.current,
+            trigger: carouselRef.current,
             start: 'top 75%',
             once: true
           }
@@ -196,42 +192,336 @@ const HomePage = () => {
       );
     }
 
-    if (featuredRef.current) {
+    if (faqRef.current && faqHeadingRef.current) {
       gsap.fromTo(
-        featuredRef.current.querySelectorAll('.product-card'),
+        faqHeadingRef.current,
         { opacity: 0, y: 40 },
         {
           opacity: 1,
           y: 0,
-          duration: 0.6,
-          stagger: 0.1,
-          ease: 'power2.out',
+          duration: 0.8,
+          ease: 'power3.out',
           scrollTrigger: {
-            trigger: featuredRef.current,
-            start: 'top 80%',
+            trigger: faqRef.current,
+            start: 'top 75%',
             once: true
           }
         }
       );
+
+      const faqItems = faqRef.current.querySelectorAll('.accordion-item');
+      if (faqItems.length > 0) {
+        gsap.fromTo(
+          faqItems,
+          {
+            opacity: 0,
+            y: 30,
+            rotateX: -15
+          },
+          {
+            opacity: 1,
+            y: 0,
+            rotateX: 0,
+            duration: 0.7,
+            stagger: 0.12,
+            ease: 'back.out(1.2)',
+            scrollTrigger: {
+              trigger: faqRef.current,
+              start: 'top 70%',
+              once: true
+            }
+          }
+        );
+      }
+    }
+
+    if (featuredRef.current && featuredHeadingRef.current) {
+      gsap.fromTo(
+        featuredHeadingRef.current,
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: featuredRef.current,
+            start: 'top 75%',
+            once: true
+          }
+        }
+      );
+
+      const productCards = featuredRef.current.querySelectorAll('.product-card');
+      if (productCards.length > 0) {
+        gsap.fromTo(
+          productCards,
+          {
+            opacity: 0,
+            y: 60,
+            scale: 0.9,
+            rotateY: -10
+          },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            rotateY: 0,
+            duration: 0.8,
+            stagger: {
+              amount: 0.6,
+              from: 'start',
+              ease: 'power2.inOut'
+            },
+            ease: 'back.out(1.2)',
+            scrollTrigger: {
+              trigger: featuredRef.current,
+              start: 'top 70%',
+              once: true
+            }
+          }
+        );
+
+        productCards.forEach(card => {
+          card.addEventListener('mouseenter', function() {
+            gsap.to(this, {
+              y: -10,
+              scale: 1.03,
+              duration: 0.4,
+              ease: 'power2.out'
+            });
+          });
+
+          card.addEventListener('mouseleave', function() {
+            gsap.to(this, {
+              y: 0,
+              scale: 1,
+              duration: 0.4,
+              ease: 'power2.out'
+            });
+          });
+        });
+      }
+
+      const viewAllBtn = featuredRef.current.querySelector('.view-all-btn');
+      if (viewAllBtn) {
+        gsap.to(viewAllBtn, {
+          y: -5,
+          duration: 1.5,
+          ease: 'sine.inOut',
+          yoyo: true,
+          repeat: -1
+        });
+      }
+    }
+
+    if (testimonialsRef.current) {
+      const testimonialCards = testimonialsRef.current.querySelectorAll('.testimonial-card');
+      if (testimonialCards.length > 0) {
+        gsap.fromTo(
+          testimonialCards,
+          {
+            opacity: 0,
+            y: 50,
+            rotateZ: (index) => (index % 2 === 0 ? -5 : 5),
+            scale: 0.9
+          },
+          {
+            opacity: 1,
+            y: 0,
+            rotateZ: 0,
+            scale: 1,
+            duration: 0.9,
+            stagger: {
+              amount: 0.8,
+              from: 'start',
+              ease: 'power1.inOut'
+            },
+            ease: 'back.out(1.3)',
+            scrollTrigger: {
+              trigger: testimonialsRef.current,
+              start: 'top 75%',
+              once: true
+            }
+          }
+        );
+
+        testimonialCards.forEach(card => {
+          card.addEventListener('mouseenter', function() {
+            gsap.to(this, {
+              scale: 1.05,
+              rotateZ: gsap.utils.random(-2, 2),
+              duration: 0.3,
+              ease: 'power2.out'
+            });
+          });
+
+          card.addEventListener('mouseleave', function() {
+            gsap.to(this, {
+              scale: 1,
+              rotateZ: 0,
+              duration: 0.3,
+              ease: 'power2.out'
+            });
+          });
+        });
+      }
+    }
+
+    if (storyRef.current && storyTextRef.current && storyVideoRef.current) {
+      const paragraphs = storyTextRef.current.querySelectorAll('p');
+      const heading = storyTextRef.current.querySelector('h2');
+
+      gsap.fromTo(
+        heading,
+        { opacity: 0, x: -40 },
+        {
+          opacity: 1,
+          x: 0,
+          duration: 0.9,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: storyRef.current,
+            start: 'top 70%',
+            once: true
+          }
+        }
+      );
+
+      gsap.fromTo(
+        paragraphs,
+        { opacity: 0, x: -30 },
+        {
+          opacity: 1,
+          x: 0,
+          duration: 0.7,
+          stagger: 0.2,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: storyRef.current,
+            start: 'top 65%',
+            once: true
+          }
+        }
+      );
+
+      gsap.fromTo(
+        storyVideoRef.current,
+        {
+          opacity: 0,
+          x: 40,
+          scale: 0.95
+        },
+        {
+          opacity: 1,
+          x: 0,
+          scale: 1,
+          duration: 1,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: storyRef.current,
+            start: 'top 70%',
+            once: true
+          }
+        }
+      );
+
+      gsap.to(storyVideoRef.current, {
+        y: -20,
+        scrollTrigger: {
+          trigger: storyRef.current,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 1
+        }
+      });
     }
 
     if (whyChooseRef.current) {
+      const featureCards = whyChooseRef.current.querySelectorAll('.feature-card');
+      if (featureCards.length > 0) {
+        gsap.fromTo(
+          featureCards,
+          {
+            opacity: 0,
+            y: 50,
+            scale: 0.8
+          },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.9,
+            stagger: 0.2,
+            ease: 'elastic.out(1, 0.6)',
+            scrollTrigger: {
+              trigger: whyChooseRef.current,
+              start: 'top 75%',
+              once: true
+            }
+          }
+        );
+
+        featureCards.forEach(card => {
+          const icon = card.querySelector('.feature-icon');
+          if (icon) {
+            gsap.to(icon, {
+              y: -8,
+              duration: 2,
+              ease: 'sine.inOut',
+              yoyo: true,
+              repeat: -1
+            });
+          }
+
+          card.addEventListener('mouseenter', function() {
+            gsap.to(this, {
+              y: -12,
+              scale: 1.05,
+              duration: 0.4,
+              ease: 'power2.out'
+            });
+          });
+
+          card.addEventListener('mouseleave', function() {
+            gsap.to(this, {
+              y: 0,
+              scale: 1,
+              duration: 0.4,
+              ease: 'power2.out'
+            });
+          });
+        });
+      }
+    }
+
+    if (ctaRef.current) {
       gsap.fromTo(
-        whyChooseRef.current.querySelectorAll('.feature-card'),
-        { opacity: 0, scale: 0.9 },
+        ctaRef.current,
+        { opacity: 0, scale: 0.95 },
         {
           opacity: 1,
           scale: 1,
-          duration: 0.7,
-          stagger: 0.15,
-          ease: 'back.out(1.4)',
+          duration: 0.8,
+          ease: 'power3.out',
           scrollTrigger: {
-            trigger: whyChooseRef.current,
-            start: 'top 80%',
+            trigger: ctaRef.current,
+            start: 'top 85%',
             once: true
           }
         }
       );
+
+      const ctaBtn = ctaRef.current.querySelector('.cta-button');
+      if (ctaBtn) {
+        gsap.to(ctaBtn, {
+          scale: 1.05,
+          duration: 1.2,
+          ease: 'sine.inOut',
+          yoyo: true,
+          repeat: -1
+        });
+      }
     }
 
     return () => {
@@ -243,7 +533,7 @@ const HomePage = () => {
     if (!isPaused) {
       autoplayRef.current = setInterval(() => {
         nextSlide();
-      }, 3000);
+      }, AUTOPLAY_DELAY);
     }
 
     return () => {
@@ -265,11 +555,36 @@ const HomePage = () => {
 
   const animateCarousel = () => {
     if (carouselImageRef.current) {
-      gsap.fromTo(
-        carouselImageRef.current,
-        { opacity: 0, scale: 1.1 },
-        { opacity: 1, scale: 1, duration: 0.7, ease: 'power2.out' }
-      );
+      if (carouselTimeline.current) {
+        carouselTimeline.current.kill();
+      }
+
+      carouselTimeline.current = gsap.timeline();
+
+      carouselTimeline.current
+        .fromTo(
+          carouselImageRef.current,
+          {
+            opacity: 0,
+            scale: 1.15,
+            filter: 'blur(8px)'
+          },
+          {
+            opacity: 1,
+            scale: 1.05,
+            filter: 'blur(0px)',
+            duration: 0.8,
+            ease: 'power3.out'
+          }
+        )
+        .to(
+          carouselImageRef.current,
+          {
+            scale: 1,
+            duration: AUTOPLAY_DELAY / 1000 - 0.8,
+            ease: 'none'
+          }
+        );
     }
   };
 
@@ -278,10 +593,16 @@ const HomePage = () => {
     if (autoplayRef.current) {
       clearInterval(autoplayRef.current);
     }
+    if (carouselTimeline.current) {
+      carouselTimeline.current.pause();
+    }
   };
 
   const handleCarouselMouseLeave = () => {
     setIsPaused(false);
+    if (carouselTimeline.current) {
+      carouselTimeline.current.play();
+    }
   };
 
   const featuredProducts = products.slice(0, 8);
@@ -321,7 +642,7 @@ const HomePage = () => {
         className="max-w-[1400px] mx-auto py-16 px-4 sm:px-6 lg:px-8"
       >
         <div className="grid md:grid-cols-2 items-center gap-12">
-          <div>
+          <div ref={carouselTextRef}>
             <h2 className="text-4xl font-bold mb-4 text-gray-900">
               Our Desks Are Built Different
             </h2>
@@ -330,7 +651,7 @@ const HomePage = () => {
               powerful, our award-winning desks come with quality you can feel.
             </p>
 
-            <div className="flex items-center space-x-4">
+            <div className="carousel-controls flex items-center space-x-4">
               <button
                 onClick={prevSlide}
                 className="w-12 h-12 flex items-center justify-center rounded-full border-2 border-gray-300 hover:bg-primary-600 hover:border-primary-600 hover:text-white transition-all duration-200"
@@ -377,7 +698,7 @@ const HomePage = () => {
 
       <section ref={faqRef} className="py-20 bg-gray-50">
         <div className="max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div ref={faqHeadingRef} className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
               Frequently Asked Questions
             </h2>
@@ -385,7 +706,7 @@ const HomePage = () => {
               Everything you need to know about our furniture and services
             </p>
           </div>
-          <div className="faq-item">
+          <div className="accordion-item">
             <Accordion items={faqData} />
           </div>
         </div>
@@ -393,7 +714,7 @@ const HomePage = () => {
 
       <section className="py-16 bg-white" ref={featuredRef}>
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div ref={featuredHeadingRef} className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Products</h2>
             <p className="text-lg text-gray-600">Discover our most popular furniture pieces</p>
           </div>
@@ -415,7 +736,7 @@ const HomePage = () => {
           <div className="text-center mt-12">
             <Link
               to="/products"
-              className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200"
+              className="view-all-btn inline-block bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200"
             >
               View All Products
             </Link>
@@ -446,7 +767,7 @@ const HomePage = () => {
       <section ref={storyRef} className="py-20 bg-white">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
+            <div ref={storyTextRef}>
               <h2 className="text-4xl font-bold text-gray-900 mb-6">
                 Our Story
               </h2>
@@ -460,7 +781,7 @@ const HomePage = () => {
                 Today, we're proud to serve thousands of satisfied customers across the country, helping them create spaces they love to live in.
               </p>
             </div>
-            <div>
+            <div ref={storyVideoRef}>
               <YouTubeEmbed
                 videoId="jU0sUJVIwDk"
                 title="VCare Furniture Story - Furniture Showroom Tour"
@@ -483,7 +804,7 @@ const HomePage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div className="feature-card group bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 text-center">
-              <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-5 transform group-hover:scale-110 transition duration-300">
+              <div className="feature-icon w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-5 transform group-hover:scale-110 transition duration-300">
                 <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
@@ -493,7 +814,7 @@ const HomePage = () => {
             </div>
 
             <div className="feature-card group bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 text-center">
-              <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-5 transform group-hover:scale-110 transition duration-300">
+              <div className="feature-icon w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-5 transform group-hover:scale-110 transition duration-300">
                 <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
@@ -503,7 +824,7 @@ const HomePage = () => {
             </div>
 
             <div className="feature-card group bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 text-center">
-              <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-5 transform group-hover:scale-110 transition duration-300">
+              <div className="feature-icon w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-5 transform group-hover:scale-110 transition duration-300">
                 <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -515,7 +836,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="py-16 bg-primary-600 text-white">
+      <section ref={ctaRef} className="py-16 bg-primary-600 text-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Space?</h2>
           <p className="text-xl mb-8 text-primary-100">
@@ -523,7 +844,7 @@ const HomePage = () => {
           </p>
           <Link
             to="/products"
-            className="inline-block bg-white text-primary-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+            className="cta-button inline-block bg-white text-primary-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200"
           >
             Start Shopping
           </Link>

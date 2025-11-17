@@ -19,6 +19,7 @@ import {
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { BrandingSettings } from './BrandingSettings';
+import { InvoiceSettings } from './InvoiceSettings';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -32,10 +33,11 @@ export function SettingsPanel() {
   const sections = [
     { key: 'general', label: 'General', icon: <Icon name="settings" /> },
     { key: 'branding', label: 'Branding', icon: <Icon name="branding_watermark" /> },
+    { key: 'invoice', label: 'Invoice Settings', icon: <Icon name="receipt" /> },
     { key: 'store', label: 'Store Info', icon: <Icon name="store" /> },
     { key: 'users', label: 'User Management', icon: <Icon name="people" /> },
     { key: 'payment', label: 'Payment Methods', icon: <Icon name="payment" /> },
-    { key: 'notifications', label: 'Notifications', icon: <Icon name="notifications" /> },    
+    { key: 'notifications', label: 'Notifications', icon: <Icon name="notifications" /> },
     { key: 'security', label: 'Security', icon: <Icon name="security" /> },
     { key: 'hardware', label: 'Hardware', icon: <Icon name="print" /> }
   ];
@@ -99,12 +101,18 @@ export function SettingsPanel() {
     <BrandingSettings />
   );
 
+  const renderInvoiceSettings = () => (
+    <InvoiceSettings />
+  );
+
   const renderContent = () => {
     switch (activeSection) {
       case 'general':
         return renderGeneralSettings();
       case 'branding':
         return renderBrandingSettings();
+      case 'invoice':
+        return renderInvoiceSettings();
       default:
         return (
           <div className="text-center py-12">

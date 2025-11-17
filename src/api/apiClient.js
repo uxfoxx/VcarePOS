@@ -518,35 +518,35 @@ export const ecommerceOrdersApi = {
   getAll: async () => {
     return apiRequest('/ecommerce/orders');
   },
-  
+
   getById: async (orderId) => {
     return apiRequest(`/ecommerce/orders/${orderId}`);
   },
-  
+
   updateStatus: async (orderId, status, notes) => {
     return apiRequest(`/ecommerce/orders/${orderId}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status, notes })
     });
   },
-  
+
   getReceiptBlob: async (filename) => {
     // Get token from localStorage
     const token = localStorage.getItem('vcare_token');
-    
+
     // Create AbortController for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
-    
+
     try {
       const response = await fetch(`${API_URL}/ecommerce/receipts/${filename}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         signal: controller.signal
       });
-      
+
       // Clear timeout
       clearTimeout(timeoutId);
-      
+
       // Handle 401 Unauthorized specifically
       if (response.status === 401) {
         handleAuthError();
@@ -555,23 +555,34 @@ export const ecommerceOrdersApi = {
           401
         );
       }
-      
+
       if (!response.ok) {
         throw createApiError(
-          `Failed to fetch receipt: ${response.statusText}`, 
+          `Failed to fetch receipt: ${response.statusText}`,
           response.status
         );
       }
-      
+
       return response.blob();
     } catch (error) {
       clearTimeout(timeoutId);
-      
+
       if (error.name === 'AbortError') {
         throw createApiError('Request timeout', 408);
       }
-      
+
       throw error;
     }
   }
 };
+
+// Default export with generic API methods
+const apiClient = {
+  get: async (endpoint) => apiRequest(endpoint),
+  post: async (endpoint, data) => apiRequest(endpoint, { method: 'POST', body: JSON.stringify(data) }),
+  put: async (endpoint, data) => apiRequest(endpoint, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: async (endpoint) => apiRequest(endpoint, { method: 'DELETE' }),
+  patch: async (endpoint, data) => apiRequest(endpoint, { method: 'PATCH', body: JSON.stringify(data) })
+};
+
+export default apiClient;

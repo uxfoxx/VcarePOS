@@ -2,6 +2,28 @@ import React, { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
+const convertImageToBase64 = (url) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      try {
+        const dataURL = canvas.toDataURL('image/png');
+        resolve(dataURL);
+      } catch (error) {
+        reject(error);
+      }
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+};
+
 const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
   const [invoiceConfig, setInvoiceConfig] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -30,9 +52,9 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
       } else {
         setInvoiceConfig({
           settings: {
-            business_name: 'VCare Furniture Store',
-            business_address: '1100/1, Pannipitiya Road, Battaramulla, Sri Lanka',
-            phone_number: '+94 76 767 5044'
+            business_name: '',
+            business_address: '',
+            phone_number: ''
           },
           bankAccount: null,
           notesTemplate: null
@@ -42,9 +64,9 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
       console.error('Error fetching invoice configuration:', error);
       setInvoiceConfig({
         settings: {
-          business_name: 'VCare Furniture Store',
-          business_address: '1100/1, Pannipitiya Road, Battaramulla, Sri Lanka',
-          phone_number: '+94 76 767 5044'
+          business_name: '',
+          business_address: '',
+          phone_number: ''
         },
         bankAccount: null,
         notesTemplate: null
@@ -52,27 +74,39 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
     }
   };
 
-  const handleDownload = async () => {
-    setLoading(true);
+  const generatePDF = async () => {
     const element = document.getElementById('ecommerce-invoice-content');
     if (!element) {
       console.error('Invoice content element not found');
-      setLoading(false);
-      return;
+      return null;
     }
 
     try {
+      const logoElements = element.querySelectorAll('img');
+      for (let img of logoElements) {
+        try {
+          const base64Image = await convertImageToBase64(img.src);
+          img.src = base64Image;
+        } catch (error) {
+          console.warn('Failed to convert image to base64:', error);
+        }
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
         backgroundColor: '#ffffff',
         width: element.scrollWidth,
-        height: element.scrollHeight
+        height: element.scrollHeight,
+        logging: false,
+        imageTimeout: 0
       });
 
       const imgWidth = 210;
-      const pageHeight = 295;
+      const pageHeight = 297;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
 
@@ -89,10 +123,24 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
         heightLeft -= pageHeight;
       }
 
-      const filename = `invoice-${order.id}.pdf`;
-      pdf.save(filename);
+      return pdf;
     } catch (error) {
       console.error('Error generating PDF:', error);
+      throw error;
+    }
+  };
+
+  const handleDownload = async () => {
+    setLoading(true);
+    try {
+      const pdf = await generatePDF();
+      if (pdf) {
+        const filename = `invoice-${order.id}.pdf`;
+        pdf.save(filename);
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to download PDF');
     } finally {
       setLoading(false);
     }
@@ -104,9 +152,9 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
 
   if (!isOpen || !order) return null;
 
-  const businessName = invoiceConfig?.settings?.business_name || 'VCare Furniture Store';
-  const businessAddress = invoiceConfig?.settings?.business_address || '1100/1, Pannipitiya Road, Battaramulla, Sri Lanka';
-  const phoneNumber = invoiceConfig?.settings?.phone_number || '+94 76 767 5044';
+  const businessName = invoiceConfig?.settings?.business_name || '';
+  const businessAddress = invoiceConfig?.settings?.business_address || '';
+  const phoneNumber = invoiceConfig?.settings?.phone_number || '';
 
   const subtotal = order.totalAmount || order.items.reduce((sum, item) => sum + (item.totalPrice || item.unitPrice * item.quantity), 0);
   const discount = 0;
@@ -132,6 +180,10 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
           .invoice-modal-overlay {
             display: none !important;
           }
+        }
+        @page {
+          size: A4;
+          margin: 0;
         }
       `}</style>
 
@@ -164,169 +216,177 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
             </div>
           </div>
 
-          <div id="ecommerce-invoice-content" className="p-8" style={{ fontFamily: 'Arial, sans-serif' }}>
-            {/* Header */}
-            <div className="mb-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-4">
-                  <img
-                    src="/VCARELogo 1.png"
-                    alt="Business Logo"
-                    className="h-16 object-contain"
-                  />
-                  <div>
-                    <h1 className="text-4xl font-bold text-blue-600 m-0">
-                      {businessName}
+          <div
+            id="ecommerce-invoice-content"
+            className="bg-white"
+            style={{
+              fontFamily: 'Arial, sans-serif',
+              width: '210mm',
+              minHeight: '297mm',
+              position: 'relative',
+              padding: '10mm',
+              boxSizing: 'border-box',
+              margin: '0 auto'
+            }}
+          >
+            <div style={{ minHeight: 'calc(297mm - 60px)', paddingBottom: '20px' }}>
+              <div className="mb-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-4">
+                    <img
+                      src="/VCARELogo 1.png"
+                      alt="Business Logo"
+                      className="h-16 object-contain"
+                      crossOrigin="anonymous"
+                    />
+                    <div>
+                      <h1 className="text-3xl font-bold text-blue-600 m-0" style={{ fontSize: '28px' }}>
+                        {businessName}
+                      </h1>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <h1 className="text-4xl font-bold text-black m-0" style={{ fontSize: '36px' }}>
+                      INVOICE
                     </h1>
                   </div>
                 </div>
-                <div className="text-right">
-                  <h1 className="text-5xl font-bold text-black m-0">
-                    INVOICE
-                  </h1>
-                </div>
               </div>
-              <div className="border-t-2 border-gray-200 my-3"></div>
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>{phoneNumber}</span>
-                <span>{businessAddress}</span>
-              </div>
-            </div>
 
-            {/* Invoice Details and Customer Info */}
-            <div className="grid grid-cols-2 gap-8 mb-6">
-              <div>
-                <p className="font-bold mb-2">Invoice to:</p>
-                <p className="font-bold text-base">{order.customerName}</p>
-                {order.customerAddress && <p className="text-sm text-gray-600">{order.customerAddress}</p>}
-                {order.customerEmail && <p className="text-sm text-gray-600">{order.customerEmail}</p>}
-                {order.customerPhone && <p className="text-sm text-gray-600">{order.customerPhone}</p>}
-              </div>
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span className="font-bold">Date Issued:</span>
-                  <span>{new Date(order.createdAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}</span>
+              <div className="grid grid-cols-2 gap-8 mb-6">
+                <div>
+                  <p className="font-bold mb-2">Invoice to:</p>
+                  <p className="font-bold text-base m-0">{order.customerName}</p>
+                  {order.customerAddress && <p className="text-sm text-gray-600 m-0">{order.customerAddress}</p>}
+                  {order.customerEmail && <p className="text-sm text-gray-600 m-0">{order.customerEmail}</p>}
+                  {order.customerPhone && <p className="text-sm text-gray-600 m-0">{order.customerPhone}</p>}
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-bold">No:</span>
-                  <span className="font-mono text-base">{order.id}</span>
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <span className="font-bold">Date Issued:</span>
+                    <span>{new Date(order.createdAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-bold">No:</span>
+                    <span className="font-mono text-base">{order.id}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Items Table */}
-            <table className="w-full border-collapse" style={{ marginTop: '24px' }}>
-              <thead>
-                <tr style={{ background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)' }}>
-                  <th className="p-3 text-left text-white font-bold" style={{ width: '55%' }}>DESCRIPTION</th>
-                  <th className="p-3 text-center text-white font-bold" style={{ width: '15%' }}>QTY</th>
-                  <th className="p-3 text-right text-white font-bold" style={{ width: '30%' }}>AMOUNT</th>
-                </tr>
-              </thead>
-              <tbody>
-                {order.items.map((item, index) => (
-                  <tr key={index} className="border-b border-gray-200">
-                    <td className="p-4">
-                      <div>
-                        <p className="font-bold text-base m-0">{item.productName}</p>
-                        {(item.selectedColorId || item.selectedSize) && (
-                          <p className="text-sm text-gray-500 mt-1 m-0">
-                            {item.selectedColorId && `Color: ${item.selectedColorId}`}
-                            {item.selectedColorId && item.selectedSize && ' • '}
-                            {item.selectedSize && `Size: ${item.selectedSize}`}
-                          </p>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4 text-center">
-                      <span className="text-base">{item.quantity}NOS</span>
-                    </td>
-                    <td className="p-4 text-right">
-                      <span className="text-base font-medium">
-                        {((item.unitPrice || 0) * item.quantity).toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        })}
-                      </span>
-                    </td>
+              <table className="w-full border-collapse" style={{ marginTop: '24px' }}>
+                <thead>
+                  <tr style={{ background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)' }}>
+                    <th className="p-3 text-left text-white font-bold" style={{ width: '55%' }}>DESCRIPTION</th>
+                    <th className="p-3 text-center text-white font-bold" style={{ width: '15%' }}>QTY</th>
+                    <th className="p-3 text-right text-white font-bold" style={{ width: '30%' }}>AMOUNT</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {order.items.map((item, index) => (
+                    <tr key={index} className="border-b border-gray-200">
+                      <td className="p-4">
+                        <div>
+                          <p className="font-bold text-base m-0">{item.productName}</p>
+                          {(item.selectedColorId || item.selectedSize) && (
+                            <p className="text-sm text-gray-500 mt-1 m-0">
+                              {item.selectedColorId && `Color: ${item.selectedColorId}`}
+                              {item.selectedColorId && item.selectedSize && ' • '}
+                              {item.selectedSize && `Size: ${item.selectedSize}`}
+                            </p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4 text-center">
+                        <span className="text-base">{item.quantity}NOS</span>
+                      </td>
+                      <td className="p-4 text-right">
+                        <span className="text-base font-medium">
+                          {((item.unitPrice || 0) * item.quantity).toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-            {/* Payment Summary */}
-            <div className="mt-6 flex justify-end">
-              <div className="w-1/2 space-y-2">
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-base">TOTAL</span>
-                  <span className="text-base font-medium">
-                    {subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </div>
-                {discount > 0 && (
+              <div className="mt-6 flex justify-end">
+                <div className="w-1/2 space-y-2">
                   <div className="flex justify-between py-2 border-b">
-                    <span className="text-base">DISCOUNT</span>
+                    <span className="text-base">TOTAL</span>
                     <span className="text-base font-medium">
-                      {discount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
-                )}
-                <div className="flex justify-between py-2 border-b-2 border-gray-800">
-                  <span className="font-bold text-base">GRAND TOTAL</span>
-                  <span className="font-bold text-base">
-                    {grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
+                  {discount > 0 && (
+                    <div className="flex justify-between py-2 border-b">
+                      <span className="text-base">DISCOUNT</span>
+                      <span className="text-base font-medium">
+                        {discount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-2 border-b-2 border-gray-800">
+                    <span className="font-bold text-base">GRAND TOTAL</span>
+                    <span className="font-bold text-base">
+                      {grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
                 </div>
               </div>
+
+              {invoiceConfig?.bankAccount && order.paymentMethod === 'bank_transfer' && (
+                <div className="mt-8">
+                  <h3 className="text-base font-bold mb-3">Account details</h3>
+                  <div className="space-y-1">
+                    <p className="text-base m-0">{invoiceConfig.bankAccount.account_holder_name}</p>
+                    <p className="text-base m-0">{invoiceConfig.bankAccount.account_number}</p>
+                    <p className="text-base m-0">
+                      {invoiceConfig.bankAccount.bank_name} {invoiceConfig.bankAccount.branch_name}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {invoiceConfig?.notesTemplate && (
+                <div className="mt-8">
+                  <h3 className="text-base font-bold mb-3">Note:-</h3>
+                  <div className="space-y-2">
+                    {invoiceConfig.notesTemplate.warranty_terms && (
+                      <p className="text-sm text-gray-700 m-0" style={{ lineHeight: '1.6' }}>
+                        {invoiceConfig.notesTemplate.warranty_terms}
+                      </p>
+                    )}
+                    {invoiceConfig.notesTemplate.quotation_validity && (
+                      <p className="text-sm text-gray-700 mt-2 m-0" style={{ lineHeight: '1.6' }}>
+                        {invoiceConfig.notesTemplate.quotation_validity}
+                      </p>
+                    )}
+                    {invoiceConfig.notesTemplate.custom_notes && (
+                      <p className="text-sm text-gray-700 mt-2 m-0" style={{ lineHeight: '1.6' }}>
+                        {invoiceConfig.notesTemplate.custom_notes}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Bank Account Details */}
-            {invoiceConfig?.bankAccount && order.paymentMethod === 'bank_transfer' && (
-              <div className="mt-8">
-                <h3 className="text-base font-bold mb-3">Account details</h3>
-                <div className="space-y-1">
-                  <p className="text-base m-0">{invoiceConfig.bankAccount.account_holder_name}</p>
-                  <p className="text-base m-0">{invoiceConfig.bankAccount.account_number}</p>
-                  <p className="text-base m-0">
-                    {invoiceConfig.bankAccount.bank_name} {invoiceConfig.bankAccount.branch_name}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Notes */}
-            {invoiceConfig?.notesTemplate && (
-              <div className="mt-8">
-                <h3 className="text-base font-bold mb-3">Note:-</h3>
-                <div className="space-y-2">
-                  {invoiceConfig.notesTemplate.warranty_terms && (
-                    <p className="text-sm text-gray-700 m-0" style={{ lineHeight: '1.6' }}>
-                      {invoiceConfig.notesTemplate.warranty_terms}
-                    </p>
-                  )}
-                  {invoiceConfig.notesTemplate.quotation_validity && (
-                    <p className="text-sm text-gray-700 mt-2 m-0" style={{ lineHeight: '1.6' }}>
-                      {invoiceConfig.notesTemplate.quotation_validity}
-                    </p>
-                  )}
-                  {invoiceConfig.notesTemplate.custom_notes && (
-                    <p className="text-sm text-gray-700 mt-2 m-0" style={{ lineHeight: '1.6' }}>
-                      {invoiceConfig.notesTemplate.custom_notes}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Footer */}
             <div
-              className="mt-8 -mx-8 -mb-8 p-4 text-center text-white"
+              className="p-4 text-center text-white"
               style={{
                 background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '40px'
+                gap: '40px',
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                width: '100%'
               }}
             >
               <div className="flex items-center">

@@ -3,7 +3,7 @@ import { Typography, Divider } from 'antd';
 
 const { Title, Text } = Typography;
 
-export const InvoiceHeader = ({ businessName, businessAddress, phoneNumber, logoPreview }) => (
+export const InvoiceHeader = ({ businessName, logoPreview }) => (
   <div className="mb-6">
     <div className="flex items-start justify-between">
       <div className="flex items-center space-x-4">
@@ -11,23 +11,19 @@ export const InvoiceHeader = ({ businessName, businessAddress, phoneNumber, logo
           src={logoPreview || (localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview) || "/VCARELogo 1.png"}
           alt="Business Logo"
           className="h-16 object-contain"
+          crossOrigin="anonymous"
         />
         <div>
-          <Title level={2} className="m-0 text-blue-600" style={{ fontSize: '32px', fontWeight: 'bold' }}>
-            {businessName || 'VCare Furniture Store'}
+          <Title level={2} className="m-0 text-blue-600" style={{ fontSize: '28px', fontWeight: 'bold' }}>
+            {businessName}
           </Title>
         </div>
       </div>
       <div className="text-right">
-        <Title level={1} className="m-0" style={{ fontSize: '48px', fontWeight: 'bold', color: '#000' }}>
+        <Title level={1} className="m-0" style={{ fontSize: '36px', fontWeight: 'bold', color: '#000' }}>
           INVOICE
         </Title>
       </div>
-    </div>
-    <Divider className="my-3" style={{ borderTop: '2px solid #e5e7eb' }} />
-    <div className="flex justify-between text-sm">
-      <Text className="text-gray-600">{phoneNumber || '+94 76 767 5044'}</Text>
-      <Text className="text-gray-600">{businessAddress || '1100/1, Pannipitiya Road, Battaramulla, Sri Lanka'}</Text>
     </div>
   </div>
 );
@@ -202,24 +198,29 @@ export const InvoiceNotes = ({ notesTemplate }) => {
   );
 };
 
-export const InvoiceFooter = ({ businessName, businessAddress, phoneNumber }) => (
+export const InvoiceFooter = ({ businessAddress, phoneNumber }) => (
   <div
-    className="mt-8 -mx-8 -mb-8 p-4 text-center text-white"
+    className="p-4 text-center text-white"
     style={{
       background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: '40px'
+      gap: '40px',
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      width: '100%'
     }}
   >
     <div className="flex items-center">
       <span className="material-icons mr-2">phone</span>
-      <Text className="text-white text-sm">{phoneNumber || '+94 76 767 5044'}</Text>
+      <Text className="text-white text-sm">{phoneNumber}</Text>
     </div>
     <div className="flex items-center">
       <span className="material-icons mr-2">location_on</span>
-      <Text className="text-white text-sm">{businessAddress || '1100/1, Pannipitiya Road, Battaramulla, Sri Lanka'}</Text>
+      <Text className="text-white text-sm">{businessAddress}</Text>
     </div>
   </div>
 );

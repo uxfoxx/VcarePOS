@@ -18,6 +18,28 @@ import apiClient from '../../api/apiClient';
 
 const { Title, Text } = Typography;
 
+const convertImageToBase64 = (url) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      try {
+        const dataURL = canvas.toDataURL('image/png');
+        resolve(dataURL);
+      } catch (error) {
+        reject(error);
+      }
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+};
+
 export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) {
   const [loading, setLoading] = useState(false);
   const [invoiceConfig, setInvoiceConfig] = useState(null);
@@ -34,12 +56,11 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
       setInvoiceConfig(response.data);
     } catch (error) {
       console.error('Error fetching invoice configuration:', error);
-      // Use default configuration if fetch fails
       setInvoiceConfig({
         settings: {
-          business_name: 'VCare Furniture Store',
-          business_address: '1100/1, Pannipitiya Road, Battaramulla, Sri Lanka',
-          phone_number: '+94 76 767 5044'
+          business_name: '',
+          business_address: '',
+          phone_number: ''
         },
         bankAccount: null,
         notesTemplate: null
@@ -62,8 +83,8 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
     printContainer.style.top = '0';
     printContainer.style.left = '0';
     printContainer.style.width = '210mm';
-    printContainer.style.height = 'auto';
-    printContainer.style.padding = '8mm';
+    printContainer.style.minHeight = '297mm';
+    printContainer.style.padding = '0';
     printContainer.style.backgroundColor = '#ffffff';
 
     const clonedContent = element.cloneNode(true);
@@ -74,7 +95,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
     clonedContent.offsetHeight;
     clonedContent.style.display = 'block';
 
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
     try {
       window.print();
@@ -85,27 +106,42 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
     }
   };
 
-  const handleView = async () => {
-    setLoading(true);
+  const generatePDF = async () => {
     const element = document.getElementById('invoice-content');
     if (!element) {
       console.error('Invoice content element not found');
-      setLoading(false);
-      return;
+      return null;
     }
 
     try {
+      const savedBranding = localStorage.getItem('vcare_branding') ? JSON.parse(localStorage.getItem('vcare_branding')) : null;
+      const logoPreview = invoiceConfig?.settings?.logo_url || savedBranding?.logoPreview || '/VCARELogo 1.png';
+
+      const logoElements = element.querySelectorAll('img');
+      for (let img of logoElements) {
+        try {
+          const base64Image = await convertImageToBase64(img.src);
+          img.src = base64Image;
+        } catch (error) {
+          console.warn('Failed to convert image to base64:', error);
+        }
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
         backgroundColor: '#ffffff',
         width: element.scrollWidth,
-        height: element.scrollHeight
+        height: element.scrollHeight,
+        logging: false,
+        imageTimeout: 0
       });
 
       const imgWidth = 210;
-      const pageHeight = 295;
+      const pageHeight = 297;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
 
@@ -122,12 +158,25 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
         heightLeft -= pageHeight;
       }
 
-      const pdfBlob = pdf.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      window.open(pdfUrl, '_blank');
+      return pdf;
     } catch (error) {
       console.error('Error generating PDF:', error);
-      handlePrint();
+      throw error;
+    }
+  };
+
+  const handleView = async () => {
+    setLoading(true);
+    try {
+      const pdf = await generatePDF();
+      if (pdf) {
+        const pdfBlob = pdf.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Error viewing PDF:', error);
+      message.error('Failed to generate PDF preview');
     } finally {
       setLoading(false);
     }
@@ -135,46 +184,15 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
 
   const handleDownload = async () => {
     setLoading(true);
-    const element = document.getElementById('invoice-content');
-    if (!element) {
-      console.error('Invoice content element not found');
-      setLoading(false);
-      return;
-    }
-
     try {
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: element.scrollWidth,
-        height: element.scrollHeight
-      });
-
-      const imgWidth = 210;
-      const pageHeight = 295;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      let position = 0;
-
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+      const pdf = await generatePDF();
+      if (pdf) {
+        const filename = `invoice-${transaction.id}.pdf`;
+        pdf.save(filename);
       }
-
-      const filename = `invoice-${transaction.id}.pdf`;
-      pdf.save(filename);
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      handlePrint();
+      console.error('Error downloading PDF:', error);
+      message.error('Failed to download PDF');
     } finally {
       setLoading(false);
     }
@@ -185,71 +203,81 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
 
     const businessName = invoiceConfig?.settings?.business_name ||
       savedBranding?.businessName ||
-      'VCare Furniture Store';
+      '';
 
     const businessAddress = invoiceConfig?.settings?.business_address ||
       savedBranding?.address ||
-      '1100/1, Pannipitiya Road, Battaramulla, Sri Lanka';
+      '';
 
     const phoneNumber = invoiceConfig?.settings?.phone_number ||
       savedBranding?.phoneNumber ||
-      '+94 76 767 5044';
+      '';
 
     const logoPreview = invoiceConfig?.settings?.logo_url ||
       savedBranding?.logoPreview ||
       '/VCARELogo 1.png';
 
     return (
-      <div id="invoice-content" className="p-8 bg-white" style={{ fontFamily: 'Arial, sans-serif' }}>
-        <InvoiceHeader
-          businessName={businessName}
-          businessAddress={businessAddress}
-          phoneNumber={phoneNumber}
-          logoPreview={logoPreview}
-        />
+      <div
+        id="invoice-content"
+        className="bg-white"
+        style={{
+          fontFamily: 'Arial, sans-serif',
+          width: '210mm',
+          minHeight: '297mm',
+          position: 'relative',
+          padding: '10mm',
+          boxSizing: 'border-box'
+        }}
+      >
+        <div style={{ minHeight: 'calc(297mm - 60px)', paddingBottom: '20px' }}>
+          <InvoiceHeader
+            businessName={businessName}
+            logoPreview={logoPreview}
+          />
 
-        <Row gutter={32} className="mb-6">
-          <Col span={12}>
-            <InvoiceCustomerSection
-              customerName={transaction.customerName}
-              customerAddress={transaction.customerAddress}
-              customerEmail={transaction.customerEmail}
-              customerPhone={transaction.customerPhone}
-            />
-          </Col>
-          <Col span={12}>
-            <InvoiceDetails
-              invoiceNumber={transaction.id}
-              dateIssued={new Date(transaction.timestamp).toLocaleDateString('en-US', {
-                month: '2-digit',
-                day: '2-digit',
-                year: 'numeric'
-              })}
-            />
-          </Col>
-        </Row>
+          <Row gutter={32} className="mb-6">
+            <Col span={12}>
+              <InvoiceCustomerSection
+                customerName={transaction.customerName}
+                customerAddress={transaction.customerAddress}
+                customerEmail={transaction.customerEmail}
+                customerPhone={transaction.customerPhone}
+              />
+            </Col>
+            <Col span={12}>
+              <InvoiceDetails
+                invoiceNumber={transaction.id}
+                dateIssued={new Date(transaction.timestamp).toLocaleDateString('en-US', {
+                  month: '2-digit',
+                  day: '2-digit',
+                  year: 'numeric'
+                })}
+              />
+            </Col>
+          </Row>
 
-        <InvoiceItemsTable items={transaction.items} />
+          <InvoiceItemsTable items={transaction.items} />
 
-        <InvoicePaymentSummary
-          subtotal={transaction.subtotal}
-          discount={transaction.discount || 0}
-          grandTotal={transaction.total}
-          advancedPayment={transaction.advancedPayment || 0}
-          balancePayment={transaction.balancePayment || 0}
-          tax={transaction.totalTax || 0}
-        />
+          <InvoicePaymentSummary
+            subtotal={transaction.subtotal}
+            discount={transaction.discount || 0}
+            grandTotal={transaction.total}
+            advancedPayment={transaction.advancedPayment || 0}
+            balancePayment={transaction.balancePayment || 0}
+            tax={transaction.totalTax || 0}
+          />
 
-        {invoiceConfig?.bankAccount && (
-          <InvoiceAccountDetails bankAccount={invoiceConfig.bankAccount} />
-        )}
+          {invoiceConfig?.bankAccount && (
+            <InvoiceAccountDetails bankAccount={invoiceConfig.bankAccount} />
+          )}
 
-        {invoiceConfig?.notesTemplate && (
-          <InvoiceNotes notesTemplate={invoiceConfig.notesTemplate} />
-        )}
+          {invoiceConfig?.notesTemplate && (
+            <InvoiceNotes notesTemplate={invoiceConfig.notesTemplate} />
+          )}
+        </div>
 
         <InvoiceFooter
-          businessName={businessName}
           businessAddress={businessAddress}
           phoneNumber={phoneNumber}
         />
@@ -363,9 +391,9 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
               top: 0;
               left: 0;
               width: 210mm;
-              height: auto;
+              min-height: 297mm;
               margin: 0;
-              padding: 8mm;
+              padding: 0;
               box-sizing: border-box;
               background-color: #ffffff;
             }
@@ -379,6 +407,10 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
             .ant-modal-footer {
               display: none !important;
             }
+          }
+          @page {
+            size: A4;
+            margin: 0;
           }
         `}
       </style>

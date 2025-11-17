@@ -245,7 +245,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                     width: '210mm',
                     minHeight: '297mm',
                     backgroundColor: '#ffffff',
-                    padding: '15mm',
+                    padding: '10mm',
                     boxSizing: 'border-box',
                     display: 'flex',
                     flexDirection: 'column',
@@ -257,32 +257,32 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                   <div style={{
                     width: '100%',
                     maxWidth: '180mm',
-                    border: '3px solid #000',
-                    padding: '20mm',
+                    border: '2px solid #000',
+                    padding: '10mm',
                     boxSizing: 'border-box'
                   }}>
                     {/* Logo Section */}
                     <div style={{
                       textAlign: 'center',
-                      marginBottom: '15mm',
-                      borderBottom: '2px solid #000',
-                      paddingBottom: '10mm'
+                      marginBottom: '8mm',
+                      borderBottom: '1px solid #000',
+                      paddingBottom: '6mm'
                     }}>
                       <img
                         src={logoPreview}
                         alt="Logo"
                         style={{
-                          height: '25mm',
-                          maxWidth: '80mm',
+                          height: '15mm',
+                          maxWidth: '70mm',
                           objectFit: 'contain',
-                          marginBottom: '5mm'
+                          marginBottom: '3mm'
                         }}
                         crossOrigin="anonymous"
                       />
                       <div style={{
-                        fontSize: '20px',
+                        fontSize: '18px',
                         fontWeight: 'bold',
-                        marginTop: '5mm'
+                        marginTop: '3mm'
                       }}>
                         {businessName}
                       </div>
@@ -291,14 +291,14 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                     {/* Product Name */}
                     <div style={{
                       textAlign: 'center',
-                      marginBottom: '10mm',
-                      padding: '8mm 0'
+                      marginBottom: '6mm',
+                      padding: '4mm 0'
                     }}>
                       <div style={{
-                        fontSize: '24px',
+                        fontSize: '22px',
                         fontWeight: 'bold',
-                        lineHeight: '1.3',
-                        minHeight: '20mm',
+                        lineHeight: '1.2',
+                        minHeight: '12mm',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
@@ -310,18 +310,18 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                     {/* SKU Section */}
                     <div style={{
                       textAlign: 'center',
-                      marginBottom: '8mm',
-                      fontSize: '16px'
+                      marginBottom: '5mm',
+                      fontSize: '14px'
                     }}>
                       <div style={{
                         fontWeight: 'bold',
-                        marginBottom: '3mm'
+                        marginBottom: '2mm'
                       }}>
                         SKU
                       </div>
                       <div style={{
                         fontFamily: 'monospace',
-                        fontSize: '18px',
+                        fontSize: '16px',
                         letterSpacing: '1px'
                       }}>
                         {label.product.barcode || 'N/A'}
@@ -332,8 +332,8 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                     {barcodeDataUrl && (
                       <div style={{
                         textAlign: 'center',
-                        marginBottom: '10mm',
-                        padding: '5mm 0'
+                        marginBottom: '6mm',
+                        padding: '3mm 0'
                       }}>
                         <img
                           src={barcodeDataUrl}
@@ -349,8 +349,8 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                     {/* Item Counter */}
                     <div style={{
                       textAlign: 'center',
-                      marginBottom: '8mm',
-                      fontSize: '14px',
+                      marginBottom: '5mm',
+                      fontSize: '13px',
                       color: '#666'
                     }}>
                       Item {label.itemNumber} of {label.totalQuantity}
@@ -358,16 +358,16 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
 
                     {/* Footer Section */}
                     <div style={{
-                      borderTop: '2px solid #000',
-                      paddingTop: '8mm',
-                      marginTop: '10mm',
+                      borderTop: '1px solid #000',
+                      paddingTop: '5mm',
+                      marginTop: '6mm',
                       textAlign: 'center',
-                      fontSize: '14px',
-                      lineHeight: '1.6'
+                      fontSize: '13px',
+                      lineHeight: '1.4'
                     }}>
                       <div style={{
                         fontWeight: 'bold',
-                        marginBottom: '4mm'
+                        marginBottom: '2mm'
                       }}>
                         {phoneNumber}
                       </div>

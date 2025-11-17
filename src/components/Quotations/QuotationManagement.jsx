@@ -1,149 +1,237 @@
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Table, Button, Tag, Space, Input, DatePicker, Select, message } from 'antd';
+import React, { useState } from 'react';
+import { Form, Input, Button, Card, DatePicker, InputNumber, Select, Space, Table, message, Modal } from 'antd';
 import { Icon } from '../common/Icon';
 import { PageHeader } from '../common/PageHeader';
 import { ActionButton } from '../common/ActionButton';
-import { fetchQuotations, deleteQuotation, convertQuotation, setFilters, setPagination } from '../../features/quotations/quotationsSlice';
+import { QuotationPDF } from './QuotationPDF';
+import { useSelector } from 'react-redux';
 import dayjs from 'dayjs';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
-const { Search } = Input;
-const { RangePicker } = DatePicker;
+const { TextArea } = Input;
 const { Option } = Select;
 
 export function QuotationManagement() {
-  const dispatch = useDispatch();
-  const { quotations, loading, pagination, filters } = useSelector(state => state.quotations);
-  const [selectedQuotation, setSelectedQuotation] = useState(null);
+  const [form] = Form.useForm();
+  const { productsList } = useSelector(state => state.products);
+  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [quotationData, setQuotationData] = useState(null);
+  const [showPDF, setShowPDF] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    dispatch(fetchQuotations());
-  }, [dispatch, filters, pagination.page]);
+  const handleAddProduct = () => {
+    const product = form.getFieldValue('selectedProduct');
+    const quantity = form.getFieldValue('quantity');
+    const unitPrice = form.getFieldValue('unitPrice');
 
-  const handleStatusChange = (value) => {
-    dispatch(setFilters({ status: value }));
+    if (!product || !quantity || !unitPrice) {
+      message.warning('Please select a product and enter quantity and unit price');
+      return;
+    }
+
+    const selectedProduct = productsList.find(p => p.id === product);
+    if (!selectedProduct) return;
+
+    const newProduct = {
+      id: Date.now(),
+      product_id: selectedProduct.id,
+      product_name: selectedProduct.name,
+      productName: selectedProduct.name,
+      quantity,
+      unit_price: unitPrice,
+      unitPrice,
+      total_price: quantity * unitPrice,
+      totalPrice: quantity * unitPrice,
+      description: form.getFieldValue('productDescription') || '',
+      selected_variant: form.getFieldValue('productColor') || '',
+      selectedVariant: form.getFieldValue('productColor') || '',
+      selected_size: form.getFieldValue('productSize') || '',
+      selectedSize: form.getFieldValue('productSize') || ''
+    };
+
+    setSelectedProducts([...selectedProducts, newProduct]);
+    form.setFieldsValue({
+      selectedProduct: undefined,
+      quantity: 1,
+      unitPrice: 0,
+      productDescription: '',
+      productColor: '',
+      productSize: ''
+    });
+    message.success('Product added to quotation');
   };
 
-  const handleSearch = (value) => {
-    dispatch(setFilters({ search: value }));
+  const handleRemoveProduct = (id) => {
+    setSelectedProducts(selectedProducts.filter(p => p.id !== id));
+    message.success('Product removed from quotation');
   };
 
-  const handleDateRangeChange = (dates) => {
-    if (dates) {
-      dispatch(setFilters({
-        startDate: dates[0].toISOString(),
-        endDate: dates[1].toISOString()
-      }));
-    } else {
-      dispatch(setFilters({ startDate: null, endDate: null }));
+  const calculateSubtotal = () => {
+    return selectedProducts.reduce((sum, item) => sum + item.total_price, 0);
+  };
+
+  const calculateTotal = () => {
+    const subtotal = calculateSubtotal();
+    const discount = form.getFieldValue('discount') || 0;
+    const tax = form.getFieldValue('tax') || 0;
+    return subtotal - discount + tax;
+  };
+
+  const handleGenerateQuotation = () => {
+    form.validateFields().then(values => {
+      if (selectedProducts.length === 0) {
+        message.warning('Please add at least one product to the quotation');
+        return;
+      }
+
+      const quotation = {
+        id: `QUO-${Date.now()}`,
+        customer_name: values.customerName,
+        customerName: values.customerName,
+        customer_phone: values.customerPhone,
+        customerPhone: values.customerPhone,
+        customer_email: values.customerEmail,
+        customerEmail: values.customerEmail,
+        customer_address: values.customerAddress,
+        customerAddress: values.customerAddress,
+        items: selectedProducts,
+        subtotal: calculateSubtotal(),
+        discount: values.discount || 0,
+        total_tax: values.tax || 0,
+        totalTax: values.tax || 0,
+        total: calculateTotal(),
+        valid_until: values.validUntil ? values.validUntil.toISOString() : null,
+        validUntil: values.validUntil ? values.validUntil.toISOString() : null,
+        notes: values.notes || '',
+        status: 'draft',
+        created_at: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      };
+
+      setQuotationData(quotation);
+      setShowPDF(true);
+    }).catch(error => {
+      message.error('Please fill in all required fields');
+    });
+  };
+
+  const handleClearForm = () => {
+    form.resetFields();
+    setSelectedProducts([]);
+    message.success('Form cleared');
+  };
+
+  const generatePDF = async (action = 'view') => {
+    setLoading(true);
+    const element = document.getElementById('quotation-pdf-preview');
+    if (!element) {
+      setLoading(false);
+      message.error('PDF content not found');
+      return;
+    }
+
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#ffffff',
+        width: element.scrollWidth,
+        height: element.scrollHeight,
+        logging: false
+      });
+
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      let position = 0;
+
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      if (action === 'download') {
+        const filename = `quotation-${quotationData.id}.pdf`;
+        pdf.save(filename);
+        message.success('Quotation downloaded successfully');
+      } else {
+        const pdfBlob = pdf.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      message.error('Failed to generate PDF');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDelete = (id) => {
-    dispatch(deleteQuotation({
-      id,
-      onSuccess: () => {
-        message.success('Quotation deleted successfully');
-        dispatch(fetchQuotations());
-      }
-    }));
-  };
+  const handleDownload = () => generatePDF('download');
+  const handleView = () => generatePDF('view');
 
-  const handleConvert = (id) => {
-    dispatch(convertQuotation({
-      id,
-      onSuccess: (data) => {
-        message.success('Quotation loaded to POS');
-      }
-    }));
-  };
-
-  const columns = [
+  const productColumns = [
     {
-      title: 'Quotation No',
-      dataIndex: 'id',
-      key: 'id',
-      fixed: 'left',
-      width: 150
+      title: 'Product',
+      dataIndex: 'product_name',
+      key: 'product_name',
+      render: (text, record) => (
+        <div>
+          <div className="font-medium">{text}</div>
+          {record.description && <div className="text-sm text-gray-500">{record.description}</div>}
+          {(record.selected_variant || record.selected_size) && (
+            <div className="text-xs text-gray-400">
+              {record.selected_variant && `Color: ${record.selected_variant}`}
+              {record.selected_variant && record.selected_size && ' • '}
+              {record.selected_size && `Size: ${record.selected_size}`}
+            </div>
+          )}
+        </div>
+      )
     },
     {
-      title: 'Customer',
-      dataIndex: 'customer_name',
-      key: 'customer_name',
-      width: 200
+      title: 'Quantity',
+      dataIndex: 'quantity',
+      key: 'quantity',
+      width: 100
+    },
+    {
+      title: 'Unit Price',
+      dataIndex: 'unit_price',
+      key: 'unit_price',
+      width: 120,
+      render: (price) => `LKR ${price.toFixed(2)}`
     },
     {
       title: 'Total',
-      dataIndex: 'total',
-      key: 'total',
+      dataIndex: 'total_price',
+      key: 'total_price',
       width: 120,
-      render: (total) => `LKR ${total?.toFixed(2)}`
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      width: 120,
-      render: (status) => {
-        const colors = {
-          draft: 'default',
-          sent: 'blue',
-          accepted: 'green',
-          rejected: 'red',
-          expired: 'orange',
-          converted: 'purple'
-        };
-        return <Tag color={colors[status]}>{status?.toUpperCase()}</Tag>;
-      }
-    },
-    {
-      title: 'Valid Until',
-      dataIndex: 'valid_until',
-      key: 'valid_until',
-      width: 120,
-      render: (date) => date ? dayjs(date).format('MM/DD/YYYY') : 'N/A'
-    },
-    {
-      title: 'Created',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      width: 120,
-      render: (date) => dayjs(date).format('MM/DD/YYYY')
+      render: (total) => `LKR ${total.toFixed(2)}`
     },
     {
       title: 'Actions',
       key: 'actions',
-      fixed: 'right',
-      width: 200,
+      width: 100,
       render: (_, record) => (
-        <Space>
-          <ActionButton
-            size="small"
-            icon="visibility"
-            onClick={() => setSelectedQuotation(record)}
-          >
-            View
-          </ActionButton>
-          {record.status !== 'converted' && (
-            <ActionButton
-              size="small"
-              icon="shopping_cart"
-              onClick={() => handleConvert(record.id)}
-            >
-              Load to POS
-            </ActionButton>
-          )}
-          {record.status === 'draft' && (
-            <ActionButton
-              size="small"
-              icon="delete"
-              danger
-              onClick={() => handleDelete(record.id)}
-            >
-              Delete
-            </ActionButton>
-          )}
-        </Space>
+        <ActionButton
+          size="small"
+          icon="delete"
+          danger
+          onClick={() => handleRemoveProduct(record.id)}
+        >
+          Remove
+        </ActionButton>
       )
     }
   ];
@@ -151,53 +239,263 @@ export function QuotationManagement() {
   return (
     <div className="p-6">
       <PageHeader
-        title="Quotation Management"
-        subtitle="Manage customer quotations"
+        title="Quotation Generator"
+        subtitle="Create instant quotations without saving to database"
         icon="request_quote"
       />
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="mb-4 flex gap-4">
-          <Search
-            placeholder="Search by quotation number, customer name or phone"
-            onSearch={handleSearch}
-            style={{ width: 300 }}
-            allowClear
-          />
-          <Select
-            placeholder="Filter by status"
-            style={{ width: 150 }}
-            onChange={handleStatusChange}
-            allowClear
-          >
-            <Option value="draft">Draft</Option>
-            <Option value="sent">Sent</Option>
-            <Option value="accepted">Accepted</Option>
-            <Option value="rejected">Rejected</Option>
-            <Option value="expired">Expired</Option>
-            <Option value="converted">Converted</Option>
-          </Select>
-          <RangePicker onChange={handleDateRangeChange} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column - Form */}
+        <div className="space-y-6">
+          {/* Customer Information */}
+          <Card title="Customer Information" className="shadow">
+            <Form form={form} layout="vertical">
+              <Form.Item
+                label="Customer Name"
+                name="customerName"
+                rules={[{ required: true, message: 'Please enter customer name' }]}
+              >
+                <Input placeholder="Enter customer name" />
+              </Form.Item>
+
+              <Form.Item
+                label="Phone Number"
+                name="customerPhone"
+              >
+                <Input placeholder="Enter phone number" />
+              </Form.Item>
+
+              <Form.Item
+                label="Email Address"
+                name="customerEmail"
+              >
+                <Input type="email" placeholder="Enter email address" />
+              </Form.Item>
+
+              <Form.Item
+                label="Address"
+                name="customerAddress"
+              >
+                <TextArea rows={3} placeholder="Enter customer address" />
+              </Form.Item>
+            </Form>
+          </Card>
+
+          {/* Quotation Details */}
+          <Card title="Quotation Details" className="shadow">
+            <Form form={form} layout="vertical">
+              <Form.Item
+                label="Valid Until"
+                name="validUntil"
+              >
+                <DatePicker
+                  style={{ width: '100%' }}
+                  format="MM/DD/YYYY"
+                  disabledDate={(current) => current && current < dayjs().startOf('day')}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Discount (LKR)"
+                name="discount"
+                initialValue={0}
+              >
+                <InputNumber
+                  style={{ width: '100%' }}
+                  min={0}
+                  precision={2}
+                  placeholder="Enter discount amount"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Tax (LKR)"
+                name="tax"
+                initialValue={0}
+              >
+                <InputNumber
+                  style={{ width: '100%' }}
+                  min={0}
+                  precision={2}
+                  placeholder="Enter tax amount"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Notes"
+                name="notes"
+              >
+                <TextArea rows={4} placeholder="Enter special terms or notes" />
+              </Form.Item>
+            </Form>
+          </Card>
         </div>
 
-        <Table
-          columns={columns}
-          dataSource={quotations}
-          rowKey="id"
-          loading={loading}
-          scroll={{ x: 1200 }}
-          pagination={{
-            current: pagination.page,
-            pageSize: pagination.limit,
-            total: pagination.total,
-            showSizeChanger: true,
-            showTotal: (total) => `Total ${total} quotations`,
-            onChange: (page, pageSize) => {
-              dispatch(setPagination({ page, limit: pageSize }));
-            }
-          }}
-        />
+        {/* Right Column - Products */}
+        <div className="space-y-6">
+          {/* Add Products */}
+          <Card title="Add Products" className="shadow">
+            <Form form={form} layout="vertical">
+              <Form.Item label="Select Product" name="selectedProduct">
+                <Select
+                  showSearch
+                  placeholder="Search and select product"
+                  optionFilterProp="children"
+                  filterOption={(input, option) =>
+                    option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }
+                >
+                  {productsList.map(product => (
+                    <Option key={product.id} value={product.id}>
+                      {product.name} - LKR {product.price}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+
+              <Form.Item label="Description" name="productDescription">
+                <Input placeholder="Optional product description" />
+              </Form.Item>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Form.Item label="Color/Variant" name="productColor">
+                  <Input placeholder="e.g., Black, Red" />
+                </Form.Item>
+
+                <Form.Item label="Size" name="productSize">
+                  <Input placeholder="e.g., Large, Medium" />
+                </Form.Item>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Form.Item
+                  label="Quantity"
+                  name="quantity"
+                  initialValue={1}
+                  rules={[{ required: true, message: 'Required' }]}
+                >
+                  <InputNumber style={{ width: '100%' }} min={1} />
+                </Form.Item>
+
+                <Form.Item
+                  label="Unit Price (LKR)"
+                  name="unitPrice"
+                  initialValue={0}
+                  rules={[{ required: true, message: 'Required' }]}
+                >
+                  <InputNumber
+                    style={{ width: '100%' }}
+                    min={0}
+                    precision={2}
+                  />
+                </Form.Item>
+              </div>
+
+              <ActionButton
+                block
+                icon="add"
+                onClick={handleAddProduct}
+              >
+                Add Product to Quotation
+              </ActionButton>
+            </Form>
+          </Card>
+
+          {/* Summary */}
+          <Card title="Quotation Summary" className="shadow">
+            <div className="space-y-3">
+              <div className="flex justify-between text-base">
+                <span>Subtotal:</span>
+                <span className="font-medium">LKR {calculateSubtotal().toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-base">
+                <span>Discount:</span>
+                <span className="font-medium">LKR {(form.getFieldValue('discount') || 0).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-base">
+                <span>Tax:</span>
+                <span className="font-medium">LKR {(form.getFieldValue('tax') || 0).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold border-t pt-3">
+                <span>Total:</span>
+                <span>LKR {calculateTotal().toFixed(2)}</span>
+              </div>
+              <div className="text-sm text-gray-500">
+                {selectedProducts.length} product(s) in quotation
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
+
+      {/* Products Table */}
+      {selectedProducts.length > 0 && (
+        <Card title="Selected Products" className="shadow mt-6">
+          <Table
+            columns={productColumns}
+            dataSource={selectedProducts}
+            rowKey="id"
+            pagination={false}
+          />
+        </Card>
+      )}
+
+      {/* Action Buttons */}
+      <div className="mt-6 flex justify-end gap-4">
+        <ActionButton
+          icon="clear"
+          onClick={handleClearForm}
+        >
+          Clear Form
+        </ActionButton>
+        <ActionButton.Primary
+          icon="request_quote"
+          onClick={handleGenerateQuotation}
+          disabled={selectedProducts.length === 0}
+        >
+          Generate Quotation
+        </ActionButton.Primary>
+      </div>
+
+      {/* PDF Preview Modal */}
+      <Modal
+        title={
+          <Space>
+            <Icon name="request_quote" className="text-blue-600" />
+            <span>Quotation Preview</span>
+          </Space>
+        }
+        open={showPDF}
+        onCancel={() => setShowPDF(false)}
+        width={900}
+        footer={[
+          <ActionButton key="close" onClick={() => setShowPDF(false)}>
+            Close
+          </ActionButton>,
+          <ActionButton
+            key="view"
+            icon="visibility"
+            onClick={handleView}
+            loading={loading}
+          >
+            View PDF
+          </ActionButton>,
+          <ActionButton.Primary
+            key="download"
+            icon="download"
+            onClick={handleDownload}
+            loading={loading}
+          >
+            Download PDF
+          </ActionButton.Primary>
+        ]}
+      >
+        <div className="max-h-[70vh] overflow-y-auto">
+          <div id="quotation-pdf-preview">
+            {quotationData && <QuotationPDF quotation={quotationData} />}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

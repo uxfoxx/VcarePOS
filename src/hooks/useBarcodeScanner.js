@@ -181,20 +181,20 @@ export const useBarcodeScanner = (options = {}) => {
         isActiveRef.current = true;
         updateStatus(SCANNER_STATUS.SCANNING);
       }
-      
-      // Add character to buffer
-      bufferRef.current += event.key;
-      
-      // Prevent default if this looks like scanner input (rapid typing)
-      if (isActiveRef.current && bufferRef.current.length > 2) {
+
+      // Prevent default immediately when scanning is active to capture all characters
+      if (isActiveRef.current) {
         event.preventDefault();
       }
-      
+
+      // Add character to buffer
+      bufferRef.current += event.key;
+
       // Reset timeout
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      
+
       timeoutRef.current = setTimeout(() => {
         clearBuffer();
       }, config.scanTimeoutMs);

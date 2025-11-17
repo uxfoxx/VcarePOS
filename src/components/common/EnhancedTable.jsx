@@ -213,6 +213,12 @@ export function EnhancedTable({
 
   const handleDeleteSelected = () => {
     if (onDelete && selectedRowKeys.length > 0) {
+      if (!Modal || typeof Modal.confirm !== 'function') {
+        console.error('Modal.confirm is not available');
+        message.error('Unable to show confirmation dialog. Please try again.');
+        return;
+      }
+
       Modal.confirm({
         title: `Delete ${selectedRowKeys.length} selected item(s)?`,
         content: 'This action cannot be undone.',

@@ -23,7 +23,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'pdf-worker': ['react-pdf']
+          'pdf-worker': ['react-pdf'],
+          'antd-core': ['antd'],
         }
       }
     }
@@ -45,13 +46,16 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: [
-      'react', 
+      'react',
       'react-dom',
       'react/jsx-runtime',
       'react-router-dom',
       '@reduxjs/toolkit',
       'react-redux',
       'antd',
+      'antd/es/modal',
+      'antd/es/notification',
+      'antd/es/message',
       'dayjs',
       'react-pdf',
       'pdfjs-dist'

@@ -3,6 +3,13 @@ const { body, param, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { authenticate, hasPermission, logAction } = require('../middleware/auth');
 const { handleRouteError, asyncHandler, logDatabaseOperation } = require('../utils/loggerUtils');
+const {
+  fetchAllProductsOptimized,
+  fetchProductByIdOptimized,
+  fetchLowStockProducts,
+  checkStockAvailability
+} = require('../utils/productQueries');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -281,114 +288,42 @@ const router = express.Router();
  */
 router.get('/', authenticate, hasPermission('products', 'view'), async (req, res) => {
   try {
+    logger.info('Fetching products', {
+      query: req.query,
+      user: req.user.email
+    });
+
     const client = await pool.connect();
 
-    // Get all products
-    const productsResult = await client.query(`
-      SELECT * FROM products ORDER BY created_at DESC
-    `);
+    // Parse query parameters for pagination and filtering
+    const options = {
+      page: parseInt(req.query.page) || 1,
+      limit: parseInt(req.query.limit) || 50,
+      category: req.query.category || null,
+      search: req.query.search || null,
+      lowStock: req.query.lowStock === 'true',
+      sortBy: req.query.sortBy || 'created_at',
+      sortOrder: req.query.sortOrder || 'DESC'
+    };
 
-    // Get all product colors
-    const colorsResult = await client.query(`
-      SELECT * FROM product_colors
-    `);
-
-    // Get all product sizes (now linked to colors)
-    const sizesResult = await client.query(`
-      SELECT * FROM product_sizes
-    `);
-
-    // Get all product raw materials (now linked to sizes)
-    const materialsResult = await client.query(`
-      SELECT prm.*, rm.name, rm.unit, rm.unit_price, ps.id as size_id
-      FROM product_raw_materials prm
-      JOIN raw_materials rm ON prm.raw_material_id = rm.id
-      JOIN product_sizes ps ON prm.product_size_id = ps.id
-    `);
-
-    // Get all product addons
-    const addonsResult = await client.query(`
-      SELECT * FROM product_addons
-    `);
+    // Use optimized query
+    const result = await fetchAllProductsOptimized(client, options);
 
     client.release();
 
-    // Map colors, sizes, materials, and addons to their respective products
-    const products = productsResult.rows.map(product => {
-      // Get colors for this product
-      const colors = colorsResult.rows
-        .filter(color => color.product_id === product.id)
-        .map(color => {
-          // Get sizes for this color
-          const colorSizes = sizesResult.rows
-            .filter(size => size.product_color_id === color.id)
-            .map(size => {
-              // Get raw materials for this size
-              const sizeMaterials = materialsResult.rows
-                .filter(material => material.size_id === size.id)
-                .map(material => ({
-                  rawMaterialId: material.raw_material_id,
-                  quantity: parseFloat(material.quantity),
-                  name: material.name,
-                  unit: material.unit,
-                  unitPrice: parseFloat(material.unit_price)
-                }));
-
-              return {
-                id: size.id,
-                name: size.name,
-                stock: size.stock,
-                dimensions: size.dimensions,
-                weight: parseFloat(size.weight || 0),
-                rawMaterials: sizeMaterials
-              };
-            });
-
-          return {
-            id: color.id,
-            name: color.name,
-            colorCode: color.color_code,
-            image: color.image,
-            sizes: colorSizes
-          };
-        });
-
-      // Calculate total stock from all color sizes
-      const totalStock = colors.reduce((total, color) =>
-        total + color.sizes.reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
-      );
-
-      const addons = addonsResult.rows
-        .filter(addon => addon.product_id === product.id)
-        .map(addon => ({
-          id: addon.raw_material_id,
-          name: addon.name,
-          quantity: parseFloat(addon.quantity),
-          price: parseFloat(addon.price)
-        }));
-
-      return {
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        category: product.category,
-        price: parseFloat(product.price),
-        stock: totalStock, // Use calculated total stock
-        barcode: product.barcode,
-        image: product.image,
-        color: product.color,
-        material: product.material,
-        hasAddons: product.has_addons,
-        media: Array.isArray(product.media) ? product.media : [],
-        colors,
-        addons,
-        createdAt: product.created_at,
-        updatedAt: product.updated_at
-      };
+    logger.info('Products fetched successfully', {
+      count: result.data.length,
+      total: result.pagination.total,
+      page: result.pagination.page
     });
 
-    res.json(products);
+    res.json(result);
   } catch (error) {
+    logger.error('Error fetching products', {
+      error: error.message,
+      stack: error.stack,
+      query: req.query
+    });
     handleRouteError(error, req, res, 'Products - Fetch All');
   }
 });
@@ -1109,5 +1044,157 @@ router.put(
  *       500:
  *         description: Server error
  */
+
+/**
+ * @swagger
+ * /products/{id}/stock-check:
+ *   get:
+ *     summary: Check stock availability for a product
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Product ID
+ *       - in: query
+ *         name: quantity
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Required quantity
+ *       - in: query
+ *         name: colorId
+ *         schema:
+ *           type: string
+ *         description: Color variant ID (optional)
+ *       - in: query
+ *         name: size
+ *         schema:
+ *           type: string
+ *         description: Size variant name (optional)
+ *     responses:
+ *       200:
+ *         description: Stock availability check result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 available:
+ *                   type: boolean
+ *                 currentStock:
+ *                   type: integer
+ *                 requested:
+ *                   type: integer
+ *                 productName:
+ *                   type: string
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Product not found
+ */
+router.get('/:id/stock-check', authenticate, hasPermission('products', 'view'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const quantity = parseInt(req.query.quantity);
+    const colorId = req.query.colorId || null;
+    const size = req.query.size || null;
+
+    logger.debug('Stock check requested', {
+      productId: id,
+      quantity,
+      colorId,
+      size
+    });
+
+    if (!quantity || quantity < 1) {
+      return res.status(400).json({
+        error: 'Invalid quantity',
+        message: 'Quantity must be a positive integer'
+      });
+    }
+
+    const client = await pool.connect();
+
+    const result = await checkStockAvailability(client, id, quantity, {
+      colorId,
+      size
+    });
+
+    client.release();
+
+    logger.debug('Stock check completed', {
+      productId: id,
+      available: result.available
+    });
+
+    res.json(result);
+  } catch (error) {
+    logger.error('Stock check error', {
+      productId: req.params.id,
+      error: error.message
+    });
+    handleRouteError(error, req, res, 'Products - Stock Check');
+  }
+});
+
+/**
+ * @swagger
+ * /products/low-stock:
+ *   get:
+ *     summary: Get products with low stock
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: threshold
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Stock threshold
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *         description: Maximum results
+ *     responses:
+ *       200:
+ *         description: List of low stock products
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ */
+router.get('/low-stock', authenticate, hasPermission('products', 'view'), async (req, res) => {
+  try {
+    const threshold = parseInt(req.query.threshold) || 10;
+    const limit = parseInt(req.query.limit) || 50;
+
+    logger.info('Fetching low stock products', { threshold, limit });
+
+    const client = await pool.connect();
+
+    const products = await fetchLowStockProducts(client, threshold, limit);
+
+    client.release();
+
+    logger.info('Low stock products fetched', { count: products.length });
+
+    res.json(products);
+  } catch (error) {
+    logger.error('Error fetching low stock products', {
+      error: error.message
+    });
+    handleRouteError(error, req, res, 'Products - Low Stock');
+  }
+});
 
 module.exports = router;

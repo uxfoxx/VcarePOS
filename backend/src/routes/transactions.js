@@ -3,6 +3,12 @@ const { body, param, validationResult } = require('express-validator');
 const { pool } = require('../utils/db');
 const { authenticate, hasPermission } = require('../middleware/auth');
 const { handleRouteError } = require('../utils/loggerUtils');
+const {
+  validateBulkStockAvailability,
+  ValidationError,
+  BusinessLogicError
+} = require('../utils/validation');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -522,10 +528,10 @@ router.post(
     }
 
     const client = await pool.connect();
-    
+
     try {
       await client.query('BEGIN');
-      
+
       const {
         items,
         subtotal,
@@ -547,10 +553,30 @@ router.post(
         salesperson,
         salespersonId
       } = req.body;
-      
+
+      logger.info('Creating new transaction', {
+        itemCount: items.length,
+        total,
+        paymentMethod,
+        cashier: cashier || `${req.user.firstName} ${req.user.lastName}`
+      });
+
+      // CRITICAL: Validate stock availability for all items BEFORE creating transaction
+      try {
+        await validateBulkStockAvailability(client, items);
+      } catch (error) {
+        logger.warn('Stock validation failed for transaction', {
+          itemCount: items.length,
+          error: error.message
+        });
+        throw error;
+      }
+
       // Generate transaction ID
       const transactionId = req.body.id || `TXN-${Date.now()}`;
-      
+
+      logger.debug('Inserting transaction record', { transactionId });
+
       // Insert transaction
       const transactionResult = await client.query(`
         INSERT INTO transactions (
@@ -604,24 +630,43 @@ router.post(
           item.selectedColorId
         ]);
         
-        // Update product stock
+        // Update product stock with row-level locking to prevent race conditions
         if (item.selectedSize && item.selectedColorId) {
-          // Update specific size stock using the correct relationship chain
-          await client.query(`
-            UPDATE product_sizes
-            SET stock = stock - $1
-            WHERE id = (
-              SELECT ps.id 
-              FROM product_sizes ps
-              JOIN product_colors pc ON ps.product_color_id = pc.id
-              WHERE pc.id = $2 AND ps.name = $3
-            )
+          logger.debug('Updating variant stock', {
+            productId: item.product.id,
+            colorId: item.selectedColorId,
+            size: item.selectedSize,
+            quantity: item.quantity
+          });
+
+          // Lock and update specific size stock using FOR UPDATE to prevent race conditions
+          const sizeUpdateResult = await client.query(`
+            UPDATE product_sizes ps
+            SET stock = ps.stock - $1
+            FROM product_colors pc
+            WHERE ps.product_color_id = pc.id
+              AND pc.id = $2
+              AND ps.name = $3
+              AND ps.stock >= $1
+            RETURNING ps.id, ps.stock, ps.name
           `, [
             item.quantity,
             item.selectedColorId,
             item.selectedSize
           ]);
-          
+
+          if (sizeUpdateResult.rows.length === 0) {
+            throw new BusinessLogicError(
+              `Insufficient stock for ${item.product.name} (${item.selectedSize}). Stock may have changed.`,
+              'STOCK_INSUFFICIENT'
+            );
+          }
+
+          logger.debug('Variant stock updated', {
+            sizeId: sizeUpdateResult.rows[0].id,
+            remainingStock: sizeUpdateResult.rows[0].stock
+          });
+
           // Update total product stock (sum of all sizes across all colors)
           await client.query(`
             UPDATE products
@@ -634,15 +679,33 @@ router.post(
             WHERE id = $1
           `, [item.product.id]);
         } else {
-          // Update regular product stock
-          await client.query(`
+          logger.debug('Updating regular product stock', {
+            productId: item.product.id,
+            quantity: item.quantity
+          });
+
+          // Lock and update regular product stock
+          const productUpdateResult = await client.query(`
             UPDATE products
-            SET stock = GREATEST(0, stock - $1)
-            WHERE id = $2
+            SET stock = stock - $1
+            WHERE id = $2 AND stock >= $1
+            RETURNING id, stock, name
           `, [
             item.quantity,
             item.product.id
           ]);
+
+          if (productUpdateResult.rows.length === 0) {
+            throw new BusinessLogicError(
+              `Insufficient stock for ${item.product.name}. Stock may have changed.`,
+              'STOCK_INSUFFICIENT'
+            );
+          }
+
+          logger.debug('Product stock updated', {
+            productId: productUpdateResult.rows[0].id,
+            remainingStock: productUpdateResult.rows[0].stock
+          });
         }
         
         // Update raw material stock for the selected size (new relationship structure)
@@ -692,10 +755,17 @@ router.post(
       }
       
       await client.query('COMMIT');
-      
+
+      logger.info('Transaction created successfully', {
+        transactionId,
+        itemCount: items.length,
+        total,
+        customerName
+      });
+
       // Return the created transaction
       const transaction = transactionResult.rows[0];
-      
+
       res.status(201).json({
         id: transaction.id,
         customerName: transaction.customer_name,
@@ -721,7 +791,35 @@ router.post(
       });
     } catch (error) {
       await client.query('ROLLBACK');
-      handleRouteError(error, req, res, 'Transactions - Creating transaction:');
+
+      logger.error('Transaction creation failed', {
+        itemCount: items?.length || 0,
+        total: total || 0,
+        error: error.message,
+        errorType: error.constructor.name,
+        stack: error.stack
+      });
+
+      // Handle specific error types with appropriate status codes and messages
+      if (error instanceof ValidationError) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          message: error.message,
+          field: error.field,
+          code: error.code,
+          details: error.details
+        });
+      }
+
+      if (error instanceof BusinessLogicError) {
+        return res.status(422).json({
+          error: 'Business logic error',
+          message: error.message,
+          code: error.code
+        });
+      }
+
+      handleRouteError(error, req, res, 'Transactions - Creating transaction');
     } finally {
       client.release();
     }

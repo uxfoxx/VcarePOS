@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable no-unused-vars */
+import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Card,
@@ -10,18 +11,18 @@ import {
   message,
   Row,
   Col,
-  Dropdown,
+  // Dropdown,
   Tabs,
-  Modal,
-  Table,
-  Button,
-  Input,
+  // Modal,
+  // Table,
+  // Button,
+  // Input,
   Tooltip,
-  Checkbox
+  // Checkbox
 } from 'antd';
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
-import { SearchInput } from '../common/SearchInput';
+// import { SearchInput } from '../common/SearchInput';
 import { ProductDetailsSheet } from '../Invoices/ProductDetailsSheet';
 import { CategoryManagement } from './CategoryManagement';
 import { ProductModal } from './ProductModal';
@@ -33,8 +34,8 @@ import { fetchProducts, deleteProducts, updateProduct, addProduct } from '../../
 import { fetchRawMaterials } from '../../features/rawMaterials/rawMaterialsSlice';
 import { fetchCategories } from '../../features/categories/categoriesSlice';
 
-const { Title, Text } = Typography;
-const { Search } = Input;
+const { Text } = Typography;
+// const { Search } = Input;
 
 export function ProductManagement() {
   const dispatch = useDispatch();
@@ -189,6 +190,7 @@ export function ProductManagement() {
       width: 120,
       sorter: (a, b) => (a.price || 0) - (b.price || 0),
       render: (price, record) => {
+        console.log(price, record)
         return <Text strong>LKR {(price || 0).toFixed(2)}</Text>;
       },
     },
@@ -199,6 +201,7 @@ export function ProductManagement() {
       width: 120,
       sorter: (a, b) => (a.stock || 0) - (b.stock || 0),
       render: (stock, record) => {
+        console.log(stock, record)
         return (
           <Tag color={stock > 10 ? 'green' : stock > 0 ? 'orange' : 'red'}>
             {stock} units
@@ -391,6 +394,7 @@ export function ProductManagement() {
         width: 120,
         sorter: (a, b) => (a.stock || 0) - (b.stock || 0),
         render: (stock, record) => {
+          console.log(stock, record);
           let color = 'green';
           let status = 'In Stock';
 
@@ -425,6 +429,7 @@ export function ProductManagement() {
         width: 120,
         sorter: (a, b) => (a.price || 0) - (b.price || 0),
         render: (price, record) => {
+          console.log(price, record);
           return <Text strong>LKR {(price || 0).toFixed(2)}</Text>;
         },
       },

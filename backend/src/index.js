@@ -37,8 +37,6 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploads folder
-app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));
 // Middleware
 app.use(cors({
   origin: '*',
@@ -54,6 +52,14 @@ app.use(express.json({
     req.rawBody = buf.toString();
   }
 }));
+// Serve uploads folder
+// app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/api/uploads', express.static(path.join(__dirname, '../uploads'), {
+  setHeaders: (res, path, stat) => {
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  }
+}));
+
 app.use(timeoutMiddleware(60000)); // 60 second timeout for all requests
 app.use(requestLogger); // Add request logging before other middleware
 app.use(logAction);

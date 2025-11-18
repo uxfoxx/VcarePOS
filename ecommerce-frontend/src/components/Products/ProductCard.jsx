@@ -56,8 +56,22 @@ const ProductCard = ({ product }) => {
         <img
           src={
             product.media && Array.isArray(product.media) && product.media.length > 0
-              ? `${import.meta.env.VITE_API_URL}${product.media[0]}`
-              : product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
+              ? (() => {
+                // Find the first media that is NOT a video
+                const imageMedia = product.media.find(
+                  (m) =>
+                    !m.startsWith('data:video/') &&
+                    !m.toLowerCase().endsWith('.mp4') &&
+                    !m.toLowerCase().endsWith('.webm') &&
+                    !m.toLowerCase().endsWith('.mov')
+                );
+                return imageMedia
+                  ? `${import.meta.env.VITE_API_URL}${imageMedia}`
+                  : product.image ||
+                  'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
+              })()
+              : product.image ||
+              'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
           }
           // src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=400'}
           alt={product.name}

@@ -125,10 +125,30 @@ export function ProductManagement() {
       render: (text, record) => (
         <div className="flex items-center space-x-3">
           <Image
+            // src={
+            //   record.media && Array.isArray(record.media) && record.media.length > 0
+            //     ? `${import.meta.env.VITE_API_URL}${record.media[0]}`
+            //     : record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
+            // }
+
             src={
               record.media && Array.isArray(record.media) && record.media.length > 0
-                ? `${import.meta.env.VITE_API_URL}${record.media[0]}`
-                : record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
+                ? (() => {
+                  // Find the first media that is NOT a video
+                  const imageMedia = record.media.find(
+                    (m) =>
+                      !m.startsWith('data:video/') &&
+                      !m.toLowerCase().endsWith('.mp4') &&
+                      !m.toLowerCase().endsWith('.webm') &&
+                      !m.toLowerCase().endsWith('.mov')
+                  );
+                  return imageMedia
+                    ? `${import.meta.env.VITE_API_URL}${imageMedia}`
+                    : record.image ||
+                    'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
+                })()
+                : record.image ||
+                'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
             }
             // src={record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=100'}
             alt={record.name}

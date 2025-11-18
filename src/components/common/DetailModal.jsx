@@ -35,6 +35,7 @@ export function DetailModal({
                     className="object-cover rounded-lg"
                     controls
                     style={{ aspectRatio: '4/3', objectFit: 'cover' }}
+                    crossOrigin="anonymous"
                   />
                 ) : (
                   <Image
@@ -45,6 +46,7 @@ export function DetailModal({
                     className="object-cover rounded-lg"
                     preview={true}
                     style={{ aspectRatio: '4/3', objectFit: 'cover' }}
+                    crossOrigin="anonymous"
                   />
                 )}
                 {data.media.length > 1 && (
@@ -73,13 +75,14 @@ export function DetailModal({
                           </div>
                         ) : (
                           <Image
-                            src={mediaUrl}
+                            src={`${import.meta.env.VITE_API_URL}${mediaUrl}`}
                             alt={`${data.name} ${index + 2}`}
                             width={48}
                             height={48}
                             className="object-cover"
                             preview={true}
                             style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                            crossOrigin="anonymous"
                           />
                         )}
                       </div>

@@ -4,14 +4,23 @@ import App from './App.jsx';
 import store from './app/store';
 import './styles/tailwind.css';
 import './styles/main.scss';
-import './styles/branding.css'; 
+import './styles/branding.css';
+
+// hide all logger messages in production
+if (import.meta.env.PROD) {
+  console.log = () => { };
+  console.warn = () => { };
+  console.error = () => { };
+  console.debug = () => { };
+  console.info = () => { };
+}
 
 // Load environment variables
 const loadEnv = () => {
   // Check if we're running in development mode
   if (import.meta.env.DEV) {
     console.log('Running in development mode');
-    
+
     // Log environment variables (without exposing sensitive data)
     console.log('Environment variables loaded:', {
       API_URL: import.meta.env.VITE_API_URL || 'Not set'
@@ -27,7 +36,7 @@ const applyInitialBranding = () => {
   const savedBranding = localStorage.getItem('vcare_branding');
   if (savedBranding) {
     const parsedBranding = JSON.parse(savedBranding);
-    
+
     // Create a style element if it doesn't exist
     let styleEl = document.getElementById('branding-styles');
     if (!styleEl) {
@@ -35,16 +44,16 @@ const applyInitialBranding = () => {
       styleEl.id = 'branding-styles';
       document.head.appendChild(styleEl);
     }
-    
+
     // Update CSS variables
     styleEl.innerHTML = `
       :root {
         --primary-color: ${parsedBranding.primaryColor || '#0E72BD'};
         --secondary-color: ${parsedBranding.secondaryColor || '#52c41a'};
         --accent-color: ${parsedBranding.accentColor || '#fa8c16'};
-        --primary-color-rgb: ${parsedBranding.primaryColor ? 
-          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
-          '14, 114, 189'};
+        --primary-color-rgb: ${parsedBranding.primaryColor ?
+        `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` :
+        '14, 114, 189'};
         --font-family: ${parsedBranding.fontFamily || 'Inter'}, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
       }
       
@@ -139,39 +148,39 @@ const applyInitialBranding = () => {
       }
 
       .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
-        background-color: rgba(${parsedBranding.primaryColor ? 
-          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
-          '14, 114, 189'}, 0.1) !important; 
+        background-color: rgba(${parsedBranding.primaryColor ?
+        `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` :
+        '14, 114, 189'}, 0.1) !important; 
       }
 
       .ant-select-focused .ant-select-selector {
         border-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
-        box-shadow: 0 0 0 2px rgba(${parsedBranding.primaryColor ? 
-          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
-          '14, 114, 189'}, 0.2) !important;
+        box-shadow: 0 0 0 2px rgba(${parsedBranding.primaryColor ?
+        `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` :
+        '14, 114, 189'}, 0.2) !important;
       }
 
       .ant-input:focus, 
       .ant-input-focused {
         border-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
-        box-shadow: 0 0 0 2px rgba(${parsedBranding.primaryColor ? 
-          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
-          '14, 114, 189'}, 0.2) !important;
+        box-shadow: 0 0 0 2px rgba(${parsedBranding.primaryColor ?
+        `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` :
+        '14, 114, 189'}, 0.2) !important;
       }
 
       .ant-input-affix-wrapper:focus,
       .ant-input-affix-wrapper-focused {
         border-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
-        box-shadow: 0 0 0 2px rgba(${parsedBranding.primaryColor ? 
-          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
-          '14, 114, 189'}, 0.2) !important;
+        box-shadow: 0 0 0 2px rgba(${parsedBranding.primaryColor ?
+        `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` :
+        '14, 114, 189'}, 0.2) !important;
       }
 
       .ant-picker-focused {
         border-color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
-        box-shadow: 0 0 0 2px rgba(${parsedBranding.primaryColor ? 
-          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
-          '14, 114, 189'}, 0.2) !important;
+        box-shadow: 0 0 0 2px rgba(${parsedBranding.primaryColor ?
+        `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` :
+        '14, 114, 189'}, 0.2) !important;
       }
 
       .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner {
@@ -180,12 +189,12 @@ const applyInitialBranding = () => {
 
       .ant-tag-blue {
         color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
-        background: rgba(${parsedBranding.primaryColor ? 
-          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
-          '14, 114, 189'}, 0.1) !important;
-        border-color: rgba(${parsedBranding.primaryColor ? 
-          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
-          '14, 114, 189'}, 0.3) !important;
+        background: rgba(${parsedBranding.primaryColor ?
+        `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` :
+        '14, 114, 189'}, 0.1) !important;
+        border-color: rgba(${parsedBranding.primaryColor ?
+        `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` :
+        '14, 114, 189'}, 0.3) !important;
       }
 
       .ant-progress-bg {
@@ -232,35 +241,35 @@ const applyInitialBranding = () => {
       }
 
       .ant-menu-light .ant-menu-item-selected {
-        background-color: rgba(${parsedBranding.primaryColor ? 
-          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
-          '14, 114, 189'}, 0.1) !important;
+        background-color: rgba(${parsedBranding.primaryColor ?
+        `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` :
+        '14, 114, 189'}, 0.1) !important;
       }
 
       /* Dropdown items */
       .ant-dropdown-menu-item-active {
-        background-color: rgba(${parsedBranding.primaryColor ? 
-          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
-          '14, 114, 189'}, 0.1) !important;
+        background-color: rgba(${parsedBranding.primaryColor ?
+        `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` :
+        '14, 114, 189'}, 0.1) !important;
       }
 
       .ant-dropdown-menu-item-active:hover {
-        background-color: rgba(${parsedBranding.primaryColor ? 
-          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
-          '14, 114, 189'}, 0.2) !important;
+        background-color: rgba(${parsedBranding.primaryColor ?
+        `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` :
+        '14, 114, 189'}, 0.2) !important;
       }
 
       .ant-dropdown-menu-submenu-title:hover {
-        background-color: rgba(${parsedBranding.primaryColor ? 
-          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
-          '14, 114, 189'}, 0.1) !important;
+        background-color: rgba(${parsedBranding.primaryColor ?
+        `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` :
+        '14, 114, 189'}, 0.1) !important;
       }
 
       .ant-dropdown-menu-submenu-active > .ant-dropdown-menu-submenu-title {
         color: ${parsedBranding.primaryColor || '#0E72BD'} !important;
-        background-color: rgba(${parsedBranding.primaryColor ? 
-          `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` : 
-          '14, 114, 189'}, 0.1) !important;
+        background-color: rgba(${parsedBranding.primaryColor ?
+        `${parseInt(parsedBranding.primaryColor.slice(1, 3), 16)}, ${parseInt(parsedBranding.primaryColor.slice(3, 5), 16)}, ${parseInt(parsedBranding.primaryColor.slice(5, 7), 16)}` :
+        '14, 114, 189'}, 0.1) !important;
       }
 
       .ant-dropdown-menu-submenu-selected > .ant-dropdown-menu-submenu-title {
@@ -307,6 +316,6 @@ applyInitialBranding();
 
 createRoot(document.getElementById('root')).render(
   <Provider store={store}>
-  <App />
-</Provider>
+    <App />
+  </Provider>
 );

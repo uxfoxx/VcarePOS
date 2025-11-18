@@ -22,9 +22,9 @@ const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="">
-              <img src="/VCARELogo 1.png" alt="VCare Logo" class="w-full h-[40px] object-fill"/>
+              <img src="/VCARELogo 1.png" alt="VCare Logo" className="w-full h-[40px] object-fill" />
             </div>
-            
+
           </Link>
 
           {/* Navigation */}

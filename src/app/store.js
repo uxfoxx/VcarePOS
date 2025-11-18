@@ -17,7 +17,7 @@ if (import.meta.env.DEV) {
 const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({ 
+    getDefaultMiddleware({
       thunk: false,
       serializableCheck: {
         ignoredActions: ['orders/uploadTemporaryReceipt'],

@@ -42,12 +42,12 @@ export function ProductGrid({ collapsed }) {
   // Barcode scanner functionality
   const findProductByBarcode = useCallback((barcode) => {
     if (!Array.isArray(products)) return null;
-    
+
     // Search for product by barcode (including variants)
-    return products.find(product => 
-      product.barcode === barcode || 
+    return products.find(product =>
+      product.barcode === barcode ||
       product.sku === barcode ||
-      (product.variants && product.variants.some(variant => 
+      (product.variants && product.variants.some(variant =>
         variant.barcode === barcode || variant.sku === barcode
       ))
     );
@@ -68,9 +68,9 @@ export function ProductGrid({ collapsed }) {
 
   const handleBarcodeScanned = useCallback((barcode) => {
     console.log('Barcode scanned:', barcode);
-    
+
     const product = findProductByBarcode(barcode);
-    
+
     if (product) {
       message.success(`Product found: ${product.name}`);
       handleAddToCart(product);
@@ -99,14 +99,14 @@ export function ProductGrid({ collapsed }) {
   // Get categories from state, including only active ones
   const activeCategories = Array.isArray(categories) ? categories.filter(cat => cat?.isActive) : [];
   const categoryNames = ['All', ...activeCategories.map(cat => cat.name)];
-  
+
   // Filter products
   const filteredProducts = Array.isArray(products) ? products
     .filter(product => {
       // Skip variants as they'll be shown through their parent product
       if (product.isVariant) return false;
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (product.barcode && product.barcode.toLowerCase().includes(searchTerm.toLowerCase()));
+        (product.barcode && product.barcode.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
       return matchesSearch && matchesCategory;
     }) : [];
@@ -114,7 +114,7 @@ export function ProductGrid({ collapsed }) {
   const handleColorAndSizeSelected = (selectedColor, selectedSize, _selectedSizeData) => {
     // Close color/size modal
     setShowColorSizeModal(false);
-    
+
     // Create product with selected color and size
     const productWithColorAndSize = {
       ...selectedProduct,
@@ -125,15 +125,15 @@ export function ProductGrid({ collapsed }) {
       // Use the raw materials from the selected color
       rawMaterials: selectedSize?.rawMaterials || []
     };
-    
+
     // Show addons modal for the selected color/size combination
     setSelectedProduct(productWithColorAndSize);
     setShowAddonsModal(true);
   };
 
   const handleAddToCartWithAddons = (productWithAddons, quantity = 1) => {
-    dispatch(addToCart({ 
-      product: productWithAddons, 
+    dispatch(addToCart({
+      product: productWithAddons,
       quantity,
       selectedColorId: productWithAddons.selectedColorId,
       selectedSize: productWithAddons.selectedSize,
@@ -158,9 +158,12 @@ export function ProductGrid({ collapsed }) {
 
   if (loading) {
     return (
-      <Card 
+      <Card
         className="h-full"
-        bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
+        // bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
+        styles={{
+          body: { padding: 0, height: 'calc(100vh - 200px)' }
+        }}
       >
         <div className="p-4">
           <LoadingSkeleton type="product-grid" />
@@ -171,9 +174,12 @@ export function ProductGrid({ collapsed }) {
 
   return (
     <>
-      <Card 
+      <Card
         className="h-full"
-        bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
+        // bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
+        styles={{
+          body: { padding: 0, height: 'calc(100vh - 200px)' }
+        }}
       >
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -182,13 +188,12 @@ export function ProductGrid({ collapsed }) {
               {/* Scanner status indicator */}
               {BARCODE_SCANNER_CONFIG.ENABLED && (
                 <div className="text-sm text-gray-500 mt-1">
-                  Scanner: <span className={`font-medium ${
-                    scannerStatus === 'idle' ? 'text-green-600' :
+                  Scanner: <span className={`font-medium ${scannerStatus === 'idle' ? 'text-green-600' :
                     scannerStatus === 'scanning' ? 'text-blue-600' :
-                    scannerStatus === 'processing' ? 'text-yellow-600' :
-                    scannerStatus === 'error' ? 'text-red-600' :
-                    'text-gray-600'
-                  }`}>
+                      scannerStatus === 'processing' ? 'text-yellow-600' :
+                        scannerStatus === 'error' ? 'text-red-600' :
+                          'text-gray-600'
+                    }`}>
                     {scannerStatus}
                   </span>
                 </div>
@@ -205,7 +210,7 @@ export function ProductGrid({ collapsed }) {
               />
               {/* Barcode simulator for testing */}
               {BARCODE_SCANNER_CONFIG.ENABLED && (
-                <ActionButton.Primary 
+                <ActionButton.Primary
                   size="large"
                   onClick={() => setShowBarcodeSimulator(true)}
                   title="Open barcode scanner simulator for testing"
@@ -213,7 +218,7 @@ export function ProductGrid({ collapsed }) {
                   Scanner Test
                 </ActionButton.Primary>
               )}
-              <ActionButton.Primary 
+              <ActionButton.Primary
                 size="large"
                 icon="add"
                 onClick={() => setShowCustomProductModal(true)}
@@ -245,10 +250,10 @@ export function ProductGrid({ collapsed }) {
               icon="inventory_2"
               title="No Products Found"
               description={
-                searchTerm ? 
-                  `No products found for "${searchTerm}"` : 
-                  selectedCategory === 'All' ? 
-                    'No products available' : 
+                searchTerm ?
+                  `No products found for "${searchTerm}"` :
+                  selectedCategory === 'All' ?
+                    'No products available' :
                     `No products found in "${selectedCategory}" category`
               }
             />

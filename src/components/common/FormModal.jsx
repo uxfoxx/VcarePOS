@@ -35,15 +35,15 @@ export function FormModal({
         <ActionButton key="cancel" onClick={onCancel}>
           {cancelText}
         </ActionButton>,
-        <ActionButton.Primary 
-          key="submit" 
+        <ActionButton.Primary
+          key="submit"
           onClick={handleSubmit}
           loading={loading}
         >
           {submitText}
         </ActionButton.Primary>
       ]}
-      destroyOnClose
+      destroyOnHidden
       {...props}
     >
       <Form

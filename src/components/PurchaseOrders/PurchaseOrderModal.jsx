@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  fetchVendors, 
+import {
+  fetchVendors,
 } from '../../features/vendors/vendorsSlice';
-import { 
-  Modal, 
-  Form, 
-  Input, 
-  Select, 
-  DatePicker, 
-  Button, 
-  Typography, 
-  Space, 
-  Divider, 
-  Table, 
-  InputNumber, 
+import {
+  Modal,
+  Form,
+  Input,
+  Select,
+  DatePicker,
+  Button,
+  Typography,
+  Space,
+  Divider,
+  Table,
+  InputNumber,
   Popconfirm,
   message,
   Tabs,
@@ -33,10 +33,10 @@ const { Option } = Select;
 const { TextArea } = Input;
 const { TabPane } = Tabs;
 
-export function PurchaseOrderModal({ 
-  open, 
-  onClose, 
-  onSubmit, 
+export function PurchaseOrderModal({
+  open,
+  onClose,
+  onSubmit,
   editingOrder = null,
   products = [],
   rawMaterials = []
@@ -100,7 +100,7 @@ export function PurchaseOrderModal({
         vendorPhone: vendor.phone,
         vendorAddress: vendor.address
       });
-    } 
+    }
   };
 
   // Function to disable dates before orderDate
@@ -113,12 +113,12 @@ export function PurchaseOrderModal({
 
   const handleAddItem = (values) => {
     const { itemId, quantity, unitPrice } = values;
-    
+
     // Check if item already exists
-    const existingItemIndex = items.findIndex(item => 
+    const existingItemIndex = items.findIndex(item =>
       item.itemId === itemId && item.type === itemType
     );
-    
+
     if (existingItemIndex >= 0) {
       // Update existing item
       const updatedItems = [...items];
@@ -133,20 +133,20 @@ export function PurchaseOrderModal({
     } else {
       // Add new item
       let itemDetails;
-      
+
       if (itemType === 'product') {
         const product = products.find(p => p.id === itemId);
         if (!product) {
           message.error('Product not found');
           return;
         }
-        
+
         itemDetails = {
           itemId,
           type: 'product',
           name: product.name,
-          color:  {id : selectedColor.id, name: selectedColor.name},
-          size: {id: selectedSize.id, name: selectedSize.name},
+          color: { id: selectedColor.id, name: selectedColor.name },
+          size: { id: selectedSize.id, name: selectedSize.name },
           sku: product.barcode,
           category: product.category,
           quantity,
@@ -159,7 +159,7 @@ export function PurchaseOrderModal({
           message.error('Raw material not found');
           return;
         }
-        
+
         itemDetails = {
           itemId,
           type: 'material',
@@ -172,11 +172,11 @@ export function PurchaseOrderModal({
           total: quantity * unitPrice
         };
       }
-      
+
       setItems([...items, itemDetails]);
       message.success('Item added successfully');
     }
-    
+
     itemsForm.resetFields();
   };
 
@@ -185,7 +185,7 @@ export function PurchaseOrderModal({
     message.success('Item removed');
   };
 
-  
+
   const handleProductChange = (productId) => {
     const product = products.find(p => p.id === productId);
     setSelectedProduct(product);
@@ -209,15 +209,15 @@ export function PurchaseOrderModal({
     try {
       // Validate form
       const values = await form.validateFields();
-      
+
       if (items.length === 0) {
         message.error('Please add at least one item to the purchase order');
         return;
       }
-      
+
       // Calculate total
       const total = items.reduce((sum, item) => sum + item.total, 0);
-      
+
       // Prepare order data
       const orderData = {
         ...values,
@@ -227,16 +227,16 @@ export function PurchaseOrderModal({
         total,
         status: editingOrder?.status || 'draft'
       };
-      
+
       // Submit order
       const result = onSubmit(orderData);
-      
+
       if (result) {
         onClose();
       }
-    } catch {   
+    } catch {
       message.error('Please fill in all required fields');
-    } 
+    }
   };
 
   const itemColumns = [
@@ -257,10 +257,10 @@ export function PurchaseOrderModal({
       key: 'name',
       render: (text, record) => (
         <div>
-          <Text strong>{text} {record.type === 'product' ? `| ${record.color.name} | ${record.size.name}`: ''} </Text>
+          <Text strong>{text} {record.type === 'product' ? `| ${record.color.name} | ${record.size.name}` : ''} </Text>
           <br />
           <Text type="secondary" className="text-xs">
-            SKU: {record.sku} | {record.category} 
+            SKU: {record.sku} | {record.category}
           </Text>
         </div>
       )
@@ -318,7 +318,7 @@ export function PurchaseOrderModal({
       onCancel={onClose}
       width={1100}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
     >
       {vendorsError && (
         <Alert
@@ -330,13 +330,13 @@ export function PurchaseOrderModal({
         />
       )}
       <Tabs activeKey={activeTab} onChange={setActiveTab}>
-        <TabPane 
+        <TabPane
           tab={
             <span>
               <Icon name="store" className="mr-2" />
               Vendor Details
             </span>
-          } 
+          }
           key="1"
         >
           <Form
@@ -351,8 +351,8 @@ export function PurchaseOrderModal({
                   label="Select Vendor"
                   rules={[{ required: true, message: 'Please select a vendor' }]}
                 >
-                  <Select 
-                    placeholder="Select a vendor" 
+                  <Select
+                    placeholder="Select a vendor"
                     onChange={handleVendorChange}
                     allowClear
                     showSearch
@@ -437,8 +437,8 @@ export function PurchaseOrderModal({
                     }
                   ]}
                 >
-                  <DatePicker 
-                    className="w-full" 
+                  <DatePicker
+                    className="w-full"
                     disabledDate={disabledDeliveryDate}
                   />
                 </Form.Item>
@@ -498,8 +498,8 @@ export function PurchaseOrderModal({
           </Form>
 
           <div className="flex justify-end mt-4">
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               onClick={() => setActiveTab('2')}
               className="bg-blue-600"
               disabled={vendorsLoading}
@@ -509,14 +509,14 @@ export function PurchaseOrderModal({
             </Button>
           </div>
         </TabPane>
-        
-        <TabPane 
+
+        <TabPane
           tab={
             <span>
               <Icon name="inventory_2" className="mr-2" />
               Order Items
             </span>
-          } 
+          }
           key="2"
         >
           <div className="space-y-6">
@@ -589,7 +589,7 @@ export function PurchaseOrderModal({
                           >
                             {selectedProduct?.colors?.map(color => (
                               <Option key={color.id} value={color.id}>
-                                {color.name} 
+                                {color.name}
                               </Option>
                             ))}
                           </Select>
@@ -615,7 +615,7 @@ export function PurchaseOrderModal({
                               </Option>
                             ))}
                           </Select>
-                        </Form.Item>  
+                        </Form.Item>
                       </>
                     )}
                   </Col>
@@ -663,7 +663,7 @@ export function PurchaseOrderModal({
                   Total: LKR {orderTotal.toFixed(2)}
                 </Text>
               </div>
-              
+
               <Table
                 columns={itemColumns}
                 dataSource={items}
@@ -703,8 +703,8 @@ export function PurchaseOrderModal({
                 <Button onClick={onClose}>
                   Cancel
                 </Button>
-                <Button 
-                  type="primary" 
+                <Button
+                  type="primary"
                   onClick={handleSubmit}
                   loading={purchaseOrderLoading}
                   disabled={items.length === 0}

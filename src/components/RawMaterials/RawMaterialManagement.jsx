@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
-  Card, 
-  Button, 
-  Input, 
-  Space, 
-  Modal, 
-  Form, 
-  Select, 
-  InputNumber, 
+import {
+  Card,
+  Button,
+  Input,
+  Space,
+  Modal,
+  Form,
+  Select,
+  InputNumber,
   Typography,
   Tag,
   Alert,
@@ -42,17 +42,17 @@ export function RawMaterialManagement() {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const {rawMaterialsList, error} = useSelector(state => state.rawMaterials);
+  const { rawMaterialsList, error } = useSelector(state => state.rawMaterials);
   const [activeTab, setActiveTab] = useState('materials');
 
   useEffect(() => { dispatch2(fetchRawMaterials()); }, [dispatch2]);
 
   const categories = ['All', ...new Set(rawMaterialsList.map(m => m.category))];
-  
+
   const filteredMaterials = rawMaterialsList.filter(material => {
     const matchesSearch = material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         material.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         material.supplier?.toLowerCase().includes(searchTerm.toLowerCase());
+      material.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      material.supplier?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || material.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -77,11 +77,11 @@ export function RawMaterialManagement() {
       };
 
       if (editingMaterial) {
-        dispatch2(updateRawMaterials({materialData}));
+        dispatch2(updateRawMaterials({ materialData }));
         // dispatch({ type: 'UPDATE_RAW_MATERIAL', payload: materialData });
         message.success('Raw material updated successfully');
       } else {
-        dispatch2(addRawMaterials({materialData}));
+        dispatch2(addRawMaterials({ materialData }));
         // dispatch({ type: 'ADD_RAW_MATERIAL', payload: materialData });
         message.success('Raw material added successfully');
       }
@@ -103,7 +103,7 @@ export function RawMaterialManagement() {
   };
 
   const handleDelete = (materialId) => {
-    dispatch2(deleteRawMaterials({materialId}));
+    dispatch2(deleteRawMaterials({ materialId }));
     // dispatch({ type: 'DELETE_RAW_MATERIAL', payload: materialId });
     // message.success('Raw material deleted successfully');
   };
@@ -186,7 +186,7 @@ export function RawMaterialManagement() {
       render: (record) => (
         <Space>
           <Tooltip title="Edit">
-            <ActionButton.Text 
+            <ActionButton.Text
               icon="edit"
               onClick={(e) => {
                 e.stopPropagation();
@@ -206,7 +206,7 @@ export function RawMaterialManagement() {
               cancelText="Cancel"
               okButtonProps={{ danger: true }}
             >
-              <ActionButton.Text 
+              <ActionButton.Text
                 icon="delete"
                 danger
                 onClick={(e) => e.stopPropagation()}
@@ -274,7 +274,7 @@ export function RawMaterialManagement() {
                 <Option key={category} value={category}>{category}</Option>
               ))}
             </Select>
-            <ActionButton.Primary 
+            <ActionButton.Primary
               icon="add"
               onClick={() => setShowModal(true)}
             >
@@ -314,10 +314,10 @@ export function RawMaterialManagement() {
           const isOutOfStock = record.stockQuantity === 0;
           const isLowStock = record.stockQuantity <= record.minimumStock;
           const isAlmostLow = record.stockQuantity <= record.minimumStock * 2;
-          
+
           let color = 'green';
           let status = 'In Stock';
-          
+
           if (isOutOfStock) {
             color = 'red';
             status = 'Out of Stock';
@@ -328,7 +328,7 @@ export function RawMaterialManagement() {
             color = 'yellow';
             status = 'Almost Low';
           }
-          
+
           return (
             <div>
               <Text strong className={`text-${color === 'red' ? 'red' : color === 'orange' ? 'orange' : color === 'yellow' ? 'yellow' : 'green'}-600`}>
@@ -340,12 +340,11 @@ export function RawMaterialManagement() {
               </Tag>
               <div className="mt-1">
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full ${
-                      isOutOfStock ? 'bg-red-500' : 
-                      isLowStock ? 'bg-orange-500' : 
-                      isAlmostLow ? 'bg-yellow-500' : 'bg-green-500'
-                    }`}
+                  <div
+                    className={`h-2 rounded-full ${isOutOfStock ? 'bg-red-500' :
+                        isLowStock ? 'bg-orange-500' :
+                          isAlmostLow ? 'bg-yellow-500' : 'bg-green-500'
+                      }`}
                     style={{ width: `${Math.max(percentage, 5)}%` }}
                   />
                 </div>
@@ -373,7 +372,7 @@ export function RawMaterialManagement() {
         render: (record) => (
           <Space>
             <Tooltip title="Edit">
-              <ActionButton.Text 
+              <ActionButton.Text
                 icon="edit"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -383,7 +382,7 @@ export function RawMaterialManagement() {
               />
             </Tooltip>
             <Tooltip title="Restock">
-              <ActionButton.Text 
+              <ActionButton.Text
                 icon="add_shopping_cart"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -447,17 +446,16 @@ export function RawMaterialManagement() {
             rowKey="id"
             onRow={(record) => ({
               onClick: () => handleRowClick(record),
-              className: `cursor-pointer hover:bg-blue-50 ${
-                record.alertType === 'out-of-stock' ? 'bg-red-50' : 
-                record.alertType === 'low-stock' ? 'bg-orange-50' : 
-                'bg-yellow-50'
-              }`
+              className: `cursor-pointer hover:bg-blue-50 ${record.alertType === 'out-of-stock' ? 'bg-red-50' :
+                  record.alertType === 'low-stock' ? 'bg-orange-50' :
+                    'bg-yellow-50'
+                }`
             })}
             searchFields={['name', 'category', 'supplier']}
             searchPlaceholder="Search materials with stock issues..."
             showSearch={true}
             extra={
-              <ActionButton.Primary 
+              <ActionButton.Primary
                 icon="add"
                 onClick={() => setShowModal(true)}
               >
@@ -520,7 +518,7 @@ export function RawMaterialManagement() {
         }}
         footer={null}
         width={700}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={form}
@@ -654,8 +652,8 @@ export function RawMaterialManagement() {
         data={selectedMaterial}
         type="rawMaterial"
         actions={[
-          <ActionButton 
-            key="edit" 
+          <ActionButton
+            key="edit"
             icon="edit"
             onClick={() => {
               setShowDetailModal(false);

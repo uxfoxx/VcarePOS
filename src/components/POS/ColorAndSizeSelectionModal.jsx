@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Modal,
   Typography,
@@ -207,7 +207,10 @@ export function ColorAndSizeSelectionModal({
                     hoverable
                     className={`cursor-pointer transition-all ${selectedColor?.id === color.id ? 'border-blue-500 shadow-md bg-blue-50' : ''}`}
                     onClick={() => handleColorSelect(color)}
-                    bodyStyle={{ padding: '16px' }}
+                    // bodyStyle={{ padding: '16px' }}
+                    styles={{
+                      body: { padding: '16px' }
+                    }}
                   >
                     <div className="text-center space-y-3">
                       {/* Color Image Circle */}
@@ -272,7 +275,10 @@ export function ColorAndSizeSelectionModal({
                       hoverable
                       className={`cursor-pointer transition-all ${selectedSize?.id === size.id ? 'border-blue-500 shadow-md bg-blue-50' : ''}`}
                       onClick={() => handleSizeSelect(size)}
-                      bodyStyle={{ padding: '16px' }}
+                      // bodyStyle={{ padding: '16px' }}
+                      styles={{
+                        body: { padding: '16px' }
+                      }}
                     >
                       <div className="text-center space-y-2">
                         <div className="relative">

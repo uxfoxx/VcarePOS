@@ -1,6 +1,6 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
 import { ConfigProvider, Layout, theme, Spin, App as AntApp, Modal } from 'antd';
-import { AuthProvider } from './contexts/AuthContext'; 
+import { AuthProvider } from './contexts/AuthContext';
 import { LoginPage } from './components/Auth/LoginPage';
 import { Header } from './components/Layout/Header';
 import { Sidebar } from './components/Layout/Sidebar';
@@ -18,10 +18,10 @@ const getBrandingValue = (key, defaultValue = null) => {
   try {
     const branding = localStorage.getItem('vcare_branding');
     if (!branding) return defaultValue;
-    
+
     const brandingData = JSON.parse(branding);
     const value = brandingData[key];
-    
+
     // If the value is an object (like Ant Design Color object), extract the hex string
     if (value && typeof value === 'object') {
       // Handle Ant Design ColorPicker objects
@@ -35,11 +35,11 @@ const getBrandingValue = (key, defaultValue = null) => {
       // If it's an object but we can't extract a color, return default
       return defaultValue;
     }
-    
+
     // If it's already a string, return it
     return value || defaultValue;
   } catch (error) {
-    console.warn('Error parsing branding data:', error);
+    console.error('Error parsing branding data:', error);
     return defaultValue;
   }
 };
@@ -62,13 +62,15 @@ const QuotationManagement = lazy(() => import('./components/Quotations/Quotation
 
 // Loading component
 const ComponentLoader = () => (
-  <div style={{ 
-    display: 'flex', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    height: '300px' 
+  <div style={{
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '300px'
   }}>
-    <Spin size="large" tip="Loading..." />
+    <Spin tip="Loading..." size="large">
+      <div style={{ padding: 50 }} /> {/* empty child to trigger nested mode */}
+    </Spin>
   </div>
 );
 
@@ -80,7 +82,7 @@ const { Sider, Content } = Layout;
 function TokenValidator() {
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector(state => state.auth);
-  
+
   useEffect(() => {
     // Function to validate token
     const validateToken = () => {
@@ -90,7 +92,7 @@ function TokenValidator() {
         try {
           const tokenData = JSON.parse(atob(token.split('.')[1]));
           const expiry = tokenData.exp * 1000; // Convert to milliseconds
-          
+
           // If token is expired or will expire in 5 minutes, refresh user data
           if (Date.now() > expiry - 5 * 60 * 1000) {
             dispatch(getCurrentUser());
@@ -103,21 +105,21 @@ function TokenValidator() {
 
     // Check token validity immediately
     validateToken();
-    
+
     // Then check periodically (every 5 minutes)
     const interval = setInterval(validateToken, 5 * 60 * 1000);
-    
+
     // Cleanup on unmount
     return () => clearInterval(interval);
   }, [dispatch, isAuthenticated]);
-  
+
   // This component doesn't render anything
   return null;
 }
 
 function AppContent() {
   const { isAuthenticated } = useSelector(state => state.auth);
-  const [activeTab, setActiveTab] = useState('pos'); 
+  const [activeTab, setActiveTab] = useState('pos');
   const [collapsed, setCollapsed] = useState(true);
 
   // If not authenticated, show login page
@@ -289,25 +291,25 @@ function AppContent() {
     <>
       <TokenValidator />
       <Layout style={layoutStyle}>
-        <Sider 
-          width={siderWidth} 
+        <Sider
+          width={siderWidth}
           style={siderStyle}
           collapsible
           collapsed={collapsed}
           onCollapse={setCollapsed}
           trigger={null}
         >
-          <Sidebar 
-            activeTab={activeTab} 
+          <Sidebar
+            activeTab={activeTab}
             onTabChange={setActiveTab}
             collapsed={collapsed}
             onCollapse={setCollapsed}
           />
         </Sider>
         <Layout>
-          <Header 
+          <Header
             style={headerStyle}
-            collapsed={collapsed} 
+            collapsed={collapsed}
             onCollapse={setCollapsed}
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -343,27 +345,27 @@ function App() {
         dispatch(getCurrentUser());
       }
     }, [dispatch]);
-    
+
     // Check stock levels periodically using Redux
     useEffect(() => {
       // Initial check
       dispatch(checkStockLevels());
-      
+
       // Set up interval for periodic checks
       const interval = setInterval(() => {
         dispatch(checkStockLevels());
       }, settings.stockCheckInterval);
-      
+
       return () => clearInterval(interval);
     }, [dispatch, settings.stockCheckInterval]);
-    
+
     // Also check stock levels when raw materials or products change
     useEffect(() => {
       if (rawMaterialsList.length > 0 || productsList.length > 0) {
         dispatch(checkStockLevels());
       }
     }, [rawMaterialsList, productsList, dispatch]);
-    
+
     // Wrap AppContent with ErrorBoundary to catch any rendering errors
     return (
       <ErrorBoundary showErrorDetails={import.meta.env.DEV}>
@@ -376,33 +378,33 @@ function App() {
   return (
     <ConfigProvider
       theme={{
-        algorithm: localStorage.getItem('vcare_branding') && 
-          getBrandingValue('darkModeSupport') ? 
+        algorithm: localStorage.getItem('vcare_branding') &&
+          getBrandingValue('darkModeSupport') ?
           theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
           colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
           colorPrimaryText: getBrandingValue('primaryTextColor', '#ffffff'),
           borderRadius: 8,
-          colorBgContainer: localStorage.getItem('vcare_branding') && 
-            getBrandingValue('darkModeSupport') ? 
+          colorBgContainer: localStorage.getItem('vcare_branding') &&
+            getBrandingValue('darkModeSupport') ?
             '#141414' : '#ffffff',
-          colorBgLayout: localStorage.getItem('vcare_branding') && 
-            getBrandingValue('darkModeSupport') ? 
+          colorBgLayout: localStorage.getItem('vcare_branding') &&
+            getBrandingValue('darkModeSupport') ?
             '#000000' : '#f8fafc',
           fontFamily: `"${getBrandingValue('fontFamily', 'Inter')}", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
           fontSize: 14,
           lineHeight: 1.5,
-          colorText: localStorage.getItem('vcare_branding') && 
-            getBrandingValue('darkModeSupport') ? 
+          colorText: localStorage.getItem('vcare_branding') &&
+            getBrandingValue('darkModeSupport') ?
             '#ffffff' : '#1f2937',
-          colorTextSecondary: localStorage.getItem('vcare_branding') && 
-            getBrandingValue('darkModeSupport') ? 
+          colorTextSecondary: localStorage.getItem('vcare_branding') &&
+            getBrandingValue('darkModeSupport') ?
             '#a3a3a3' : '#6b7280',
-          boxShadow: localStorage.getItem('vcare_branding') && 
-            getBrandingValue('darkModeSupport') ? 
+          boxShadow: localStorage.getItem('vcare_branding') &&
+            getBrandingValue('darkModeSupport') ?
             '0 1px 3px rgba(0, 0, 0, 0.3)' : '0 1px 3px rgba(0, 0, 0, 0.1)',
-          boxShadowSecondary: localStorage.getItem('vcare_branding') && 
-            getBrandingValue('darkModeSupport') ? 
+          boxShadowSecondary: localStorage.getItem('vcare_branding') &&
+            getBrandingValue('darkModeSupport') ?
             '0 4px 6px rgba(0, 0, 0, 0.3)' : '0 4px 6px rgba(0, 0, 0, 0.1)',
           colorSuccess: getBrandingValue('secondaryColor', '#52c41a'),
           colorSuccessText: getBrandingValue('secondaryTextColor', '#ffffff'),
@@ -411,50 +413,50 @@ function App() {
         },
         components: {
           Layout: {
-            headerBg: localStorage.getItem('vcare_branding') && 
-              getBrandingValue('darkModeSupport') ? 
+            headerBg: localStorage.getItem('vcare_branding') &&
+              getBrandingValue('darkModeSupport') ?
               '#141414' : '#ffffff',
-            siderBg: localStorage.getItem('vcare_branding') && 
-              getBrandingValue('darkModeSupport') ? 
+            siderBg: localStorage.getItem('vcare_branding') &&
+              getBrandingValue('darkModeSupport') ?
               '#141414' : '#ffffff',
-            bodyBg: localStorage.getItem('vcare_branding') && 
-              getBrandingValue('darkModeSupport') ? 
+            bodyBg: localStorage.getItem('vcare_branding') &&
+              getBrandingValue('darkModeSupport') ?
               '#000000' : '#f8fafc',
             headerHeight: 64,
-            footerBg: localStorage.getItem('vcare_branding') && 
-              getBrandingValue('darkModeSupport') ? 
+            footerBg: localStorage.getItem('vcare_branding') &&
+              getBrandingValue('darkModeSupport') ?
               '#141414' : '#ffffff',
           },
           Card: {
             borderRadiusLG: 12,
-            boxShadowTertiary: localStorage.getItem('vcare_branding') && 
-              getBrandingValue('darkModeSupport') ? 
+            boxShadowTertiary: localStorage.getItem('vcare_branding') &&
+              getBrandingValue('darkModeSupport') ?
               '0 1px 3px rgba(0, 0, 0, 0.3)' : '0 1px 3px rgba(0, 0, 0, 0.1)',
-            colorBgContainer: localStorage.getItem('vcare_branding') && 
-              getBrandingValue('darkModeSupport') ? 
+            colorBgContainer: localStorage.getItem('vcare_branding') &&
+              getBrandingValue('darkModeSupport') ?
               '#141414' : '#ffffff',
           },
           Button: {
             borderRadius: 8,
             controlHeight: 40,
             fontWeight: 500,
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
-             colorPrimaryActive: `${getBrandingValue('primaryColor', '#0E72BD')}CC`,
-             colorPrimaryTextHover: getBrandingValue('primaryTextColor', '#ffffff'),
-             colorPrimaryTextActive: getBrandingValue('primaryTextColor', '#ffffff'),
+            colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+            colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+            colorPrimaryActive: `${getBrandingValue('primaryColor', '#0E72BD')}CC`,
+            colorPrimaryTextHover: getBrandingValue('primaryTextColor', '#ffffff'),
+            colorPrimaryTextActive: getBrandingValue('primaryTextColor', '#ffffff'),
           },
           Input: {
             borderRadius: 8,
             controlHeight: 40,
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+            colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+            colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
           },
           Select: {
             borderRadius: 8,
             controlHeight: 40,
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+            colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+            colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
           },
           Table: {
             borderRadiusLG: 12,
@@ -473,60 +475,60 @@ function App() {
             itemBorderRadius: 8,
             itemMarginInline: 4,
             itemMarginBlock: 2,
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
-             colorItemBgSelected: (() => {
-               const primaryColor = getBrandingValue('primaryColor', '#0E72BD');
-               const r = parseInt(primaryColor.slice(1, 3), 16);
-               const g = parseInt(primaryColor.slice(3, 5), 16);
-               const b = parseInt(primaryColor.slice(5, 7), 16);
-               return `rgba(${r}, ${g}, ${b}, 0.1)`;
-             })(),
+            colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+            colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+            itemSelectedBg: (() => {
+              const primaryColor = getBrandingValue('primaryColor', '#0E72BD');
+              const r = parseInt(primaryColor.slice(1, 3), 16);
+              const g = parseInt(primaryColor.slice(3, 5), 16);
+              const b = parseInt(primaryColor.slice(5, 7), 16);
+              return `rgba(${r}, ${g}, ${b}, 0.1)`;
+            })(),
           },
-           Checkbox: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
-           },
-           Radio: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
-           },
-           Switch: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
-           },
-           Slider: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
-           },
-           Tabs: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryActive: `${getBrandingValue('primaryColor', '#0E72BD')}CC`,
-           },
-           Tag: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryBg: `${getBrandingValue('primaryColor', '#0E72BD')}19`,
-             colorPrimaryBorderHover: getBrandingValue('primaryColor', '#0E72BD'),
-           },
-           Progress: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryBg: `${getBrandingValue('primaryColor', '#0E72BD')}19`,
-           },
-           Pagination: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
-             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
-           },
-           DatePicker: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
-             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
-           },
-           TimePicker: {
-             colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
-             colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
-             colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
-           },
+          Checkbox: {
+            colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+            colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
+          },
+          Radio: {
+            colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+            colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+          },
+          Switch: {
+            colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+            colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+          },
+          Slider: {
+            colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+            colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
+          },
+          Tabs: {
+            colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+            colorPrimaryActive: `${getBrandingValue('primaryColor', '#0E72BD')}CC`,
+          },
+          Tag: {
+            colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+            colorPrimaryBg: `${getBrandingValue('primaryColor', '#0E72BD')}19`,
+            colorPrimaryBorderHover: getBrandingValue('primaryColor', '#0E72BD'),
+          },
+          Progress: {
+            colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+            colorPrimaryBg: `${getBrandingValue('primaryColor', '#0E72BD')}19`,
+          },
+          Pagination: {
+            colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+            colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+            colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
+          },
+          DatePicker: {
+            colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+            colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+            colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
+          },
+          TimePicker: {
+            colorPrimary: getBrandingValue('primaryColor', '#0E72BD'),
+            colorPrimaryHover: `${getBrandingValue('primaryColor', '#0E72BD')}E6`,
+            colorPrimaryBorder: getBrandingValue('primaryColor', '#0E72BD'),
+          },
           Tooltip: {
             colorBgDefault: getBrandingValue('primaryColor', '#0E72BD'),
             colorTextLightSolid: '#ffffff',
@@ -546,8 +548,8 @@ function App() {
     >
       <AntApp>
         <AuthProvider>
-            <ReduxErrorNotification />
-            <AppWithNotifications />
+          <ReduxErrorNotification />
+          <AppWithNotifications />
         </AuthProvider>
       </AntApp>
     </ConfigProvider>

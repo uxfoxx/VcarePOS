@@ -135,7 +135,7 @@ export function ProductAddonsModal({ open, onClose, product }) {
       onCancel={onClose}
       width={800}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
     >
       <div className="space-y-6">
         {/* Product Info */}

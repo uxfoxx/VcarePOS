@@ -1506,7 +1506,7 @@ export function ProductModal({
       onCancel={handleClose}
       width={900}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
     >
       <div className="space-y-6">
         <EnhancedStepper

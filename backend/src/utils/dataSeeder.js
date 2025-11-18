@@ -8,17 +8,17 @@ const path = require('path');
  */
 async function seedDatabase() {
   const client = await pool.connect();
-  
+
   try {
     console.log('Starting database seeding...');
     // Remove schema.sql logic and assume migrations have already created tables
-    
+
     // Check if users table is empty
     const usersResult = await client.query('SELECT COUNT(*) FROM users');
-    
+
     if (parseInt(usersResult.rows[0].count) === 0) {
-      console.log('Seeding users...');
-      
+      // console.log('Seeding users...');
+
       // Create admin user
       const adminPassword = await hashPassword('admin123');
       await client.query(`
@@ -36,7 +36,7 @@ async function seedDatabase() {
           '{"pos":{"view":true,"edit":true,"delete":true},"products":{"view":true,"edit":true,"delete":true},"raw-materials":{"view":true,"edit":true,"delete":true},"transactions":{"view":true,"edit":true,"delete":true},"reports":{"view":true,"edit":true,"delete":true},"coupons":{"view":true,"edit":true,"delete":true},"tax":{"view":true,"edit":true,"delete":true},"purchase-orders":{"view":true,"edit":true,"delete":true},"settings":{"view":true,"edit":true,"delete":true},"user-management":{"view":true,"edit":true,"delete":true},"audit-trail":{"view":true,"edit":true,"delete":true}}'
         )
       `, [adminPassword]);
-      
+
       // Create cashier user
       const cashierPassword = await hashPassword('cashier123');
       await client.query(`
@@ -54,7 +54,7 @@ async function seedDatabase() {
           '{"pos":{"view":true,"edit":true,"delete":false},"products":{"view":true,"edit":false,"delete":false},"raw-materials":{"view":false,"edit":false,"delete":false},"transactions":{"view":true,"edit":false,"delete":false},"reports":{"view":false,"edit":false,"delete":false},"coupons":{"view":true,"edit":false,"delete":false},"tax":{"view":false,"edit":false,"delete":false},"purchase-orders":{"view":false,"edit":false,"delete":false},"settings":{"view":false,"edit":false,"delete":false},"user-management":{"view":false,"edit":false,"delete":false},"audit-trail":{"view":false,"edit":false,"delete":false}}'
         )
       `, [cashierPassword]);
-      
+
       // Create manager user
       const managerPassword = await hashPassword('manager123');
       await client.query(`
@@ -72,16 +72,16 @@ async function seedDatabase() {
           '{"pos":{"view":true,"edit":true,"delete":true},"products":{"view":true,"edit":true,"delete":true},"raw-materials":{"view":true,"edit":true,"delete":false},"transactions":{"view":true,"edit":true,"delete":false},"reports":{"view":true,"edit":false,"delete":false},"coupons":{"view":true,"edit":true,"delete":true},"tax":{"view":true,"edit":true,"delete":false},"purchase-orders":{"view":true,"edit":true,"delete":false},"settings":{"view":true,"edit":false,"delete":false},"user-management":{"view":true,"edit":false,"delete":false},"audit-trail":{"view":true,"edit":false,"delete":false}}'
         )
       `, [managerPassword]);
-      
+
       console.log('Users seeded successfully');
     }
-    
+
     // Check if categories table is empty
     const categoriesResult = await client.query('SELECT COUNT(*) FROM categories');
-    
+
     if (parseInt(categoriesResult.rows[0].count) === 0) {
       console.log('Seeding categories...');
-      
+
       // Insert categories
       await client.query(`
         INSERT INTO categories (id, name, description, is_active) VALUES
@@ -92,13 +92,13 @@ async function seedDatabase() {
         ('CAT-005', 'Bedroom', 'Bedroom furniture including beds, nightstands, and dressers', TRUE),
         ('CAT-006', 'Office Furniture', 'Professional office furniture and accessories', FALSE)
       `);
-      
+
       console.log('Categories seeded successfully');
     }
-    
+
     // Import mock data from frontend if needed
     // This would involve reading the mock data files and inserting the data into the database
-    
+
     console.log('Database seeding completed successfully');
   } catch (error) {
     console.error('Error seeding database:', error);

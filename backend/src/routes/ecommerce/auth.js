@@ -199,7 +199,7 @@ router.post('/auth/login', [
 
     // Generate JWT token
     const token = generateToken(customer);
-    console.log("asdasdasd", customer)
+    // console.log("asdasdasd", customer)
     // Send login notification email
     const emailBody = generateLoginNotificationEmailBody(customer.first_name, lastLoginTime);
     await sendEmail(customer.email, 'New Login Notification', emailBody);

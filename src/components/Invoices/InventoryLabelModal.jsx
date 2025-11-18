@@ -222,7 +222,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
           </ActionButton.Primary>
         ]}
         className="inventory-labels-modal"
-        destroyOnClose
+        destroyOnHidden
       >
         <div className="max-h-[70vh] overflow-y-auto">
           <div className="mb-4 p-4 bg-blue-50 rounded-lg">

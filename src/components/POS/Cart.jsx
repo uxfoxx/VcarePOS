@@ -22,7 +22,7 @@ import { fetchTaxes } from '../../features/taxes/taxesSlice';
 import { fetchCoupons } from '../../features/coupons/couponsSlice';
 import { useReduxNotifications as useNotifications } from '../../hooks/useReduxNotifications';
 import { ActionButton } from '../common/ActionButton';
-import { Icon } from '../common/Icon'; 
+import { Icon } from '../common/Icon';
 import { CheckoutModal } from '../POS/CheckoutModal';
 import { QuotationPDF } from '../Quotations/QuotationPDF';
 import jsPDF from 'jspdf';
@@ -72,9 +72,12 @@ export function Cart() {
   // Early return if cart is not properly initialized
   if (!cart) {
     return (
-      <Card 
+      <Card
         className="h-full"
-        bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
+        styles={{
+          body: { padding: 0, height: 'calc(100vh - 200px)' }
+        }}
+        // bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
         title={
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -99,7 +102,7 @@ export function Cart() {
   const calculateTaxes = () => {
     const activeTaxes = Array.isArray(taxes) ? taxes.filter(tax => tax.isActive) : [];
     let itemTaxes = [];
-    
+
     // Calculate category taxes for each item
     cart.forEach(cartItem => {
       const categoryTaxes = activeTaxes.filter(tax =>
@@ -107,7 +110,7 @@ export function Cart() {
         Array.isArray(tax.applicableCategories) &&
         tax.applicableCategories.includes(cartItem.product.category)
       );
-      
+
       categoryTaxes.forEach(tax => {
         const taxAmount = (cartItem.product.price * cartItem.quantity * tax.rate) / 100;
         itemTaxes.push({
@@ -123,28 +126,28 @@ export function Cart() {
 
     // Get full bill taxes
     const fullBillTaxes = activeTaxes.filter(tax => tax && tax.taxType === 'full_bill');
-    
+
     return { itemTaxes, fullBillTaxes };
   };
 
   const { itemTaxes, fullBillTaxes } = calculateTaxes();
-  
+
   const subtotal = cart.reduce((sum, item) => {
     // Include base price
     let itemTotal = item.product.price * item.quantity;
 
     // Add addon prices if any
     if (item.product.addons) {
-      const addonTotal = item.product.addons.reduce((addonSum, addon) => 
+      const addonTotal = item.product.addons.reduce((addonSum, addon) =>
         addonSum + addon.price, 0) * item.quantity;
       itemTotal += addonTotal;
     }
-    
+
     return sum + itemTotal;
   }, 0);
-  
+
   const categoryTaxTotal = itemTaxes.reduce((sum, tax) => sum + (tax.amount || 0), 0);
-  
+
   // Calculate coupon discount based on type
   let couponDiscount = 0;
   if (appliedCoupon) {
@@ -158,35 +161,35 @@ export function Cart() {
       couponDiscount = appliedCoupon.discountAmount || 0;
     }
   }
-  
+
   const taxableAmount = subtotal + categoryTaxTotal - couponDiscount;
-  
+
   // Calculate full bill taxes on the taxable amount
   const fullBillTaxTotal = fullBillTaxes.reduce((sum, tax) => sum + (taxableAmount * tax.rate) / 100, 0);
-  
+
   const total = taxableAmount + fullBillTaxTotal;
 
   const handleQuantityChange = (productId, selectedSize, newQuantity) => {
     if (newQuantity <= 0) {
       // Find the cart item to get the selectedColorId
-      const cartItem = cart.find(item => 
+      const cartItem = cart.find(item =>
         item.product.id === productId && item.selectedSize === selectedSize
       );
-      dispatch(removeFromCart({ 
-        productId, 
+      dispatch(removeFromCart({
+        productId,
         selectedColorId: cartItem?.selectedColorId,
-        selectedSize 
+        selectedSize
       }));
     } else {
       // Find the cart item to get the selectedColorId
-      const cartItem = cart.find(item => 
+      const cartItem = cart.find(item =>
         item.product.id === productId && item.selectedSize === selectedSize
       );
-      dispatch(updateQuantity({ 
-        productId, 
+      dispatch(updateQuantity({
+        productId,
         selectedColorId: cartItem?.selectedColorId,
-        selectedSize, 
-        quantity: newQuantity 
+        selectedSize,
+        quantity: newQuantity
       }));
     }
   };
@@ -216,7 +219,7 @@ export function Cart() {
       // Check category restrictions
       if (coupon.applicableCategories && coupon.applicableCategories.length > 0) {
         const cartCategories = cart.map(item => item.product.category);
-        const hasApplicableProducts = coupon.applicableCategories.some(category => 
+        const hasApplicableProducts = coupon.applicableCategories.some(category =>
           cartCategories.includes(category)
         );
         if (!hasApplicableProducts) {
@@ -226,7 +229,7 @@ export function Cart() {
       }
 
       setAppliedCoupon(coupon);
-      const discountText = coupon.discountType === 'percentage' 
+      const discountText = coupon.discountType === 'percentage'
         ? `${coupon.discountPercent}% discount`
         : `LKR ${coupon.discountAmount} discount`;
       message.success(`Coupon applied! ${discountText}`);
@@ -386,15 +389,18 @@ export function Cart() {
     } else if (materialWarnings.lowMaterials.length > 0) {
       message.warning('Some raw materials are running low. Consider restocking soon.');
     }
-    
+
     setShowCheckoutModal(true);
   };
 
   return (
     <>
-      <Card 
+      <Card
         className="h-full"
-        bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
+        // bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
+        styles={{
+          body: { padding: 0, height: 'calc(100vh - 200px)' }
+        }}
         title={
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -429,7 +435,7 @@ export function Cart() {
                   className="mb-2"
                 />
               )}
-              
+
               {materialWarnings.lowMaterials.length > 0 && (
                 <Alert
                   type="warning"
@@ -468,14 +474,14 @@ export function Cart() {
                   // Get category taxes for this item
                   const itemCategoryTaxes = itemTaxes.filter(tax => tax.productId === item.product.id);
                   const itemTaxAmount = itemCategoryTaxes.reduce((sum, tax) => sum + tax.amount, 0);
-                  
+
                   // Calculate addon price if any
-                  const addonPrice = item.product.addons ? 
+                  const addonPrice = item.product.addons ?
                     item.product.addons.reduce((sum, addon) => sum + addon.price, 0) * item.quantity : 0;
-                  
+
                   // Calculate total price including addons
                   const itemTotalPrice = (item.product.price * item.quantity) + addonPrice;
-                  
+
                   return (
                     <List.Item className="px-0 py-3 border-b border-gray-100">
                       <div className="w-full">
@@ -501,25 +507,25 @@ export function Cart() {
                           </div>
                           <Popconfirm
                             title="Remove item?"
-                            onConfirm={() => dispatch(removeFromCart({ 
-                              productId: item.product.id, 
+                            onConfirm={() => dispatch(removeFromCart({
+                              productId: item.product.id,
                               selectedColorId: item.selectedColorId,
-                              selectedSize: item.selectedSize 
+                              selectedSize: item.selectedSize
                             }))}
                           >
-                            <ActionButton.Text 
+                            <ActionButton.Text
                               icon="close"
                               size="small"
                               className="text-gray-400 hover:text-red-500"
                             />
                           </Popconfirm>
                         </div>
-                        
+
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
                             <Text className="text-sm">LKR {item.product.price.toFixed(2)}</Text>
                             <InputNumber
-                              min={1} 
+                              min={1}
                               max={100}
                               value={item.quantity}
                               onChange={(value) => handleQuantityChange(item.product.id, item.selectedSize, value || 1)}
@@ -538,8 +544,8 @@ export function Cart() {
                             )}
                           </div>
                         </div>
-                        
-                        {/* Show addons if any */ }
+
+                        {/* Show addons if any */}
                         {item.product.addons && Array.isArray(item.product.addons) && item.product.addons.length > 0 && (
                           <div className="mt-1 pl-4 border-l-2 border-blue-200">
                             <Text type="secondary" className="text-xs">Addons:</Text>
@@ -555,7 +561,7 @@ export function Cart() {
                             ))}
                           </div>
                         )}
-                        
+
                         {/* Show category taxes for this item */}
                         {itemCategoryTaxes.length > 0 && (
                           <div className="mt-1">
@@ -566,10 +572,10 @@ export function Cart() {
                             ))}
                           </div>
                         )}
-                        
+
                         <div className="mt-1">
                           <Text type="secondary" className="text-xs">
-                            {itemTaxAmount > 0 && ` + LKR ${itemTaxAmount.toFixed(2)} tax`} 
+                            {itemTaxAmount > 0 && ` + LKR ${itemTaxAmount.toFixed(2)} tax`}
                           </Text>
                         </div>
                       </div>
@@ -605,15 +611,15 @@ export function Cart() {
                         <Text strong className="text-green-800 text-sm">{appliedCoupon.code}</Text>
                         <br />
                         <Text className="text-green-600 text-xs">
-                          {appliedCoupon.discountType === 'percentage' 
+                          {appliedCoupon.discountType === 'percentage'
                             ? `${appliedCoupon.discountPercent}% discount`
                             : `LKR ${appliedCoupon.discountAmount} discount`
                           }
                         </Text>
                       </div>
-                      <ActionButton.Text 
+                      <ActionButton.Text
                         icon="close"
-                        danger 
+                        danger
                         size="small"
                         onClick={handleRemoveCoupon}
                       />
@@ -626,7 +632,7 @@ export function Cart() {
                 ) : (
                   <div className="space-y-2">
                     <div className="flex space-x-1">
-                      <Input 
+                      <Input
                         placeholder="Enter coupon code"
                         value={couponCode}
                         onChange={(e) => setCouponCode(e.target.value)}
@@ -634,8 +640,8 @@ export function Cart() {
                         onPressEnter={handleApplyCoupon}
                         className="flex-1"
                       />
-                      <Button 
-                        size="middle" 
+                      <Button
+                        size="middle"
                         type="primary"
                         onClick={handleApplyCoupon}
                         disabled={!couponCode.trim()}

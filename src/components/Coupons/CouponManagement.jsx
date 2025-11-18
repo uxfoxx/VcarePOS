@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { 
-  Button, 
-  Input, 
-  Space, 
-  Modal, 
-  Form, 
-  Select, 
-  InputNumber, 
+import {
+  Button,
+  Input,
+  Space,
+  Modal,
+  Form,
+  Select,
+  InputNumber,
   Typography,
   Tag,
   Switch,
@@ -161,8 +161,8 @@ export function CouponManagement() {
       width: 120,
       render: (record) => (
         <Text strong>
-          {record.discountType === 'percentage' 
-            ? `${record.discountPercent}%` 
+          {record.discountType === 'percentage'
+            ? `${record.discountPercent}%`
             : `LKR ${record.discountAmount}`
           }
         </Text>
@@ -211,10 +211,10 @@ export function CouponManagement() {
       render: (record) => {
         const isExpired = record.validTo && new Date(record.validTo) < new Date();
         const isUsedUp = record.usageLimit && record.usedCount >= record.usageLimit;
-        
+
         let status = 'Active';
         let color = 'green';
-        
+
         if (!record.isActive) {
           status = 'Inactive';
           color = 'red';
@@ -225,7 +225,7 @@ export function CouponManagement() {
           status = 'Used Up';
           color = 'orange';
         }
-        
+
         return <Tag color={color}>{status}</Tag>;
       },
       filters: [
@@ -237,7 +237,7 @@ export function CouponManagement() {
       onFilter: (value, record) => {
         const isExpired = record.validTo && new Date(record.validTo) < new Date();
         const isUsedUp = record.usageLimit && record.usedCount >= record.usageLimit;
-        
+
         if (value === 'active') return record.isActive && !isExpired && !isUsedUp;
         if (value === 'inactive') return !record.isActive;
         if (value === 'expired') return isExpired;
@@ -253,7 +253,7 @@ export function CouponManagement() {
       render: (record) => (
         <Space>
           <Tooltip title="Edit">
-            <ActionButton.Text 
+            <ActionButton.Text
               icon="edit"
               onClick={(e) => {
                 e.stopPropagation();
@@ -284,7 +284,7 @@ export function CouponManagement() {
               cancelText="Cancel"
               okButtonProps={{ danger: true }}
             >
-              <ActionButton.Text 
+              <ActionButton.Text
                 icon="delete"
                 danger
                 onClick={(e) => e.stopPropagation()}
@@ -321,7 +321,7 @@ export function CouponManagement() {
         searchFields={['code', 'description']}
         searchPlaceholder="Search coupons..."
         extra={
-          <ActionButton.Primary 
+          <ActionButton.Primary
             icon="add"
             onClick={() => setShowModal(true)}
           >
@@ -343,7 +343,7 @@ export function CouponManagement() {
         }}
         footer={null}
         width={800}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={form}
@@ -358,12 +358,12 @@ export function CouponManagement() {
                 label="Coupon Code"
                 rules={[{ required: true, message: 'Please enter coupon code' }]}
               >
-                <Input 
+                <Input
                   placeholder="Enter coupon code"
                   className="font-mono"
                   addonAfter={
-                    <Button 
-                      type="text" 
+                    <Button
+                      type="text"
                       size="small"
                       onClick={generateCouponCode}
                       icon={<Icon name="refresh" size="text-sm" />}
@@ -453,8 +453,8 @@ export function CouponManagement() {
               </Col>
             )}
             <Col span={8}>
-              <Form.Item 
-                name="minimumAmount" 
+              <Form.Item
+                name="minimumAmount"
                 label="Minimum Order Amount (LKR)"
                 rules={discountType === 'fixed' ? [
                   {
@@ -498,7 +498,7 @@ export function CouponManagement() {
             </Col>
             <Col span={12}>
               <Form.Item name="dateRange" label="Valid Period">
-                <RangePicker 
+                <RangePicker
                   className="w-full"
                   showTime
                   format="YYYY-MM-DD HH:mm"
@@ -523,7 +523,7 @@ export function CouponManagement() {
           </Form.Item>
 
           <Form.Item name="isActive" label="Active" valuePropName="checked" initialValue={true}>
-              <Switch />
+            <Switch />
           </Form.Item>
 
           <div className="flex justify-end space-x-2 mt-6">
@@ -549,8 +549,8 @@ export function CouponManagement() {
         data={selectedCoupon}
         type="coupon"
         actions={[
-          <ActionButton 
-            key="edit" 
+          <ActionButton
+            key="edit"
             icon="edit"
             onClick={() => {
               setShowDetailModal(false);

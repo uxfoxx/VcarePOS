@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  Modal, 
-  Form, 
-  Input, 
-  Select, 
+import {
+  Modal,
+  Form,
+  Input,
+  Select,
   Typography,
   Row,
   Col,
@@ -123,14 +123,14 @@ export function UserModal({ open, onClose, editingUser }) {
   // Handle success and error messages from Redux state
   useEffect(() => {
     if (!open) return; // Only handle messages when modal is open
-    
+
     if (successMessage) {
       message.success(successMessage);
       dispatch(clearMessages());
       handleClose(); // Close modal on success
       return; // Don't process error if success occurred
     }
-    
+
     if (error) {
       message.error(error);
       dispatch(clearMessages());
@@ -157,20 +157,20 @@ export function UserModal({ open, onClose, editingUser }) {
     try {
       // TODO: Move duplicate validation to backend to prevent race conditions
       // This client-side check is insufficient for production use
-      
+
       // Temporary client-side check for duplicate username
-      const existingUser = users.find(u => 
-        u.username === values.username && 
+      const existingUser = users.find(u =>
+        u.username === values.username &&
         u.id !== editingUser?.id
       );
       if (existingUser) {
         message.error('Username already exists');
         return;
       }
-      
+
       // Temporary client-side check for duplicate email
-      const existingEmail = users.find(u => 
-        u.email === values.email && 
+      const existingEmail = users.find(u =>
+        u.email === values.email &&
         u.id !== editingUser?.id
       );
       if (existingEmail) {
@@ -219,7 +219,7 @@ export function UserModal({ open, onClose, editingUser }) {
           size="small"
         />
       </div>
-      
+
       {modulePerms.view && (
         <Row gutter={16}>
           <Col span={8}>
@@ -347,8 +347,8 @@ export function UserModal({ open, onClose, editingUser }) {
             <Col span={12}>
               <Form.Item name="isActive" label="Active User" valuePropName="checked" initialValue={true}>
                 {/* <div className="flex items-center space-x-2 mt-8"> */}
-                  <Switch />
-                  {/* <Text>Active User</Text> */}
+                <Switch />
+                {/* <Text>Active User</Text> */}
                 {/* </div> */}
               </Form.Item>
             </Col>
@@ -390,13 +390,13 @@ export function UserModal({ open, onClose, editingUser }) {
               <Text type="secondary">Configure access levels for each system module</Text>
             </div>
             <div className="space-x-2">
-              <ActionButton 
+              <ActionButton
                 size="small"
                 onClick={() => setPermissions(rolePermissions.admin)}
               >
                 Grant All
               </ActionButton>
-              <ActionButton 
+              <ActionButton
                 size="small"
                 onClick={() => setPermissions(rolePermissions.cashier)}
               >
@@ -406,7 +406,7 @@ export function UserModal({ open, onClose, editingUser }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Object.entries(permissions).map(([module, modulePerms]) => 
+            {Object.entries(permissions).map(([module, modulePerms]) =>
               renderPermissionCard(module, modulePerms)
             )}
           </div>
@@ -434,7 +434,7 @@ export function UserModal({ open, onClose, editingUser }) {
       onCancel={handleClose}
       width={800}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form
         form={form}
@@ -450,7 +450,7 @@ export function UserModal({ open, onClose, editingUser }) {
           <ActionButton onClick={handleClose}>
             Cancel
           </ActionButton>
-          <ActionButton.Primary 
+          <ActionButton.Primary
             htmlType="submit"
             loading={loading}
             icon={editingUser ? "save" : "person_add"}

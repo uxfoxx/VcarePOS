@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Table, 
-  Card, 
-  Space, 
-  Button, 
-  Dropdown, 
-  Checkbox, 
-  Input, 
-  Select, 
-  DatePicker, 
+import {
+  Table,
+  Card,
+  Space,
+  Button,
+  Dropdown,
+  Checkbox,
+  Input,
+  Select,
+  DatePicker,
   Tooltip,
   Empty,
   Skeleton,
@@ -58,10 +58,10 @@ export function EnhancedTable({
 }) {
   // Filter out invalid column objects to prevent errors
   const safeInitialColumns = useMemo(() => {
-    return initialColumns.filter(col => 
-      col && 
-      typeof col === 'object' && 
-      col.key && 
+    return initialColumns.filter(col =>
+      col &&
+      typeof col === 'object' &&
+      col.key &&
       col.title
     );
   }, [initialColumns]);
@@ -112,7 +112,7 @@ export function EnhancedTable({
           col.sorter || ((a, b) => {
             const aVal = col.dataIndex ? a[col.dataIndex] : '';
             const bVal = col.dataIndex ? b[col.dataIndex] : '';
-            
+
             // Handle different data types
             if (typeof aVal === 'number' && typeof bVal === 'number') {
               return aVal - bVal;
@@ -153,22 +153,22 @@ export function EnhancedTable({
             </div>
           ),
           filterIcon: filtered => (
-            <Icon 
-              name="filter_list" 
-              className={filtered ? 'text-blue-600' : 'text-gray-400'} 
+            <Icon
+              name="filter_list"
+              className={filtered ? 'text-blue-600' : 'text-gray-400'}
             />
           ),
           onFilter: col.onFilter || ((value, record) => {
             const dataIndex = col.dataIndex;
             if (!dataIndex) return false; // previously returned true; return false to avoid matching everything
-            
+
             let fieldValue;
             if (Array.isArray(dataIndex)) {
               fieldValue = dataIndex.reduce((obj, key) => obj?.[key], record);
             } else {
               fieldValue = record[dataIndex];
             }
-            
+
             return fieldValue?.toString()?.toLowerCase()?.includes(value.toLowerCase());
           })
         })
@@ -178,19 +178,19 @@ export function EnhancedTable({
   // Filter data based on search term
   const filteredData = useMemo(() => {
     if (!searchTerm) return dataSource;
-    
+
     return dataSource.filter(record => {
       if (searchFields.length > 0) {
         return searchFields.some(field => {
-          const value = Array.isArray(field) 
+          const value = Array.isArray(field)
             ? field.reduce((obj, key) => obj?.[key], record)
             : record[field];
           return value?.toString()?.toLowerCase()?.includes(searchTerm.toLowerCase());
         });
       }
-      
+
       // Default: search all string fields
-      return Object.values(record).some(value => 
+      return Object.values(record).some(value =>
         value?.toString()?.toLowerCase()?.includes(searchTerm.toLowerCase())
       );
     });
@@ -243,7 +243,7 @@ export function EnhancedTable({
         defaultFixed[col.key] = col.fixed || false;
       }
     });
-    
+
     configForm.setFieldsValue({
       visibleColumns: defaultVisible,
       fixedColumns: defaultFixed
@@ -253,7 +253,7 @@ export function EnhancedTable({
   const handleConfigSubmit = () => {
     try {
       const values = configForm.getFieldsValue();
-      
+
       // Validate that at least one column is visible
       if (!values.visibleColumns || values.visibleColumns.length === 0) {
         message.error('At least one column must be visible');
@@ -322,7 +322,7 @@ export function EnhancedTable({
                 </div>
               </div>
             )}
-            
+
             <Space>
               {showSearch && (
                 <Search
@@ -334,7 +334,7 @@ export function EnhancedTable({
                   allowClear
                 />
               )}
-              
+
               {selectedRowKeys.length > 0 && onDelete && (
                 <Popconfirm
                   title={`Delete ${selectedRowKeys.length} selected item(s)?`}
@@ -343,7 +343,7 @@ export function EnhancedTable({
                   cancelText="Cancel"
                   okButtonProps={{ danger: true }}
                 >
-                  <ActionButton 
+                  <ActionButton
                     danger
                     icon="delete"
                   >
@@ -351,21 +351,21 @@ export function EnhancedTable({
                   </ActionButton>
                 </Popconfirm>
               )}
-              
+
               {showColumnConfig && (
                 <Tooltip title="Configure Columns">
-                  <ActionButton 
-                    icon="settings" 
+                  <ActionButton
+                    icon="settings"
                     onClick={openConfigModal}
                   />
                 </Tooltip>
               )}
-              
+
               {extra}
             </Space>
           </div>
         )}
-        
+
         <Table
           columns={enhancedColumns}
           dataSource={filteredData}
@@ -412,14 +412,14 @@ export function EnhancedTable({
           <ActionButton key="cancel" onClick={handleConfigCancel}>
             Cancel
           </ActionButton>,
-          <ActionButton.Primary 
-            key="apply" 
+          <ActionButton.Primary
+            key="apply"
             onClick={handleConfigSubmit}
           >
             Apply Changes
           </ActionButton.Primary>
         ]}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={configForm}
@@ -458,7 +458,7 @@ export function EnhancedTable({
                 {safeInitialColumns.map(col => (
                   <div key={col.key} className="flex items-center justify-between p-2 border rounded">
                     <Text>{col.title}</Text>
-                    <Form.Item name={[ 'fixedColumns', col.key ]} initialValue={fixedColumns[col.key] || 'none'} style={{ margin: 0 }}>
+                    <Form.Item name={['fixedColumns', col.key]} initialValue={fixedColumns[col.key] || 'none'} style={{ margin: 0 }}>
                       <Select className="w-32" size="small">
                         <Option value="none">Not Fixed</Option>
                         <Option value="left">Fix Left</Option>
@@ -476,7 +476,7 @@ export function EnhancedTable({
             <div className="bg-blue-50 p-3 rounded">
               <Text className="text-sm">
                 <Icon name="info" className="mr-2 text-blue-600" />
-                <strong>Tips:</strong> Fixed columns will remain visible when scrolling horizontally. 
+                <strong>Tips:</strong> Fixed columns will remain visible when scrolling horizontally.
                 The Actions column is fixed to the right by default for better usability.
               </Text>
             </div>

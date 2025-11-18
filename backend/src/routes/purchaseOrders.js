@@ -344,13 +344,13 @@ const router = express.Router();
 router.get('/', authenticate, hasPermission('purchase-orders', 'view'), async (req, res) => {
   try {
     const client = await pool.connect();
-    
+
     // Get all purchase orders
     const ordersResult = await client.query(`
       SELECT * FROM purchase_orders
       ORDER BY created_at DESC
     `);
-    
+
     // Get all purchase order items
     const itemsResult = await client.query(`
      select
@@ -364,15 +364,15 @@ router.get('/', authenticate, hasPermission('purchase-orders', 'view'), async (r
       left join product_sizes ps on
         poi.size_id = ps.id;
     `);
-    
+
     // Get all purchase order timeline events
     const timelineResult = await client.query(`
       SELECT * FROM purchase_order_timeline
       ORDER BY timestamp
     `);
-    
+
     client.release();
-    
+
     // Map items and timeline events to their respective orders
     const purchaseOrders = ordersResult.rows.map(order => {
       const items = itemsResult.rows
@@ -385,12 +385,12 @@ router.get('/', authenticate, hasPermission('purchase-orders', 'view'), async (r
           category: item.category,
           unit: item.unit,
           quantity: parseFloat(item.quantity),
-          color: {id: item.color_id, name: item.color_name}, 
-          size: {id: item.size_id, name: item.size_name},
+          color: { id: item.color_id, name: item.color_name },
+          size: { id: item.size_id, name: item.size_name },
           unitPrice: parseFloat(item.unit_price),
           total: parseFloat(item.total)
         }));
-      
+
       const timeline = timelineResult.rows
         .filter(event => event.purchase_order_id === order.id)
         .map(event => ({
@@ -399,7 +399,7 @@ router.get('/', authenticate, hasPermission('purchase-orders', 'view'), async (r
           user: event.user_name,
           notes: event.notes
         }));
-      
+
       return {
         id: order.id,
         vendorId: order.vendor_id,
@@ -422,7 +422,7 @@ router.get('/', authenticate, hasPermission('purchase-orders', 'view'), async (r
         timeline
       };
     });
-    
+
     res.json(purchaseOrders);
   } catch (error) {
     handleRouteError(error, req, res, 'PurchaseOrders - Fetching purchase orders:');
@@ -437,21 +437,21 @@ router.get('/', authenticate, hasPermission('purchase-orders', 'view'), async (r
 router.get('/:id', authenticate, hasPermission('purchase-orders', 'view'), async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const client = await pool.connect();
-    
+
     // Get purchase order
     const orderResult = await client.query(`
       SELECT * FROM purchase_orders WHERE id = $1
     `, [id]);
-    
+
     if (orderResult.rows.length === 0) {
       client.release();
       return res.status(404).json({ message: 'Purchase order not found' });
     }
-    
+
     const order = orderResult.rows[0];
-    
+
     // Get purchase order items
     const itemsResult = await client.query(`
            select
@@ -465,14 +465,14 @@ router.get('/:id', authenticate, hasPermission('purchase-orders', 'view'), async
             left join product_sizes ps on
               poi.size_id = ps.id WHERE poi.purchase_order_id = $1
     `, [id]);
-    
+
     // Get purchase order timeline events
     const timelineResult = await client.query(`
       SELECT * FROM purchase_order_timeline
       WHERE purchase_order_id = $1
       ORDER BY timestamp
     `, [id]);
-    
+
     // Get goods receive notes for this purchase order with variant information
     const grnResult = await client.query(`
       SELECT 
@@ -485,9 +485,9 @@ router.get('/:id', authenticate, hasPermission('purchase-orders', 'view'), async
       LEFT JOIN product_sizes ps ON gi.size_id = ps.id
       WHERE g.purchase_order_id = $1
     `, [id]);
-    
+
     client.release();
-    
+
     // Format items
     const items = itemsResult.rows.map(item => ({
       itemId: item.item_id,
@@ -497,12 +497,12 @@ router.get('/:id', authenticate, hasPermission('purchase-orders', 'view'), async
       category: item.category,
       unit: item.unit,
       quantity: parseFloat(item.quantity),
-      color: {id: item.color_id, name: item.color_name}, 
-      size: {id: item.size_id, name: item.size_name},
+      color: { id: item.color_id, name: item.color_name },
+      size: { id: item.size_id, name: item.size_name },
       unitPrice: parseFloat(item.unit_price),
       total: parseFloat(item.total)
     }));
-    
+
     // Format timeline events
     const timeline = timelineResult.rows.map(event => ({
       status: event.status,
@@ -510,7 +510,7 @@ router.get('/:id', authenticate, hasPermission('purchase-orders', 'view'), async
       user: event.user_name,
       notes: event.notes
     }));
-  
+
     // Format goods receive notes
     const goodsReceiveNotes = grnResult.rows.reduce((acc, row) => {
       // Find existing GRN or create new one
@@ -527,8 +527,8 @@ router.get('/:id', authenticate, hasPermission('purchase-orders', 'view'), async
             unit: row.unit,
             quantity: parseFloat(row.quantity),
             receivedQuantity: parseFloat(row.received_quantity),
-            color: {id: row.color_id, name: row.color_name},
-            size: {id: row.size_id, name: row.size_name},
+            color: { id: row.color_id, name: row.color_name },
+            size: { id: row.size_id, name: row.size_name },
             notes: row.notes
           });
         }
@@ -554,14 +554,14 @@ router.get('/:id', authenticate, hasPermission('purchase-orders', 'view'), async
             unit: row.unit,
             quantity: parseFloat(row.quantity),
             receivedQuantity: parseFloat(row.received_quantity),
-            color: {id: row.color_id, name: row.color_name},
-            size: {id: row.size_id, name: row.size_name},
+            color: { id: row.color_id, name: row.color_name },
+            size: { id: row.size_id, name: row.size_name },
             notes: row.notes
           }] : []
         }];
       }
     }, []);
-    
+
     // Format response
     const formattedOrder = {
       id: order.id,
@@ -585,7 +585,7 @@ router.get('/:id', authenticate, hasPermission('purchase-orders', 'view'), async
       timeline,
       goodsReceiveNotes
     };
-    
+
     res.json(formattedOrder);
   } catch (error) {
     handleRouteError(error, req, res, 'PurchaseOrders - Fetching purchase order:');
@@ -619,10 +619,10 @@ router.post(
     }
 
     const client = await pool.connect();
-    
+
     try {
       await client.query('BEGIN');
-      
+
       const {
         vendorId,
         vendorName,
@@ -638,15 +638,15 @@ router.post(
         items,
         status = 'pending'
       } = req.body;
-      
+
       // Calculate total
       const total = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
-      
+
       // Generate purchase order ID
       const purchaseOrderId = req.body.id || `PO-${Date.now()}`;
 
-      console.log('Creating purchase order with ID:', purchaseOrderId);
-      
+      // console.log('Creating purchase order with ID:', purchaseOrderId);
+
       // Insert purchase order
       const orderResult = await client.query(`
         INSERT INTO purchase_orders (
@@ -672,7 +672,7 @@ router.post(
         status,
         `${req.user.firstName} ${req.user.lastName}`
       ]);
-      
+
       // Insert purchase order items
       for (const item of items) {
         const colorId = getSafeColorId(item);
@@ -698,7 +698,7 @@ router.post(
           sizeId
         ]);
       }
-      
+
       // Insert initial timeline event
       await client.query(`
         INSERT INTO purchase_order_timeline (
@@ -710,12 +710,12 @@ router.post(
         `${req.user.firstName} ${req.user.lastName}`,
         'Purchase order created'
       ]);
-      
+
       await client.query('COMMIT');
-      
+
       // Return the created purchase order
       const order = orderResult.rows[0];
-      
+
       res.status(201).json({
         id: order.id,
         vendorId: order.vendor_id,
@@ -792,39 +792,39 @@ router.put(
     } = req.body;
 
     const client = await pool.connect();
-    
+
     try {
       await client.query('BEGIN');
-      
+
       // Check if purchase order exists
       const checkResult = await client.query(
         'SELECT * FROM purchase_orders WHERE id = $1',
         [id]
       );
-      
+
       if (checkResult.rows.length === 0) {
         await client.query('ROLLBACK');
         client.release();
         return res.status(404).json({ message: 'Purchase order not found' });
       }
-      
+
       const existingOrder = checkResult.rows[0];
-      
+
       // Only allow updates if order is pending
       if (existingOrder.status !== 'pending' && !status) {
         await client.query('ROLLBACK');
         client.release();
-        return res.status(400).json({ 
-          message: 'Cannot update purchase order that is not pending' 
+        return res.status(400).json({
+          message: 'Cannot update purchase order that is not pending'
         });
       }
-      
+
       // Calculate total if items provided
       let total = existingOrder.total;
       if (items && items.length > 0) {
         total = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
       }
-      
+
       // Update purchase order
       const orderResult = await client.query(`
         UPDATE purchase_orders
@@ -851,12 +851,12 @@ router.put(
         status || existingOrder.status,
         id
       ]);
-      
+
       // Update items if provided
       if (items && items.length > 0) {
         // Delete existing items
         await client.query('DELETE FROM purchase_order_items WHERE purchase_order_id = $1', [id]);
-        
+
         // Insert new items
         for (const item of items) {
           const colorId = getSafeColorId(item);
@@ -884,9 +884,9 @@ router.put(
         }
       }
 
-      if(status && status === "completed") { 
+      if (status && status === "completed") {
         // Use standardized stock management for purchase order completion
-        for (const item of items) { 
+        for (const item of items) {
           try {
             await updateInventoryStock(client, item, item.quantity, 'add');
           } catch (error) {
@@ -909,18 +909,18 @@ router.put(
           `Status changed from ${existingOrder.status} to ${status}`
         ]);
       }
-      
+
       await client.query('COMMIT');
-      
+
       // Get updated purchase order
       const order = orderResult.rows[0];
-      
+
       // Get updated items
       const updatedItemsResult = await client.query(
         'SELECT * FROM purchase_order_items WHERE purchase_order_id = $1',
         [id]
       );
-      
+
       const updatedItems = updatedItemsResult.rows.map(item => ({
         itemId: item.item_id,
         type: item.type,
@@ -932,22 +932,22 @@ router.put(
         unitPrice: parseFloat(item.unit_price),
         total: parseFloat(item.total)
       }));
-      
+
       // Get updated timeline
       const timelineResult = await client.query(
         'SELECT * FROM purchase_order_timeline WHERE purchase_order_id = $1 ORDER BY timestamp',
         [id]
       );
-      
+
       const timeline = timelineResult.rows.map(event => ({
         status: event.status,
         timestamp: event.timestamp,
         user: event.user_name,
         notes: event.notes
       }));
-      
+
       // client.release();
-      
+
       res.json({
         id: order.id,
         vendorId: order.vendor_id,
@@ -992,36 +992,36 @@ router.delete(
   ],
   async (req, res) => {
     const { id } = req.params;
-    
+
     try {
       const client = await pool.connect();
-      
+
       // Check if purchase order exists
       const checkResult = await client.query(
         'SELECT * FROM purchase_orders WHERE id = $1',
         [id]
       );
-      
+
       if (checkResult.rows.length === 0) {
         client.release();
         return res.status(404).json({ message: 'Purchase order not found' });
       }
-      
+
       const order = checkResult.rows[0];
-      
+
       // Only allow deletion if order is pending
       if (order.status !== 'pending') {
         client.release();
-        return res.status(400).json({ 
-          message: 'Cannot delete purchase order that is not pending' 
+        return res.status(400).json({
+          message: 'Cannot delete purchase order that is not pending'
         });
       }
-      
+
       // Delete purchase order (cascade will delete items and timeline events)
       await client.query('DELETE FROM purchase_orders WHERE id = $1', [id]);
-      
+
       client.release();
-      
+
       res.json({ message: 'Purchase order deleted successfully' });
     } catch (error) {
       handleRouteError(error, req, res, 'PurchaseOrders - Deleting purchase order:');
@@ -1051,27 +1051,27 @@ router.put(
 
     const { id } = req.params;
     const { status, notes } = req.body;
-    
+
     try {
       const client = await pool.connect();
-      
+
       // Check if purchase order exists
       const checkResult = await client.query(
         'SELECT * FROM purchase_orders WHERE id = $1',
         [id]
       );
-      
+
       if (checkResult.rows.length === 0) {
         client.release();
         return res.status(404).json({ message: 'Purchase order not found' });
       }
-      
+
       // Update purchase order status
       const orderResult = await client.query(
         'UPDATE purchase_orders SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
         [status, id]
       );
-      
+
       // Add timeline event
       await client.query(`
         INSERT INTO purchase_order_timeline (
@@ -1083,15 +1083,15 @@ router.put(
         `${req.user.firstName} ${req.user.lastName}`,
         notes || `Status changed to ${status}`
       ]);
-      
+
       // Get updated timeline
       const timelineResult = await client.query(
         'SELECT * FROM purchase_order_timeline WHERE purchase_order_id = $1 ORDER BY timestamp',
         [id]
       );
-      
+
       client.release();
-      
+
       const order = orderResult.rows[0];
       const timeline = timelineResult.rows.map(event => ({
         status: event.status,
@@ -1099,7 +1099,7 @@ router.put(
         user: event.user_name,
         notes: event.notes
       }));
-      
+
       res.json({
         id: order.id,
         status: order.status,
@@ -1145,27 +1145,27 @@ router.post(
     } = req.body;
 
     const client = await pool.connect();
-    
+
     try {
       await client.query('BEGIN');
-      
+
       // Check if purchase order exists
       const orderResult = await client.query(
         'SELECT * FROM purchase_orders WHERE id = $1',
         [id]
       );
-      
+
       if (orderResult.rows.length === 0) {
         await client.query('ROLLBACK');
         client.release();
         return res.status(404).json({ message: 'Purchase order not found' });
       }
-      
+
       const order = orderResult.rows[0];
-      
+
       // Generate GRN ID
       const grnId = req.body.id || `GRN-${Date.now()}`;
-      
+
       // Insert goods receive note
       const grnResult = await client.query(`
         INSERT INTO goods_receive_notes (
@@ -1183,7 +1183,7 @@ router.post(
         checkedBy,
         notes
       ]);
-      
+
       // Insert GRN items with variant information
       for (const item of items) {
         if (item.received) {
@@ -1193,11 +1193,11 @@ router.post(
             WHERE purchase_order_id = $1 AND item_id = $2
             LIMIT 1
           `, [id, item.itemId]);
-          
+
           const poItem = poItemResult.rows[0];
           const colorId = poItem?.color_id || null;
           const sizeId = poItem?.size_id || null;
-          
+
           await client.query(`
             INSERT INTO goods_receive_note_items (
               grn_id, item_id, type, name, sku, category,
@@ -1217,7 +1217,7 @@ router.post(
             colorId,
             sizeId
           ]);
-          
+
           // Use standardized stock management for inventory updates
           const itemWithVariants = {
             ...item,
@@ -1225,7 +1225,7 @@ router.post(
             color: colorId ? { id: colorId } : null,
             size: sizeId ? { id: sizeId } : null
           };
-          
+
           try {
             await updateInventoryStock(client, itemWithVariants, item.receivedQuantity, 'add');
           } catch (error) {
@@ -1234,19 +1234,19 @@ router.post(
           }
         }
       }
-      
+
       // Check if all items were received in full
-      const allItemsReceived = items.every(item => 
+      const allItemsReceived = items.every(item =>
         !item.received || item.receivedQuantity >= item.quantity
       );
-      
+
       // Update purchase order status
       const newStatus = allItemsReceived ? 'completed' : 'received';
       await client.query(
         'UPDATE purchase_orders SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
         [newStatus, id]
       );
-      
+
       // Add timeline event
       await client.query(`
         INSERT INTO purchase_order_timeline (
@@ -1258,12 +1258,12 @@ router.post(
         `${req.user.firstName} ${req.user.lastName}`,
         `Goods received. Status changed to ${newStatus}`
       ]);
-      
+
       await client.query('COMMIT');
-      
+
       // Get the created GRN
       const grn = grnResult.rows[0];
-      
+
       // Format response
       const formattedGrn = {
         id: grn.id,
@@ -1279,7 +1279,7 @@ router.post(
           // Get variant info that was stored during GRN creation
           const colorId = item.color?.id || null;
           const sizeId = item.size?.id || null;
-          
+
           return {
             itemId: item.itemId,
             type: item.type,
@@ -1289,13 +1289,13 @@ router.post(
             unit: item.unit,
             quantity: item.quantity,
             receivedQuantity: item.receivedQuantity,
-            color: colorId ? {id: colorId, name: item.color?.name} : {id: null, name: null},
-            size: sizeId ? {id: sizeId, name: item.size?.name} : {id: null, name: null},
+            color: colorId ? { id: colorId, name: item.color?.name } : { id: null, name: null },
+            size: sizeId ? { id: sizeId, name: item.size?.name } : { id: null, name: null },
             notes: item.notes
           };
         })
       };
-      
+
       res.status(201).json(formattedGrn);
     } catch (error) {
       await client.query('ROLLBACK');

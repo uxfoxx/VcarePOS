@@ -1,5 +1,4 @@
-import React from 'react';
-import { Modal, Descriptions, Typography, Space, Image, Tag, Button, Divider } from 'antd';
+import { Modal, Descriptions, Typography, Space, Image, Tag, Divider } from 'antd';
 import { Icon } from './Icon';
 import { ActionButton } from './ActionButton';
 
@@ -535,7 +534,7 @@ export function DetailModal({
         </ActionButton>,
         ...actions
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <div className="max-h-[70vh] overflow-y-auto">
         {renderContent()}

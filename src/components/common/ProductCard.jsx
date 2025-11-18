@@ -1,4 +1,4 @@
-import React from 'react';
+// import React from 'react';
 import { Card, Typography, Image, Badge, Tag, Button } from 'antd';
 import { Icon } from './Icon';
 
@@ -96,7 +96,9 @@ export function ProductCard({
         </div>
       }
       // onClick={() => onClick?.(product)}
-      bodyStyle={{ padding: '16px' }}
+      styles={{
+        body: { padding: '16px' }
+      }}
       {...props}
     >
       <div className="space-y-3">

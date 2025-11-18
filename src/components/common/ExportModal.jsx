@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { 
-  Modal, 
-  Form, 
-  Select, 
-  DatePicker, 
-  InputNumber, 
-  Switch, 
+import {
+  Modal,
+  Form,
+  Select,
+  DatePicker,
+  InputNumber,
+  Switch,
   Input,
-  Typography, 
-  Space, 
+  Typography,
+  Space,
   Row,
   Col,
   Card,
@@ -16,13 +16,13 @@ import {
 } from 'antd';
 import { ActionButton } from './ActionButton';
 import { Icon } from './Icon';
-import { 
-  exportProducts, 
-  exportRawMaterials, 
-  exportTransactions, 
+import {
+  exportProducts,
+  exportRawMaterials,
+  exportTransactions,
   exportTransactionItems,
-  exportCoupons, 
-  exportUsers, 
+  exportCoupons,
+  exportUsers,
   exportAuditTrail,
   exportComprehensiveReport,
   exportPurchaseOrders,
@@ -35,9 +35,9 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
-export function ExportModal({ 
-  open, 
-  onClose, 
+export function ExportModal({
+  open,
+  onClose,
   dataType = 'products',
   data = {},
   title: _title = 'Export Data'
@@ -49,16 +49,16 @@ export function ExportModal({
     try {
       setLoading(true);
       const values = form.getFieldsValue();
-      
+
       // Validate data exists
       if (!data || Object.keys(data).length === 0) {
         message.error('No data available for export. Please ensure data is loaded first.');
         return;
       }
-      
+
       // Prepare filters based on data type
       const filters = { ...values };
-      
+
       // Validate date ranges
       if (filters.dateRange) {
         if (filters.dateRange.length !== 2) {
@@ -97,7 +97,7 @@ export function ExportModal({
       }
 
       console.log('Exporting with filters:', dataType, filters);
-      
+
       switch (dataType) {
         case 'products':
           exportProducts(data.products || [], filters);
@@ -135,12 +135,12 @@ export function ExportModal({
         default:
           throw new Error(`Unknown data type: ${dataType}`);
       }
-      
+
       message.success('Export completed successfully!');
       onClose();
     } catch (error) {
       console.error('Export error:', error);
-      
+
       // Provide specific error messages based on error type
       if (error.message.includes('No CSV content')) {
         message.error('No data available to export. Please check your filters and try again.');
@@ -184,7 +184,7 @@ export function ExportModal({
           </Form.Item>
         </Col>
       </Row>
-      
+
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item name="priceRange" label="Price Range">
@@ -240,7 +240,7 @@ export function ExportModal({
           </Form.Item>
         </Col>
       </Row>
-      
+
       <div className="space-y-2">
         <div className="flex items-center space-x-2">
           <Form.Item name="lowStock" valuePropName="checked" noStyle>
@@ -261,13 +261,13 @@ export function ExportModal({
   const renderTransactionFilters = () => (
     <div className="space-y-4">
       <Form.Item name="dateRange" label="Date Range">
-        <RangePicker 
+        <RangePicker
           className="w-full"
           format="YYYY-MM-DD"
           placeholder={['Start Date', 'End Date']}
         />
       </Form.Item>
-      
+
       <Row gutter={16}>
         <Col span={8}>
           <Form.Item name="paymentMethod" label="Payment Method">
@@ -295,12 +295,12 @@ export function ExportModal({
           </Form.Item>
         </Col>
       </Row>
-      
+
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item name="minAmount" label="Minimum Amount">
-            <InputNumber 
-              placeholder="0.00" 
+            <InputNumber
+              placeholder="0.00"
               className="w-full"
               prefix="LKR"
               min={0}
@@ -310,8 +310,8 @@ export function ExportModal({
         </Col>
         <Col span={12}>
           <Form.Item name="maxAmount" label="Maximum Amount">
-            <InputNumber 
-              placeholder="No limit" 
+            <InputNumber
+              placeholder="No limit"
               className="w-full"
               prefix="LKR"
               min={0}
@@ -326,13 +326,13 @@ export function ExportModal({
   const renderTransactionItemFilters = () => (
     <div className="space-y-4">
       <Form.Item name="dateRange" label="Date Range">
-        <RangePicker 
+        <RangePicker
           className="w-full"
           format="YYYY-MM-DD"
           placeholder={['Start Date', 'End Date']}
         />
       </Form.Item>
-      
+
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item name="productCategory" label="Product Category">
@@ -374,7 +374,7 @@ export function ExportModal({
           </Form.Item>
         </Col>
       </Row>
-      
+
       <div className="space-y-2">
         <div className="flex items-center space-x-2">
           <Form.Item name="expired" valuePropName="checked" noStyle>
@@ -414,7 +414,7 @@ export function ExportModal({
           </Form.Item>
         </Col>
       </Row>
-      
+
       <div className="flex items-center space-x-2">
         <Form.Item name="recentLogin" valuePropName="checked" noStyle>
           <Switch size="small" />
@@ -427,13 +427,13 @@ export function ExportModal({
   const renderAuditFilters = () => (
     <div className="space-y-4">
       <Form.Item name="dateRange" label="Date Range">
-        <RangePicker 
+        <RangePicker
           className="w-full"
           format="YYYY-MM-DD"
           placeholder={['Start Date', 'End Date']}
         />
       </Form.Item>
-      
+
       <Row gutter={16}>
         <Col span={8}>
           <Form.Item name="action" label="Action">
@@ -471,13 +471,13 @@ export function ExportModal({
   const renderPurchaseOrderFilters = () => (
     <div className="space-y-4">
       <Form.Item name="dateRange" label="Date Range">
-        <RangePicker 
+        <RangePicker
           className="w-full"
           format="YYYY-MM-DD"
           placeholder={['Start Date', 'End Date']}
         />
       </Form.Item>
-      
+
       <Row gutter={16}>
         <Col span={8}>
           <Form.Item name="status" label="Status">
@@ -501,12 +501,12 @@ export function ExportModal({
           </Form.Item>
         </Col>
       </Row>
-      
+
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item name="minAmount" label="Minimum Amount">
-            <InputNumber 
-              placeholder="0.00" 
+            <InputNumber
+              placeholder="0.00"
               className="w-full"
               prefix="LKR"
               min={0}
@@ -516,8 +516,8 @@ export function ExportModal({
         </Col>
         <Col span={12}>
           <Form.Item name="maxAmount" label="Maximum Amount">
-            <InputNumber 
-              placeholder="No limit" 
+            <InputNumber
+              placeholder="No limit"
               className="w-full"
               prefix="LKR"
               min={0}
@@ -555,7 +555,7 @@ export function ExportModal({
           </Form.Item>
         </Col>
       </Row>
-      
+
       <Form.Item name="name" label="Vendor Name">
         <Input placeholder="Filter by vendor name" />
       </Form.Item>
@@ -577,8 +577,8 @@ export function ExportModal({
         </Col>
         <Col span={12}>
           <Form.Item name="minQuantity" label="Minimum Units Sold">
-            <InputNumber 
-              placeholder="0" 
+            <InputNumber
+              placeholder="0"
               className="w-full"
               min={0}
               step={1}
@@ -586,12 +586,12 @@ export function ExportModal({
           </Form.Item>
         </Col>
       </Row>
-      
+
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item name="minRevenue" label="Minimum Revenue">
-            <InputNumber 
-              placeholder="0.00" 
+            <InputNumber
+              placeholder="0.00"
               className="w-full"
               prefix="LKR"
               min={0}
@@ -685,8 +685,8 @@ export function ExportModal({
         <ActionButton key="cancel" onClick={onClose}>
           Cancel
         </ActionButton>,
-        <ActionButton.Primary 
-          key="export" 
+        <ActionButton.Primary
+          key="export"
           onClick={handleExport}
           loading={loading}
           icon="download"
@@ -694,7 +694,7 @@ export function ExportModal({
           Export CSV
         </ActionButton.Primary>
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <div className="space-y-6">
         {/* Export Info */}
@@ -727,7 +727,7 @@ export function ExportModal({
         <div className="bg-gray-50 p-4 rounded-lg">
           <Text className="text-sm">
             <Icon name="info" className="mr-2 text-blue-600" />
-            <strong>Export Format:</strong> The data will be exported as a CSV file that can be opened in Excel, Google Sheets, or any spreadsheet application. 
+            <strong>Export Format:</strong> The data will be exported as a CSV file that can be opened in Excel, Google Sheets, or any spreadsheet application.
             All filters will be applied to reduce the exported data to only what you need.
           </Text>
         </div>

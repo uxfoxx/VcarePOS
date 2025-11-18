@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Modal, 
-  Form, 
-  Input, 
-  InputNumber, 
-  Select, 
-  Typography, 
-  Space, 
-  Divider, 
-  List, 
+import {
+  Modal,
+  Form,
+  Input,
+  InputNumber,
+  Select,
+  Typography,
+  Space,
+  Divider,
+  List,
   Tag,
   Button,
   message,
@@ -61,9 +61,9 @@ export function CustomProductModal({ open, onClose }) {
   // Calculate total price whenever selected materials change
   useEffect(() => {
     const calculatedPrice = selectedMaterials.reduce((sum, material) => {
-   //   return sum + (material.quantity * material.unitPrice * 1.5); // 50% markup
+      //   return sum + (material.quantity * material.unitPrice * 1.5); // 50% markup
       return sum + (material.quantity * material.unitPrice);
-    }, 0); 
+    }, 0);
     setTotalPrice(calculatedPrice);
     setEditablePrice(calculatedPrice);
 
@@ -74,7 +74,7 @@ export function CustomProductModal({ open, onClose }) {
   }, [selectedMaterials]);
 
   // Filter materials based on search term
-  const filteredMaterials = (rawMaterials || []).filter(material => 
+  const filteredMaterials = (rawMaterials || []).filter(material =>
     material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     material.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -89,9 +89,9 @@ export function CustomProductModal({ open, onClose }) {
     const existingMaterial = selectedMaterials.find(m => m.id === values.materialId);
     if (existingMaterial) {
       // Update quantity if material already exists
-      setSelectedMaterials(selectedMaterials.map(m => 
-        m.id === values.materialId 
-          ? { ...m, quantity: m.quantity + values.quantity } 
+      setSelectedMaterials(selectedMaterials.map(m =>
+        m.id === values.materialId
+          ? { ...m, quantity: m.quantity + values.quantity }
           : m
       ));
     } else {
@@ -105,7 +105,7 @@ export function CustomProductModal({ open, onClose }) {
         totalPrice: values.quantity * material.unitPrice
       }]);
     }
-    
+
     materialsForm.resetFields(['materialId', 'quantity']);
   };
 
@@ -174,8 +174,8 @@ export function CustomProductModal({ open, onClose }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Text strong>Name:</Text>
-              <Input 
-                placeholder="Enter custom product name" 
+              <Input
+                placeholder="Enter custom product name"
                 value={customName}
                 onChange={(e) => setCustomName(e.target.value)}
                 className="mt-1"
@@ -221,18 +221,18 @@ export function CustomProductModal({ open, onClose }) {
       content: (
         <div className="space-y-4">
           <Title level={5}>Add Raw Materials</Title>
-          
+
           <Search
             placeholder="Search materials..."
             onChange={(e) => setSearchTerm(e.target.value)}
             className="mb-4"
           />
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
             {filteredMaterials.map(material => (
-              <Card 
-                key={material.id} 
-                size="small" 
+              <Card
+                key={material.id}
+                size="small"
                 className="cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => {
                   materialsForm.setFieldsValue({
@@ -259,7 +259,7 @@ export function CustomProductModal({ open, onClose }) {
               </Card>
             ))}
           </div>
-          
+
           <Form
             form={materialsForm}
             layout="horizontal"
@@ -271,7 +271,7 @@ export function CustomProductModal({ open, onClose }) {
                 rules={[{ required: true, message: 'Please select a material' }]}
                 className="flex-1"
               >
-                <Select 
+                <Select
                   placeholder="Select material"
                   showSearch
                   optionFilterProp="children"
@@ -312,7 +312,7 @@ export function CustomProductModal({ open, onClose }) {
               <Text strong>Selected Materials</Text>
               <Text strong>Total: LKR {totalPrice.toFixed(2)}</Text>
             </div>
-            
+
             {selectedMaterials.length === 0 ? (
               <div className="text-center py-4">
                 <Icon name="category" className="text-gray-300 text-2xl mb-2" />
@@ -326,10 +326,10 @@ export function CustomProductModal({ open, onClose }) {
                     key={item.id}
                     className="flex justify-between items-center"
                     actions={[
-                      <Button 
-                        type="text" 
-                        danger 
-                        icon={<Icon name="delete" />} 
+                      <Button
+                        type="text"
+                        danger
+                        icon={<Icon name="delete" />}
                         onClick={() => handleRemoveMaterial(item.id)}
                       />
                     ]}
@@ -350,23 +350,23 @@ export function CustomProductModal({ open, onClose }) {
           </div>
 
           <div className="flex gap-2 justify-between">
-              <Text strong>Price:</Text>
-              <InputNumber
-                className="w-44 mt-1"
-                min={0.01}
-                value={editablePrice}
-                onChange={(value) => setEditablePrice(value)}
-                formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={value => value.replace(/LKR\s?|(,*)/g, '')}
-                step={100}
-                size="large"
-              />
-              {totalPrice > 0 && (
-                <Text type="secondary" className="text-xs block mt-1">
-                  Suggested price: LKR {(totalPrice * 1.5 ).toFixed(2)} (based on materials with 50% markup)
-                </Text>
-              )}
-            </div>
+            <Text strong>Price:</Text>
+            <InputNumber
+              className="w-44 mt-1"
+              min={0.01}
+              value={editablePrice}
+              onChange={(value) => setEditablePrice(value)}
+              formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+              step={100}
+              size="large"
+            />
+            {totalPrice > 0 && (
+              <Text type="secondary" className="text-xs block mt-1">
+                Suggested price: LKR {(totalPrice * 1.5).toFixed(2)} (based on materials with 50% markup)
+              </Text>
+            )}
+          </div>
         </div>
       )
     }
@@ -384,14 +384,14 @@ export function CustomProductModal({ open, onClose }) {
       onCancel={onClose}
       width={800}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
     >
       <div className="space-y-6">
         <EnhancedStepper
           current={currentStep}
           steps={steps}
         />
-        
+
         <div className="min-h-[400px] mt-6">
           {steps[currentStep].content}
         </div>
@@ -418,7 +418,7 @@ export function CustomProductModal({ open, onClose }) {
                 <Icon name="arrow_forward" className="ml-2" />
               </ActionButton.Primary>
             ) : (
-              <ActionButton.Primary 
+              <ActionButton.Primary
                 onClick={handleSubmit}
                 loading={loading}
                 disabled={selectedMaterials.length === 0 || !customName.trim()}

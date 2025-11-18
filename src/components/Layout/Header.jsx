@@ -1,11 +1,11 @@
-import  { useState, useEffect } from 'react';
-import { 
-  Layout, 
-  Avatar, 
-  Dropdown, 
-  Badge, 
-  Space, 
-  Typography, 
+import { useState, useEffect } from 'react';
+import {
+  Layout,
+  Avatar,
+  Dropdown,
+  Badge,
+  Space,
+  Typography,
   Tooltip,
   List,
   Empty,
@@ -42,7 +42,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
   };
 
   const userMenuItems = [
-   
+
     {
       key: 'logout',
       icon: <Icon name="logout" />,
@@ -79,12 +79,12 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
     } else {
       markAsRead(notification.id);
     }
-    
+
     // Navigate to relevant page if specified
     if (notification.navigateTo && onTabChange) {
       onTabChange(notification.navigateTo);
     }
-    
+
     setShowNotifications(false);
   };
 
@@ -181,15 +181,15 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
         <Title level={5} className="m-0">Notifications</Title>
         <Space size="small">
           {allNotifications.length > 0 && unreadCount > 0 && (
-            <ActionButton.Text 
-              size="small" 
+            <ActionButton.Text
+              size="small"
               onClick={handleMarkAllRead}
             >
               Mark All Read
             </ActionButton.Text>
           )}
-          <ActionButton.Text 
-            size="small" 
+          <ActionButton.Text
+            size="small"
             onClick={handleClearAll}
             disabled={allNotifications.length === 0}
           >
@@ -197,19 +197,19 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
           </ActionButton.Text>
         </Space>
       </div>
-      
+
       {allNotifications.length === 0 ? (
-        <Empty 
-          image={Empty.PRESENTED_IMAGE_SIMPLE} 
-          description="No notifications" 
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description="No notifications"
           className="py-8"
         />
       ) : (
         <List
-        className=' overflow-y-auto max-h-96'
+          className=' overflow-y-auto max-h-96'
           dataSource={allNotifications}
           renderItem={item => (
-            <List.Item 
+            <List.Item
               className={`cursor-pointer  hover:bg-gray-50 transition-colors ${item.read ? 'opacity-70' : ''}`}
               onClick={() => handleNotificationClick(item)}
             >
@@ -262,7 +262,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
 
   return (
     <>
-      <AntHeader 
+      <AntHeader
         style={style}
         className="flex items-center justify-between"
       >
@@ -284,13 +284,13 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
             </Title>
           </div>
         </div>
-        
+
         <Space size="middle" className="flex items-center">
-          
-          
+
+
           {/* Help Tour Button */}
           <Tooltip title="Take a Tour">
-            <ActionButton.Text 
+            <ActionButton.Text
               icon="help_outline"
               onClick={() => setTourOpen(true)}
               className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all"
@@ -298,31 +298,31 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
             />
           </Tooltip>
 
-          <Dropdown 
+          <Dropdown
             open={showNotifications}
             onOpenChange={setShowNotifications}
-            dropdownRender={() => notificationContent}
+            popupRender={() => notificationContent}
             placement="bottomRight"
             trigger={['click']}
           >
             <Badge count={unreadCount} size="small" offset={[-2, 2]}>
-              <ActionButton.Text 
+              <ActionButton.Text
                 icon="notifications"
                 className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all"
                 data-tour="notifications"
               />
             </Badge>
           </Dropdown>
-          
-          <Dropdown 
-            menu={{ items: userMenuItems }} 
+
+          <Dropdown
+            menu={{ items: userMenuItems }}
             placement="bottomRight"
             trigger={['click']}
           >
             <div className="flex items-center space-x-3 cursor-pointer" data-tour="user-menu">
-              <Avatar 
+              <Avatar
                 size={40}
-                style={{ 
+                style={{
                   background: 'linear-gradient(135deg, #0E72BD, #1890ff)',
                 }}
               >

@@ -23,7 +23,7 @@ export function BarcodeSimulator({ visible, onClose, onScan }) {
         { barcode, timestamp: new Date().toLocaleTimeString() },
         ...prev.slice(0, 4) // Keep only last 5 scans
       ]);
-      
+
       // Call parent handler
       if (onScan) {
         onScan(barcode);
@@ -50,7 +50,7 @@ export function BarcodeSimulator({ visible, onClose, onScan }) {
     try {
       simulateScan(barcode);
       message.success(`Simulated scan: ${barcode}`);
-      
+
       // Add to recent scans
       setRecentScans(prev => [
         { barcode, timestamp: new Date().toLocaleTimeString() },
@@ -79,7 +79,7 @@ export function BarcodeSimulator({ visible, onClose, onScan }) {
       onCancel={onClose}
       footer={null}
       width={700}
-      destroyOnClose
+      destroyOnHidden
     >
       <div className="space-y-6">
         {/* Scanner Status */}
@@ -87,9 +87,8 @@ export function BarcodeSimulator({ visible, onClose, onScan }) {
           <Row gutter={16}>
             <Col span={8}>
               <Text strong>Scanner Status:</Text>
-              <div className={`text-lg font-medium ${
-                BARCODE_SCANNER_CONFIG.ENABLED ? 'text-green-600' : 'text-red-600'
-              }`}>
+              <div className={`text-lg font-medium ${BARCODE_SCANNER_CONFIG.ENABLED ? 'text-green-600' : 'text-red-600'
+                }`}>
                 {BARCODE_SCANNER_CONFIG.ENABLED ? 'Enabled' : 'Disabled'}
               </div>
             </Col>
@@ -102,24 +101,24 @@ export function BarcodeSimulator({ visible, onClose, onScan }) {
             <Col span={8}>
               <Text strong>Last Scanned:</Text>
               <div className="text-sm text-gray-600">
-          <Row gutter={16} className="mt-4">
-            <Col span={8}>
-              <Text strong>Audio Feedback:</Text>
-              <div className="text-lg">
-                {BARCODE_SCANNER_CONFIG.AUDIO_FEEDBACK?.SUCCESS_SOUND ? 'Enabled' : 'Disabled'}
-              </div>
-            </Col>
-            <Col span={8}>
-              <Text strong>End Keys:</Text>
-              <div className="text-sm">{BARCODE_SCANNER_CONFIG.END_KEYS.join(', ')}</div>
-            </Col>
-            <Col span={8}>
-              <Text strong>Allow in Inputs:</Text>
-              <div className="text-lg">
-                {BARCODE_SCANNER_CONFIG.ALLOW_IN_INPUTS ? 'Yes' : 'No'}
-              </div>
-            </Col>
-          </Row>
+                <Row gutter={16} className="mt-4">
+                  <Col span={8}>
+                    <Text strong>Audio Feedback:</Text>
+                    <div className="text-lg">
+                      {BARCODE_SCANNER_CONFIG.AUDIO_FEEDBACK?.SUCCESS_SOUND ? 'Enabled' : 'Disabled'}
+                    </div>
+                  </Col>
+                  <Col span={8}>
+                    <Text strong>End Keys:</Text>
+                    <div className="text-sm">{BARCODE_SCANNER_CONFIG.END_KEYS.join(', ')}</div>
+                  </Col>
+                  <Col span={8}>
+                    <Text strong>Allow in Inputs:</Text>
+                    <div className="text-lg">
+                      {BARCODE_SCANNER_CONFIG.ALLOW_IN_INPUTS ? 'Yes' : 'No'}
+                    </div>
+                  </Col>
+                </Row>
                 {stats.lastScannedCode || 'None'}
               </div>
             </Col>
@@ -137,8 +136,8 @@ export function BarcodeSimulator({ visible, onClose, onScan }) {
               onPressEnter={handleSimulateScan}
               size="large"
             />
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               onClick={handleSimulateScan}
               size="large"
               disabled={!testBarcode.trim()}

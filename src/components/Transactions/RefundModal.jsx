@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { 
-  Modal, 
-  Form, 
-  Input, 
-  Select, 
-  Typography, 
-  Space, 
-  List, 
+import {
+  Modal,
+  Form,
+  Input,
+  Select,
+  Typography,
+  Space,
+  List,
   InputNumber,
   Radio,
   Alert,
@@ -22,11 +22,11 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
-export function RefundModal({ 
-  open, 
-  onClose, 
-  transaction, 
-  onRefund 
+export function RefundModal({
+  open,
+  onClose,
+  transaction,
+  onRefund
 }) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -35,11 +35,11 @@ export function RefundModal({
   const [refundAmounts, setRefundAmounts] = useState({});
 
   if (!transaction) return null;
-  
+
   const handleSubmit = (values) => {
     try {
       setLoading(true);
-      
+
       let refundAmount = 0;
       let refundItems = [];
 
@@ -82,7 +82,7 @@ export function RefundModal({
 
       // Dispatch the action and let Redux saga handle the async operation
       onRefund(refundData);
-      
+
       // Close modal and reset form
       onClose();
       form.resetFields();
@@ -135,7 +135,7 @@ export function RefundModal({
       onCancel={onClose}
       width={800}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form
         form={form}
@@ -179,8 +179,8 @@ export function RefundModal({
           rules={[{ required: true, message: 'Please select refund type' }]}
           initialValue="full"
         >
-          <Radio.Group 
-            value={refundType} 
+          <Radio.Group
+            value={refundType}
             onChange={(e) => setRefundType(e.target.value)}
           >
             <Space direction="vertical" className="w-full">
@@ -222,11 +222,11 @@ export function RefundModal({
             label="Refund Amount"
             rules={[
               { required: true, message: 'Please enter refund amount' },
-              { 
-                type: 'number', 
-                min: 0.01, 
-                max: transaction.total, 
-                message: `Amount must be between LKR0.01 and LKR${transaction.total.toFixed(2)}` 
+              {
+                type: 'number',
+                min: 0.01,
+                max: transaction.total,
+                message: `Amount must be between LKR0.01 and LKR${transaction.total.toFixed(2)}`
               }
             ]}
           >
@@ -251,7 +251,7 @@ export function RefundModal({
                 const isSelected = selectedItems.includes(item.product.id);
                 const maxQuantity = item.quantity;
                 const refundQuantity = refundAmounts[item.product.id] || maxQuantity;
-                
+
                 return (
                   <List.Item className="border rounded-lg p-3 mb-2">
                     <div className="w-full">
@@ -277,7 +277,7 @@ export function RefundModal({
                           </Text>
                         </div>
                       </div>
-                      
+
                       {isSelected && (
                         <div className="flex items-center justify-between mt-3 pt-3 border-t">
                           <div className="flex items-center space-x-2">
@@ -301,7 +301,7 @@ export function RefundModal({
                 );
               }}
             />
-            
+
             {selectedItems.length > 0 && (
               <div className="bg-green-50 p-3 rounded-lg mt-3">
                 <div className="flex justify-between items-center">
@@ -371,8 +371,8 @@ export function RefundModal({
           <ActionButton onClick={onClose}>
             Cancel
           </ActionButton>
-          <ActionButton.Primary 
-            htmlType="submit" 
+          <ActionButton.Primary
+            htmlType="submit"
             loading={loading}
             icon="undo"
             danger

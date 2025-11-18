@@ -1,8 +1,8 @@
-import  { useState, useEffect } from 'react';
-import { 
-  Card, 
-  Row, 
-  Col, 
+import { useState, useEffect } from 'react';
+import {
+  Card,
+  Row,
+  Col,
   Modal,
   Image,
   Tag,
@@ -47,19 +47,19 @@ export function ProductGrid({ collapsed }) {
   }, [dispatch]);
 
   // Calculate loading state - show loading if still fetching OR if no data but no error
-  const isLoading = productsLoading || categoriesLoading || 
+  const isLoading = productsLoading || categoriesLoading ||
     (!productsList.length && !productsError) ||
     (!categoriesList.length && !categoriesError);
-  
+
   // Get categories from state, including only active ones
   const activeCategories = categoriesList?.filter(cat => cat.isActive) || [];
   const categoryNames = ['All', ...activeCategories.map(cat => cat.name)];
-  
+
   // Filter products with null safety
   const filteredProducts = (productsList || [])
     .filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (product.barcode && product.barcode.toLowerCase().includes(searchTerm.toLowerCase()));
+        (product.barcode && product.barcode.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
@@ -82,8 +82,8 @@ export function ProductGrid({ collapsed }) {
 
   const handleAddToCartWithAddons = (productWithAddons, quantity = 1) => {
     // Add to cart with all necessary parameters
-    dispatch(addToCart({ 
-      product: productWithAddons, 
+    dispatch(addToCart({
+      product: productWithAddons,
       quantity,
       selectedSize: productWithAddons.selectedSize,
       addons: productWithAddons.addons
@@ -104,7 +104,7 @@ export function ProductGrid({ collapsed }) {
     if (!selectedProduct || !selectedProduct.hasSizes || !selectedSize) {
       return null;
     }
-    
+
     return selectedProduct.sizes.find(size => size.name === selectedSize);
   };
 
@@ -118,7 +118,7 @@ export function ProductGrid({ collapsed }) {
         dimensions: sizeData.dimensions,
         weight: sizeData.weight
       };
-      
+
       // Show addons modal for the selected size
       setShowDetailModal(false);
       setSelectedProduct(productWithSize);
@@ -144,9 +144,12 @@ export function ProductGrid({ collapsed }) {
   // Show error state if there are errors
   if (productsError || categoriesError) {
     return (
-      <Card 
+      <Card
         className="h-full"
-        bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
+        // bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
+        styles={{
+          body: { padding: 0, height: 'calc(100vh - 200px)' }
+        }}
       >
         <div className="p-4 flex items-center justify-center h-full">
           <EmptyState
@@ -161,9 +164,12 @@ export function ProductGrid({ collapsed }) {
 
   if (isLoading) {
     return (
-      <Card 
+      <Card
         className="h-full"
-        bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
+        // bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
+        styles={{
+          body: { padding: 0, height: 'calc(100vh - 200px)' }
+        }}
       >
         <div className="p-4">
           <LoadingSkeleton type="product-grid" />
@@ -176,9 +182,12 @@ export function ProductGrid({ collapsed }) {
 
   return (
     <>
-      <Card 
+      <Card
         className="h-full"
-        bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
+        // bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)' }}
+        styles={{
+          body: { padding: 0, height: 'calc(100vh - 200px)' }
+        }}
       >
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -194,7 +203,7 @@ export function ProductGrid({ collapsed }) {
                 className="w-80"
                 size="large"
               />
-              <ActionButton.Primary 
+              <ActionButton.Primary
                 size="large"
                 icon="add"
                 onClick={() => setShowCustomProductModal(true)}
@@ -226,10 +235,10 @@ export function ProductGrid({ collapsed }) {
               icon="inventory_2"
               title="No Products Found"
               description={
-                searchTerm ? 
-                  `No products found for "${searchTerm}"` : 
-                  selectedCategory === 'All' ? 
-                    'No products available' : 
+                searchTerm ?
+                  `No products found for "${searchTerm}"` :
+                  selectedCategory === 'All' ?
+                    'No products available' :
                     `No products found in "${selectedCategory}" category`
               }
             />
@@ -277,7 +286,7 @@ export function ProductGrid({ collapsed }) {
                 {selectedProduct.description}
               </Text>
             </div>
-            
+
             {/* Product Image and Basic Info */}
             <div className="flex gap-6">
               <div className="w-1/3">
@@ -289,19 +298,19 @@ export function ProductGrid({ collapsed }) {
                   style={{ aspectRatio: '4/3', objectFit: 'cover' }}
                 />
               </div>
-              
+
               <div className="w-2/3">
                 {/* Price and Stock */}
                 <div className="mb-6">
                   <Title level={2} className="text-green-600 mb-2">
-                    {selectedSizeData 
+                    {selectedSizeData
                       ? `LKR ${(selectedSizeData.price || 0).toFixed(2)}`
                       : selectedProduct.hasSizes
                         ? `From LKR ${Math.min(...(selectedProduct.sizes || []).map(s => s.price || 0) || [0]).toFixed(2)}`
                         : `LKR ${(selectedProduct.price || 0).toFixed(2)}`
                     }
                   </Title>
-                  
+
                   <Tag color={
                     selectedSizeData
                       ? selectedSizeData.stock > 0 ? 'green' : 'red'
@@ -313,7 +322,7 @@ export function ProductGrid({ collapsed }) {
                     }
                   </Tag>
                 </div>
-                
+
                 {/* Size Selection */}
                 {selectedProduct.hasSizes && (
                   <div className="mb-6">
@@ -334,7 +343,7 @@ export function ProductGrid({ collapsed }) {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Size Details */}
                 {selectedSizeData && (
                   <div className="bg-blue-50 p-4 rounded-lg mb-6">
@@ -375,7 +384,7 @@ export function ProductGrid({ collapsed }) {
                     </Row>
                   </div>
                 )}
-                
+
                 {/* Product Details for non-size products */}
                 {!selectedProduct.hasSizes && (
                   <div className="mb-6">
@@ -398,10 +407,10 @@ export function ProductGrid({ collapsed }) {
                     </Row>
                   </div>
                 )}
-                
+
                 {/* Action Buttons */}
                 <div className="flex justify-end space-x-3 mt-6">
-                  <Button 
+                  <Button
                     size="large"
                     onClick={() => {
                       setShowDetailModal(false);
@@ -411,7 +420,7 @@ export function ProductGrid({ collapsed }) {
                   >
                     Close
                   </Button>
-                  
+
                   {selectedProduct.hasSizes ? (
                     <Button
                       type="primary"
@@ -420,10 +429,10 @@ export function ProductGrid({ collapsed }) {
                       onClick={handleAddSelectedSizeToCart}
                       disabled={!selectedSizeData || selectedSizeData.stock === 0}
                     >
-                      {!selectedSizeData 
-                        ? 'Select Size' 
-                        : selectedSizeData.stock === 0 
-                          ? 'Out of Stock' 
+                      {!selectedSizeData
+                        ? 'Select Size'
+                        : selectedSizeData.stock === 0
+                          ? 'Out of Stock'
                           : `Add to Cart - LKR ${(selectedSizeData.price || 0).toFixed(2)}`
                       }
                     </Button>

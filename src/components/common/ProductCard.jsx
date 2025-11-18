@@ -27,7 +27,7 @@ export function ProductCard({
     // Price is now fixed for all variations
     return `LKR ${(product.price || 0).toFixed(2) || '0.00'}`;
   };
-  console.log("sssssdfsddsfdsf", product.media[0] && `${import.meta.env.VITE_API_URL}${product.media[0]}`)
+  console.log("sssssdfsddsfdsf", product.media && product.media.length && `${import.meta.env.VITE_API_URL}${product.media[0]}`)
   return (
     <Card
       hoverable

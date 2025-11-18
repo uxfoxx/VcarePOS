@@ -1,19 +1,32 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { fetchOrders } from '../store/slices/ordersSlice';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
+import EcommerceInvoiceModal from '../components/Orders/EcommerceInvoiceModal';
 
 const OrdersPage = () => {
   const dispatch = useDispatch();
   const { customer } = useSelector(state => state.auth);
   const { orders, loading } = useSelector(state => state.orders);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
 
   useEffect(() => {
     if (customer) {
       dispatch(fetchOrders({ customerId: customer.id }));
     }
   }, [dispatch, customer]);
+
+  const handleViewInvoice = (order) => {
+    setSelectedOrder(order);
+    setIsInvoiceModalOpen(true);
+  };
+
+  const handleCloseInvoice = () => {
+    setIsInvoiceModalOpen(false);
+    setSelectedOrder(null);
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -144,11 +157,17 @@ const OrdersPage = () => {
                         </p>
                       )}
                     </div>
-                    <div className="text-right">
+                    <div className="text-right space-y-2">
                       <p className="text-sm text-gray-600">Delivery to:</p>
                       <p className="text-sm font-medium text-gray-900 max-w-xs truncate">
                         {order.customerAddress}
                       </p>
+                      <button
+                        onClick={() => handleViewInvoice(order)}
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        View Invoice
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -157,6 +176,12 @@ const OrdersPage = () => {
           ))}
         </div>
       )}
+
+      <EcommerceInvoiceModal
+        order={selectedOrder}
+        isOpen={isInvoiceModalOpen}
+        onClose={handleCloseInvoice}
+      />
     </div>
   );
 };

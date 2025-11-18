@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { 
-  Card, 
-  List, 
-  InputNumber, 
-  Typography, 
-  Divider, 
+import {
+  Card,
+  List,
+  InputNumber,
+  Typography,
+  Divider,
   Badge,
   Popconfirm,
   message,
@@ -12,7 +12,9 @@ import {
   Button,
   Alert,
   Tag,
-  Empty
+  Empty,
+  Modal,
+  Space
 } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import { removeFromCart, updateQuantity, clearCart } from '../../features/cart/cartSlice';
@@ -22,6 +24,9 @@ import { useReduxNotifications as useNotifications } from '../../hooks/useReduxN
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon'; 
 import { CheckoutModal } from '../POS/CheckoutModal';
+import { QuotationPDF } from '../Quotations/QuotationPDF';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const { Title, Text } = Typography;
 
@@ -35,6 +40,16 @@ export function Cart() {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponCode, setCouponCode] = useState('');
   const [materialWarnings, setMaterialWarnings] = useState({ unavailableMaterials: [], lowMaterials: [] });
+  const [showQuotationModal, setShowQuotationModal] = useState(false);
+  const [quotationForm, setQuotationForm] = useState({
+    customerName: '',
+    customerPhone: '',
+    customerEmail: '',
+    customerAddress: '',
+    notes: ''
+  });
+  const [quotationData, setQuotationData] = useState(null);
+  const [loadingPDF, setLoadingPDF] = useState(false);
 
   // Check raw material availability and reset coupon when cart is cleared
   useEffect(() => {
@@ -245,12 +260,126 @@ export function Cart() {
     }
   };
 
+  const handleGenerateQuotation = () => {
+    if (!quotationForm.customerName.trim()) {
+      message.warning('Please enter customer name');
+      return;
+    }
+
+    const quotationItems = cart.map(item => ({
+      product_id: item.product.id,
+      product_name: item.product.name,
+      productName: item.product.name,
+      quantity: item.quantity,
+      unit_price: item.product.price,
+      unitPrice: item.product.price,
+      total_price: item.product.price * item.quantity,
+      totalPrice: item.product.price * item.quantity,
+      description: item.product.description || '',
+      selected_variant: item.selectedVariant || '',
+      selectedVariant: item.selectedVariant || '',
+      selected_size: item.selectedSize || '',
+      selectedSize: item.selectedSize || ''
+    }));
+
+    const quotation = {
+      id: `QUO-${Date.now()}`,
+      customer_name: quotationForm.customerName,
+      customerName: quotationForm.customerName,
+      customer_phone: quotationForm.customerPhone,
+      customerPhone: quotationForm.customerPhone,
+      customer_email: quotationForm.customerEmail,
+      customerEmail: quotationForm.customerEmail,
+      customer_address: quotationForm.customerAddress,
+      customerAddress: quotationForm.customerAddress,
+      items: quotationItems,
+      subtotal: subtotal,
+      discount: couponDiscount,
+      total_tax: fullBillTaxTotal,
+      totalTax: fullBillTaxTotal,
+      total: total,
+      notes: quotationForm.notes || '',
+      status: 'draft',
+      created_at: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
+
+    setQuotationData(quotation);
+    setShowQuotationModal(false);
+    message.success('Quotation generated successfully');
+  };
+
+  const generateQuotationPDF = async (action = 'view') => {
+    if (!quotationData) return;
+
+    setLoadingPDF(true);
+    const element = document.getElementById('quotation-pdf-content');
+    if (!element) {
+      setLoadingPDF(false);
+      message.error('PDF content not found');
+      return;
+    }
+
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#ffffff',
+        width: element.scrollWidth,
+        height: element.scrollHeight,
+        logging: false
+      });
+
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      let position = 0;
+
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      if (action === 'download') {
+        const filename = `quotation-${quotationData.id}.pdf`;
+        pdf.save(filename);
+        message.success('Quotation downloaded successfully');
+        setQuotationData(null);
+        setQuotationForm({
+          customerName: '',
+          customerPhone: '',
+          customerEmail: '',
+          customerAddress: '',
+          notes: ''
+        });
+      } else {
+        const pdfBlob = pdf.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      message.error('Failed to generate PDF');
+    } finally {
+      setLoadingPDF(false);
+    }
+  };
+
   const handleProceedToCheckout = () => {
     if (cart.length === 0) {
       message.warning('Cart is empty');
       return;
     }
-    
+
     // Show warnings but allow user to proceed
     if (materialWarnings.unavailableMaterials.length > 0) {
       message.warning('Some raw materials are out of stock. Production may be delayed.');
@@ -536,8 +665,8 @@ export function Cart() {
             </div>
           </div>
 
-          {/* Action Button */}
-          <div className="border-t border-gray-200 p-4">
+          {/* Action Buttons */}
+          <div className="border-t border-gray-200 p-4 space-y-2">
             <Button
               type="primary"
               icon={<Icon name="arrow_forward" />}
@@ -551,6 +680,17 @@ export function Cart() {
               {(materialWarnings.unavailableMaterials.length > 0 || materialWarnings.lowMaterials.length > 0) && (
                 <Icon name="warning" className="ml-2 text-yellow-300" />
               )}
+            </Button>
+
+            <Button
+              icon={<Icon name="request_quote" />}
+              size="large"
+              block
+              onClick={() => setShowQuotationModal(true)}
+              disabled={cart.length === 0}
+              className="h-10"
+            >
+              Generate Quotation
             </Button>
           </div>
         </div>
@@ -569,6 +709,123 @@ export function Cart() {
         categoryTaxTotal={categoryTaxTotal}
         fullBillTaxTotal={fullBillTaxTotal}
       />
+
+      {/* Quotation Customer Details Modal */}
+      <Modal
+        title="Customer Information for Quotation"
+        open={showQuotationModal}
+        onCancel={() => setShowQuotationModal(false)}
+        onOk={handleGenerateQuotation}
+        okText="Generate Quotation"
+        width={600}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Customer Name *</label>
+            <Input
+              placeholder="Enter customer name"
+              value={quotationForm.customerName}
+              onChange={(e) => setQuotationForm({ ...quotationForm, customerName: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Phone Number</label>
+            <Input
+              placeholder="Enter phone number"
+              value={quotationForm.customerPhone}
+              onChange={(e) => setQuotationForm({ ...quotationForm, customerPhone: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Email Address</label>
+            <Input
+              type="email"
+              placeholder="Enter email address"
+              value={quotationForm.customerEmail}
+              onChange={(e) => setQuotationForm({ ...quotationForm, customerEmail: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Address</label>
+            <Input.TextArea
+              rows={3}
+              placeholder="Enter customer address"
+              value={quotationForm.customerAddress}
+              onChange={(e) => setQuotationForm({ ...quotationForm, customerAddress: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Notes</label>
+            <Input.TextArea
+              rows={3}
+              placeholder="Enter special terms or notes"
+              value={quotationForm.notes}
+              onChange={(e) => setQuotationForm({ ...quotationForm, notes: e.target.value })}
+            />
+          </div>
+        </div>
+      </Modal>
+
+      {/* Quotation PDF Preview Modal */}
+      <Modal
+        title={
+          <Space>
+            <Icon name="request_quote" className="text-blue-600" />
+            <span>Quotation Preview</span>
+          </Space>
+        }
+        open={!!quotationData}
+        onCancel={() => {
+          setQuotationData(null);
+          setQuotationForm({
+            customerName: '',
+            customerPhone: '',
+            customerEmail: '',
+            customerAddress: '',
+            notes: ''
+          });
+        }}
+        width={900}
+        footer={[
+          <ActionButton
+            key="close"
+            onClick={() => {
+              setQuotationData(null);
+              setQuotationForm({
+                customerName: '',
+                customerPhone: '',
+                customerEmail: '',
+                customerAddress: '',
+                notes: ''
+              });
+            }}
+          >
+            Close
+          </ActionButton>,
+          <ActionButton
+            key="view"
+            icon="visibility"
+            onClick={() => generateQuotationPDF('view')}
+            loading={loadingPDF}
+          >
+            View PDF
+          </ActionButton>,
+          <ActionButton.Primary
+            key="download"
+            icon="download"
+            onClick={() => generateQuotationPDF('download')}
+            loading={loadingPDF}
+          >
+            Download PDF
+          </ActionButton.Primary>
+        ]}
+      >
+        <div className="max-h-[70vh] overflow-y-auto">
+          <div id="quotation-pdf-content">
+            {quotationData && <QuotationPDF quotation={quotationData} />}
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }

@@ -575,3 +575,14 @@ export const ecommerceOrdersApi = {
     }
   }
 };
+
+// Default export with generic API methods
+const apiClient = {
+  get: async (endpoint) => apiRequest(endpoint),
+  post: async (endpoint, data) => apiRequest(endpoint, { method: 'POST', body: JSON.stringify(data) }),
+  put: async (endpoint, data) => apiRequest(endpoint, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: async (endpoint) => apiRequest(endpoint, { method: 'DELETE' }),
+  patch: async (endpoint, data) => apiRequest(endpoint, { method: 'PATCH', body: JSON.stringify(data) })
+};
+
+export default apiClient;

@@ -43,6 +43,12 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
       module: 'transactions'
     },
     {
+      key: 'quotations',
+      icon: <Icon name="request_quote" />,
+      label: 'Quotations',
+      module: 'quotations'
+    },
+    {
       key: 'reports',
       icon: <Icon name="analytics" />,
       label: 'Reports',

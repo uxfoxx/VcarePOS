@@ -1,5 +1,5 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
-import { ConfigProvider, Layout, theme, Spin, App as AntApp } from 'antd';
+import { ConfigProvider, Layout, theme, Spin, App as AntApp, Modal } from 'antd';
 import { AuthProvider } from './contexts/AuthContext'; 
 import { LoginPage } from './components/Auth/LoginPage';
 import { Header } from './components/Layout/Header';
@@ -58,6 +58,7 @@ const UserManagement = lazy(() => import('./components/Users/UserManagement').th
 const AuditTrail = lazy(() => import('./components/AuditTrail/AuditTrail').then(module => ({ default: module.AuditTrail })));
 const PurchaseOrderManagement = lazy(() => import('./components/PurchaseOrders/PurchaseOrderManagement').then(module => ({ default: module.PurchaseOrderManagement })));
 const EcommerceOrderManagement = lazy(() => import('./components/EcommerceOrders/EcommerceOrderManagement').then(module => ({ default: module.EcommerceOrderManagement })));
+const QuotationManagement = lazy(() => import('./components/Quotations/QuotationManagement').then(module => ({ default: module.QuotationManagement })));
 
 // Loading component
 const ComponentLoader = () => (
@@ -160,6 +161,13 @@ function AppContent() {
         <ProtectedRoute module="transactions" action="view">
           <Suspense fallback={<ComponentLoader />}>
             <TransactionHistory />
+          </Suspense>
+        </ProtectedRoute>
+      ),
+      'quotations': (
+        <ProtectedRoute module="quotations" action="view">
+          <Suspense fallback={<ComponentLoader />}>
+            <QuotationManagement />
           </Suspense>
         </ProtectedRoute>
       ),
@@ -320,7 +328,14 @@ function App() {
     const { rawMaterialsList } = useSelector(state => state.rawMaterials);
     const { productsList } = useSelector(state => state.products);
     const { settings } = useReduxNotifications();
-    
+
+    // Ensure Modal is available globally to prevent "Modal is not defined" errors
+    useEffect(() => {
+      if (Modal && typeof window !== 'undefined') {
+        window.AntdModal = Modal;
+      }
+    }, []);
+
     // Check for existing token on app load and try to restore session
     useEffect(() => {
       const token = localStorage.getItem('vcare_token');

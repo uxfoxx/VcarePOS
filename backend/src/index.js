@@ -17,6 +17,8 @@ const usersRoutes = require('./routes/users');
 const auditRoutes = require('./routes/audit');
 const systemRoutes = require('./routes/system');
 const ecommerceRoutes = require('./routes/ecommerce');
+const invoiceSettingsRoutes = require('./routes/invoiceSettings');
+const quotationsRoutes = require('./routes/quotations');
 
 // Import middleware
 const { logAction } = require('./middleware/auth');
@@ -70,6 +72,8 @@ app.use('/api/users', usersRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/ecommerce', ecommerceRoutes);
+app.use('/api/invoice-settings', invoiceSettingsRoutes);
+app.use('/api/quotations', quotationsRoutes);
 
 // Swagger docs
 setupSwagger(app);

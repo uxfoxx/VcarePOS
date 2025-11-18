@@ -466,7 +466,25 @@ const CheckoutPage = () => {
                     {items.map(item => (
                       <div key={item.id} className="flex items-center space-x-4 p-3 border border-gray-200 rounded-lg">
                         <img
-                          src={item.product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=100'}
+                          src={
+                            item.product.media && Array.isArray(item.product.media) && item.product.media.length > 0
+                              ? (() => {
+                                // Find the first media that is NOT a video
+                                const imageMedia = item.product.media.find(
+                                  (m) =>
+                                    !m.startsWith('data:video/') &&
+                                    !m.toLowerCase().endsWith('.mp4') &&
+                                    !m.toLowerCase().endsWith('.webm') &&
+                                    !m.toLowerCase().endsWith('.mov')
+                                );
+                                return imageMedia
+                                  ? `https://vcaresl.com/api${imageMedia}`
+                                  : item.image ||
+                                  'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
+                              })()
+                              : item.image ||
+                              'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
+                          }
                           alt={item.product.name}
                           className="w-16 h-16 object-cover rounded-lg"
                         />

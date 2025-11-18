@@ -36,7 +36,7 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
 
   const fetchInvoiceConfig = async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const API_URL = 'http://localhost:3001/api';
       const token = localStorage.getItem('token');
 
       const response = await fetch(`${API_URL}/invoice-settings/complete`, {

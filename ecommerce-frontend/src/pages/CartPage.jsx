@@ -36,23 +36,41 @@ const CartPage = () => {
   return (
     <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Shopping Cart</h1>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Cart Items */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-lg shadow-md">
             <div className="p-6">
               <h2 className="text-lg font-semibold mb-4">Cart Items ({totalItems})</h2>
-              
+
               <div className="space-y-4">
                 {items.map(item => (
                   <div key={item.id} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
                     <img
-                      src={item.product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=200'}
+                      src={
+                        item.product.media && Array.isArray(item.product.media) && item.product.media.length > 0
+                          ? (() => {
+                            // Find the first media that is NOT a video
+                            const imageMedia = item.product.media.find(
+                              (m) =>
+                                !m.startsWith('data:video/') &&
+                                !m.toLowerCase().endsWith('.mp4') &&
+                                !m.toLowerCase().endsWith('.webm') &&
+                                !m.toLowerCase().endsWith('.mov')
+                            );
+                            return imageMedia
+                              ? `https://vcaresl.com/api${imageMedia}`
+                              : item.image ||
+                              'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
+                          })()
+                          : item.image ||
+                          'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
+                      }
                       alt={item.product.name}
                       className="w-20 h-20 object-cover rounded-lg"
                     />
-                    
+
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900">{item.product.name}</h3>
                       <p className="text-gray-600 text-sm">{item.product.category}</p>
@@ -61,7 +79,7 @@ const CartPage = () => {
                       )}
                       <p className="text-primary-600 font-semibold">LKR {item.product.price.toFixed(2)}</p>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => handleUpdateQuantity(
@@ -87,7 +105,7 @@ const CartPage = () => {
                         +
                       </button>
                     </div>
-                    
+
                     <div className="text-right">
                       <p className="font-semibold text-gray-900">
                         LKR {(item.product.price * item.quantity).toFixed(2)}
@@ -114,18 +132,18 @@ const CartPage = () => {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
             <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
-            
+
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal ({totalItems} items)</span>
                 <span className="font-medium">LKR {totalAmount.toFixed(2)}</span>
               </div>
-              
+
               <div className="flex justify-between">
                 <span className="text-gray-600">Shipping</span>
                 <span className="font-medium text-green-600">Free</span>
               </div>
-              
+
               <div className="border-t pt-3">
                 <div className="flex justify-between">
                   <span className="text-lg font-semibold">Total</span>
@@ -135,7 +153,7 @@ const CartPage = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="mt-6 space-y-3">
               <Link
                 to="/checkout"

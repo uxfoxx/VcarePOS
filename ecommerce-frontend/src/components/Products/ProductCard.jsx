@@ -66,7 +66,7 @@ const ProductCard = ({ product }) => {
                     !m.toLowerCase().endsWith('.mov')
                 );
                 return imageMedia
-                  ? `${import.meta.env.VITE_API_URL}${imageMedia}`
+                  ? `https://vcaresl.com/api${imageMedia}`
                   : product.image ||
                   'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
               })()
@@ -76,6 +76,7 @@ const ProductCard = ({ product }) => {
           // src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=400'}
           alt={product.name}
           className="h-48 w-full object-cover object-center group-hover:scale-105 transition-transform duration-200"
+          crossOrigin="anonymous"
         />
       </div>
 

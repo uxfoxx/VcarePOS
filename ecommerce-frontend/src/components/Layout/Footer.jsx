@@ -11,7 +11,7 @@ const Footer = () => {
       logout();
     }
   };
-
+  const { categories, loading } = useSelector(state => state.products);
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -53,23 +53,29 @@ const Footer = () => {
                   All Products
                 </Link>
               </li>
-              <li>
-                <Link to="/products?category=Tables" className="text-gray-300 hover:text-white transition-colors">
-                  Tables
-                </Link>
-              </li>
-              <li>
-                <Link to="/products?category=Chairs" className="text-gray-300 hover:text-white transition-colors">
-                  Chairs
-                </Link>
-              </li>
-              <li>
-                <Link to="/products?category=Storage" className="text-gray-300 hover:text-white transition-colors">
-                  Storage
-                </Link>
-              </li>
+
+              {loading && categories && categories.length > 0 ? categories.map((category) => (
+                <li key={category}>
+                  <Link
+                    to={`/products?category=${encodeURIComponent(category)}`}
+                    className="text-gray-300 hover:text-white transition-colors"
+                  >
+                    {category}
+                  </Link>
+                </li>
+              )) : ['Tables', 'Chairs', 'Storage'].map((category) => (
+                <li key={category}>
+                  <Link
+                    to={`/products?category=${encodeURIComponent(category)}`}
+                    className="text-gray-300 hover:text-white transition-colors"
+                  >
+                    {category}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
+
 
           {/* Customer Service */}
           <div>

@@ -1,25 +1,41 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useSearchParams } from 'react-router-dom';
 import { fetchProducts } from '../store/slices/productsSlice';
 import ProductCard from '../components/Products/ProductCard';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const ProductsPage = () => {
   const dispatch = useDispatch();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { products, categories, loading } = useSelector(state => state.products);
-  
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All');
+  const location = useLocation();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
 
+  // Get category from URL
+  const selectedCategory = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("category") || "All";
+  }, [location.search]);
+
+  // Fetch products once
   useEffect(() => {
-    if (products.length === 0) {
-      dispatch(fetchProducts());
-    }
+    if (products.length === 0) dispatch(fetchProducts());
   }, [dispatch, products.length]);
+
+  // When user changes category from dropdown
+  const handleCategoryChange = (category) => {
+    const params = new URLSearchParams(location.search);
+    if (category === 'All') {
+      params.delete('category');
+    } else {
+      params.set('category', category);
+    }
+    navigate(`/products?${params.toString()}`);
+  };
+
 
   // Debug logging when products change
   useEffect(() => {
@@ -36,42 +52,32 @@ const ProductsPage = () => {
     });
   }, [products, categories, loading]);
 
-  // Update URL when category changes
-  useEffect(() => {
-    if (selectedCategory === 'All') {
-      searchParams.delete('category');
-    } else {
-      searchParams.set('category', selectedCategory);
-    }
-    setSearchParams(searchParams);
-  }, [selectedCategory, searchParams, setSearchParams]);
-
   // Filter and sort products with memoization for performance
   const filteredProducts = useMemo(() => {
     if (!products || !Array.isArray(products)) return [];
-    
+
     return products
       .filter(product => {
         if (!product) return false;
-        
+
         const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
         const searchLower = (searchTerm || '').toLowerCase();
-        const matchesSearch = 
+        const matchesSearch =
           product.name?.toLowerCase().includes(searchLower) ||
           product.description?.toLowerCase().includes(searchLower);
         const hasStock = product.stock > 0; // Only show products with stock available
-        
+
         return matchesCategory && matchesSearch && hasStock;
       })
       .sort((a, b) => {
         let aValue = a[sortBy];
         let bValue = b[sortBy];
-        
+
         if (sortBy === 'price') {
           aValue = parseFloat(aValue) || 0;
           bValue = parseFloat(bValue) || 0;
         }
-        
+
         if (sortOrder === 'asc') {
           return aValue > bValue ? 1 : -1;
         } else {
@@ -106,9 +112,8 @@ const ProductsPage = () => {
           {/* Category Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+            <select value={selectedCategory}
+              onChange={(e) => handleCategoryChange(e.target.value)}
               className="input-field"
             >
               <option value="All">All Categories</option>
@@ -171,7 +176,7 @@ const ProductsPage = () => {
               Showing {filteredProducts.length} of {products.length} products
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map(product => (
               <ProductCard key={product.id} product={product} />

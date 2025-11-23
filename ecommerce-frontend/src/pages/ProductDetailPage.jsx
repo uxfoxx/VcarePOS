@@ -191,8 +191,8 @@ const ProductDetailPage = () => {
                     key={color.id}
                     onClick={() => handleColorChange(color)}
                     className={`flex items-center space-x-2 p-3 border rounded-lg ${selectedColor?.id === color.id
-                        ? "border-primary-600 bg-primary-50"
-                        : "border-gray-200"
+                      ? "border-primary-600 bg-primary-50"
+                      : "border-gray-200"
                       }`}
                   >
                     <div
@@ -217,10 +217,10 @@ const ProductDetailPage = () => {
                     onClick={() => setSelectedSize(size)}
                     disabled={size.stock === 0}
                     className={`p-3 border rounded-lg text-center ${selectedSize?.id === size.id
-                        ? "border-primary-600 bg-primary-50"
-                        : size.stock === 0
-                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                          : "border-gray-200"
+                      ? "border-primary-600 bg-primary-50"
+                      : size.stock === 0
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "border-gray-200"
                       }`}
                   >
                     <div className="font-medium">{size.name}</div>

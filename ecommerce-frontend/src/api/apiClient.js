@@ -1,4 +1,4 @@
-const API_BASE_URL =  'https://vcaresl.com/api';
+const API_BASE_URL = 'https://vcaresl.com/api';
 
 // Helper function to get auth token
 const getAuthToken = () => {
@@ -24,6 +24,9 @@ const makeRequest = async (endpoint, options = {}) => {
     // Handle 401 Unauthorized
     if (response.status === 401) {
       localStorage.removeItem('ecommerce_token');
+      localStorage.removeItem('vcare_token');
+      localStorage.removeItem('vcare_token_exp');
+      localStorage.removeItem('loglevel');
       window.location.href = '/login';
       throw new Error('Session expired. Please login again.');
     }

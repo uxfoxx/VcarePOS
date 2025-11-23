@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { 
-  Input, 
-  Space, 
-  Modal, 
-  Form, 
-  InputNumber, 
+import {
+  Input,
+  Space,
+  Modal,
+  Form,
+  InputNumber,
   Typography,
   Switch,
   Popconfirm,
@@ -34,12 +34,14 @@ import { FormModal } from '../common/FormModal';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { DetailModal } from '../common/DetailModal';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
+import { useAuth } from '../../contexts/AuthContext';
 
 const { Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
 export function TaxManagement() {
+  const { hasPermission } = useAuth();
   const dispatch = useDispatch();
   const taxes = useSelector(state => state.taxes.taxesList) || [];
   const categories = useSelector(state => state.categories.categoriesList)?.filter(cat => cat.isActive) || [];
@@ -110,7 +112,7 @@ export function TaxManagement() {
 
   const handleBulkDelete = (taxIds) => {
     if (!taxIds || taxIds.length === 0) return;
-    
+
     // Dispatch the action and let Redux saga handle the async operation
     dispatch(bulkDeleteTaxes({ taxIds }));
     setSelectedRowKeys([]);
@@ -138,7 +140,7 @@ export function TaxManagement() {
   const handleSaveGlobalTaxSettings = () => {
     const action = globalTaxEnabled ? 'enable' : 'disable';
     const taxIds = 'all'; // Enable/disable all taxes
-    
+
     // Dispatch the action and let Redux saga handle the async operation
     dispatch(bulkUpdateStatus({ action, taxIds }));
     setShowGlobalTaxSettings(false);
@@ -233,9 +235,10 @@ export function TaxManagement() {
       width: 120,
       render: (record) => (
         <Space>
-          <Tooltip title="Edit">
-            <ActionButton.Text 
+          <Tooltip title={hasPermission("tax", "edit") ? "Edit" : "No Permission"}>
+            <ActionButton.Text
               icon="edit"
+              disabled={hasPermission("tax", "edit") ? false : true}
               onClick={(e) => {
                 e.stopPropagation();
                 handleEdit(record);
@@ -243,9 +246,10 @@ export function TaxManagement() {
               className="text-blue-600"
             />
           </Tooltip>
-          <Tooltip title="Delete">
+          <Tooltip title={hasPermission("tax", "delete") ? "Delete" : "No Permission"}>
             <Popconfirm
               title="Delete this tax?"
+              disabled={hasPermission("tax", "delete") ? false : true}
               onConfirm={(e) => {
                 e?.stopPropagation();
                 handleDelete(record.id);
@@ -254,9 +258,10 @@ export function TaxManagement() {
               cancelText="Cancel"
               okButtonProps={{ danger: true }}
             >
-              <ActionButton.Text 
+              <ActionButton.Text
                 icon="delete"
                 danger
+                disabled={hasPermission("tax", "delete") ? false : true}
                 onClick={(e) => e.stopPropagation()}
               />
             </Popconfirm>
@@ -266,6 +271,7 @@ export function TaxManagement() {
     },
   ];
 
+  // console.log("asdasdasdasd", hasPermission("tax", "view"))
   // Check if all taxes are inactive
   const areTaxesDisabled = taxes.every(tax => !tax.isActive);
 
@@ -296,7 +302,7 @@ export function TaxManagement() {
         searchPlaceholder="Search taxes..."
         extra={
           <Space>
-            <ActionButton 
+            <ActionButton
               icon={areTaxesDisabled ? "toggle_off" : "toggle_on"}
               loading={loading}
               onClick={() => {
@@ -307,7 +313,7 @@ export function TaxManagement() {
             >
               {areTaxesDisabled ? "Enable Taxes" : "Disable All Taxes"}
             </ActionButton>
-            <ActionButton.Primary 
+            <ActionButton.Primary
               icon="add"
               onClick={() => setShowModal(true)}
               disabled={loading}
@@ -351,11 +357,11 @@ export function TaxManagement() {
               label="Tax Rate (%)"
               rules={[
                 { required: true, message: 'Please enter tax rate' },
-                { 
-                  type: 'number', 
-                  min: 0, 
-                  max: 100, 
-                  message: 'Tax rate must be between 0 and 100' 
+                {
+                  type: 'number',
+                  min: 0,
+                  max: 100,
+                  message: 'Tax rate must be between 0 and 100'
                 }
               ]}
             >
@@ -402,18 +408,18 @@ export function TaxManagement() {
         </Form.Item>
 
         {taxType === 'category' && (
-          <Form.Item 
-            name="applicableCategories" 
+          <Form.Item
+            name="applicableCategories"
             label="Applicable Categories"
             rules={[
-              { 
-                required: taxType === 'category', 
-                message: 'Please select at least one category for category tax' 
+              {
+                required: taxType === 'category',
+                message: 'Please select at least one category for category tax'
               }
             ]}
           >
-            <Select 
-              mode="multiple" 
+            <Select
+              mode="multiple"
               placeholder="Select categories this tax applies to"
               showSearch
               filterOption={(input, option) =>
@@ -442,7 +448,7 @@ export function TaxManagement() {
         </Form.Item>
 
         <Form.Item name="isActive" label="Active Status" valuePropName="checked" initialValue={true}>
-            <Switch />
+          <Switch />
         </Form.Item>
 
         {taxType === 'full_bill' && (
@@ -475,15 +481,15 @@ export function TaxManagement() {
         open={showGlobalTaxSettings}
         onCancel={() => setShowGlobalTaxSettings(false)}
         footer={[
-          <ActionButton 
-            key="cancel" 
+          <ActionButton
+            key="cancel"
             onClick={() => setShowGlobalTaxSettings(false)}
             disabled={loading}
           >
             Cancel
           </ActionButton>,
-          <ActionButton.Primary 
-            key="save" 
+          <ActionButton.Primary
+            key="save"
             onClick={handleSaveGlobalTaxSettings}
             loading={loading}
           >
@@ -503,41 +509,41 @@ export function TaxManagement() {
               showIcon
             />
           )}
-          
+
           <Alert
             message={globalTaxEnabled ? "Enable Tax Collection" : "Disable All Taxes"}
             description={
-              globalTaxEnabled 
+              globalTaxEnabled
                 ? "This will enable tax collection based on your configured tax rules."
                 : "This will disable ALL taxes in the system. No taxes will be applied to any orders."
             }
             type={globalTaxEnabled ? "info" : "warning"}
             showIcon
           />
-          
+
           <div className="flex items-center justify-between p-4 border rounded-lg">
             <div>
               <Text strong>Tax Collection</Text>
               <br />
               <Text type="secondary">
-                {globalTaxEnabled 
-                  ? "Taxes will be applied to orders according to your tax rules" 
+                {globalTaxEnabled
+                  ? "Taxes will be applied to orders according to your tax rules"
                   : "No taxes will be applied to any orders"
                 }
               </Text>
             </div>
-            <Switch 
-              checked={globalTaxEnabled} 
+            <Switch
+              checked={globalTaxEnabled}
               onChange={setGlobalTaxEnabled}
               size="default"
             />
           </div>
-          
+
           <div className="bg-gray-50 p-4 rounded-lg">
             <Text className="text-sm">
               <Icon name="info" className="mr-2 text-blue-600" />
-              <strong>Note:</strong> {globalTaxEnabled 
-                ? "Individual taxes can still be enabled or disabled in the tax management table." 
+              <strong>Note:</strong> {globalTaxEnabled
+                ? "Individual taxes can still be enabled or disabled in the tax management table."
                 : "This will override individual tax settings and disable all taxes in the system."
               }
             </Text>
@@ -557,8 +563,8 @@ export function TaxManagement() {
         data={selectedTax}
         type="tax"
         actions={[
-          <ActionButton 
-            key="edit" 
+          <ActionButton
+            key="edit"
             icon="edit"
             onClick={() => {
               setShowDetailModal(false);

@@ -133,7 +133,7 @@ export function EcommerceOrderManagement() {
       title: 'Items',
       dataIndex: 'items',
       key: 'items',
-      width: 80,
+      width: 150,
       render: (items) => <Tag color="blue">{items.length}</Tag>,
       sorter: (a, b) => a.items.length - b.items.length,
     },
@@ -221,7 +221,7 @@ export function EcommerceOrderManagement() {
       title: 'Actions',
       key: 'actions',
       fixed: 'right',
-      width: 100,
+      width: 120,
       render: (record) => (
         <Space>
           <Tooltip title="View Details">
@@ -259,38 +259,30 @@ export function EcommerceOrderManagement() {
     <>
       <Card>
         {/* Statistics */}
-        <Row gutter={16} className="mb-6">
-          <Col span={6}>
-            <Card size="small" className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{ecommerceOrders.length}</div>
-              <div className="text-sm text-gray-500">Total Orders</div>
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card size="small" className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
-                {ecommerceOrders.filter(o => o.orderStatus === 'pending_payment').length}
-              </div>
-              <div className="text-sm text-gray-500">Pending Payment</div>
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card size="small" className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {ecommerceOrders.filter(o => o.orderStatus === 'processing').length}
-              </div>
-              <div className="text-sm text-gray-500">Processing</div>
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card size="small" className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {ecommerceOrders.filter(o => o.orderStatus === 'completed').length}
-              </div>
-              <div className="text-sm text-gray-500">Completed</div>
-            </Card>
-          </Col>
-        </Row>
+        <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <Card size="small" className="text-center">
+            <div className="text-2xl font-bold text-blue-600">{ecommerceOrders.length}</div>
+            <div className="text-sm text-gray-500">Total Orders</div>
+          </Card>
+          <Card size="small" className="text-center">
+            <div className="text-2xl font-bold text-orange-600">
+              {ecommerceOrders.filter(o => o.orderStatus === 'pending_payment').length}
+            </div>
+            <div className="text-sm text-gray-500">Pending Payment</div>
+          </Card>
+          <Card size="small" className="text-center">
+            <div className="text-2xl font-bold text-blue-600">
+              {ecommerceOrders.filter(o => o.orderStatus === 'processing').length}
+            </div>
+            <div className="text-sm text-gray-500">Processing</div>
+          </Card>
+          <Card size="small" className="text-center">
+            <div className="text-2xl font-bold text-green-600">
+              {ecommerceOrders.filter(o => o.orderStatus === 'completed').length}
+            </div>
+            <div className="text-sm text-gray-500">Completed</div>
+          </Card>
+        </div>
 
         <EnhancedTable
           title="E-commerce Orders"

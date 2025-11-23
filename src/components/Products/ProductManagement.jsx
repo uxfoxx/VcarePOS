@@ -271,7 +271,7 @@ export function ProductManagement() {
       title: 'Actions',
       key: 'actions',
       fixed: 'right',
-      width: 100,
+      width: 180,
       render: (record) => (
         <Space>
           <Tooltip title="Edit">

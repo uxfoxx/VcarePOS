@@ -306,14 +306,14 @@ export function EnhancedTable({
 
   return (
     <>
-      <Card className="overflow-x-auto">
+      <Card className="overflow-x-auto flex w-full bgred">
         {(title || icon || extra || showSearch || showColumnConfig) && (
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap w-full">
             {(title || icon) && (
               <div className="flex items-center">
                 {icon && <Icon name={icon} className="text-[#0E72BD] mr-2" size="text-xl" />}
                 <div>
-                  {title && <Text strong className="text-lg">{title}</Text>}
+                  {title && <Text strong className="text-lg whitespace-nowrap">{title}</Text>}
                   {subtitle && (
                     <Text type="secondary" className="text-sm block">
                       {subtitle}

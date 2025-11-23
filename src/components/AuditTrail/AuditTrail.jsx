@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  Input, 
-  Select, 
-  Space, 
+import {
+  Card,
+  Input,
+  Select,
+  Space,
   Typography,
   Tag,
   Avatar,
@@ -49,19 +49,19 @@ export function AuditTrail() {
 
   const filteredAuditTrail = auditList.filter(entry => {
     const matchesSearch = entry.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         entry.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         entry.module.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      entry.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.module.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesAction = filterAction === 'all' || entry.action === filterAction;
     const matchesModule = filterModule === 'all' || entry.module === filterModule;
-    
+
     let matchesDate = true;
     if (dateRange && dateRange.length === 2) {
       const entryDate = dayjs(entry.timestamp);
-      matchesDate = entryDate.isAfter(dateRange[0].startOf('day')) && 
-                   entryDate.isBefore(dateRange[1].endOf('day'));
+      matchesDate = entryDate.isAfter(dateRange[0].startOf('day')) &&
+        entryDate.isBefore(dateRange[1].endOf('day'));
     }
-    
+
     return matchesSearch && matchesAction && matchesModule && matchesDate;
   });
 
@@ -147,8 +147,8 @@ export function AuditTrail() {
       key: 'action',
       width: 120,
       render: (action) => (
-        <Tag 
-          color={getActionColor(action)} 
+        <Tag
+          color={getActionColor(action)}
           icon={<Icon name={getActionIcon(action)} size="text-xs" />}
         >
           {action}
@@ -184,6 +184,7 @@ export function AuditTrail() {
       title: 'Description',
       dataIndex: 'description',
       key: 'description',
+      width: 300,
       render: (description) => (
         <Text className="text-sm">{description}</Text>
       ),

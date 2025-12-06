@@ -137,6 +137,28 @@ router.post('/orders', [
         unitPrice: product.price,
         totalPrice: itemTotal
       });
+
+      // Update raw material stock for the selected size (new relationship structure)
+      if (item.selectedColorId && item.selectedSize) {
+        const rawMaterialsResult = await client.query(`
+            SELECT prm.raw_material_id, prm.quantity
+            FROM product_raw_materials prm
+            JOIN product_sizes ps ON prm.product_size_id = ps.id
+            JOIN product_colors pc ON ps.product_color_id = pc.id
+            WHERE pc.id = $1 AND ps.name = $2
+          `, [item.selectedColorId, item.selectedSize]);
+
+        for (const material of rawMaterialsResult.rows) {
+          await client.query(`
+              UPDATE raw_materials
+              SET stock_quantity = GREATEST(0, stock_quantity - $1)
+              WHERE id = $2
+            `, [
+            parseFloat(material.quantity) * item.quantity,
+            material.raw_material_id
+          ]);
+        }
+      }
     }
 
     // Generate order ID

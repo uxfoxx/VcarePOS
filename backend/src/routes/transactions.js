@@ -258,29 +258,29 @@ const router = express.Router();
 router.get('/', authenticate, hasPermission('transactions', 'view'), async (req, res) => {
   try {
     const client = await pool.connect();
-    
+
     // Get all transactions
     const transactionsResult = await client.query(`
       SELECT * FROM transactions
       ORDER BY timestamp DESC
     `);
-    
+
     // Get all transaction items
     const itemsResult = await client.query(`
       SELECT ti.*, p.image
       FROM transaction_items ti
       LEFT JOIN products p ON ti.product_id = p.id
     `);
-    
+
     // Get all refunds
     const refundsResult = await client.query(`
       SELECT r.*, ri.*
       FROM refunds r
       LEFT JOIN refund_items ri ON r.id = ri.refund_id
     `);
-    
+
     client.release();
-    
+
     // Map items and refunds to their respective transactions
     const transactions = transactionsResult.rows.map(transaction => {
       const items = itemsResult.rows
@@ -299,7 +299,7 @@ router.get('/', authenticate, hasPermission('transactions', 'view'), async (req,
           selectedVariant: item.selected_variant,
           addons: item.addons
         }));
-      
+
       const refunds = refundsResult.rows
         .filter(refund => refund.transaction_id === transaction.id)
         .reduce((acc, refund) => {
@@ -338,7 +338,7 @@ router.get('/', authenticate, hasPermission('transactions', 'view'), async (req,
             }];
           }
         }, []);
-      
+
       return {
         id: transaction.id,
         customerName: transaction.customer_name,
@@ -364,7 +364,7 @@ router.get('/', authenticate, hasPermission('transactions', 'view'), async (req,
         refunds
       };
     });
-    
+
     res.json(transactions);
   } catch (error) {
     handleRouteError(error, req, res, 'Transactions - Fetching transactions:');
@@ -379,21 +379,21 @@ router.get('/', authenticate, hasPermission('transactions', 'view'), async (req,
 router.get('/:id', authenticate, hasPermission('transactions', 'view'), async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const client = await pool.connect();
-    
+
     // Get transaction
     const transactionResult = await client.query(`
       SELECT * FROM transactions WHERE id = $1
     `, [id]);
-    
+
     if (transactionResult.rows.length === 0) {
       client.release();
       return res.status(404).json({ message: 'Transaction not found' });
     }
-    
+
     const transaction = transactionResult.rows[0];
-    
+
     // Get transaction items
     const itemsResult = await client.query(`
       SELECT ti.*, p.image
@@ -401,7 +401,7 @@ router.get('/:id', authenticate, hasPermission('transactions', 'view'), async (r
       LEFT JOIN products p ON ti.product_id = p.id
       WHERE ti.transaction_id = $1
     `, [id]);
-    
+
     // Get refunds
     const refundsResult = await client.query(`
       SELECT r.*, ri.*
@@ -409,9 +409,9 @@ router.get('/:id', authenticate, hasPermission('transactions', 'view'), async (r
       LEFT JOIN refund_items ri ON r.id = ri.refund_id
       WHERE r.transaction_id = $1
     `, [id]);
-    
+
     client.release();
-    
+
     // Format items
     const items = itemsResult.rows.map(item => ({
       product: {
@@ -427,7 +427,7 @@ router.get('/:id', authenticate, hasPermission('transactions', 'view'), async (r
       selectedVariant: item.selected_variant,
       addons: item.addons
     }));
-    
+
     // Format refunds
     const refunds = refundsResult.rows.reduce((acc, refund) => {
       // Find existing refund or create new one
@@ -465,7 +465,7 @@ router.get('/:id', authenticate, hasPermission('transactions', 'view'), async (r
         }];
       }
     }, []);
-    
+
     // Format response
     const formattedTransaction = {
       id: transaction.id,
@@ -491,7 +491,7 @@ router.get('/:id', authenticate, hasPermission('transactions', 'view'), async (r
       items,
       refunds
     };
-    
+
     res.json(formattedTransaction);
   } catch (error) {
     handleRouteError(error, req, res, 'Transactions - Fetching transaction:');
@@ -522,10 +522,10 @@ router.post(
     }
 
     const client = await pool.connect();
-    
+
     try {
       await client.query('BEGIN');
-      
+
       const {
         items,
         subtotal,
@@ -547,10 +547,10 @@ router.post(
         salesperson,
         salespersonId
       } = req.body;
-      
+
       // Generate transaction ID
       const transactionId = req.body.id || `TXN-${Date.now()}`;
-      
+
       // Insert transaction
       const transactionResult = await client.query(`
         INSERT INTO transactions (
@@ -581,7 +581,7 @@ router.post(
         status,
         JSON.stringify(appliedTaxes)
       ]);
-      
+
       // Insert transaction items
       for (const item of items) {
         await client.query(`
@@ -603,7 +603,7 @@ router.post(
           JSON.stringify(item.product.addons || null),
           item.selectedColorId
         ]);
-        
+
         // Update product stock
         if (item.selectedSize && item.selectedColorId) {
           // Update specific size stock using the correct relationship chain
@@ -621,7 +621,7 @@ router.post(
             item.selectedColorId,
             item.selectedSize
           ]);
-          
+
           // Update total product stock (sum of all sizes across all colors)
           await client.query(`
             UPDATE products
@@ -644,7 +644,7 @@ router.post(
             item.product.id
           ]);
         }
-        
+
         // Update raw material stock for the selected size (new relationship structure)
         if (item.selectedColorId && item.selectedSize) {
           const rawMaterialsResult = await client.query(`
@@ -654,7 +654,7 @@ router.post(
             JOIN product_colors pc ON ps.product_color_id = pc.id
             WHERE pc.id = $1 AND ps.name = $2
           `, [item.selectedColorId, item.selectedSize]);
-          
+
           for (const material of rawMaterialsResult.rows) {
             await client.query(`
               UPDATE raw_materials
@@ -666,7 +666,22 @@ router.post(
             ]);
           }
         }
-        
+
+        // Update raw materials for products having a rawMaterials array
+        if (item.product.rawMaterials && item.product.rawMaterials.length > 0) {
+          for (const material of item.product.rawMaterials) {
+            await client.query(`
+            UPDATE raw_materials
+            SET stock_quantity = GREATEST(0, stock_quantity - $1)
+            WHERE id = $2
+        `, [
+              parseFloat(material.quantity) * item.quantity,
+              material.rawMaterialId
+            ]);
+          }
+        }
+
+
         // Update raw material stock for addons
         if (item.product.addons && item.product.addons.length > 0) {
           for (const addon of item.product.addons) {
@@ -681,7 +696,7 @@ router.post(
           }
         }
       }
-      
+
       // Update coupon usage if applied
       if (appliedCoupon) {
         await client.query(`
@@ -690,12 +705,12 @@ router.post(
           WHERE code = $1
         `, [appliedCoupon]);
       }
-      
+
       await client.query('COMMIT');
-      
+
       // Return the created transaction
       const transaction = transactionResult.rows[0];
-      
+
       res.status(201).json({
         id: transaction.id,
         customerName: transaction.customer_name,
@@ -750,31 +765,31 @@ router.put(
 
     const { id } = req.params;
     const { status } = req.body;
-    
+
     try {
       const client = await pool.connect();
-      
+
       // Check if transaction exists
       const checkResult = await client.query(
         'SELECT * FROM transactions WHERE id = $1',
         [id]
       );
-      
+
       if (checkResult.rows.length === 0) {
         client.release();
         return res.status(404).json({ message: 'Transaction not found' });
       }
-      
+
       // Update transaction status
       const result = await client.query(
         'UPDATE transactions SET status = $1 WHERE id = $2 RETURNING *',
         [status, id]
       );
-      
+
       client.release();
-      
+
       const transaction = result.rows[0];
-      
+
       res.json({
         id: transaction.id,
         status: transaction.status
@@ -819,36 +834,36 @@ router.post(
     } = req.body;
 
     const client = await pool.connect();
-    
+
     try {
       await client.query('BEGIN');
-      
+
       // Check if transaction exists
       const transactionResult = await client.query(
         'SELECT * FROM transactions WHERE id = $1',
         [id]
       );
-      
+
       if (transactionResult.rows.length === 0) {
         await client.query('ROLLBACK');
         client.release();
         return res.status(404).json({ message: 'Transaction not found' });
       }
-      
+
       const transaction = transactionResult.rows[0];
-      
+
       // Check if refund amount is valid
       if (parseFloat(refundAmount) > parseFloat(transaction.total)) {
         await client.query('ROLLBACK');
         client.release();
-        return res.status(400).json({ 
-          message: 'Refund amount cannot exceed transaction total' 
+        return res.status(400).json({
+          message: 'Refund amount cannot exceed transaction total'
         });
       }
-      
+
       // Generate refund ID
       const refundId = `REFUND-${Date.now()}`;
-      
+
       // Insert refund
       const refundResult = await client.query(`
         INSERT INTO refunds (
@@ -867,7 +882,7 @@ router.post(
         `${req.user.firstName} ${req.user.lastName}`,
         'processed'
       ]);
-      
+
       // Insert refund items if applicable
       if (refundType === 'items' && refundItems && refundItems.length > 0) {
         for (const item of refundItems) {
@@ -882,7 +897,7 @@ router.post(
             item.refundQuantity,
             item.refundAmount
           ]);
-          
+
           // Restore product stock
           if (item.selectedColorId && item.selectedSize) {
             // Update specific size stock using correct relationship chain
@@ -900,7 +915,7 @@ router.post(
               item.selectedColorId,
               item.selectedSize
             ]);
-            
+
             // Update total product stock (sum of all sizes across all colors)
             await client.query(`
               UPDATE products
@@ -929,7 +944,7 @@ router.post(
         const itemsResult = await client.query(`
           SELECT * FROM transaction_items WHERE transaction_id = $1
         `, [id]);
-        
+
         for (const item of itemsResult.rows) {
           if (item.selected_size && item.selected_color_id) {
             // Restore size stock using correct relationship chain
@@ -947,7 +962,7 @@ router.post(
               item.selected_color_id,
               item.selected_size
             ]);
-            
+
             // Update total product stock (sum of all sizes across all colors)
             await client.query(`
               UPDATE products
@@ -972,19 +987,19 @@ router.post(
           }
         }
       }
-      
+
       // Update transaction status
       const newStatus = refundType === 'full' ? 'refunded' : 'partially-refunded';
       await client.query(
         'UPDATE transactions SET status = $1 WHERE id = $2',
         [newStatus, id]
       );
-      
+
       await client.query('COMMIT');
-      
+
       // Return the created refund
       const refund = refundResult.rows[0];
-      
+
       res.status(201).json({
         id: refund.id,
         transactionId: refund.transaction_id,

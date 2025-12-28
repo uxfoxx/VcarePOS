@@ -35,34 +35,34 @@ const HomePage = () => {
   const qualityFeatures = [
     {
       icon: Hammer,
-      title: "Handcrafted Excellence",
-      description: "Each piece is meticulously crafted by skilled artisans with over 20 years of experience",
-      stat: "20+",
-      statLabel: "Years Experience",
+      title: "Ergonomic Comfort for Better Workdays",
+      description: "Engineered for long hours and better posture. Our mesh chairs, adjustable armrests, and lumbar support systems ensure comfort from morning to night",
+      // stat: "20+",
+      // statLabel: "Years Experience",
       image: "https://images.pexels.com/photos/5974401/pexels-photo-5974401.jpeg"
     },
     {
       icon: Leaf,
-      title: "Sustainable Materials",
-      description: "100% solid wood from responsibly managed forests, certified by FSC and PEFC standards",
-      stat: "100%",
-      statLabel: "Sustainable Wood",
+      title: "Smart Desk Technology for Modern Workflows",
+      description: "1Choose from single-motor or dual-motor Smart Desks with LED displays, memory height presets, and USB charging to create your ideal workflow.",
+      // stat: "100%",
+      // statLabel: "Sustainable Wood",
       image: "https://images.pexels.com/photos/667838/pexels-photo-667838.jpeg"
     },
     {
       icon: Award,
       title: "Award-Winning Design",
       description: "Recognized by leading design institutes for innovation, functionality, and aesthetics",
-      stat: "15+",
-      statLabel: "Design Awards",
+      // stat: "15+",
+      // statLabel: "Design Awards",
       image: "https://images.pexels.com/photos/245032/pexels-photo-245032.jpeg"
     },
     {
       icon: Shield,
-      title: "Built to Last",
-      description: "Reinforced joints, premium hardware, and stress-tested construction for generations of use",
-      stat: "50+",
-      statLabel: "Year Lifespan",
+      title: "Trusted by Thousands Across Sri Lanka",
+      description: "From startups to established brands, Sri Lankan companies rely on Vcare for long-lasting workspace solutions that deliver performance and style.",
+      // stat: "50+",
+      // statLabel: "Year Lifespan",
       image: "https://images.pexels.com/photos/374074/pexels-photo-374074.jpeg"
     }
   ];
@@ -641,10 +641,10 @@ const HomePage = () => {
         <div className="hero-content relative z-10 h-full flex items-center justify-center px-4 sm:px-6 lg:px-8">
           <div className="text-center text-white max-w-4xl">
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
-              Transform Your Space with <span className="text-primary-400">Premium Furniture</span>
+              Transform Your Space with <span className="text-primary-400">Premium Workspace Solutions</span>
             </h1>
             <p className="text-xl sm:text-2xl mb-8 text-gray-200 font-light">
-              Handcrafted excellence, sustainable materials, and timeless design for your home
+              Discover ergonomic office chairs, smart height-adjustable desks, and modern workspace solutions designed to enhance comfort, productivity, and style. Explore vcare’s premium products collection built for Sri Lankan homes and offices.
             </p>
             <Link
               to="/products"
@@ -666,7 +666,7 @@ const HomePage = () => {
               Crafted With <span className="text-primary-600">Excellence</span>
             </h2>
             <p className="quality-subtitle text-lg text-gray-600 max-w-2xl mx-auto">
-              Discover what makes our furniture stand apart from the rest
+              Why Our Products Stands Out
             </p>
           </div>
 
@@ -771,21 +771,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section ref={faqRef} className="py-20 bg-gray-50">
-        <div className="max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div ref={faqHeadingRef} className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Frequently Asked Questions
-            </h2>
-            <p className="text-lg text-gray-600">
-              Everything you need to know about our furniture and services
-            </p>
-          </div>
-          <div className="accordion-item">
-            <Accordion items={faqData} />
-          </div>
-        </div>
-      </section>
+     
 
       <section className="py-16 bg-white" ref={featuredRef}>
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -819,25 +805,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section ref={testimonialsRef} className="py-20 bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              What Our Customers Say
-            </h2>
-            <p className="text-lg text-gray-600">
-              Real experiences from real customers who love their VCare furniture
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <div key={index} className="testimonial-card">
-                <TestimonialCard {...testimonial} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      
 
       <section ref={storyRef} className="py-20 bg-white">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -911,6 +879,26 @@ const HomePage = () => {
         </div>
       </section>
 
+      <section ref={testimonialsRef} className="py-20 bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              What Our Customers Say
+            </h2>
+            <p className="text-lg text-gray-600">
+              Real experiences from real customers who love their VCare furniture
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <div key={index} className="testimonial-card">
+                <TestimonialCard {...testimonial} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section ref={ctaRef} className="py-16 bg-primary-600 text-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Space?</h2>
@@ -925,6 +913,24 @@ const HomePage = () => {
           </Link>
         </div>
       </section>
+
+       <section ref={faqRef} className="py-20 bg-gray-50">
+        <div className="max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div ref={faqHeadingRef} className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-lg text-gray-600">
+              Everything you need to know about our furniture and services
+            </p>
+          </div>
+          <div className="accordion-item">
+            <Accordion items={faqData} />
+          </div>
+        </div>
+      </section>
+
+      
     </div>
   );
 };

@@ -36,112 +36,104 @@ const HomePage = () => {
     {
       icon: Hammer,
       title: "Ergonomic Comfort for Better Workdays",
-      description: "Engineered for long hours and better posture. Our mesh chairs, adjustable armrests, and lumbar support systems ensure comfort from morning to night",
-      // stat: "20+",
-      // statLabel: "Years Experience",
+      description: "Engineered for long hours and better posture. Our mesh chairs, adjustable armrests, and lumbar support systems ensure comfort from morning to night.",
       image: "https://images.pexels.com/photos/5974401/pexels-photo-5974401.jpeg"
     },
     {
       icon: Leaf,
       title: "Smart Desk Technology for Modern Workflows",
-      description: "1Choose from single-motor or dual-motor Smart Desks with LED displays, memory height presets, and USB charging to create your ideal workflow.",
-      // stat: "100%",
-      // statLabel: "Sustainable Wood",
+      description: "Choose from single-motor or dual-motor Smart Desks with LED displays, memory height presets, and USB charging to create your ideal workflow.",
       image: "https://images.pexels.com/photos/667838/pexels-photo-667838.jpeg"
     },
     {
-      icon: Award,
-      title: "Award-Winning Design",
-      description: "Recognized by leading design institutes for innovation, functionality, and aesthetics",
-      // stat: "15+",
-      // statLabel: "Design Awards",
+      icon: Shield,
+      title: "Built to Last with Premium Materials",
+      description: "Metal bases, reinforced frames, and durable construction ensure your workspace furniture withstands years of daily use.",
       image: "https://images.pexels.com/photos/245032/pexels-photo-245032.jpeg"
     },
     {
-      icon: Shield,
-      title: "Trusted by Thousands Across Sri Lanka",
-      description: "From startups to established brands, Sri Lankan companies rely on Vcare for long-lasting workspace solutions that deliver performance and style.",
-      // stat: "50+",
-      // statLabel: "Year Lifespan",
+      icon: Award,
+      title: "Minimalist Design for Any Space",
+      description: "Clean, modern aesthetics that complement any environment - from home offices to corporate workspaces across Sri Lanka.",
       image: "https://images.pexels.com/photos/374074/pexels-photo-374074.jpeg"
     }
   ];
 
   const faqData = [
     {
-      question: "Do you offer free delivery?",
-      answer: "Yes! We offer free delivery on all orders within the continental United States. For international orders, shipping costs are calculated at checkout based on your location."
+      question: "Do you offer island-wide delivery?",
+      answer: "Yes! We provide island-wide delivery across Sri Lanka. Delivery to Colombo and suburbs is typically within 2-3 business days, while other areas may take 5-7 business days. Contact us for specific delivery timelines to your location."
     },
     {
       question: "What is your warranty policy?",
-      answer: "All our furniture comes with a comprehensive 1-year warranty covering manufacturing defects. This includes issues with materials, workmanship, and structural integrity. Normal wear and tear is not covered."
+      answer: "We offer up to 2 years warranty on selected items covering manufacturing defects. This includes issues with motors on Smart Desks, structural integrity, and mechanical components. Normal wear and tear is not covered."
     },
     {
-      question: "What materials do you use?",
-      answer: "We exclusively use premium, sustainable materials including solid hardwoods, genuine leather, high-grade fabrics, and eco-friendly finishes. All our wood is sourced from responsibly managed forests."
+      question: "What types of Smart Desks do you offer?",
+      answer: "We offer both single-motor and dual-motor Smart Desks. Both options feature LED displays for height tracking, memory presets for your preferred heights, and USB charging ports. Dual-motor desks offer faster adjustment and higher weight capacity."
     },
     {
       question: "Is assembly required?",
-      answer: "Most of our furniture arrives partially assembled to ensure safe shipping. Assembly is straightforward and typically takes 30-60 minutes. Detailed instructions and all necessary hardware are included. Professional assembly services are also available."
+      answer: "Most furniture requires some assembly. Our team provides professional assembly services in the Colombo area. Detailed instructions and all necessary hardware are included with every purchase. Assembly typically takes 30-60 minutes."
     },
     {
-      question: "Can I customize furniture pieces?",
-      answer: "Absolutely! We offer customization options including fabric selection, wood finishes, and dimensions for many of our pieces. Contact our design team to discuss your specific requirements and get a personalized quote."
+      question: "Can I customize my order?",
+      answer: "Yes! We offer customization options including desk sizes, frame colors, and tabletop finishes. Visit our showroom at 1100/1 Pannipitiya Road, Battaramulla to discuss your specific requirements with our team."
     },
     {
-      question: "What is your return policy?",
-      answer: "We offer a 30-day return policy on most items. If you're not completely satisfied, you can return your purchase for a full refund. The item must be in its original condition. Return shipping is free for defective items."
+      question: "Do you have a showroom?",
+      answer: "Yes, visit our showroom at 1100/1 Pannipitiya Road, Battaramulla, Sri Lanka to experience our products firsthand. Our friendly team will help you find the perfect workspace solution for your needs."
     }
   ];
 
   const testimonials = [
     {
-      name: "Sarah Johnson",
-      role: "Interior Designer",
+      name: "Kasun Perera",
+      role: "Software Engineer",
       rating: 5,
-      review: "The quality of VCare furniture is exceptional. I've recommended them to all my clients and they're always impressed with the craftsmanship and durability.",
-      initials: "SJ",
+      review: "Great value for money! The Smart Desk I purchased has transformed my home office. The height adjustment feature is smooth and the build quality is excellent.",
+      initials: "KP",
       bgColor: "bg-blue-500"
     },
     {
-      name: "Michael Chen",
-      role: "Homeowner",
+      name: "Nadeesha Fernando",
+      role: "Business Owner",
       rating: 5,
-      review: "Best furniture purchase I've ever made! The delivery was smooth, assembly was easy, and the desk looks absolutely stunning in my home office.",
-      initials: "MC",
+      review: "The sales team was incredibly friendly and helpful. They guided me through all the options and helped me find the perfect setup for my office.",
+      initials: "NF",
       bgColor: "bg-green-500"
     },
     {
-      name: "Emily Rodriguez",
-      role: "Business Owner",
+      name: "Dinesh Jayawardena",
+      role: "Remote Professional",
       rating: 5,
-      review: "We furnished our entire office with VCare pieces. The modern design and comfort have significantly improved our workspace. Highly recommend!",
-      initials: "ER",
-      bgColor: "bg-purple-500"
+      review: "My posture has improved significantly since switching to the 808 Ergo Mesh Chair. No more back pain after long work sessions. Highly recommend!",
+      initials: "DJ",
+      bgColor: "bg-teal-500"
     },
     {
-      name: "David Thompson",
-      role: "Architect",
+      name: "Sachini Wijesekara",
+      role: "Freelance Designer",
       rating: 5,
-      review: "As an architect, I appreciate attention to detail. VCare furniture demonstrates excellent design principles and superior build quality in every piece.",
-      initials: "DT",
+      review: "Island-wide delivery was quick and hassle-free. The dual-motor desk is perfect for my creative work - adjusting between sitting and standing throughout the day.",
+      initials: "SW",
       bgColor: "bg-orange-500"
     },
     {
-      name: "Jessica Lee",
-      role: "Marketing Manager",
+      name: "Ruwan Silva",
+      role: "Startup Founder",
       rating: 5,
-      review: "The customer service was outstanding and the furniture exceeded my expectations. The dining set I ordered has become the centerpiece of our home.",
-      initials: "JL",
-      bgColor: "bg-pink-500"
+      review: "Furnished our entire startup office with Vcare products. The minimalist design fits perfectly with our modern workspace. Great quality at affordable prices.",
+      initials: "RS",
+      bgColor: "bg-cyan-500"
     },
     {
-      name: "Robert Martinez",
-      role: "Homeowner",
+      name: "Amaya Rathnayake",
+      role: "HR Manager",
       rating: 5,
-      review: "Incredible value for the quality. The bedroom furniture set is beautiful, sturdy, and has transformed our master suite into a luxury retreat.",
-      initials: "RM",
-      bgColor: "bg-teal-500"
+      review: "The 2-year warranty gave us confidence in our purchase. Our employees love the ergonomic chairs - productivity has noticeably improved!",
+      initials: "AR",
+      bgColor: "bg-rose-500"
     }
   ];
 
@@ -752,20 +744,20 @@ const HomePage = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-12">
             <div className="text-center p-6 bg-white rounded-xl shadow-md">
-              <div className="text-4xl font-extrabold text-primary-600 mb-2">98%</div>
-              <div className="text-sm text-gray-600 font-medium">Customer Satisfaction</div>
-            </div>
-            <div className="text-center p-6 bg-white rounded-xl shadow-md">
-              <div className="text-4xl font-extrabold text-primary-600 mb-2">10K+</div>
-              <div className="text-sm text-gray-600 font-medium">Happy Customers</div>
-            </div>
-            <div className="text-center p-6 bg-white rounded-xl shadow-md">
-              <div className="text-4xl font-extrabold text-primary-600 mb-2">5★</div>
-              <div className="text-sm text-gray-600 font-medium">Average Rating</div>
+              <div className="text-4xl font-extrabold text-primary-600 mb-2">2 Yr</div>
+              <div className="text-sm text-gray-600 font-medium">Warranty Coverage</div>
             </div>
             <div className="text-center p-6 bg-white rounded-xl shadow-md">
               <div className="text-4xl font-extrabold text-primary-600 mb-2">100%</div>
-              <div className="text-sm text-gray-600 font-medium">Eco-Friendly</div>
+              <div className="text-sm text-gray-600 font-medium">Island-Wide Delivery</div>
+            </div>
+            <div className="text-center p-6 bg-white rounded-xl shadow-md">
+              <div className="text-4xl font-extrabold text-primary-600 mb-2">5★</div>
+              <div className="text-sm text-gray-600 font-medium">Customer Reviews</div>
+            </div>
+            <div className="text-center p-6 bg-white rounded-xl shadow-md">
+              <div className="text-4xl font-extrabold text-primary-600 mb-2">Pro</div>
+              <div className="text-sm text-gray-600 font-medium">Assembly Service</div>
             </div>
           </div>
         </div>
@@ -815,19 +807,19 @@ const HomePage = () => {
                 Our Story
               </h2>
               <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-                For over two decades, VCare Furniture has been dedicated to crafting exceptional furniture that transforms houses into homes. Our journey began in a small workshop with a simple vision: to create furniture that combines timeless design with uncompromising quality.
+                Vcare, operating under Vogue Holdings (Pvt) Ltd, was founded with a clear mission: to bring premium workspace solutions to Sri Lankan homes and offices. We understand that where you work matters, and the right furniture can transform your productivity and well-being.
               </p>
               <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-                Every piece we create is a testament to our commitment to sustainability, craftsmanship, and customer satisfaction. We source only the finest materials from responsibly managed forests and work with skilled artisans who pour their expertise into every detail.
+                Our philosophy centers on four core principles: comfort that supports you through long work hours, real-world functionality that adapts to your needs, quality materials that stand the test of time, and modern minimal aesthetics that elevate any space.
               </p>
               <p className="text-lg text-gray-600 leading-relaxed">
-                Today, we're proud to serve thousands of satisfied customers across the country, helping them create spaces they love to live in.
+                Today, we serve professionals working remotely, corporate offices, students, freelancers, and homeowners across Sri Lanka with island-wide delivery and personalized service from our Battaramulla showroom.
               </p>
             </div>
             <div ref={storyVideoRef}>
               <YouTubeEmbed
                 videoId="jU0sUJVIwDk"
-                title="VCare Furniture Story - Furniture Showroom Tour"
+                title="Vcare Workspace Solutions - Showroom Tour"
               />
             </div>
           </div>
@@ -838,10 +830,10 @@ const HomePage = () => {
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">
-              Why Choose <span className="text-primary-600">VCare Furniture</span>?
+              Why Choose <span className="text-primary-600">Vcare</span>?
             </h2>
             <p className="text-lg text-gray-700 max-w-2xl mx-auto">
-              Where design meets durability — handcrafted with care, delivered with excellence.
+              Premium workspace solutions designed for comfort, productivity, and style.
             </p>
           </div>
 
@@ -853,7 +845,7 @@ const HomePage = () => {
                 </svg>
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">Premium Quality</h3>
-              <p className="text-gray-600">Expertly crafted furniture using only the finest sustainable materials.</p>
+              <p className="text-gray-600">Metal bases, reinforced frames, and durable materials built to last.</p>
             </div>
 
             <div className="feature-card group bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 text-center">
@@ -862,18 +854,18 @@ const HomePage = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Free Delivery</h3>
-              <p className="text-gray-600">Enjoy seamless delivery — fast, free, and right to your door.</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Island-Wide Delivery</h3>
+              <p className="text-gray-600">Fast, reliable delivery across Sri Lanka with professional assembly.</p>
             </div>
 
             <div className="feature-card group bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 text-center">
               <div className="feature-icon w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-5 transform group-hover:scale-110 transition duration-300">
                 <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">1-Year Warranty</h3>
-              <p className="text-gray-600">Peace of mind guaranteed — protection on all your furniture pieces.</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Up to 2-Year Warranty</h3>
+              <p className="text-gray-600">Extended warranty coverage on selected items for your peace of mind.</p>
             </div>
           </div>
         </div>
@@ -886,7 +878,7 @@ const HomePage = () => {
               What Our Customers Say
             </h2>
             <p className="text-lg text-gray-600">
-              Real experiences from real customers who love their VCare furniture
+              Real experiences from Sri Lankan professionals who trust Vcare
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -901,15 +893,15 @@ const HomePage = () => {
 
       <section ref={ctaRef} className="py-16 bg-primary-600 text-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Space?</h2>
+          <h2 className="text-3xl font-bold mb-4">Ready to Upgrade Your Workspace?</h2>
           <p className="text-xl mb-8 text-primary-100">
-            Browse our complete collection and find the perfect furniture for your home
+            Explore Smart Desks, Ergonomic Chairs, and more with island-wide delivery
           </p>
           <Link
             to="/products"
             className="cta-button inline-block bg-white text-primary-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200"
           >
-            Start Shopping
+            Shop Now
           </Link>
         </div>
       </section>

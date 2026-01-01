@@ -22,8 +22,8 @@ const Footer = () => {
               <img alt="VCare Logo" className=" h-[40px] object-fill" src="/VCARELogo 1.png" />
             </div>
             <p className="text-gray-300 mb-4">
-              Premium furniture solutions for your home and office. Quality craftsmanship,
-              modern designs, and exceptional customer service.
+              Premium workspace solutions for Sri Lankan homes and offices. Ergonomic chairs,
+              smart desks, and modern furniture with island-wide delivery and up to 2-year warranty.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-300 hover:text-white transition-colors">
@@ -77,31 +77,30 @@ const Footer = () => {
           </div>
 
 
-          {/* Customer Service */}
+          {/* Company */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Customer Service</h3>
+            <h3 className="text-lg font-semibold mb-4">Company</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                <Link to="/about" className="text-gray-300 hover:text-white transition-colors">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link to="/about" className="text-gray-300 hover:text-white transition-colors">
+                  Visit Showroom
+                </Link>
+              </li>
+              <li>
+                <Link to="/about" className="text-gray-300 hover:text-white transition-colors">
                   Contact Us
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                  Shipping Info
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                  Returns
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                  FAQ
-                </a>
+                </Link>
               </li>
             </ul>
+            <div className="mt-4 text-gray-400 text-sm">
+              <p>1100/1 Pannipitiya Road</p>
+              <p>Battaramulla, Sri Lanka</p>
+            </div>
           </div>
 
           {/* Account */}

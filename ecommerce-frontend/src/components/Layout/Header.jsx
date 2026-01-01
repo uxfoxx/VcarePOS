@@ -28,6 +28,7 @@ const Header = () => {
   const navLinks = [
     { label: "Home", to: "/" },
     { label: "Products", to: "/products" },
+    { label: "About Us", to: "/about" },
     { label: `Cart${totalItems > 0 ? ` (${totalItems})` : ""}`, to: "/cart" },
   ];
 

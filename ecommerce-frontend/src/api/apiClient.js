@@ -1,11 +1,30 @@
-const API_BASE_URL = 'https://vcaresl.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vcaresl.com/api';
+const REQUEST_TIMEOUT = 15000;
 
-// Helper function to get auth token
 const getAuthToken = () => {
   return localStorage.getItem('ecommerce_token');
 };
 
-// Helper function to make authenticated requests
+const fetchWithTimeout = async (url, options, timeout = REQUEST_TIMEOUT) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout. Server is taking too long to respond.');
+    }
+    throw error;
+  }
+};
+
 const makeRequest = async (endpoint, options = {}) => {
   const token = getAuthToken();
 
@@ -19,9 +38,8 @@ const makeRequest = async (endpoint, options = {}) => {
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    const response = await fetchWithTimeout(`${API_BASE_URL}${endpoint}`, config);
 
-    // Handle 401 Unauthorized
     if (response.status === 401) {
       localStorage.removeItem('ecommerce_token');
       localStorage.removeItem('vcare_token');
@@ -33,27 +51,12 @@ const makeRequest = async (endpoint, options = {}) => {
 
     const data = await response.json();
 
-    // if (!response.ok) {
-    //   throw new Error(data.message || 'Request failed');
-    // }
     if (!response.ok) {
-      // Throw the full response data plus status
       const err = new Error(data.message || 'Request failed');
       err.status = response.status;
-      err.data = data; // <--- keep remainingTime
-
-      console.log("API request failed", {
-        endpoint,
-        status: response.status,
-        statusText: response.statusText,
-        responseData: data,
-        response,
-        err
-      });
-
+      err.data = data;
       throw err;
     }
-
 
     return data;
   } catch (error) {

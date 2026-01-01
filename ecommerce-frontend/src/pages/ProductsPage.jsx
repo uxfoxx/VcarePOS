@@ -7,7 +7,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 const ProductsPage = () => {
   const dispatch = useDispatch();
-  const { products, categories, loading } = useSelector(state => state.products);
+  const { products, categories, listLoading, error } = useSelector(state => state.products);
   const location = useLocation();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,12 +37,11 @@ const ProductsPage = () => {
   };
 
 
-  // Debug logging when products change
   useEffect(() => {
     console.log('E-commerce ProductsPage: Products state updated', {
       productsLength: products.length,
       categoriesLength: categories.length,
-      loading,
+      listLoading,
       sampleProducts: products.slice(0, 3).map(p => ({
         id: p.id,
         name: p.name,
@@ -50,7 +49,7 @@ const ProductsPage = () => {
         category: p.category
       }))
     });
-  }, [products, categories, loading]);
+  }, [products, categories, listLoading]);
 
   // Filter and sort products with memoization for performance
   const filteredProducts = useMemo(() => {
@@ -152,10 +151,25 @@ const ProductsPage = () => {
         </div>
       </div>
 
-      {/* Products Grid */}
-      {loading ? (
+      {listLoading ? (
         <div className="flex justify-center py-12">
           <LoadingSpinner size="large" />
+        </div>
+      ) : error ? (
+        <div className="text-center py-12">
+          <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Products</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => dispatch(fetchProducts())}
+            className="bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       ) : filteredProducts.length === 0 ? (
         <div className="text-center py-12">

@@ -15,7 +15,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 const HomePage = () => {
   const dispatch = useDispatch();
-  const { products, loading } = useSelector(state => state.products);
+  const { products, listLoading } = useSelector(state => state.products);
 
   const [activeFeature, setActiveFeature] = useState(0);
 
@@ -772,7 +772,7 @@ const HomePage = () => {
             <p className="text-lg text-gray-600">Discover our most popular furniture pieces</p>
           </div>
 
-          {loading ? (
+          {listLoading ? (
             <div className="flex justify-center">
               <LoadingSpinner size="large" />
             </div>

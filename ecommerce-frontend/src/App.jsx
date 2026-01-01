@@ -1,11 +1,10 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { getCurrentCustomer } from './store/slices/authSlice';
 import { fetchProducts } from './store/slices/productsSlice';
 import ErrorBoundary from './components/Common/ErrorBoundary';
 
-// Components
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
@@ -19,13 +18,10 @@ import OrderSuccessPage from './pages/OrderSuccessPage';
 import NotFoundPage from './pages/NotFoundPage';
 import AboutPage from './pages/AboutPage';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
-import LoadingSpinner from './components/Common/LoadingSpinner';
 import MainLayout from './components/Layout/MainLayout';
 
 function App() {
   const dispatch = useDispatch();
-  const { loading: authLoading } = useSelector(state => state.auth);
-  const { listLoading: productsLoading } = useSelector(state => state.products);
 
   useEffect(() => {
     const token = localStorage.getItem('ecommerce_token');
@@ -35,14 +31,6 @@ function App() {
 
     dispatch(fetchProducts());
   }, [dispatch]);
-
-  if (authLoading || productsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="large" />
-      </div>
-    );
-  }
 
   return (
     <ErrorBoundary>

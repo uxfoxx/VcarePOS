@@ -9,6 +9,7 @@ import {
   clearCurrentOrder
 } from '../store/slices/ordersSlice';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
+import { fetchActiveDeliveryCharges } from '../utils/supabaseClient';
 
 const CheckoutPage = () => {
   const dispatch = useDispatch();
@@ -34,6 +35,10 @@ const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState('cash_on_delivery');
   const [tempReceiptFile, setTempReceiptFile] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [deliveryCharges, setDeliveryCharges] = useState([]);
+  const [selectedDeliveryLocation, setSelectedDeliveryLocation] = useState('');
+  const [deliveryCharge, setDeliveryCharge] = useState(0);
+  const [loadingDeliveryCharges, setLoadingDeliveryCharges] = useState(false);
 
   useEffect(() => {
     // Redirect if cart is empty
@@ -50,6 +55,22 @@ const CheckoutPage = () => {
   }, [dispatch]);
 
   useEffect(() => {
+    // Fetch delivery charges
+    const loadDeliveryCharges = async () => {
+      setLoadingDeliveryCharges(true);
+      try {
+        const charges = await fetchActiveDeliveryCharges();
+        setDeliveryCharges(charges);
+      } catch (error) {
+        console.error('Failed to load delivery charges:', error);
+      } finally {
+        setLoadingDeliveryCharges(false);
+      }
+    };
+    loadDeliveryCharges();
+  }, []);
+
+  useEffect(() => {
     // Show success modal when order is created
     if (currentOrder && !loading) {
       setShowSuccessModal(true);
@@ -61,6 +82,18 @@ const CheckoutPage = () => {
       ...customerInfo,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const handleDeliveryLocationChange = (e) => {
+    const location = e.target.value;
+    setSelectedDeliveryLocation(location);
+
+    if (location) {
+      const charge = deliveryCharges.find(c => c.location_name === location);
+      setDeliveryCharge(charge ? parseFloat(charge.charge_amount) : 0);
+    } else {
+      setDeliveryCharge(0);
+    }
   };
   console.log("currentOrder", currentOrder)
   const handleFileChange = (e) => {
@@ -114,6 +147,12 @@ const CheckoutPage = () => {
       return;
     }
 
+    // Validate delivery location if delivery charge selected
+    if (deliveryCharge > 0 && !selectedDeliveryLocation) {
+      alert('Please select a delivery location');
+      return;
+    }
+
     const orderData = {
       customerName: customerInfo.name,
       customerEmail: customerInfo.email,
@@ -126,6 +165,8 @@ const CheckoutPage = () => {
         selectedSize: item.selectedSize,
         quantity: item.quantity,
       })),
+      deliveryLocation: selectedDeliveryLocation || null,
+      deliveryCharge: deliveryCharge || 0,
     };
 
     // Include receipt details if bank transfer
@@ -255,6 +296,33 @@ const CheckoutPage = () => {
                       required
                     />
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Delivery Location (Optional)
+                    </label>
+                    <select
+                      value={selectedDeliveryLocation}
+                      onChange={handleDeliveryLocationChange}
+                      className="input-field"
+                      disabled={loadingDeliveryCharges}
+                    >
+                      <option value="">Select delivery location (No delivery charge)</option>
+                      {deliveryCharges.map((charge) => (
+                        <option key={charge.id} value={charge.location_name}>
+                          {charge.location_name} - Rs. {parseFloat(charge.charge_amount).toFixed(2)}
+                        </option>
+                      ))}
+                    </select>
+                    {loadingDeliveryCharges && (
+                      <p className="text-sm text-gray-500 mt-1">Loading delivery options...</p>
+                    )}
+                    {deliveryCharge > 0 && (
+                      <p className="text-sm text-blue-600 mt-1 font-medium">
+                        Delivery charge: Rs. {deliveryCharge.toFixed(2)}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mt-6 flex justify-end">
@@ -363,7 +431,13 @@ const CheckoutPage = () => {
                         <strong>Phone:</strong> {customerInfo.phone}<br />
                       </>
                     )}
-                    <strong>Address:</strong> {customerInfo.address}
+                    <strong>Address:</strong> {customerInfo.address}<br />
+                    {selectedDeliveryLocation && (
+                      <>
+                        <strong>Delivery Location:</strong> {selectedDeliveryLocation}<br />
+                        <strong>Delivery Charge:</strong> Rs. {deliveryCharge.toFixed(2)}
+                      </>
+                    )}
                   </p>
                 </div>
 
@@ -383,7 +457,7 @@ const CheckoutPage = () => {
                         <p><strong>Account Number:</strong> 8001234567</p>
                         <p><strong>Branch:</strong> Colombo Main Branch</p>
                         <p className="mt-2 text-blue-700">
-                          Please transfer LKR {totalAmount.toFixed(2)} and upload your receipt below.
+                          Please transfer LKR {(totalAmount + deliveryCharge).toFixed(2)} and upload your receipt below.
                         </p>
                       </div>
                     </div>
@@ -555,13 +629,20 @@ const CheckoutPage = () => {
                 <span className="text-gray-600">Subtotal</span>
                 <span className="font-medium">LKR {totalAmount.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Shipping</span>
-                <span className="font-medium text-green-600">Free</span>
-              </div>
+              {deliveryCharge > 0 ? (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Delivery Charge ({selectedDeliveryLocation})</span>
+                  <span className="font-medium text-blue-600">LKR {deliveryCharge.toFixed(2)}</span>
+                </div>
+              ) : (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Shipping</span>
+                  <span className="font-medium text-green-600">Free</span>
+                </div>
+              )}
               <div className="flex justify-between text-lg font-bold">
                 <span>Total</span>
-                <span className="text-primary-600">LKR {totalAmount.toFixed(2)}</span>
+                <span className="text-primary-600">LKR {(totalAmount + deliveryCharge).toFixed(2)}</span>
               </div>
             </div>
           </div>

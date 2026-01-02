@@ -513,6 +513,38 @@ export const vendorsApi = {
   }
 };
 
+// Delivery Charges API
+export const deliveryChargesApi = {
+  getAll: async (is_active) => {
+    const query = is_active !== undefined ? `?is_active=${is_active}` : '';
+    return apiRequest(`/delivery-charges${query}`);
+  },
+
+  getById: async (id) => {
+    return apiRequest(`/delivery-charges/${id}`);
+  },
+
+  create: async (deliveryCharge) => {
+    return apiRequest('/delivery-charges', {
+      method: 'POST',
+      body: JSON.stringify(deliveryCharge)
+    });
+  },
+
+  update: async (id, deliveryCharge) => {
+    return apiRequest(`/delivery-charges/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(deliveryCharge)
+    });
+  },
+
+  delete: async (id) => {
+    return apiRequest(`/delivery-charges/${id}`, {
+      method: 'DELETE'
+    });
+  }
+};
+
 // E-commerce Orders API (for POS system)
 export const ecommerceOrdersApi = {
   getAll: async () => {

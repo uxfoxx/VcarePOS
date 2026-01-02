@@ -27,14 +27,40 @@ const { Title, Text } = Typography;
 
 export function DeliveryChargesSettings() {
   const dispatch = useDispatch();
-  const { deliveryCharges, loading } = useSelector(state => state.deliveryCharges);
+  const { deliveryCharges, loading, error } = useSelector(state => state.deliveryCharges);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingCharge, setEditingCharge] = useState(null);
   const [form] = Form.useForm();
+  const [lastAction, setLastAction] = useState(null);
+  const prevLoadingRef = React.useRef(loading);
 
   useEffect(() => {
     dispatch(fetchDeliveryChargesRequest({}));
   }, [dispatch]);
+
+  useEffect(() => {
+    // Show success/error messages when operations complete
+    if (prevLoadingRef.current && !loading && lastAction) {
+      if (error) {
+        message.error(error);
+      } else {
+        const messages = {
+          create: 'Delivery charge created successfully',
+          update: 'Delivery charge updated successfully',
+          delete: 'Delivery charge deleted successfully',
+        };
+        if (messages[lastAction]) {
+          message.success(messages[lastAction]);
+        }
+        if (lastAction !== 'delete') {
+          setModalVisible(false);
+          form.resetFields();
+        }
+      }
+      setLastAction(null);
+    }
+    prevLoadingRef.current = loading;
+  }, [loading, error, lastAction, form]);
 
   const handleCreate = () => {
     setEditingCharge(null);
@@ -49,20 +75,18 @@ export function DeliveryChargesSettings() {
   };
 
   const handleDelete = (id) => {
+    setLastAction('delete');
     dispatch(deleteDeliveryChargeRequest(id));
-    message.success('Delivery charge deleted successfully');
   };
 
   const handleSubmit = (values) => {
     if (editingCharge) {
+      setLastAction('update');
       dispatch(updateDeliveryChargeRequest({ id: editingCharge.id, ...values }));
-      message.success('Delivery charge updated successfully');
     } else {
+      setLastAction('create');
       dispatch(createDeliveryChargeRequest(values));
-      message.success('Delivery charge created successfully');
     }
-    setModalVisible(false);
-    form.resetFields();
   };
 
   const columns = [

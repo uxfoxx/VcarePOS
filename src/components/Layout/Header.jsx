@@ -245,8 +245,32 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
   );
 
   const getPageTitle = () => {
+    const brandingData = (() => {
+      try {
+        const branding = localStorage.getItem('vcare_branding');
+        return branding ? JSON.parse(branding) : {};
+      } catch {
+        return {};
+      }
+    })();
+
+    const logoPreview = brandingData.logoPreview || '/VCARELogo 1.png';
+
+    if (activeTab === 'pos') {
+      return (
+        <div className="flex items-center gap-2">
+          <img
+            src={logoPreview}
+            alt="Logo"
+            className="h-6 object-contain"
+            crossOrigin="anonymous"
+          />
+          <span>Point of Sale</span>
+        </div>
+      );
+    }
+
     const titles = {
-      'pos': 'Point of Sale',
       'products': 'Product Management',
       'raw-materials': 'Raw Materials',
       'transactions': 'Orders',
@@ -257,7 +281,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
       'audit-trail': 'Audit Trail',
       'settings': 'Settings'
     };
-    return titles[activeTab] || 'VCare POS';
+    return titles[activeTab] || 'Dashboard';
   };
 
   return (

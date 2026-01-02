@@ -12,7 +12,7 @@ exports.sendEmail = async (to, subject, htmlContent, attachments = [], replyTo =
             }
         });
         transporter.sendMail({
-            from: `VCare Furniture" <${process.env.MAIL_EMAIL}>`,
+            from: `"${process.env.BUSINESS_NAME || 'POS System'}" <${process.env.MAIL_EMAIL}>`,
             to,
             subject,
             html: htmlContent,

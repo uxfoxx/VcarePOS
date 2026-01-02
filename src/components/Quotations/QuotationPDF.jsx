@@ -15,9 +15,9 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
     }
   })();
 
-  const businessName = brandingData.businessName || 'VCare Furniture';
-  const businessAddress = brandingData.address || '123 Main Street, City, State 12345';
-  const phoneNumber = brandingData.phoneNumber || '(555) 123-4567';
+  const businessName = brandingData.businessName || '';
+  const businessAddress = brandingData.address || '';
+  const phoneNumber = brandingData.phoneNumber || '';
   const logoPreview = brandingData.logoPreview || '/VCARELogo 1.png';
 
   const formatDate = (date) => {
@@ -40,11 +40,13 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
               className="h-16 object-contain"
               crossOrigin="anonymous"
             />
-            <div>
-              <Title level={2} className="m-0 text-blue-600" style={{ fontSize: '28px', fontWeight: 'bold' }}>
-                {businessName}
-              </Title>
-            </div>
+            {businessName && (
+              <div>
+                <Title level={2} className="m-0 text-blue-600" style={{ fontSize: '28px', fontWeight: 'bold' }}>
+                  {businessName}
+                </Title>
+              </div>
+            )}
           </div>
           <div className="text-right">
             <Title level={1} className="m-0" style={{ fontSize: '36px', fontWeight: 'bold', color: '#000' }}>

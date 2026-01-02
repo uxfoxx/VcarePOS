@@ -17,26 +17,31 @@ export function GoodsReceiveNotePDF({ order, grnData, id }) {
       <div className="text-center mb-8">
         <div className="flex items-center justify-center space-x-4 mb-4">
           <div className=" rounded-xl flex items-center justify-center">
-            <img 
-              src={localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
-                ? JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
-                : "/VCARELogo 1.png"} 
-              alt="VCare Logo" 
+            <img
+              src={localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview
+                ? JSON.parse(localStorage.getItem('vcare_branding')).logoPreview
+                : "/VCARELogo 1.png"}
+              alt="Business Logo"
               className="h-10 object-contain"
             />
           </div>
-          <div>
-            <Title level={2} className="m-0 text-blue-600">
-              {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
-                ? JSON.parse(localStorage.getItem('vcare_branding')).businessName 
-                : "VCare Furniture Store"}
-            </Title>
-            <Text type="secondary">
-              {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).tagline 
-                ? JSON.parse(localStorage.getItem('vcare_branding')).tagline 
-                : "Premium Furniture Solutions"}
-            </Text>
-          </div>
+          {(() => {
+            const branding = localStorage.getItem('vcare_branding') ? JSON.parse(localStorage.getItem('vcare_branding')) : {};
+            return (branding.businessName || branding.tagline) ? (
+              <div>
+                {branding.businessName && (
+                  <Title level={2} className="m-0 text-blue-600">
+                    {branding.businessName}
+                  </Title>
+                )}
+                {branding.tagline && (
+                  <Text type="secondary">
+                    {branding.tagline}
+                  </Text>
+                )}
+              </div>
+            ) : null;
+          })()}
         </div>
         <Divider />
         <Title level={3} className="text-gray-800">GOODS RECEIVE NOTE</Title>
@@ -131,26 +136,26 @@ export function GoodsReceiveNotePDF({ order, grnData, id }) {
 
       {/* Footer */}
       <div className="mt-12 pt-4 border-t text-center text-xs text-gray-500">
-        <Text>
-          {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
-            ? JSON.parse(localStorage.getItem('vcare_branding')).businessName 
-            : "VCare Furniture Store"} | 
-          {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).address 
-            ? JSON.parse(localStorage.getItem('vcare_branding')).address 
-            : "123 Main Street, City, State 12345"} | 
-          {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).phoneNumber 
-            ? JSON.parse(localStorage.getItem('vcare_branding')).phoneNumber 
-            : "(555) 123-4567"}
-        </Text>
-        <br />
-        <Text>
-          Email: {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).emailAddress 
-            ? JSON.parse(localStorage.getItem('vcare_branding')).emailAddress 
-            : "inventory@vcarefurniture.com"} | 
-          Website: {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).website 
-            ? JSON.parse(localStorage.getItem('vcare_branding')).website 
-            : "www.vcarefurniture.com"}
-        </Text>
+        {(() => {
+          const branding = localStorage.getItem('vcare_branding') ? JSON.parse(localStorage.getItem('vcare_branding')) : {};
+          const parts = [];
+          if (branding.businessName) parts.push(branding.businessName);
+          if (branding.address) parts.push(branding.address);
+          if (branding.phoneNumber) parts.push(branding.phoneNumber);
+          return parts.length > 0 ? <Text>{parts.join(' | ')}</Text> : null;
+        })()}
+        {(() => {
+          const branding = localStorage.getItem('vcare_branding') ? JSON.parse(localStorage.getItem('vcare_branding')) : {};
+          const parts = [];
+          if (branding.emailAddress) parts.push(`Email: ${branding.emailAddress}`);
+          if (branding.website) parts.push(`Website: ${branding.website}`);
+          return parts.length > 0 ? (
+            <>
+              <br />
+              <Text>{parts.join(' | ')}</Text>
+            </>
+          ) : null;
+        })()}
         <br />
         <Text className="text-xs mt-2">GRN #{grnData.id} - Generated on {new Date().toLocaleDateString()}</Text>
       </div>

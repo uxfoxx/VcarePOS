@@ -165,26 +165,26 @@ export function PurchaseOrderPDF({ order, id }) {
 
       {/* Footer */}
       <div className="mt-12 pt-4 border-t text-center text-xs text-gray-500">
-        <Text>
-          {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
-            ? JSON.parse(localStorage.getItem('vcare_branding')).businessName 
-            : "VCare Furniture Store"} | 
-          {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).address 
-            ? JSON.parse(localStorage.getItem('vcare_branding')).address 
-            : "123 Main Street, City, State 12345"} | 
-          {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).phoneNumber 
-            ? JSON.parse(localStorage.getItem('vcare_branding')).phoneNumber 
-            : "(555) 123-4567"}
-        </Text>
-        <br />
-        <Text>
-          Email: {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).emailAddress 
-            ? JSON.parse(localStorage.getItem('vcare_branding')).emailAddress 
-            : "orders@vcarefurniture.com"} | 
-          Website: {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).website 
-            ? JSON.parse(localStorage.getItem('vcare_branding')).website 
-            : "www.vcarefurniture.com"}
-        </Text>
+        {(() => {
+          const branding = localStorage.getItem('vcare_branding') ? JSON.parse(localStorage.getItem('vcare_branding')) : {};
+          const parts = [];
+          if (branding.businessName) parts.push(branding.businessName);
+          if (branding.address) parts.push(branding.address);
+          if (branding.phoneNumber) parts.push(branding.phoneNumber);
+          return parts.length > 0 ? <Text>{parts.join(' | ')}</Text> : null;
+        })()}
+        {(() => {
+          const branding = localStorage.getItem('vcare_branding') ? JSON.parse(localStorage.getItem('vcare_branding')) : {};
+          const parts = [];
+          if (branding.emailAddress) parts.push(`Email: ${branding.emailAddress}`);
+          if (branding.website) parts.push(`Website: ${branding.website}`);
+          return parts.length > 0 ? (
+            <>
+              <br />
+              <Text>{parts.join(' | ')}</Text>
+            </>
+          ) : null;
+        })()}
       </div>
     </div>
   );

@@ -9,12 +9,18 @@ export function Footer({ style }) {
     <AntFooter style={style}>
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Text type="secondary" className="text-xs">
-            © {new Date().getFullYear()} {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
-              ? JSON.parse(localStorage.getItem('vcare_branding')).businessName 
-              : "VCare Furniture Store"}. All rights reserved.
-          </Text>
-          <Divider type="vertical" />
+          {(() => {
+            const branding = localStorage.getItem('vcare_branding') ? JSON.parse(localStorage.getItem('vcare_branding')) : {};
+            return branding.businessName ? (
+              <Text type="secondary" className="text-xs">
+                © {new Date().getFullYear()} {branding.businessName}. All rights reserved.
+              </Text>
+            ) : null;
+          })()}
+          {(() => {
+            const branding = localStorage.getItem('vcare_branding') ? JSON.parse(localStorage.getItem('vcare_branding')) : {};
+            return branding.businessName ? <Divider type="vertical" /> : null;
+          })()}
           <Text type="secondary" className="text-xs">
             Version 1.0.0
           </Text>

@@ -19,6 +19,51 @@ export function QuotationManagement() {
   const [quotationData, setQuotationData] = useState(null);
   const [showPDF, setShowPDF] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedProductData, setSelectedProductData] = useState(null);
+  const [selectedColorData, setSelectedColorData] = useState(null);
+  const [availableColors, setAvailableColors] = useState([]);
+  const [availableSizes, setAvailableSizes] = useState([]);
+
+  const handleProductChange = (productId) => {
+    const selectedProduct = productsList.find(p => p.id === productId);
+    if (!selectedProduct) return;
+
+    setSelectedProductData(selectedProduct);
+
+    if (selectedProduct.colors && selectedProduct.colors.length > 0) {
+      setAvailableColors(selectedProduct.colors);
+    } else {
+      setAvailableColors([]);
+    }
+
+    setAvailableSizes([]);
+    setSelectedColorData(null);
+
+    form.setFieldsValue({
+      unitPrice: selectedProduct.price || 0,
+      productColor: undefined,
+      productSize: undefined
+    });
+  };
+
+  const handleColorChange = (colorId) => {
+    if (!selectedProductData || !selectedProductData.colors) return;
+
+    const selectedColor = selectedProductData.colors.find(c => c.id === colorId);
+    if (!selectedColor) return;
+
+    setSelectedColorData(selectedColor);
+
+    if (selectedColor.sizes && selectedColor.sizes.length > 0) {
+      setAvailableSizes(selectedColor.sizes);
+    } else {
+      setAvailableSizes([]);
+    }
+
+    form.setFieldsValue({
+      productSize: undefined
+    });
+  };
 
   const handleAddProduct = () => {
     const product = form.getFieldValue('selectedProduct');
@@ -33,6 +78,28 @@ export function QuotationManagement() {
     const selectedProduct = productsList.find(p => p.id === product);
     if (!selectedProduct) return;
 
+    const colorId = form.getFieldValue('productColor');
+    const sizeId = form.getFieldValue('productSize');
+
+    let colorName = '';
+    let colorImage = '';
+    let sizeName = '';
+
+    if (colorId && selectedProduct.colors) {
+      const color = selectedProduct.colors.find(c => c.id === colorId);
+      if (color) {
+        colorName = color.name;
+        colorImage = color.image || '';
+
+        if (sizeId && color.sizes) {
+          const size = color.sizes.find(s => s.id === sizeId);
+          if (size) {
+            sizeName = size.name;
+          }
+        }
+      }
+    }
+
     const newProduct = {
       id: Date.now(),
       product_id: selectedProduct.id,
@@ -44,10 +111,12 @@ export function QuotationManagement() {
       total_price: quantity * unitPrice,
       totalPrice: quantity * unitPrice,
       description: form.getFieldValue('productDescription') || '',
-      selected_variant: form.getFieldValue('productColor') || '',
-      selectedVariant: form.getFieldValue('productColor') || '',
-      selected_size: form.getFieldValue('productSize') || '',
-      selectedSize: form.getFieldValue('productSize') || ''
+      selected_variant: colorName,
+      selectedVariant: colorName,
+      selected_size: sizeName,
+      selectedSize: sizeName,
+      color_image: colorImage,
+      colorImage: colorImage
     };
 
     setSelectedProducts([...selectedProducts, newProduct]);
@@ -56,9 +125,13 @@ export function QuotationManagement() {
       quantity: 1,
       unitPrice: 0,
       productDescription: '',
-      productColor: '',
-      productSize: ''
+      productColor: undefined,
+      productSize: undefined
     });
+    setSelectedProductData(null);
+    setSelectedColorData(null);
+    setAvailableColors([]);
+    setAvailableSizes([]);
     message.success('Product added to quotation');
   };
 
@@ -186,16 +259,25 @@ export function QuotationManagement() {
       dataIndex: 'product_name',
       key: 'product_name',
       render: (text, record) => (
-        <div>
-          <div className="font-medium">{text}</div>
-          {record.description && <div className="text-sm text-gray-500">{record.description}</div>}
-          {(record.selected_variant || record.selected_size) && (
-            <div className="text-xs text-gray-400">
-              {record.selected_variant && `Color: ${record.selected_variant}`}
-              {record.selected_variant && record.selected_size && ' • '}
-              {record.selected_size && `Size: ${record.selected_size}`}
-            </div>
+        <div className="flex items-start gap-3">
+          {record.color_image && (
+            <img
+              src={record.color_image.startsWith('data:') ? record.color_image : `${import.meta.env.VITE_API_URL}${record.color_image}`}
+              alt={record.selected_variant || 'Product'}
+              className="w-12 h-12 rounded object-cover flex-shrink-0"
+            />
           )}
+          <div className="flex-1">
+            <div className="font-medium">{text}</div>
+            {record.description && <div className="text-sm text-gray-500">{record.description}</div>}
+            {(record.selected_variant || record.selected_size) && (
+              <div className="text-xs text-gray-400 mt-1">
+                {record.selected_variant && `Color: ${record.selected_variant}`}
+                {record.selected_variant && record.selected_size && ' • '}
+                {record.selected_size && `Size: ${record.selected_size}`}
+              </div>
+            )}
+          </div>
         </div>
       )
     },
@@ -341,6 +423,7 @@ export function QuotationManagement() {
                   showSearch
                   placeholder="Search and select product"
                   optionFilterProp="children"
+                  onChange={handleProductChange}
                   filterOption={(input, option) =>
                     option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }
@@ -357,15 +440,57 @@ export function QuotationManagement() {
                 <Input placeholder="Optional product description" />
               </Form.Item>
 
-              <div className="grid grid-cols-2 gap-4">
-                <Form.Item label="Color/Variant" name="productColor">
-                  <Input placeholder="e.g., Black, Red" />
-                </Form.Item>
+              {selectedProductData && availableColors.length > 0 && (
+                <div className="grid grid-cols-2 gap-4">
+                  <Form.Item
+                    label="Color/Variant"
+                    name="productColor"
+                    rules={[{ required: true, message: 'Please select a color' }]}
+                  >
+                    <Select
+                      placeholder="Select color"
+                      onChange={handleColorChange}
+                      optionLabelProp="label"
+                    >
+                      {availableColors.map(color => (
+                        <Option
+                          key={color.id}
+                          value={color.id}
+                          label={color.name}
+                        >
+                          <div className="flex items-center gap-2">
+                            {color.image && (
+                              <img
+                                src={color.image.startsWith('data:') ? color.image : `${import.meta.env.VITE_API_URL}${color.image}`}
+                                alt={color.name}
+                                className="w-6 h-6 rounded object-cover"
+                              />
+                            )}
+                            <span>{color.name}</span>
+                          </div>
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
 
-                <Form.Item label="Size" name="productSize">
-                  <Input placeholder="e.g., Large, Medium" />
-                </Form.Item>
-              </div>
+                  <Form.Item
+                    label="Size"
+                    name="productSize"
+                    rules={[{ required: availableSizes.length > 0, message: 'Please select a size' }]}
+                  >
+                    <Select
+                      placeholder="Select size"
+                      disabled={availableSizes.length === 0}
+                    >
+                      {availableSizes.map(size => (
+                        <Option key={size.id} value={size.id}>
+                          {size.name}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <Form.Item

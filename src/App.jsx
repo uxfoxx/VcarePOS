@@ -122,6 +122,38 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('pos');
   const [collapsed, setCollapsed] = useState(true);
 
+  // Update document title based on active tab and branding
+  useEffect(() => {
+    const brandingData = (() => {
+      try {
+        const branding = localStorage.getItem('vcare_branding');
+        return branding ? JSON.parse(branding) : {};
+      } catch {
+        return {};
+      }
+    })();
+
+    const businessName = brandingData.businessName || 'VCare';
+
+    const pageTitles = {
+      'pos': `${businessName} - POS`,
+      'products': `${businessName} - Products`,
+      'raw-materials': `${businessName} - Raw Materials`,
+      'transactions': `${businessName} - Orders`,
+      'quotations': `${businessName} - Quotations`,
+      'reports': `${businessName} - Reports`,
+      'coupons': `${businessName} - Coupons`,
+      'tax': `${businessName} - Tax Management`,
+      'user-management': `${businessName} - Users`,
+      'audit-trail': `${businessName} - Audit Trail`,
+      'purchase-orders': `${businessName} - Purchase Orders`,
+      'ecommerce-orders': `${businessName} - E-commerce Orders`,
+      'settings': `${businessName} - Settings`
+    };
+
+    document.title = pageTitles[activeTab] || businessName;
+  }, [activeTab]);
+
   // If not authenticated, show login page
   if (!isAuthenticated) {
     return <LoginPage />;

@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, Typography } from 'antd';
 import { Icon } from '../common/Icon';
+import { ALWAYS_ACCESSIBLE_MODULES } from '../../constants/permissions';
 
 const { Title, Text } = Typography;
 
@@ -28,8 +29,8 @@ export function ProtectedRoute({ children, module, action = 'view' }) {
     );
   }
 
-  // Then check specific permissions
-  if (!hasPermission(module, action)) {
+  // Then check specific permissions (skip for always accessible modules)
+  if (!ALWAYS_ACCESSIBLE_MODULES.includes(module) && !hasPermission(module, action)) {
     return (
       <Card>
         <div className="text-center py-12">

@@ -3,6 +3,7 @@ import { Layout, Menu, Typography, Badge } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
 import { useReduxNotifications as useNotifications } from '../../hooks/useReduxNotifications';
 import { Icon } from '../common/Icon';
+import { ALWAYS_ACCESSIBLE_MODULES } from '../../constants/permissions';
 
 const { Sider } = Layout;
 const { Text, Title } = Typography;
@@ -99,8 +100,9 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
   ];
 
   // Filter menu items based on user permissions
-  const menuItems = allMenuItems.filter(item => 
-    hasPermission(item.module, 'view')
+  // Always show modules in ALWAYS_ACCESSIBLE_MODULES regardless of permissions
+  const menuItems = allMenuItems.filter(item =>
+    ALWAYS_ACCESSIBLE_MODULES.includes(item.module) || hasPermission(item.module, 'view')
   );
 
   const enhancedMenuItems = menuItems.map(item => ({

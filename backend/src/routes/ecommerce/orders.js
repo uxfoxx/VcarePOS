@@ -78,7 +78,9 @@ router.post('/orders', [
     customerAddress,
     paymentMethod,
     items,
-    receiptDetails
+    receiptDetails,
+    deliveryLocation,
+    deliveryCharge
   } = req.body;
 
   const client = await pool.connect();
@@ -164,12 +166,16 @@ router.post('/orders', [
     // Generate order ID
     const orderId = `ECOM-${Date.now()}`;
 
+    // Add delivery charge to total
+    const finalTotal = totalAmount + (parseFloat(deliveryCharge) || 0);
+
     // Insert order
     const orderResult = await client.query(`
       INSERT INTO ecommerce_orders (
         id, customer_id, customer_name, customer_email, customer_phone,
-        customer_address, total_amount, payment_method, order_status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        customer_address, total_amount, payment_method, order_status,
+        delivery_location, delivery_charge
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
     `, [
       orderId,
@@ -178,9 +184,11 @@ router.post('/orders', [
       customerEmail,
       customerPhone,
       customerAddress,
-      totalAmount,
+      finalTotal,
       paymentMethod,
-      paymentMethod === 'cash_on_delivery' ? 'processing' : 'processing'
+      paymentMethod === 'cash_on_delivery' ? 'processing' : 'processing',
+      deliveryLocation || null,
+      parseFloat(deliveryCharge) || 0
     ]);
 
     // Handle bank transfer receipt if provided

@@ -584,15 +584,16 @@ router.post(
           // Insert color
           const colorResult = await client.query(`
             INSERT INTO product_colors (
-              id, product_id, name, color_code, image
-            ) VALUES ($1, $2, $3, $4, $5)
+              id, product_id, name, color_code, image, color_selector_image
+            ) VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *
           `, [
             color.id || `COLOR-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
             productId,
             color.name,
             color.colorCode,
-            color.image
+            color.image,
+            color.colorSelectorImage || color.color_selector_image || null
           ]);
 
           const insertedColor = colorResult.rows[0];
@@ -781,15 +782,16 @@ router.put(
           // Insert color
           const colorResult = await client.query(`
             INSERT INTO product_colors (
-              id, product_id, name, color_code, image
-            ) VALUES ($1, $2, $3, $4, $5)
+              id, product_id, name, color_code, image, color_selector_image
+            ) VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *
           `, [
             color.id || `COLOR-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
             id,
             color.name,
             color.colorCode,
-            color.image
+            color.image,
+            color.colorSelectorImage || color.color_selector_image || null
           ]);
 
           const insertedColor = colorResult.rows[0];

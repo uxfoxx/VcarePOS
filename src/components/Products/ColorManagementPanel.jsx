@@ -51,24 +51,36 @@ export function ColorManagementPanel({
   const [activeSizeId, setActiveSizeId] = useState(null);
   const [editingSizeId, setEditingSizeId] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [colorSelectorImagePreview, setColorSelectorImagePreview] = useState(null);
   const [materialSearchTerm, setMaterialSearchTerm] = useState('');
 
   const handleAddColor = (values) => {
     const newColor = {
       name: values.name,
       colorCode: '#000000',
-      image: imagePreview || ''
+      image: imagePreview || '',
+      colorSelectorImage: colorSelectorImagePreview || ''
     };
 
     onAddColor(newColor);
     colorForm.resetFields();
     setImagePreview(null);
+    setColorSelectorImagePreview(null);
   };
 
   const handleImageUpload = (file) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       setImagePreview(e.target.result);
+    };
+    reader.readAsDataURL(file);
+    return false;
+  };
+
+  const handleColorSelectorImageUpload = (file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setColorSelectorImagePreview(e.target.result);
     };
     reader.readAsDataURL(file);
     return false;
@@ -253,47 +265,91 @@ export function ColorManagementPanel({
             </Col>
           </Row>
 
-          <Form.Item label="Color Image (Optional)">
-            <Upload
-              accept="image/*"
-              beforeUpload={handleImageUpload}
-              showUploadList={false}
-              maxCount={1}
-            >
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors cursor-pointer">
-                {imagePreview ? (
-                  <div className="space-y-2">
-                    <div className="flex justify-center">
-                      <div
-                        className="w-8 h-8 rounded-full border-2 border-gray-300"
-                        style={{
-                          backgroundImage: `url(${imagePreview})`,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center'
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <Button icon={<Icon name="upload" />} size="small">
-                        Change Image
-                      </Button>
-                    </div>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Color Selector Image (Optional)" help="Small thumbnail for color picker">
+                <Upload
+                  accept="image/*"
+                  beforeUpload={handleColorSelectorImageUpload}
+                  showUploadList={false}
+                  maxCount={1}
+                >
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors cursor-pointer">
+                    {colorSelectorImagePreview ? (
+                      <div className="space-y-2">
+                        <div className="flex justify-center">
+                          <div
+                            className="w-8 h-8 rounded-full border-2 border-gray-300"
+                            style={{
+                              backgroundImage: `url(${colorSelectorImagePreview})`,
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center'
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <Button icon={<Icon name="upload" />} size="small">
+                            Change Image
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Icon name="cloud_upload" className="text-2xl text-gray-400" />
+                        <div>
+                          <Text>Upload thumbnail</Text>
+                          <br />
+                          <Text type="secondary" className="text-xs">
+                            Shown in color selector
+                          </Text>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Icon name="cloud_upload" className="text-2xl text-gray-400" />
-                    <div>
-                      <Text>Click to upload color image</Text>
-                      <br />
-                      <Text type="secondary" className="text-sm">
-                        Will be displayed as small circle in POS
-                      </Text>
-                    </div>
+                </Upload>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Product Image in Color (Optional)" help="Full-size product image">
+                <Upload
+                  accept="image/*"
+                  beforeUpload={handleImageUpload}
+                  showUploadList={false}
+                  maxCount={1}
+                >
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors cursor-pointer">
+                    {imagePreview ? (
+                      <div className="space-y-2">
+                        <div className="flex justify-center">
+                          <img
+                            src={imagePreview}
+                            alt="Product"
+                            className="h-16 w-16 object-cover rounded"
+                          />
+                        </div>
+                        <div>
+                          <Button icon={<Icon name="upload" />} size="small">
+                            Change Image
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Icon name="cloud_upload" className="text-2xl text-gray-400" />
+                        <div>
+                          <Text>Upload image</Text>
+                          <br />
+                          <Text type="secondary" className="text-xs">
+                            Shown in product gallery
+                          </Text>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </Upload>
-          </Form.Item>
+                </Upload>
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       </Card>
 

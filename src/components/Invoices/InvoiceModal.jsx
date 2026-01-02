@@ -264,6 +264,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
             subtotal={transaction.subtotal}
             discount={transaction.discount || 0}
             grandTotal={transaction.total}
+            deliveryCharge={transaction.deliveryCharge || 0}
             advancedPayment={transaction.advancedPayment || 0}
             balancePayment={transaction.balancePayment || 0}
             tax={transaction.totalTax || 0}

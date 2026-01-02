@@ -20,6 +20,7 @@ import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { BrandingSettings } from './BrandingSettings';
 import { InvoiceSettings } from './InvoiceSettings';
+import { DeliveryChargesSettings } from './DeliveryChargesSettings';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -34,6 +35,7 @@ export function SettingsPanel() {
     { key: 'general', label: 'General', icon: <Icon name="settings" /> },
     { key: 'branding', label: 'Branding', icon: <Icon name="branding_watermark" /> },
     { key: 'invoice', label: 'Invoice Settings', icon: <Icon name="receipt" /> },
+    { key: 'delivery', label: 'Delivery Charges', icon: <Icon name="local_shipping" /> },
     { key: 'store', label: 'Store Info', icon: <Icon name="store" /> },
     { key: 'users', label: 'User Management', icon: <Icon name="people" /> },
     { key: 'payment', label: 'Payment Methods', icon: <Icon name="payment" /> },
@@ -105,6 +107,10 @@ export function SettingsPanel() {
     <InvoiceSettings />
   );
 
+  const renderDeliverySettings = () => (
+    <DeliveryChargesSettings />
+  );
+
   const renderContent = () => {
     switch (activeSection) {
       case 'general':
@@ -113,6 +119,8 @@ export function SettingsPanel() {
         return renderBrandingSettings();
       case 'invoice':
         return renderInvoiceSettings();
+      case 'delivery':
+        return renderDeliverySettings();
       default:
         return (
           <div className="text-center py-12">

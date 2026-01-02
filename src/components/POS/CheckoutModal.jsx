@@ -24,6 +24,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { fetchUsers } from '../../features/users/usersSlice';
 import { clearCart } from '../../features/cart/cartSlice';
 import { createTransaction } from '../../features/transactions/transactionsSlice';
+import { fetchDeliveryChargesRequest } from '../../features/deliveryCharges/deliveryChargesSlice';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -42,6 +43,7 @@ export function CheckoutModal({
 }) {
   const dispatch = useDispatch();
   const users = useSelector(state => state.users.usersList);
+  const { activeDeliveryCharges } = useSelector(state => state.deliveryCharges);
   const { currentUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [customerForm] = Form.useForm();
@@ -63,9 +65,13 @@ export function CheckoutModal({
     customerAddress: ''
   });
 
+  const [selectedDeliveryLocation, setSelectedDeliveryLocation] = useState(null);
+  const [deliveryCharge, setDeliveryCharge] = useState(0);
+
   React.useEffect(() => {
     if (open) {
       dispatch(fetchUsers());
+      dispatch(fetchDeliveryChargesRequest({ is_active: true }));
       // Reset forms and customer data when modal opens
       setCustomerData({
         customerName: '',
@@ -73,6 +79,8 @@ export function CheckoutModal({
         customerEmail: '',
         customerAddress: ''
       });
+      setSelectedDeliveryLocation(null);
+      setDeliveryCharge(0);
       setCurrentStep(0);
       setOrderNotes('');
       setPaymentMethod('card');
@@ -97,7 +105,7 @@ export function CheckoutModal({
   }, 0);
   
   const taxableAmount = subtotal + (categoryTaxTotal || 0) - (couponDiscount || 0);
-  const total = taxableAmount + (fullBillTaxTotal || 0);
+  const total = taxableAmount + (fullBillTaxTotal || 0) + deliveryCharge;
 
   // Get salesperson details
   const getSalespersonName = (userId) => {
@@ -178,6 +186,8 @@ export function CheckoutModal({
         customerPhone: customerData.customerPhone,
         customerEmail: customerData.customerEmail,
         customerAddress: customerData.customerAddress,
+        deliveryLocation: selectedDeliveryLocation,
+        deliveryCharge: deliveryCharge,
         appliedCoupon: appliedCoupon?.code,
         notes: orderNotes,
         status: 'completed',
@@ -372,7 +382,17 @@ export function CheckoutModal({
             <Text>LKR {((taxableAmount * (tax.rate || 0)) / 100).toFixed(2)}</Text>
           </div>
         ))}
-        
+
+        {deliveryCharge > 0 && (
+          <div className="flex justify-between">
+            <Text className="text-blue-600">
+              <Icon name="local_shipping" className="mr-1" />
+              Delivery ({selectedDeliveryLocation})
+            </Text>
+            <Text className="text-blue-600">LKR {deliveryCharge.toFixed(2)}</Text>
+          </div>
+        )}
+
         <Divider className="my-2" />
         <div className="flex justify-between">
           <Title level={5} className="m-0">Total</Title>
@@ -444,7 +464,7 @@ export function CheckoutModal({
           </Form.Item>
           
           <Form.Item name="customerAddress" label="Delivery Address">
-            <TextArea 
+            <TextArea
               placeholder="Enter delivery address (optional)"
               rows={3}
               onChange={(e) => {
@@ -453,6 +473,35 @@ export function CheckoutModal({
               }}
             />
           </Form.Item>
+
+          <Form.Item name="deliveryLocation" label="Delivery Location (Optional)">
+            <Select
+              placeholder="Select delivery location for delivery charges"
+              allowClear
+              value={selectedDeliveryLocation}
+              onChange={(value) => {
+                setSelectedDeliveryLocation(value);
+                const charge = activeDeliveryCharges?.find(c => c.location_name === value);
+                setDeliveryCharge(charge ? parseFloat(charge.charge_amount) : 0);
+              }}
+            >
+              {(activeDeliveryCharges || []).map(charge => (
+                <Option key={charge.id} value={charge.location_name}>
+                  {charge.location_name} - Rs. {parseFloat(charge.charge_amount).toFixed(2)}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          {deliveryCharge > 0 && (
+            <div className="bg-blue-50 p-3 rounded-lg flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Icon name="local_shipping" className="text-blue-600" />
+                <Text>Delivery Charge</Text>
+              </div>
+              <Text strong className="text-blue-600">Rs. {deliveryCharge.toFixed(2)}</Text>
+            </div>
+          )}
         </Form>
 
         <Divider />

@@ -105,9 +105,10 @@ export const InvoicePaymentSummary = ({
   grandTotal,
   advancedPayment = 0,
   balancePayment = 0,
-  tax = 0
+  tax = 0,
+  deliveryCharge = 0
 }) => {
-  const calculatedGrandTotal = grandTotal || (subtotal - discount + tax);
+  const calculatedGrandTotal = grandTotal || (subtotal - discount + tax + deliveryCharge);
   const calculatedBalance = balancePayment || (calculatedGrandTotal - advancedPayment);
 
   return (
@@ -125,6 +126,14 @@ export const InvoicePaymentSummary = ({
               <Text className="text-base">DISCOUNT</Text>
               <Text className="text-base font-medium">
                 {discount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </Text>
+            </div>
+          )}
+          {deliveryCharge > 0 && (
+            <div className="flex justify-between py-2 border-b">
+              <Text className="text-base">DELIVERY CHARGE</Text>
+              <Text className="text-base font-medium">
+                {deliveryCharge.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Text>
             </div>
           )}

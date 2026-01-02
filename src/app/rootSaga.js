@@ -14,6 +14,7 @@ import vendorsSaga from '../features/vendors/vendorsSaga';
 import notificationsSaga from '../features/notifications/notificationsSaga';
 import ecommerceOrdersSaga from '../features/ecommerceOrders/ecommerceOrdersSaga';
 import quotationsSaga from '../features/quotations/quotationsSaga';
+import deliveryChargesSaga from '../features/deliveryCharges/deliveryChargesSaga';
 
 
 export default function* rootSaga() {
@@ -32,5 +33,6 @@ export default function* rootSaga() {
     notificationsSaga(),
     ecommerceOrdersSaga(),
     quotationsSaga(),
+    deliveryChargesSaga(),
   ]);
 }

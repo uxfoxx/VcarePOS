@@ -9,7 +9,8 @@ import {
   clearCurrentOrder
 } from '../store/slices/ordersSlice';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
-import { fetchActiveDeliveryCharges } from '../utils/supabaseClient';
+import { deliveryChargesApi } from '../api/apiClient';
+import { toast } from 'react-toastify';
 
 const CheckoutPage = () => {
   const dispatch = useDispatch();
@@ -55,11 +56,10 @@ const CheckoutPage = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    // Fetch delivery charges
     const loadDeliveryCharges = async () => {
       setLoadingDeliveryCharges(true);
       try {
-        const charges = await fetchActiveDeliveryCharges();
+        const charges = await deliveryChargesApi.getActive();
         setDeliveryCharges(charges);
       } catch (error) {
         console.error('Failed to load delivery charges:', error);
@@ -95,20 +95,18 @@ const CheckoutPage = () => {
       setDeliveryCharge(0);
     }
   };
-  console.log("currentOrder", currentOrder)
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file size (5MB max)
       if (file.size > 5 * 1024 * 1024) {
-        alert('File size must be less than 5MB');
+        toast.error('File size must be less than 5MB');
         return;
       }
 
-      // Validate file type
       const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
       if (!allowedTypes.includes(file.type)) {
-        alert('Only JPEG, PNG, and PDF files are allowed');
+        toast.error('Only JPEG, PNG, and PDF files are allowed');
         return;
       }
 
@@ -141,15 +139,13 @@ const CheckoutPage = () => {
   };
 
   const handlePlaceOrder = () => {
-    // Validate bank transfer receipt upload
     if (paymentMethod === 'bank_transfer' && !uploadedReceiptDetails) {
-      alert('Please upload your bank transfer receipt before placing the order');
+      toast.error('Please upload your bank transfer receipt before placing the order');
       return;
     }
 
-    // Validate delivery location if delivery charge selected
     if (deliveryCharge > 0 && !selectedDeliveryLocation) {
-      alert('Please select a delivery location');
+      toast.error('Please select a delivery location');
       return;
     }
 

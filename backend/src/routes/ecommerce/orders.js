@@ -633,36 +633,6 @@ router.put('/orders/:orderId/status', [
   try {
     const client = await pool.connect();
 
-    //  SELECT * FROM bank_receipts.status verified if paymentMethod is 'bank_transfer'
-    // status === 'pending_payment' = bank_receipts status must be 'pending_payment'
-    // status === 'processing' = bank_receipts status must be 'verified' 
-    // status === 'cancelled' = bank_receipts status can be rejected
-    let updatedBankStatus = status;
-    if (status === 'pending_payment') {
-      updatedBankStatus = 'pending_verification';
-    } else if (status === 'processing') {
-      updatedBankStatus = 'verified';
-    } else if (status === 'cancelled') {
-      updatedBankStatus = 'rejected';
-    }
-    if (['pending_payment', 'processing', 'cancelled'].includes(status)) {
-      const receiptResult = await client.query(
-        'SELECT * FROM bank_receipts WHERE ecommerce_order_id = $1',
-        [orderId]
-      );
-      if (receiptResult.rows.length > 0) {
-        await client.query(
-          'UPDATE bank_receipts SET status = $1 WHERE ecommerce_order_id = $2',
-          [updatedBankStatus, orderId]
-        );
-      } else if (status !== 'cancelled') {
-        client.release();
-        return res.status(400).json({ message: 'Cannot update to this status without a bank receipt' });
-      }
-    }
-
-
-
     // Check if order exists
     const checkResult = await client.query(
       'SELECT * FROM ecommerce_orders WHERE id = $1',
@@ -675,6 +645,34 @@ router.put('/orders/:orderId/status', [
     }
 
     const order = checkResult.rows[0];
+
+    // Only handle bank receipts if payment method is bank_transfer
+    if (order.payment_method === 'bank_transfer') {
+      let updatedBankStatus = status;
+      if (status === 'pending_payment') {
+        updatedBankStatus = 'pending_verification';
+      } else if (status === 'processing') {
+        updatedBankStatus = 'verified';
+      } else if (status === 'cancelled') {
+        updatedBankStatus = 'rejected';
+      }
+
+      if (['pending_payment', 'processing', 'cancelled'].includes(status)) {
+        const receiptResult = await client.query(
+          'SELECT * FROM bank_receipts WHERE ecommerce_order_id = $1',
+          [orderId]
+        );
+        if (receiptResult.rows.length > 0) {
+          await client.query(
+            'UPDATE bank_receipts SET status = $1 WHERE ecommerce_order_id = $2',
+            [updatedBankStatus, orderId]
+          );
+        } else if (status !== 'cancelled') {
+          client.release();
+          return res.status(400).json({ message: 'Cannot update to this status without a bank receipt' });
+        }
+      }
+    }
 
     // Update order status
     const result = await client.query(
@@ -709,6 +707,60 @@ router.put('/orders/:orderId/status', [
 
   } catch (error) {
     handleRouteError(error, req, res, 'E-commerce - Update Order Status');
+  }
+});
+
+router.get('/orders/new', [authenticate, hasPermission('ecommerce', 'view')], async (req, res) => {
+  try {
+    const client = await pool.connect();
+
+    const result = await client.query(`
+      SELECT
+        o.*,
+        COUNT(*) OVER() as total_count
+      FROM ecommerce_orders o
+      WHERE o.notified_at IS NULL
+      ORDER BY o.created_at DESC
+    `);
+
+    client.release();
+
+    res.json({
+      orders: result.rows,
+      count: result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0
+    });
+  } catch (error) {
+    handleRouteError(error, req, res, 'E-commerce - Get New Orders');
+  }
+});
+
+router.post('/orders/:orderId/mark-notified', [
+  authenticate,
+  hasPermission('ecommerce', 'edit')
+], async (req, res) => {
+  const { orderId } = req.params;
+
+  try {
+    const client = await pool.connect();
+
+    const result = await client.query(
+      'UPDATE ecommerce_orders SET notified_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *',
+      [orderId]
+    );
+
+    if (result.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    client.release();
+
+    res.json({
+      success: true,
+      order: result.rows[0]
+    });
+  } catch (error) {
+    handleRouteError(error, req, res, 'E-commerce - Mark Order Notified');
   }
 });
 

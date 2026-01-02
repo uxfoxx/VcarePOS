@@ -4,6 +4,8 @@ import { useDispatch } from 'react-redux';
 import { getCurrentCustomer } from './store/slices/authSlice';
 import { fetchProducts } from './store/slices/productsSlice';
 import ErrorBoundary from './components/Common/ErrorBoundary';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
@@ -34,6 +36,17 @@ function App() {
 
   return (
     <ErrorBoundary>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
       <Router>
         <MainLayout>
 

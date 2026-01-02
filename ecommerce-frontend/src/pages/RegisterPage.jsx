@@ -21,7 +21,7 @@ const RegisterPage = () => {
     otpEmail,
     resendTimer
   } = useSelector((state) => state.auth);
-  console.log("resendTimer", resendTimer);
+
   // Form state
   const [formData, setFormData] = useState({
     firstName: '',
@@ -59,7 +59,7 @@ const RegisterPage = () => {
 
     return () => clearInterval(timer);
   }, [resendTimer]);
-  console.log("resendTimer", realResendTimer, otpLoading)
+
   // Clear errors when component mounts
   useEffect(() => {
     dispatch(clearError());
@@ -68,18 +68,6 @@ const RegisterPage = () => {
     setOtp('');
   }, [dispatch]);
 
-
-  console.log("allstates", {
-    loading,
-    error,
-    isAuthenticated,
-    otpSent,
-    otpVerified,
-    otpLoading,
-    otpError,
-    otpEmail,
-    resendTimer
-  })
   // Show error toasts
   useEffect(() => {
     if (error) {

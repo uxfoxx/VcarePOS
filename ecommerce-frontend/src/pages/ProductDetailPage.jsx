@@ -5,6 +5,7 @@ import { fetchProductById, clearCurrentProduct } from '../store/slices/productsS
 import { addToCart } from '../store/slices/cartSlice';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
 import { showToast } from '../components/Common/Toast';
+import { toast } from 'react-toastify';
 import { Image } from 'antd';
 
 const ProductDetailPage = () => {
@@ -90,13 +91,20 @@ const ProductDetailPage = () => {
     if (!currentProduct) return;
 
     if (currentProduct.colors?.length > 0) {
-      if (!selectedColor || !selectedSize) return alert("Please select color and size");
+      if (!selectedColor || !selectedSize) {
+        toast.error("Please select color and size");
+        return;
+      }
 
-      if (selectedSize.stock < quantity)
-        return alert("Insufficient stock for selected size");
+      if (selectedSize.stock < quantity) {
+        toast.error("Insufficient stock for selected size");
+        return;
+      }
     } else {
-      if (currentProduct.stock < quantity)
-        return alert("Insufficient stock");
+      if (currentProduct.stock < quantity) {
+        toast.error("Insufficient stock");
+        return;
+      }
     }
 
     dispatch(

@@ -120,18 +120,7 @@ export const authApi = {
 // Products API
 export const productsApi = {
   getAll: async () => {
-    console.log('E-commerce API: Making request to /ecommerce/products');
-    const result = await makeRequest('/ecommerce/products');
-    console.log('E-commerce API: Received products response', {
-      productCount: result.length,
-      sampleProduct: result[0] ? {
-        id: result[0].id,
-        name: result[0].name,
-        stock: result[0].stock,
-        colorsCount: result[0].colors?.length || 0
-      } : null
-    });
-    return result;
+    return makeRequest('/ecommerce/products');
   },
 
   getById: async (productId) => {
@@ -189,5 +178,12 @@ export const ordersApi = {
 
   getById: async (orderId) => {
     return makeRequest(`/ecommerce/orders/${orderId}`);
+  },
+};
+
+// Delivery Charges API
+export const deliveryChargesApi = {
+  getActive: async () => {
+    return makeRequest('/delivery-charges?is_active=true');
   },
 };

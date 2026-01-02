@@ -5,10 +5,37 @@ const { authenticate } = require('../../middleware/auth');
 const { generateToken, hashPassword, comparePassword } = require('../../utils/auth');
 const { handleRouteError } = require('../../utils/loggerUtils');
 const crypto = require('crypto');
-const { generateOtpEmailBody, generateWelcomeEmailBody, generateLoginNotificationEmailBody, generateForgotPasswordEmailBody, generatePasswordChangeEmailBody } = require('../../utils/mailHelper.js'); // or separate file if needed
+const { generateOtpEmailBody, generateWelcomeEmailBody, generateLoginNotificationEmailBody, generateForgotPasswordEmailBody, generatePasswordChangeEmailBody } = require('../../utils/mailHelper.js');
 const { sendEmail } = require('../../helper/mail.helper.js');
+const { loginLimiter, otpLimiter, registerLimiter, forgotPasswordLimiter } = require('../../middleware/rateLimiter');
 
 const router = express.Router();
+
+router.get('/auth/check-email', async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  try {
+    const client = await pool.connect();
+
+    const result = await client.query(
+      'SELECT id FROM users WHERE email = $1',
+      [email]
+    );
+
+    client.release();
+
+    res.json({
+      available: result.rows.length === 0,
+      exists: result.rows.length > 0
+    });
+  } catch (error) {
+    handleRouteError(error, req, res, 'E-commerce - Check Email');
+  }
+});
 
 /**
  * @swagger
@@ -39,7 +66,7 @@ const router = express.Router();
  *       400:
  *         description: Validation error or email already exists
  */
-router.post('/auth/register', [
+router.post('/auth/register', registerLimiter, [
   body('firstName').notEmpty().withMessage('First name is required'),
   body('lastName').notEmpty().withMessage('Last name is required'),
   body('email').isEmail().withMessage('Valid email is required'),
@@ -146,7 +173,7 @@ router.post('/auth/register', [
  *         description: Invalid credentials
  */
 
-router.post('/auth/login', [
+router.post('/auth/login', loginLimiter, [
   body('email').isEmail().withMessage('Valid email is required'),
   body('password').notEmpty().withMessage('Password is required')
 ], async (req, res) => {
@@ -271,7 +298,7 @@ router.get('/auth/me', authenticate, async (req, res) => {
 
 // otp send for verify email (60 seconds cooldown)
 
-router.post('/auth/otp/send', [
+router.post('/auth/otp/send', otpLimiter, [
   body('email').isEmail().withMessage('Valid email is required')
 ], async (req, res) => {
   const errors = validationResult(req);
@@ -325,8 +352,7 @@ router.post('/auth/otp/send', [
 });
 
 
-// otp verify
-router.post('/auth/otp/verify', [
+router.post('/auth/otp/verify', otpLimiter, [
   body('email').isEmail().withMessage('Valid email is required'),
   body('otp').isNumeric().withMessage('Valid OTP is required')
 ], async (req, res) => {
@@ -384,7 +410,7 @@ router.post('/auth/otp/verify', [
   }
 });
 
-router.post('/auth/forgot-password', [
+router.post('/auth/forgot-password', forgotPasswordLimiter, [
   body('email').isEmail().withMessage('Valid email is required')
 ], async (req, res) => {
   const errors = validationResult(req);

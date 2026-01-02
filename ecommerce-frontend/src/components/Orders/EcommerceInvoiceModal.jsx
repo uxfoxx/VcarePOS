@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { toast } from 'react-toastify';
 
 const convertImageToBase64 = (url) => {
   return new Promise((resolve, reject) => {
@@ -140,7 +141,7 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
       }
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Failed to download PDF');
+      toast.error('Failed to download PDF');
     } finally {
       setLoading(false);
     }

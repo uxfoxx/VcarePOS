@@ -4,7 +4,7 @@
  */
 
 // Configuration
-const API_URL = import.meta.env.VITE_API_URL || 'https://vcaresl.com/api ';
+const API_URL = import.meta.env.VITE_API_URL || 'https://vcaresl.com/api';
 const API_TIMEOUT = 50000; // 50 seconds
 
 /**

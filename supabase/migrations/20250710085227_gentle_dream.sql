@@ -31,7 +31,7 @@ SELECT
   'Doe',
   'cashier',
   TRUE,
-  '{"pos":{"view":true,"edit":true,"delete":false},"products":{"view":true,"edit":false,"delete":false},"raw-materials":{"view":ture,"edit":false,"delete":false},"transactions":{"view":true,"edit":false,"delete":false},"reports":{"view":false,"edit":false,"delete":false},"coupons":{"view":true,"edit":false,"delete":false},"tax":{"view":ture,"edit":false,"delete":false},"purchase-orders":{"view":false,"edit":false,"delete":false},"settings":{"view":false,"edit":false,"delete":false},"user-management":{"view":false,"edit":false,"delete":false},"audit-trail":{"view":false,"edit":false,"delete":false}}'
+  '{"pos":{"view":true,"edit":true,"delete":false},"products":{"view":true,"edit":false,"delete":false},"raw-materials":{"view":true,"edit":false,"delete":false},"transactions":{"view":true,"edit":false,"delete":false},"reports":{"view":false,"edit":false,"delete":false},"coupons":{"view":true,"edit":false,"delete":false},"tax":{"view":true,"edit":false,"delete":false},"purchase-orders":{"view":false,"edit":false,"delete":false},"settings":{"view":false,"edit":false,"delete":false},"user-management":{"view":false,"edit":false,"delete":false},"audit-trail":{"view":false,"edit":false,"delete":false}}'
 WHERE NOT EXISTS (
   SELECT 1 FROM users WHERE username = 'cashier1'
 );

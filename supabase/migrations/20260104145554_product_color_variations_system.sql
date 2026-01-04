@@ -128,62 +128,95 @@ BEGIN
   END IF;
 END $$;
 
--- Migrate existing data to new structure
--- Create default colors for existing products
-INSERT INTO product_colors (id, product_id, name, color_code, image)
-SELECT 
-  CONCAT('COLOR-', p.id, '-DEFAULT'),
-  p.id,
-  COALESCE(p.color, 'Default'),
-  '#000000',
-  p.image
-FROM products p
-WHERE NOT EXISTS (
-  SELECT 1 FROM product_colors pc WHERE pc.product_id = p.id
-);
+-- Migrate existing data to new structure (only if old structure exists)
+DO $$
+DECLARE
+  old_product_sizes_exists BOOLEAN;
+  old_product_raw_materials_exists BOOLEAN;
+BEGIN
+  -- Check if old product_sizes table exists with product_id column
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'product_sizes' AND column_name = 'product_id'
+  ) INTO old_product_sizes_exists;
 
--- Migrate existing product_sizes to new structure
-INSERT INTO product_sizes_new (id, product_color_id, name, price, stock, weight, dimensions)
-SELECT 
-  ps.id,
-  CONCAT('COLOR-', ps.product_id, '-DEFAULT'),
-  ps.name,
-  ps.price,
-  ps.stock,
-  ps.weight,
-  ps.dimensions
-FROM product_sizes ps
-WHERE EXISTS (
-  SELECT 1 FROM product_colors pc 
-  WHERE pc.id = CONCAT('COLOR-', ps.product_id, '-DEFAULT')
-)
-AND NOT EXISTS (
-  SELECT 1 FROM product_sizes_new psn WHERE psn.id = ps.id
-);
+  -- Check if old product_raw_materials table exists with product_id column
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'product_raw_materials' AND column_name = 'product_id'
+  ) INTO old_product_raw_materials_exists;
 
--- Migrate existing product_raw_materials to new structure
-INSERT INTO product_raw_materials_new (product_color_id, raw_material_id, quantity)
-SELECT 
-  CONCAT('COLOR-', prm.product_id, '-DEFAULT'),
-  prm.raw_material_id,
-  prm.quantity
-FROM product_raw_materials prm
-WHERE EXISTS (
-  SELECT 1 FROM product_colors pc 
-  WHERE pc.id = CONCAT('COLOR-', prm.product_id, '-DEFAULT')
-)
-AND NOT EXISTS (
-  SELECT 1 FROM product_raw_materials_new prmn 
-  WHERE prmn.product_color_id = CONCAT('COLOR-', prm.product_id, '-DEFAULT')
-  AND prmn.raw_material_id = prm.raw_material_id
-);
+  -- Create default colors for existing products
+  INSERT INTO product_colors (id, product_id, name, color_code, image)
+  SELECT
+    CONCAT('COLOR-', p.id, '-DEFAULT'),
+    p.id,
+    COALESCE(p.color, 'Default'),
+    '#000000',
+    p.image
+  FROM products p
+  WHERE NOT EXISTS (
+    SELECT 1 FROM product_colors pc WHERE pc.product_id = p.id
+  );
 
--- Drop old tables and rename new ones
-DROP TABLE IF EXISTS product_sizes CASCADE;
-DROP TABLE IF EXISTS product_raw_materials CASCADE;
+  -- Migrate existing product_sizes to new structure (only if old structure exists)
+  IF old_product_sizes_exists THEN
+    INSERT INTO product_sizes_new (id, product_color_id, name, price, stock, weight, dimensions)
+    SELECT
+      ps.id,
+      CONCAT('COLOR-', ps.product_id, '-DEFAULT'),
+      ps.name,
+      ps.price,
+      ps.stock,
+      ps.weight,
+      ps.dimensions
+    FROM product_sizes ps
+    WHERE EXISTS (
+      SELECT 1 FROM product_colors pc
+      WHERE pc.id = CONCAT('COLOR-', ps.product_id, '-DEFAULT')
+    )
+    AND NOT EXISTS (
+      SELECT 1 FROM product_sizes_new psn WHERE psn.id = ps.id
+    );
+  END IF;
 
-ALTER TABLE product_sizes_new RENAME TO product_sizes;
-ALTER TABLE product_raw_materials_new RENAME TO product_raw_materials;
+  -- Migrate existing product_raw_materials to new structure (only if old structure exists)
+  IF old_product_raw_materials_exists THEN
+    INSERT INTO product_raw_materials_new (product_color_id, raw_material_id, quantity)
+    SELECT
+      CONCAT('COLOR-', prm.product_id, '-DEFAULT'),
+      prm.raw_material_id,
+      prm.quantity
+    FROM product_raw_materials prm
+    WHERE EXISTS (
+      SELECT 1 FROM product_colors pc
+      WHERE pc.id = CONCAT('COLOR-', prm.product_id, '-DEFAULT')
+    )
+    AND NOT EXISTS (
+      SELECT 1 FROM product_raw_materials_new prmn
+      WHERE prmn.product_color_id = CONCAT('COLOR-', prm.product_id, '-DEFAULT')
+      AND prmn.raw_material_id = prm.raw_material_id
+    );
+  END IF;
+
+  -- Drop old tables and rename new ones (only if old tables exist)
+  IF old_product_sizes_exists THEN
+    DROP TABLE IF EXISTS product_sizes CASCADE;
+  END IF;
+
+  IF old_product_raw_materials_exists THEN
+    DROP TABLE IF EXISTS product_raw_materials CASCADE;
+  END IF;
+
+  -- Rename new tables to replace old ones
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'product_sizes_new') THEN
+    ALTER TABLE product_sizes_new RENAME TO product_sizes;
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'product_raw_materials_new') THEN
+    ALTER TABLE product_raw_materials_new RENAME TO product_raw_materials;
+  END IF;
+END $$;
 
 -- Add default_color_id to products table
 DO $$

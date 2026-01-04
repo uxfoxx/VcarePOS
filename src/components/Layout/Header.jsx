@@ -269,12 +269,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
     if (activeTab === 'pos') {
       return (
         <div className="flex items-center gap-2">
-          <img
-            src={logoPreview}
-            alt="Logo"
-            className="h-6 object-contain"
-            crossOrigin="anonymous"
-          />
+          
           <span>Point of Sale</span>
         </div>
       );

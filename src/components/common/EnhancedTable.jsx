@@ -306,7 +306,7 @@ export function EnhancedTable({
 
   return (
     <>
-      <Card className="overflow-x-auto flex w-full bgred">
+      <Card className="overflow-x-auto flex w-full bgred tempclass">
         {(title || icon || extra || showSearch || showColumnConfig) && (
           <div className="flex items-center justify-between mb-4 flex-wrap w-full">
             {(title || icon) && (
@@ -367,6 +367,9 @@ export function EnhancedTable({
         )}
 
         <Table
+        className='vcare-table'
+        
+        
           columns={enhancedColumns}
           dataSource={filteredData}
           rowKey={rowKey}

@@ -117,6 +117,7 @@ $spacing-xxl: 48px;
 
   .ant-card-body {
     padding: $spacing-lg;
+    
   }
 }
 
@@ -504,4 +505,8 @@ $spacing-xxl: 48px;
   &:hover {
     background: rgba($primary-color, 0.5);
   }
+}
+
+.tempclass.ant-card .ant-card-body{
+  width: 100%;
 }

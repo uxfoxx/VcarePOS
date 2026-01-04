@@ -49,7 +49,7 @@ CREATE SCHEMA IF NOT EXISTS auth;
 -- Create stub auth.uid() function for regular PostgreSQL
 -- This returns NULL since authentication is handled at the application level via JWT
 CREATE OR REPLACE FUNCTION auth.uid()
-RETURNS uuid AS $$
+RETURNS text AS $$
 BEGIN
   -- Return NULL as auth is handled by the application layer
   -- Application uses JWT tokens for authentication

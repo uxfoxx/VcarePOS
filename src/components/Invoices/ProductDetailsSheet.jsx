@@ -211,39 +211,33 @@ export function ProductDetailsSheet({ open, onClose, product }) {
               width: '210mm',
               minHeight: '297mm',
               backgroundColor: '#ffffff',
-              padding: '10mm',
+              padding: '15mm 20mm',
               boxSizing: 'border-box',
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center'
+              justifyContent: 'space-between'
             }}
           >
-            <div style={{
-              width: '100%',
-              maxWidth: '100%',
-              padding: '0',
-              boxSizing: 'border-box'
-            }}>
+            <div style={{ flex: 1 }}>
               {/* Top Border */}
               <div style={{
-                borderTop: '3px solid #000',
-                marginBottom: '10mm'
+                borderTop: '2px solid #000',
+                marginBottom: '20px'
               }} />
 
               {/* Logo Section */}
               <div style={{
                 textAlign: 'center',
-                marginBottom: '10mm',
-                borderBottom: '1px solid #000',
-                paddingBottom: '8mm'
+                marginBottom: '20px',
+                paddingBottom: '20px',
+                borderBottom: '1px solid #000'
               }}>
                 <img
                   src={logoPreview}
                   alt="Logo"
                   style={{
-                    height: '50px',
-                    maxWidth: '200px',
+                    height: '40px',
+                    maxWidth: '180px',
                     objectFit: 'contain'
                   }}
                   crossOrigin="anonymous"
@@ -253,11 +247,11 @@ export function ProductDetailsSheet({ open, onClose, product }) {
               {/* Product Name */}
               <div style={{
                 textAlign: 'center',
-                marginBottom: '15mm',
-                padding: '8mm 0'
+                marginTop: '60px',
+                marginBottom: '80px'
               }}>
                 <div style={{
-                  fontSize: '36px',
+                  fontSize: '48px',
                   fontWeight: 'bold',
                   lineHeight: '1.2',
                   color: '#000'
@@ -269,20 +263,20 @@ export function ProductDetailsSheet({ open, onClose, product }) {
               {/* SKU Section */}
               <div style={{
                 textAlign: 'center',
-                marginBottom: '8mm',
-                fontSize: '16px'
+                marginBottom: '40px'
               }}>
                 <div style={{
+                  fontSize: '14px',
                   fontWeight: 'normal',
-                  marginBottom: '3mm',
+                  marginBottom: '10px',
                   color: '#666'
                 }}>
                   SKU
                 </div>
                 <div style={{
-                  fontFamily: 'monospace',
-                  fontSize: '18px',
-                  letterSpacing: '2px',
+                  fontFamily: 'Courier New, monospace',
+                  fontSize: '20px',
+                  letterSpacing: '3px',
                   fontWeight: 'bold',
                   color: '#000'
                 }}>
@@ -294,14 +288,14 @@ export function ProductDetailsSheet({ open, onClose, product }) {
               {barcodeDataUrl && (
                 <div style={{
                   textAlign: 'center',
-                  marginBottom: '12mm',
-                  padding: '5mm 0'
+                  marginBottom: '50px'
                 }}>
                   <img
                     src={barcodeDataUrl}
                     alt="Barcode"
                     style={{
-                      maxWidth: '80%',
+                      width: '60%',
+                      maxWidth: '300px',
                       height: 'auto'
                     }}
                   />
@@ -311,43 +305,44 @@ export function ProductDetailsSheet({ open, onClose, product }) {
               {/* Decorative Curved Line */}
               <div style={{
                 textAlign: 'center',
-                marginBottom: '15mm',
-                padding: '0 20mm'
+                marginBottom: '60px',
+                padding: '0 40px'
               }}>
                 <svg
                   width="100%"
-                  height="60"
-                  viewBox="0 0 600 60"
-                  preserveAspectRatio="xMidYMid meet"
+                  height="40"
+                  viewBox="0 0 600 40"
+                  preserveAspectRatio="none"
                   style={{ display: 'block' }}
                 >
-                  <circle cx="20" cy="10" r="6" fill="#0E72BD" />
+                  <circle cx="15" cy="8" r="8" fill="#4A90E2" />
                   <path
-                    d="M 20 10 Q 150 50, 300 50 T 580 10"
-                    stroke="#0E72BD"
-                    strokeWidth="3"
+                    d="M 15 8 Q 300 35, 585 8"
+                    stroke="#4A90E2"
+                    strokeWidth="2.5"
                     fill="none"
                   />
-                  <circle cx="580" cy="10" r="6" fill="#0E72BD" />
+                  <circle cx="585" cy="8" r="8" fill="#4A90E2" />
                 </svg>
               </div>
+            </div>
 
-              {/* Footer Section */}
+            {/* Footer Section */}
+            <div>
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                padding: '0 15mm',
-                fontSize: '15px',
-                marginTop: '10mm'
+                fontSize: '14px',
+                marginBottom: '20px'
               }}>
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
                 }}>
-                  <Phone size={20} color="#000" strokeWidth={2} />
-                  <span style={{ fontWeight: 'normal', color: '#000' }}>
+                  <Phone size={18} color="#000" strokeWidth={2} />
+                  <span style={{ color: '#000' }}>
                     {phoneNumber}
                   </span>
                 </div>
@@ -356,8 +351,8 @@ export function ProductDetailsSheet({ open, onClose, product }) {
                   alignItems: 'center',
                   gap: '8px'
                 }}>
-                  <MapPin size={20} color="#000" strokeWidth={2} />
-                  <span style={{ fontWeight: 'normal', color: '#000' }}>
+                  <MapPin size={18} color="#000" strokeWidth={2} />
+                  <span style={{ color: '#000' }}>
                     {businessAddress}
                   </span>
                 </div>
@@ -365,8 +360,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
 
               {/* Bottom Border */}
               <div style={{
-                borderBottom: '3px solid #000',
-                marginTop: '10mm'
+                borderBottom: '2px solid #000'
               }} />
             </div>
           </div>

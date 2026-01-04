@@ -9,6 +9,12 @@ import {
   updateEcommerceOrderStatusSucceeded,
   fetchReceiptBlobSucceeded,
   fetchReceiptBlobFailed,
+  fetchNewOrders,
+  fetchNewOrdersSucceeded,
+  fetchNewOrdersFailed,
+  markOrderNotified,
+  markOrderNotifiedSucceeded,
+  markOrderNotifiedFailed,
   failed
 } from "./ecommerceOrdersSlice";
 import { ecommerceOrdersApi } from "../../api/apiClient";
@@ -51,9 +57,30 @@ function* fetchReceiptBlobSaga(action) {
   }
 }
 
+function* fetchNewOrdersSaga() {
+  try {
+    const data = yield call(ecommerceOrdersApi.getNewOrders);
+    yield put(fetchNewOrdersSucceeded(data));
+  } catch (error) {
+    yield put(fetchNewOrdersFailed(error.message));
+  }
+}
+
+function* markOrderNotifiedSaga(action) {
+  try {
+    const { orderId } = action.payload;
+    yield call(ecommerceOrdersApi.markOrderNotified, orderId);
+    yield put(markOrderNotifiedSucceeded({ orderId }));
+  } catch (error) {
+    yield put(markOrderNotifiedFailed(error.message));
+  }
+}
+
 export default function* ecommerceOrdersSaga() {
   yield takeLatest(fetchEcommerceOrders.type, fetchEcommerceOrdersSaga);
   yield takeLatest(fetchEcommerceOrderById.type, fetchEcommerceOrderByIdSaga);
   yield takeLatest(updateEcommerceOrderStatus.type, updateEcommerceOrderStatusSaga);
   yield takeLatest(fetchReceiptBlob.type, fetchReceiptBlobSaga);
+  yield takeLatest(fetchNewOrders.type, fetchNewOrdersSaga);
+  yield takeLatest(markOrderNotified.type, markOrderNotifiedSaga);
 }

@@ -14,6 +14,7 @@ import {
 } from 'antd';
 import { useDispatch } from 'react-redux';
 import { logout as logoutAction } from '../../features/auth/authSlice';
+import { markOrderNotified, setSelectedOrderId } from '../../features/ecommerceOrders/ecommerceOrdersSlice';
 import { useAuth } from '../../contexts/AuthContext';
 import { useReduxNotifications as useNotifications } from '../../hooks/useReduxNotifications';
 import { ActionButton } from '../common/ActionButton';
@@ -78,6 +79,15 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
       setReadStockAlerts(prev => new Set([...prev, notification.id]));
     } else {
       markAsRead(notification.id);
+    }
+
+    // Handle e-commerce order notifications
+    if (notification.category === 'ecommerce-order' && notification.orderId) {
+      // Mark order as notified in backend
+      dispatch(markOrderNotified({ orderId: notification.orderId }));
+
+      // Set selected order ID so EcommerceOrderManagement can auto-open the modal
+      dispatch(setSelectedOrderId(notification.orderId));
     }
 
     // Navigate to relevant page if specified

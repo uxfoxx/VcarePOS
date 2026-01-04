@@ -3,6 +3,9 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   ordersList: [],
   currentOrder: null,
+  newOrders: [],
+  newOrdersCount: 0,
+  selectedOrderId: null, // Order ID to auto-open when navigating from notifications
   receipts: {}, // { [receiptId]: { blobUrl, loading, error, timestamp } }
   loading: false,
   error: null,
@@ -81,6 +84,39 @@ const ecommerceOrdersSlice = createSlice({
         delete state.receipts[receiptId];
       }
     },
+    fetchNewOrders(state) {
+      state.loading = true;
+      state.error = null;
+    },
+    fetchNewOrdersSucceeded(state, action) {
+      state.loading = false;
+      state.newOrders = action.payload.orders || [];
+      state.newOrdersCount = action.payload.count || 0;
+    },
+    fetchNewOrdersFailed(state, action) {
+      state.loading = false;
+      state.error = action.payload;
+    },
+    markOrderNotified(state) {
+      state.loading = true;
+      state.error = null;
+    },
+    markOrderNotifiedSucceeded(state, action) {
+      state.loading = false;
+      const { orderId } = action.payload;
+      state.newOrders = state.newOrders.filter(order => order.id !== orderId);
+      state.newOrdersCount = Math.max(0, state.newOrdersCount - 1);
+    },
+    markOrderNotifiedFailed(state, action) {
+      state.loading = false;
+      state.error = action.payload;
+    },
+    setSelectedOrderId(state, action) {
+      state.selectedOrderId = action.payload;
+    },
+    clearSelectedOrderId(state) {
+      state.selectedOrderId = null;
+    },
     failed(state, action) {
       state.loading = false;
       state.error = action.payload;
@@ -99,6 +135,14 @@ export const {
   fetchReceiptBlobSucceeded,
   fetchReceiptBlobFailed,
   clearReceiptBlob,
+  fetchNewOrders,
+  fetchNewOrdersSucceeded,
+  fetchNewOrdersFailed,
+  markOrderNotified,
+  markOrderNotifiedSucceeded,
+  markOrderNotifiedFailed,
+  setSelectedOrderId,
+  clearSelectedOrderId,
   failed,
 } = ecommerceOrdersSlice.actions;
 

@@ -24,7 +24,8 @@ import { AuthenticatedFile } from '../common/AuthenticatedFile';
 import {
   fetchEcommerceOrders,
   updateEcommerceOrderStatus,
-  fetchEcommerceOrderById
+  fetchEcommerceOrderById,
+  clearSelectedOrderId
 } from '../../features/ecommerceOrders/ecommerceOrdersSlice';
 
 const { Title, Text } = Typography;
@@ -34,6 +35,7 @@ export function EcommerceOrderManagement() {
   const dispatch = useDispatch();
   const ecommerceOrders = useSelector(state => state.ecommerceOrders?.ordersList || []);
   const loading = useSelector(state => state.ecommerceOrders?.loading || false);
+  const selectedOrderId = useSelector(state => state.ecommerceOrders?.selectedOrderId);
 
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -43,6 +45,18 @@ export function EcommerceOrderManagement() {
   useEffect(() => {
     dispatch(fetchEcommerceOrders());
   }, [dispatch]);
+
+  // Auto-open modal when navigating from notification
+  useEffect(() => {
+    if (selectedOrderId && ecommerceOrders.length > 0) {
+      const order = ecommerceOrders.find(o => o.id === selectedOrderId);
+      if (order) {
+        setSelectedOrder(order);
+        setShowDetailModal(true);
+        dispatch(clearSelectedOrderId());
+      }
+    }
+  }, [selectedOrderId, ecommerceOrders, dispatch]);
 
   const handleRowClick = (order) => {
     setSelectedOrder(order);

@@ -605,6 +605,16 @@ export const ecommerceOrdersApi = {
 
       throw error;
     }
+  },
+
+  getNewOrders: async () => {
+    return apiRequest('/ecommerce/orders/new');
+  },
+
+  markOrderNotified: async (orderId) => {
+    return apiRequest(`/ecommerce/orders/${orderId}/mark-notified`, {
+      method: 'POST'
+    });
   }
 };
 

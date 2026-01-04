@@ -2,7 +2,7 @@
 
 -- Create delivery_charges table
 CREATE TABLE IF NOT EXISTS delivery_charges (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  id text PRIMARY KEY,
   location_name text NOT NULL UNIQUE,
   charge_amount decimal(10, 2) NOT NULL CHECK (charge_amount >= 0),
   is_active boolean DEFAULT true NOT NULL,
@@ -43,15 +43,15 @@ CREATE TRIGGER update_delivery_charges_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- Insert default delivery locations (Sri Lankan districts)
-INSERT INTO delivery_charges (location_name, charge_amount, is_active) VALUES
-('Colombo', 500.00, true),
-('Gampaha', 750.00, true),
-('Kalutara', 1000.00, true),
-('Kandy', 1500.00, true),
-('Galle', 2000.00, true),
-('Matara', 2500.00, true),
-('Jaffna', 3000.00, true),
-('Anuradhapura', 2000.00, true),
-('Kurunegala', 1500.00, true),
-('Ratnapura', 1800.00, true)
+INSERT INTO delivery_charges (id, location_name, charge_amount, is_active) VALUES
+('DELIV-001', 'Colombo', 500.00, true),
+('DELIV-002', 'Gampaha', 750.00, true),
+('DELIV-003', 'Kalutara', 1000.00, true),
+('DELIV-004', 'Kandy', 1500.00, true),
+('DELIV-005', 'Galle', 2000.00, true),
+('DELIV-006', 'Matara', 2500.00, true),
+('DELIV-007', 'Jaffna', 3000.00, true),
+('DELIV-008', 'Anuradhapura', 2000.00, true),
+('DELIV-009', 'Kurunegala', 1500.00, true),
+('DELIV-010', 'Ratnapura', 1800.00, true)
 ON CONFLICT (location_name) DO NOTHING;

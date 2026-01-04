@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, Typography, Space } from 'antd';
+import { Phone, MapPin } from 'lucide-react';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
@@ -256,52 +257,46 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                 >
                   <div style={{
                     width: '100%',
-                    maxWidth: '180mm',
-                    border: '2px solid #000',
-                    padding: '10mm',
+                    maxWidth: '100%',
+                    padding: '0',
                     boxSizing: 'border-box'
                   }}>
+                    {/* Top Border */}
+                    <div style={{
+                      borderTop: '3px solid #000',
+                      marginBottom: '10mm'
+                    }} />
+
                     {/* Logo Section */}
                     <div style={{
                       textAlign: 'center',
-                      marginBottom: '8mm',
+                      marginBottom: '10mm',
                       borderBottom: '1px solid #000',
-                      paddingBottom: '6mm'
+                      paddingBottom: '8mm'
                     }}>
                       <img
                         src={logoPreview}
                         alt="Logo"
                         style={{
-                          height: '15mm',
-                          maxWidth: '70mm',
-                          objectFit: 'contain',
-                          marginBottom: '3mm'
+                          height: '50px',
+                          maxWidth: '200px',
+                          objectFit: 'contain'
                         }}
                         crossOrigin="anonymous"
                       />
-                      <div style={{
-                        fontSize: '18px',
-                        fontWeight: 'bold',
-                        marginTop: '3mm'
-                      }}>
-                        {businessName}
-                      </div>
                     </div>
 
                     {/* Product Name */}
                     <div style={{
                       textAlign: 'center',
-                      marginBottom: '6mm',
-                      padding: '4mm 0'
+                      marginBottom: '15mm',
+                      padding: '8mm 0'
                     }}>
                       <div style={{
-                        fontSize: '22px',
+                        fontSize: '36px',
                         fontWeight: 'bold',
                         lineHeight: '1.2',
-                        minHeight: '12mm',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
+                        color: '#000'
                       }}>
                         {label.product.name}
                       </div>
@@ -310,19 +305,22 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                     {/* SKU Section */}
                     <div style={{
                       textAlign: 'center',
-                      marginBottom: '5mm',
-                      fontSize: '14px'
+                      marginBottom: '8mm',
+                      fontSize: '16px'
                     }}>
                       <div style={{
-                        fontWeight: 'bold',
-                        marginBottom: '2mm'
+                        fontWeight: 'normal',
+                        marginBottom: '3mm',
+                        color: '#666'
                       }}>
                         SKU
                       </div>
                       <div style={{
                         fontFamily: 'monospace',
-                        fontSize: '16px',
-                        letterSpacing: '1px'
+                        fontSize: '18px',
+                        letterSpacing: '2px',
+                        fontWeight: 'bold',
+                        color: '#000'
                       }}>
                         {label.product.barcode || 'N/A'}
                       </div>
@@ -332,49 +330,91 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
                     {barcodeDataUrl && (
                       <div style={{
                         textAlign: 'center',
-                        marginBottom: '6mm',
-                        padding: '3mm 0'
+                        marginBottom: '12mm',
+                        padding: '5mm 0'
                       }}>
                         <img
                           src={barcodeDataUrl}
                           alt="Barcode"
                           style={{
-                            maxWidth: '100%',
+                            maxWidth: '80%',
                             height: 'auto'
                           }}
                         />
                       </div>
                     )}
 
+                    {/* Decorative Curved Line */}
+                    <div style={{
+                      textAlign: 'center',
+                      marginBottom: '8mm',
+                      padding: '0 20mm'
+                    }}>
+                      <svg
+                        width="100%"
+                        height="60"
+                        viewBox="0 0 600 60"
+                        preserveAspectRatio="xMidYMid meet"
+                        style={{ display: 'block' }}
+                      >
+                        <circle cx="20" cy="10" r="6" fill="#0E72BD" />
+                        <path
+                          d="M 20 10 Q 150 50, 300 50 T 580 10"
+                          stroke="#0E72BD"
+                          strokeWidth="3"
+                          fill="none"
+                        />
+                        <circle cx="580" cy="10" r="6" fill="#0E72BD" />
+                      </svg>
+                    </div>
+
                     {/* Item Counter */}
                     <div style={{
                       textAlign: 'center',
-                      marginBottom: '5mm',
-                      fontSize: '13px',
-                      color: '#666'
+                      marginBottom: '8mm',
+                      fontSize: '14px',
+                      color: '#666',
+                      fontStyle: 'italic'
                     }}>
                       Item {label.itemNumber} of {label.totalQuantity}
                     </div>
 
                     {/* Footer Section */}
                     <div style={{
-                      borderTop: '1px solid #000',
-                      paddingTop: '5mm',
-                      marginTop: '6mm',
-                      textAlign: 'center',
-                      fontSize: '13px',
-                      lineHeight: '1.4'
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '0 15mm',
+                      fontSize: '15px',
+                      marginTop: '10mm'
                     }}>
                       <div style={{
-                        fontWeight: 'bold',
-                        marginBottom: '2mm'
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
                       }}>
-                        {phoneNumber}
+                        <Phone size={20} color="#000" strokeWidth={2} />
+                        <span style={{ fontWeight: 'normal', color: '#000' }}>
+                          {phoneNumber}
+                        </span>
                       </div>
-                      <div style={{ color: '#333' }}>
-                        {businessAddress}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        <MapPin size={20} color="#000" strokeWidth={2} />
+                        <span style={{ fontWeight: 'normal', color: '#000' }}>
+                          {businessAddress}
+                        </span>
                       </div>
                     </div>
+
+                    {/* Bottom Border */}
+                    <div style={{
+                      borderBottom: '3px solid #000',
+                      marginTop: '10mm'
+                    }} />
                   </div>
                 </div>
               );

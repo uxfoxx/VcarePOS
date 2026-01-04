@@ -40,13 +40,7 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
               className="h-16 object-contain"
               crossOrigin="anonymous"
             />
-            {businessName && (
-              <div>
-                <Title level={2} className="m-0 text-blue-600" style={{ fontSize: '28px', fontWeight: 'bold' }}>
-                  {businessName}
-                </Title>
-              </div>
-            )}
+            
           </div>
           <div className="text-right">
             <Title level={1} className="m-0" style={{ fontSize: '36px', fontWeight: 'bold', color: '#000' }}>

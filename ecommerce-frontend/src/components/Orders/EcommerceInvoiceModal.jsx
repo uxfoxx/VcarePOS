@@ -241,11 +241,7 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
                       className="h-16 object-contain"
                       crossOrigin="anonymous"
                     />
-                    <div>
-                      <h1 className="text-3xl font-bold text-blue-600 m-0" style={{ fontSize: '28px' }}>
-                        {businessName}
-                      </h1>
-                    </div>
+                    
                   </div>
                   <div className="text-right">
                     <h1 className="text-4xl font-bold text-black m-0" style={{ fontSize: '36px' }}>

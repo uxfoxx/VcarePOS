@@ -176,15 +176,15 @@ export const useBarcodeScanner = (options = {}) => {
     
     // Handle character input
     if (event.key.length === 1) {
+      // CRITICAL FIX: Prevent default FIRST to ensure we capture ALL characters
+      // This prevents the first character from being lost
+      event.preventDefault();
+      event.stopPropagation();
+
       // Start scanning mode if not already active
       if (!isActiveRef.current) {
         isActiveRef.current = true;
         updateStatus(SCANNER_STATUS.SCANNING);
-      }
-
-      // Prevent default immediately when scanning is active to capture all characters
-      if (isActiveRef.current) {
-        event.preventDefault();
       }
 
       // Add character to buffer
@@ -196,6 +196,11 @@ export const useBarcodeScanner = (options = {}) => {
       }
 
       timeoutRef.current = setTimeout(() => {
+        // If we have accumulated characters but no end key was pressed,
+        // try to process anyway if we have enough characters
+        if (bufferRef.current.length >= config.minLength) {
+          processBarcode(bufferRef.current);
+        }
         clearBuffer();
       }, config.scanTimeoutMs);
     }

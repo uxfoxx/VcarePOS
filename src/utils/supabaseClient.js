@@ -1,12 +1,26 @@
+import { createClient } from '@supabase/supabase-js';
+
 /**
- * This file previously contained Supabase client configuration.
- * The application now uses a direct connection to PostgreSQL via the backend API.
+ * Supabase client configuration for realtime subscriptions only.
+ * Direct data access should still use the backend API.
  */
 
-// Set supabase to null to ensure any accidental usage will fail explicitly
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Create Supabase client for realtime subscriptions
+export const supabaseRealtime = createClient(supabaseUrl, supabaseAnonKey, {
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  }
+});
+
+// Keep supabase as null for backward compatibility (direct access not allowed)
 export const supabase = null;
 
-// Helper functions for common operations
+// Helper functions for common operations (still disabled)
 export const fetchData = async (_table, _options = {}) => {
   try {
     throw new Error(`Direct Supabase access is no longer supported. Please use the API endpoints instead.`);

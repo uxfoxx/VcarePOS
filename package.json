@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.9.0",
+    "@supabase/supabase-js": "^2.89.0",
     "antd": "^5.27.4",
     "dayjs": "^1.11.18",
     "html2canvas": "^1.4.1",

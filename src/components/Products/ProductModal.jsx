@@ -24,6 +24,7 @@ import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { ColorManagementPanel } from './ColorManagementPanel';
 import { EnhancedStepper } from '../common/EnhancedStepper';
+import { ImageCropModal } from '../common/ImageCropModal';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -55,6 +56,9 @@ export function ProductModal({
   const [colors, setColors] = useState([]);
   const [materialSearchTerm, setMaterialSearchTerm] = useState('');
   const [selectedMaterialId, setSelectedMaterialId] = useState(null); // Track selected card
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState(null);
+  const [currentCroppingFile, setCurrentCroppingFile] = useState(null);
   const { rawMaterialsList, } = useSelector(state => state.rawMaterials);
   const { categoriesList } = useSelector(state => state.categories);
 
@@ -295,41 +299,48 @@ export function ProductModal({
     const validation = validateMediaFile(file, mediaPreviews);
     if (!validation) return false;
 
-    const { isImage, maxDimensions } = validation;
+    const { isImage } = validation;
 
     if (isImage) {
-      const img = new Image();
+      // Open crop modal for images
       const objectUrl = URL.createObjectURL(file);
-
-      img.onload = () => {
-        if (img.width > maxDimensions.width || img.height > maxDimensions.height) {
-          message.error(
-            `Image dimensions exceed ${maxDimensions.width}x${maxDimensions.height} pixels.`
-          );
-          URL.revokeObjectURL(objectUrl);
-          return;
-        }
-
-        // Add file to state
-        setMediaFiles(prev => [...prev, file]);
-        setMediaPreviews(prev => [...prev, objectUrl]); // optional UI preview
-      };
-
-      img.onerror = () => {
-        URL.revokeObjectURL(objectUrl);
-        message.error('Failed to process image. Please try another file.');
-      };
-
-      img.src = objectUrl;
-
+      setImageToCrop(objectUrl);
+      setCurrentCroppingFile(file);
+      setShowCropModal(true);
     } else {
-      // For videos → directly add to state
+      // For videos, directly add to state
       setMediaFiles(prev => [...prev, file]);
       const videoUrl = URL.createObjectURL(file);
-      setMediaPreviews(prev => [...prev, videoUrl]); // optional preview
+      setMediaPreviews(prev => [...prev, videoUrl]);
+      message.success('Video added successfully');
     }
 
     return false; // prevent default upload behavior
+  };
+
+  const handleCropComplete = ({ blob, dataUrl }) => {
+    // Convert blob to File object
+    const croppedFile = new File([blob], currentCroppingFile.name, {
+      type: 'image/jpeg',
+      lastModified: Date.now()
+    });
+
+    // Add cropped file to state
+    setMediaFiles(prev => [...prev, croppedFile]);
+    setMediaPreviews(prev => [...prev, dataUrl]);
+
+    // Set as primary image if it's the first one
+    if (mediaPreviews.length === 0) {
+      setImagePreview(dataUrl);
+    }
+
+    // Clean up
+    if (imageToCrop) {
+      URL.revokeObjectURL(imageToCrop);
+    }
+    setImageToCrop(null);
+    setCurrentCroppingFile(null);
+    setShowCropModal(false);
   };
 
 
@@ -1563,6 +1574,22 @@ export function ProductModal({
           </div>
         </div>
       </div>
+
+      {/* Image Crop Modal */}
+      <ImageCropModal
+        open={showCropModal}
+        onClose={() => {
+          if (imageToCrop) {
+            URL.revokeObjectURL(imageToCrop);
+          }
+          setShowCropModal(false);
+          setImageToCrop(null);
+          setCurrentCroppingFile(null);
+        }}
+        imageSrc={imageToCrop}
+        onCropComplete={handleCropComplete}
+        aspectRatio={4 / 3}
+      />
     </Modal >
   );
 }

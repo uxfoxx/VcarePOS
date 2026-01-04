@@ -1,68 +1,134 @@
-import { put, select, takeEvery, delay, call } from 'redux-saga/effects';
+import { put, select, call, take, fork, cancel, cancelled } from 'redux-saga/effects';
+import { eventChannel, END } from 'redux-saga';
 import { addNotification, failed } from './notificationsSlice';
-import { fetchNewOrders } from '../ecommerceOrders/ecommerceOrdersSlice';
+import { supabaseRealtime } from '../../utils/supabaseClient';
+import { message } from 'antd';
 
 // Selectors
 const getExistingNotifications = (state) => state.notifications.notifications;
-const getNewOrders = (state) => state.ecommerceOrders.newOrders;
 
-function* pollNewOrdersSaga() {
-  while (true) {
-    try {
-      // Fetch new orders
-      yield put(fetchNewOrders());
+/**
+ * Create an event channel for Supabase Realtime subscriptions
+ */
+function createRealtimeChannel() {
+  return eventChannel(emitter => {
+    console.log('[Realtime] Setting up e-commerce orders subscription...');
 
-      // Wait for the fetch to complete and get the new orders
-      yield delay(1000);
-      const newOrders = yield select(getNewOrders);
-      const existingNotifications = yield select(getExistingNotifications);
-
-      // Create set for faster lookup of existing notification IDs
-      const existingNotificationIds = new Set(existingNotifications.map(notif => notif.id));
-
-      const now = new Date().toISOString();
-
-      // Create notifications for new orders
-      if (Array.isArray(newOrders)) {
-        for (const order of newOrders) {
-          const notificationId = `ORDER-${order.id}`;
-
-          // Only add notification if it doesn't already exist
-          if (!existingNotificationIds.has(notificationId)) {
-            const notificationPayload = {
-              id: notificationId,
-              type: 'info',
-              title: 'New E-commerce Order',
-              message: `New order from ${order.customer_name} - LKR ${parseFloat(order.total_amount).toFixed(2)}`,
-              icon: 'shopping-bag',
-              persistent: true,
-              category: 'ecommerce-order',
-              navigateTo: 'ecommerce-orders',
-              orderId: order.id,
-              timestamp: now,
-              showUINotification: true
-            };
-
-            yield put(addNotification(notificationPayload));
+    // Create a channel for ecommerce_orders table
+    const channel = supabaseRealtime
+      .channel('ecommerce-orders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'ecommerce_orders'
+        },
+        (payload) => {
+          console.log('[Realtime] New order received:', payload);
+          emitter({ type: 'NEW_ORDER', order: payload.new });
+        }
+      )
+      .subscribe((status) => {
+        console.log('[Realtime] Subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('[Realtime] Successfully subscribed to e-commerce orders');
+          // Play notification sound
+          try {
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFA==');
+            audio.volume = 0.3;
+            audio.play().catch(() => {
+              // Ignore errors if audio can't play
+            });
+          } catch (err) {
+            // Ignore audio errors
           }
         }
+
+        if (status === 'CHANNEL_ERROR') {
+          console.error('[Realtime] Channel error');
+          emitter({ type: 'ERROR', error: 'Channel subscription error' });
+        }
+
+        if (status === 'TIMED_OUT') {
+          console.error('[Realtime] Connection timed out');
+          emitter({ type: 'ERROR', error: 'Connection timed out' });
+        }
+      });
+
+    // Return unsubscribe function
+    return () => {
+      console.log('[Realtime] Unsubscribing from e-commerce orders');
+      supabaseRealtime.removeChannel(channel);
+    };
+  });
+}
+
+/**
+ * Watch for realtime events and dispatch notifications
+ */
+function* watchRealtimeEvents() {
+  const channel = yield call(createRealtimeChannel);
+
+  try {
+    while (true) {
+      const event = yield take(channel);
+
+      if (event.type === 'NEW_ORDER') {
+        const order = event.order;
+        const existingNotifications = yield select(getExistingNotifications);
+        const notificationId = `ORDER-${order.id}`;
+
+        // Check if notification already exists
+        const exists = existingNotifications.some(notif => notif.id === notificationId);
+
+        if (!exists) {
+          const now = new Date().toISOString();
+
+          const notificationPayload = {
+            id: notificationId,
+            type: 'info',
+            title: 'New E-commerce Order',
+            message: `New order from ${order.customer_name} - LKR ${parseFloat(order.total_amount).toFixed(2)}`,
+            icon: 'shopping-bag',
+            persistent: true,
+            category: 'ecommerce-order',
+            navigateTo: 'ecommerce-orders',
+            orderId: order.id,
+            timestamp: now,
+            showUINotification: true
+          };
+
+          yield put(addNotification(notificationPayload));
+
+          // Show toast notification
+          message.success({
+            content: `New order from ${order.customer_name}`,
+            duration: 5,
+            style: {
+              marginTop: '20px',
+            }
+          });
+        }
+      } else if (event.type === 'ERROR') {
+        console.error('[Realtime] Error:', event.error);
+        yield put(failed(event.error));
       }
-
-      // Poll every 30 seconds
-      yield delay(30000);
-    } catch (error) {
-      console.error('Error polling new orders:', error);
-      yield put(failed(`Failed to poll new orders: ${error.message}`));
-
-      // Wait before retrying
-      yield delay(30000);
+    }
+  } finally {
+    if (yield cancelled()) {
+      channel.close();
     }
   }
 }
 
 function* notificationsSaga() {
-  // Start polling for new orders when the saga starts
-  yield call(pollNewOrdersSaga);
+  // Start watching for realtime events
+  const realtimeTask = yield fork(watchRealtimeEvents);
+
+  // Keep saga running
+  yield take('STOP_NOTIFICATIONS');
+  yield cancel(realtimeTask);
 }
 
 export default notificationsSaga;

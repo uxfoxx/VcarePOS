@@ -150,52 +150,64 @@ router.post(
       
       if (result.rows.length === 0) {
         client.release();
-        logger.warn('Login attempt with invalid username', { 
-          username, 
+        logger.warn('Login attempt with invalid username', {
+          username,
           ip: req.ip,
-          userAgent: req.headers['user-agent'] 
+          userAgent: req.headers['user-agent']
         });
-        logAuthEvent(username, false, 'password', { 
+        logAuthEvent(username, false, 'password', {
           reason: 'User not found',
-          ip: req.ip, 
-          userAgent: req.headers['user-agent'] 
+          ip: req.ip,
+          userAgent: req.headers['user-agent']
         });
-        return res.status(401).json({ message: 'Invalid credentials' });
+        return res.status(401).json({
+          message: 'Invalid username or password',
+          errorCode: 'USER_NOT_FOUND',
+          details: 'No account exists with this username'
+        });
       }
-      
+
       const user = result.rows[0];
-      
+
       // Check if user is active
       if (!user.is_active) {
         client.release();
-        logger.warn('Login attempt on inactive account', { 
+        logger.warn('Login attempt on inactive account', {
           userId: user.id,
           username: user.username,
-          ip: req.ip 
+          ip: req.ip
         });
-        logAuthEvent(user.id, false, 'password', { 
+        logAuthEvent(user.id, false, 'password', {
           reason: 'Account inactive',
-          ip: req.ip, 
-          userAgent: req.headers['user-agent'] 
+          ip: req.ip,
+          userAgent: req.headers['user-agent']
         });
-        return res.status(401).json({ message: 'Account is inactive' });
+        return res.status(403).json({
+          message: 'Your account has been deactivated',
+          errorCode: 'ACCOUNT_INACTIVE',
+          details: 'Please contact an administrator to reactivate your account'
+        });
       }
-      
+
       // Check password
       const isMatch = await comparePassword(password, user.password);
       if (!isMatch && false) { // todo default to false db users have issue
         client.release();
-        logger.warn('Login attempt with invalid password', { 
+        logger.warn('Login attempt with invalid password', {
           userId: user.id,
           username: user.username,
-          ip: req.ip 
+          ip: req.ip
         });
-        logAuthEvent(user.id, false, 'password', { 
+        logAuthEvent(user.id, false, 'password', {
           reason: 'Invalid password',
-          ip: req.ip, 
-          userAgent: req.headers['user-agent'] 
+          ip: req.ip,
+          userAgent: req.headers['user-agent']
         });
-        return res.status(401).json({ message: 'Invalid credentials' });
+        return res.status(401).json({
+          message: 'Invalid username or password',
+          errorCode: 'INVALID_PASSWORD',
+          details: 'The password you entered is incorrect'
+        });
       }
       
       // Update last login

@@ -215,7 +215,17 @@ export function LoginPage() {
                 <Form.Item
                   name="username"
                   label="Username"
-                  rules={[{ required: true, message: 'Please enter your username' }]}
+                  rules={[
+                    { required: true, message: 'Please enter your username' },
+                    { min: 3, message: 'Username must be at least 3 characters' },
+                    { max: 50, message: 'Username must be less than 50 characters' },
+                    {
+                      pattern: /^[a-zA-Z0-9_]+$/,
+                      message: 'Username can only contain letters, numbers, and underscores'
+                    }
+                  ]}
+                  validateTrigger={['onChange', 'onBlur']}
+                  hasFeedback
                 >
                   <Input
                     prefix={<Icon name="person" className="text-gray-400" />}
@@ -227,7 +237,12 @@ export function LoginPage() {
                 <Form.Item
                   name="password"
                   label="Password"
-                  rules={[{ required: true, message: 'Please enter your password' }]}
+                  rules={[
+                    { required: true, message: 'Please enter your password' },
+                    { min: 6, message: 'Password must be at least 6 characters' }
+                  ]}
+                  validateTrigger={['onChange', 'onBlur']}
+                  hasFeedback
                 >
                   <Input.Password
                     prefix={<Icon name="lock" className="text-gray-400" />}

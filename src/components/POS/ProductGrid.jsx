@@ -109,6 +109,20 @@ export function ProductGrid({ collapsed }) {
     dispatch(fetchCategories());
   }, [dispatch]);
 
+  // Handle ESC key to exit scanner mode
+  React.useEffect(() => {
+    const handleEscKey = (event) => {
+      if (event.key === 'Escape' && isScannerActive) {
+        toggleScanner();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [isScannerActive, toggleScanner]);
+
   // Get categories from state, including only active ones
   const activeCategories = Array.isArray(categories) ? categories.filter(cat => cat?.isActive) : [];
   const categoryNames = ['All', ...activeCategories.map(cat => cat.name)];
@@ -152,6 +166,34 @@ export function ProductGrid({ collapsed }) {
       selectedSize: productWithAddons.selectedSize,
       addons: productWithAddons.addons
     }));
+
+    // Show success notification with product details
+    message.success({
+      content: (
+        <div className="flex items-center space-x-3">
+          <div className="flex-shrink-0 w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-gray-900">Added to cart!</p>
+            <p className="text-sm text-gray-600">
+              {productWithAddons.name}
+              {productWithAddons.selectedSize && ` - Size: ${productWithAddons.selectedSize}`}
+              {productWithAddons.selectedColor && ` - ${productWithAddons.selectedColor.name}`}
+            </p>
+            {quantity > 1 && <p className="text-xs text-gray-500">Quantity: {quantity}</p>}
+          </div>
+        </div>
+      ),
+      duration: 3,
+      className: 'custom-cart-notification',
+      style: {
+        marginTop: '60px',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+      }
+    });
   };
 
   const handleAddCustomProduct = (customProduct) => {
@@ -321,6 +363,109 @@ export function ProductGrid({ collapsed }) {
         product={selectedProduct}
         onAddToCart={handleAddToCartWithAddons}
       />
+
+      {/* Enhanced Scanner Mode Overlay */}
+      {isScannerActive && BARCODE_SCANNER_CONFIG.ENABLED && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <div className="text-center space-y-8 animate-fadeIn">
+            {/* Scanner Icon with Pulse Animation */}
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-blue-500 opacity-25 animate-ping" style={{ animationDuration: '2s' }}></div>
+              <div className="relative flex items-center justify-center w-48 h-48 mx-auto rounded-full bg-gradient-to-br from-blue-500 to-blue-600 shadow-2xl">
+                <svg
+                  className="w-24 h-24 text-white animate-pulse"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            {/* Status Message */}
+            <div className="space-y-3">
+              <h2 className="text-4xl font-bold text-white">
+                {scannerStatus === 'idle' && 'Ready to Scan'}
+                {scannerStatus === 'scanning' && 'Scanning...'}
+                {scannerStatus === 'processing' && 'Processing Barcode...'}
+                {scannerStatus === 'error' && 'Scan Error'}
+              </h2>
+              <p className="text-xl text-gray-300">
+                {scannerStatus === 'idle' && 'Point your scanner at a barcode'}
+                {scannerStatus === 'scanning' && 'Reading barcode data'}
+                {scannerStatus === 'processing' && 'Looking up product'}
+                {scannerStatus === 'error' && 'Invalid barcode detected'}
+              </p>
+            </div>
+
+            {/* Scanning Animation */}
+            {scannerStatus === 'scanning' && (
+              <div className="relative w-64 h-2 mx-auto bg-gray-700 rounded-full overflow-hidden">
+                <div
+                  className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 animate-slideRight"
+                  style={{ animationDuration: '1.5s', animationIterationCount: 'infinite' }}
+                ></div>
+              </div>
+            )}
+
+            {/* Instructions */}
+            <div className="space-y-2 text-gray-400">
+              <p className="text-lg">Press <kbd className="px-3 py-1 bg-gray-700 text-white rounded-md font-mono text-sm">ESC</kbd> or click the button below to exit</p>
+            </div>
+
+            {/* Stop Button */}
+            <button
+              onClick={toggleScanner}
+              className="px-8 py-4 bg-red-500 hover:bg-red-600 text-white text-lg font-semibold rounded-lg shadow-lg transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-red-300"
+            >
+              Stop Scanner
+            </button>
+
+            {/* Status Indicator */}
+            <div className="flex items-center justify-center space-x-2 text-sm">
+              <div className={`w-3 h-3 rounded-full ${
+                scannerStatus === 'idle' ? 'bg-green-500 animate-pulse' :
+                scannerStatus === 'scanning' ? 'bg-blue-500 animate-pulse' :
+                scannerStatus === 'processing' ? 'bg-yellow-500 animate-pulse' :
+                'bg-red-500 animate-pulse'
+              }`}></div>
+              <span className="text-gray-300 uppercase tracking-wider">
+                {scannerStatus}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add CSS animations */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes slideRight {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(300%); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+        .animate-slideRight {
+          animation: slideRight 1.5s ease-in-out infinite;
+        }
+      `}</style>
     </>
   );
 }

@@ -62,21 +62,44 @@ function isTokenExpired(token, expirationBuffer = 300) { // 5 minutes buffer by 
 function* loginSaga(action) {
   try {
     const data = yield call(authApi.login, action.payload.username, action.payload.password);
-    
+
     // Store token with expiration information
     if (data.token) {
       localStorage.setItem('vcare_token', data.token);
-      
+
       // Extract token expiration if possible
       const decodedToken = decodeToken(data.token);
       if (decodedToken && decodedToken.exp) {
         localStorage.setItem('vcare_token_exp', decodedToken.exp);
       }
     }
-    
+
     yield put(loginSucceeded(data));
   } catch (error) {
-    yield put(failed(error.message || 'Login failed. Please try again.'));
+    // Parse error response for specific error codes
+    let errorMessage = 'Login failed. Please try again.';
+
+    if (error.response && error.response.data) {
+      const { errorCode, message, details } = error.response.data;
+
+      switch (errorCode) {
+        case 'USER_NOT_FOUND':
+          errorMessage = 'No account exists with this username. Please check your username and try again.';
+          break;
+        case 'INVALID_PASSWORD':
+          errorMessage = 'Incorrect password. Please try again.';
+          break;
+        case 'ACCOUNT_INACTIVE':
+          errorMessage = 'Your account has been deactivated. Please contact an administrator.';
+          break;
+        default:
+          errorMessage = message || details || errorMessage;
+      }
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
+    yield put(failed(errorMessage));
   }
 }
 

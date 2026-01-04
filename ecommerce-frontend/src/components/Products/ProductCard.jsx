@@ -107,7 +107,7 @@ const ProductCard = ({ product }) => {
         {product.colors && product.colors.length > 0 && (
           <div className="mb-3">
             <div className="flex items-center space-x-1">
-              <span className="text-sm text-gray-600">Colors:</span>
+              <span className="text-sm text-gray-600">Variations:</span>
               <div className="flex space-x-1">
                 {product.colors.slice(0, 4).map(color => (
                   <div

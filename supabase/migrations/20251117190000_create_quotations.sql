@@ -23,7 +23,7 @@
   - `valid_until` (timestamptz) - Quotation expiry date
   - `created_at` (timestamptz, default now()) - Creation timestamp
   - `updated_at` (timestamptz, default now()) - Last update timestamp
-  - `created_by` (uuid, references users) - User who created the quotation
+  - `created_by` (text, references users) - User who created the quotation
   - `converted_to_transaction_id` (text) - Transaction ID if converted to sale
   - `applied_taxes` (jsonb) - Tax details in JSON format
 
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS quotations (
   valid_until timestamptz,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now(),
-  created_by uuid REFERENCES users(id),
+  created_by text REFERENCES users(id),
   converted_to_transaction_id text,
   applied_taxes jsonb DEFAULT '{}'::jsonb
 );

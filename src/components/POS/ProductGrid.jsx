@@ -18,7 +18,6 @@ import { EmptyState } from '../common/EmptyState';
 import { CustomProductModal } from './CustomProductModal';
 import { ProductAddonsModal } from './ProductAddonsModal';
 import { ColorAndSizeSelectionModal } from './ColorAndSizeSelectionModal';
-import { BarcodeSimulator } from './BarcodeSimulator';
 import { addToCart } from '../../features/cart/cartSlice';
 import { useBarcodeScanner } from '../../hooks/useBarcodeScanner';
 import { BARCODE_SCANNER_CONFIG, DEFAULT_SCANNER_OPTIONS } from '../../config/barcodeConfig';
@@ -37,7 +36,7 @@ export function ProductGrid({ collapsed }) {
   const [showColorSizeModal, setShowColorSizeModal] = useState(false);
   const [showCustomProductModal, setShowCustomProductModal] = useState(false);
   const [showAddonsModal, setShowAddonsModal] = useState(false);
-  const [showBarcodeSimulator, setShowBarcodeSimulator] = useState(false);
+  const [isScannerActive, setIsScannerActive] = useState(false);
 
   // Barcode scanner functionality
   const findProductByBarcode = useCallback((barcode) => {
@@ -84,9 +83,23 @@ export function ProductGrid({ collapsed }) {
     message.error('Barcode scanner error: ' + error.message);
   }, []);
 
-  // Initialize barcode scanner
+  // Toggle scanner on/off
+  const toggleScanner = useCallback(() => {
+    setIsScannerActive(prev => {
+      const newState = !prev;
+      if (newState) {
+        message.success('Barcode scanner activated');
+      } else {
+        message.info('Barcode scanner deactivated');
+      }
+      return newState;
+    });
+  }, []);
+
+  // Initialize barcode scanner (only active when button is pressed)
   const { status: scannerStatus } = useBarcodeScanner({
     ...DEFAULT_SCANNER_OPTIONS,
+    enabled: isScannerActive && BARCODE_SCANNER_CONFIG.ENABLED,
     onScan: handleBarcodeScanned,
     onError: handleScannerError
   });
@@ -188,13 +201,16 @@ export function ProductGrid({ collapsed }) {
               {/* Scanner status indicator */}
               {BARCODE_SCANNER_CONFIG.ENABLED && (
                 <div className="text-sm text-gray-500 mt-1">
-                  Scanner: <span className={`font-medium ${scannerStatus === 'idle' ? 'text-green-600' :
-                    scannerStatus === 'scanning' ? 'text-blue-600' :
-                      scannerStatus === 'processing' ? 'text-yellow-600' :
-                        scannerStatus === 'error' ? 'text-red-600' :
-                          'text-gray-600'
+                  Scanner: <span className={`font-medium ${
+                    isScannerActive
+                      ? (scannerStatus === 'idle' ? 'text-green-600' :
+                         scannerStatus === 'scanning' ? 'text-blue-600' :
+                         scannerStatus === 'processing' ? 'text-yellow-600' :
+                         scannerStatus === 'error' ? 'text-red-600' :
+                         'text-gray-600')
+                      : 'text-gray-400'
                     }`}>
-                    {scannerStatus}
+                    {isScannerActive ? scannerStatus : 'inactive'}
                   </span>
                 </div>
               )}
@@ -208,14 +224,18 @@ export function ProductGrid({ collapsed }) {
                 className="w-80"
                 size="large"
               />
-              {/* Barcode simulator for testing */}
+              {/* Scan button to activate barcode scanner */}
               {BARCODE_SCANNER_CONFIG.ENABLED && (
                 <ActionButton.Primary
                   size="large"
-                  onClick={() => setShowBarcodeSimulator(true)}
-                  title="Open barcode scanner simulator for testing"
+                  onClick={toggleScanner}
+                  style={{
+                    backgroundColor: isScannerActive ? '#52c41a' : undefined,
+                    borderColor: isScannerActive ? '#52c41a' : undefined
+                  }}
+                  title={isScannerActive ? 'Click to deactivate scanner' : 'Click to activate scanner'}
                 >
-                  Scanner Test
+                  {isScannerActive ? 'Stop Scan' : 'Scan'}
                 </ActionButton.Primary>
               )}
               <ActionButton.Primary
@@ -300,13 +320,6 @@ export function ProductGrid({ collapsed }) {
         onClose={() => setShowAddonsModal(false)}
         product={selectedProduct}
         onAddToCart={handleAddToCartWithAddons}
-      />
-
-      {/* Barcode Scanner Simulator */}
-      <BarcodeSimulator
-        visible={showBarcodeSimulator}
-        onClose={() => setShowBarcodeSimulator(false)}
-        onScan={handleBarcodeScanned}
       />
     </>
   );

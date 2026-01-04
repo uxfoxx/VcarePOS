@@ -59,12 +59,10 @@ ALTER TABLE faqs ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Anyone can view active FAQs"
   ON faqs FOR SELECT
-  TO anon, authenticated
   USING (is_active = true);
 
 CREATE POLICY "Authenticated users can manage FAQs"
   ON faqs FOR ALL
-  TO authenticated
   USING (true)
   WITH CHECK (true);
 
@@ -85,12 +83,10 @@ ALTER TABLE testimonials ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Anyone can view featured testimonials"
   ON testimonials FOR SELECT
-  TO anon, authenticated
   USING (is_featured = true);
 
 CREATE POLICY "Authenticated users can manage testimonials"
   ON testimonials FOR ALL
-  TO authenticated
   USING (true)
   WITH CHECK (true);
 
@@ -107,12 +103,10 @@ ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Anyone can view site settings"
   ON site_settings FOR SELECT
-  TO anon, authenticated
   USING (true);
 
 CREATE POLICY "Authenticated users can manage settings"
   ON site_settings FOR ALL
-  TO authenticated
   USING (true)
   WITH CHECK (true);
 
@@ -128,17 +122,14 @@ ALTER TABLE newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Anyone can subscribe to newsletter"
   ON newsletter_subscribers FOR INSERT
-  TO anon, authenticated
   WITH CHECK (true);
 
 CREATE POLICY "Authenticated users can view subscribers"
   ON newsletter_subscribers FOR SELECT
-  TO authenticated
   USING (true);
 
 CREATE POLICY "Authenticated users can manage subscribers"
   ON newsletter_subscribers FOR ALL
-  TO authenticated
   USING (true)
   WITH CHECK (true);
 

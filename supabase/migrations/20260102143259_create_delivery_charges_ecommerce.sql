@@ -23,7 +23,6 @@ CREATE POLICY "Anyone can view active delivery charges"
 CREATE POLICY "Authenticated users can manage delivery charges"
   ON delivery_charges
   FOR ALL
-  TO authenticated
   USING (true)
   WITH CHECK (true);
 

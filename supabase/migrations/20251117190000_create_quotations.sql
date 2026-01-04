@@ -23,7 +23,7 @@
   - `valid_until` (timestamptz) - Quotation expiry date
   - `created_at` (timestamptz, default now()) - Creation timestamp
   - `updated_at` (timestamptz, default now()) - Last update timestamp
-  - `created_by` (uuid, references auth.users) - User who created the quotation
+  - `created_by` (uuid, references users) - User who created the quotation
   - `converted_to_transaction_id` (text) - Transaction ID if converted to sale
   - `applied_taxes` (jsonb) - Tax details in JSON format
 
@@ -65,6 +65,20 @@
   - Converted quotations retain reference to the original transaction
 */
 
+-- Create auth schema and functions for compatibility with regular PostgreSQL
+CREATE SCHEMA IF NOT EXISTS auth;
+
+-- Create stub auth.uid() function for regular PostgreSQL
+-- This returns NULL since authentication is handled at the application level via JWT
+CREATE OR REPLACE FUNCTION auth.uid()
+RETURNS uuid AS $$
+BEGIN
+  -- Return NULL as auth is handled by the application layer
+  -- Application uses JWT tokens for authentication
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
 -- Create quotations table
 CREATE TABLE IF NOT EXISTS quotations (
   id text PRIMARY KEY,
@@ -81,7 +95,7 @@ CREATE TABLE IF NOT EXISTS quotations (
   valid_until timestamptz,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now(),
-  created_by uuid REFERENCES auth.users(id),
+  created_by uuid REFERENCES users(id),
   converted_to_transaction_id text,
   applied_taxes jsonb DEFAULT '{}'::jsonb
 );
@@ -121,14 +135,12 @@ ALTER TABLE quotation_items ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own quotations"
   ON quotations
   FOR SELECT
-  TO authenticated
   USING (auth.uid() = created_by);
 
 -- Allow admins to view all quotations
 CREATE POLICY "Admins can view all quotations"
   ON quotations
   FOR SELECT
-  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM users
@@ -141,14 +153,12 @@ CREATE POLICY "Admins can view all quotations"
 CREATE POLICY "Users can create quotations"
   ON quotations
   FOR INSERT
-  TO authenticated
   WITH CHECK (auth.uid() = created_by);
 
 -- Allow users to update their own draft quotations
 CREATE POLICY "Users can update own draft quotations"
   ON quotations
   FOR UPDATE
-  TO authenticated
   USING (auth.uid() = created_by AND status = 'draft')
   WITH CHECK (auth.uid() = created_by);
 
@@ -156,7 +166,6 @@ CREATE POLICY "Users can update own draft quotations"
 CREATE POLICY "Admins can update all quotations"
   ON quotations
   FOR UPDATE
-  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM users
@@ -176,14 +185,12 @@ CREATE POLICY "Admins can update all quotations"
 CREATE POLICY "Users can delete own draft quotations"
   ON quotations
   FOR DELETE
-  TO authenticated
   USING (auth.uid() = created_by AND status = 'draft');
 
 -- Allow admins to delete any quotation
 CREATE POLICY "Admins can delete all quotations"
   ON quotations
   FOR DELETE
-  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM users
@@ -198,7 +205,6 @@ CREATE POLICY "Admins can delete all quotations"
 CREATE POLICY "Users can view own quotation items"
   ON quotation_items
   FOR SELECT
-  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM quotations
@@ -211,7 +217,6 @@ CREATE POLICY "Users can view own quotation items"
 CREATE POLICY "Admins can view all quotation items"
   ON quotation_items
   FOR SELECT
-  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM users
@@ -224,7 +229,6 @@ CREATE POLICY "Admins can view all quotation items"
 CREATE POLICY "Users can insert own quotation items"
   ON quotation_items
   FOR INSERT
-  TO authenticated
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM quotations
@@ -237,7 +241,6 @@ CREATE POLICY "Users can insert own quotation items"
 CREATE POLICY "Users can update own draft quotation items"
   ON quotation_items
   FOR UPDATE
-  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM quotations
@@ -259,7 +262,6 @@ CREATE POLICY "Users can update own draft quotation items"
 CREATE POLICY "Admins can update all quotation items"
   ON quotation_items
   FOR UPDATE
-  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM users
@@ -279,7 +281,6 @@ CREATE POLICY "Admins can update all quotation items"
 CREATE POLICY "Users can delete own draft quotation items"
   ON quotation_items
   FOR DELETE
-  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM quotations
@@ -293,7 +294,6 @@ CREATE POLICY "Users can delete own draft quotation items"
 CREATE POLICY "Admins can delete all quotation items"
   ON quotation_items
   FOR DELETE
-  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM users

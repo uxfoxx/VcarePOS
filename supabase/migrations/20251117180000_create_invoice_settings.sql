@@ -43,6 +43,20 @@
     - Supports customizable invoice notes and terms templates
 */
 
+-- Create auth schema and functions for compatibility with regular PostgreSQL
+CREATE SCHEMA IF NOT EXISTS auth;
+
+-- Create stub auth.uid() function for regular PostgreSQL
+-- This returns NULL since authentication is handled at the application level via JWT
+CREATE OR REPLACE FUNCTION auth.uid()
+RETURNS uuid AS $$
+BEGIN
+  -- Return NULL as auth is handled by the application layer
+  -- Application uses JWT tokens for authentication
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
 -- Create invoice_settings table
 CREATE TABLE IF NOT EXISTS invoice_settings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -60,12 +74,10 @@ ALTER TABLE invoice_settings ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Authenticated users can view invoice settings"
   ON invoice_settings FOR SELECT
-  TO authenticated
   USING (true);
 
 CREATE POLICY "Admins can insert invoice settings"
   ON invoice_settings FOR INSERT
-  TO authenticated
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM users
@@ -76,7 +88,6 @@ CREATE POLICY "Admins can insert invoice settings"
 
 CREATE POLICY "Admins can update invoice settings"
   ON invoice_settings FOR UPDATE
-  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM users
@@ -108,12 +119,10 @@ ALTER TABLE bank_account_details ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Authenticated users can view bank account details"
   ON bank_account_details FOR SELECT
-  TO authenticated
   USING (true);
 
 CREATE POLICY "Admins can insert bank account details"
   ON bank_account_details FOR INSERT
-  TO authenticated
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM users
@@ -124,7 +133,6 @@ CREATE POLICY "Admins can insert bank account details"
 
 CREATE POLICY "Admins can update bank account details"
   ON bank_account_details FOR UPDATE
-  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM users
@@ -142,7 +150,6 @@ CREATE POLICY "Admins can update bank account details"
 
 CREATE POLICY "Admins can delete bank account details"
   ON bank_account_details FOR DELETE
-  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM users
@@ -167,12 +174,10 @@ ALTER TABLE invoice_notes_templates ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Authenticated users can view invoice notes templates"
   ON invoice_notes_templates FOR SELECT
-  TO authenticated
   USING (true);
 
 CREATE POLICY "Admins can insert invoice notes templates"
   ON invoice_notes_templates FOR INSERT
-  TO authenticated
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM users
@@ -183,7 +188,6 @@ CREATE POLICY "Admins can insert invoice notes templates"
 
 CREATE POLICY "Admins can update invoice notes templates"
   ON invoice_notes_templates FOR UPDATE
-  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM users
@@ -201,7 +205,6 @@ CREATE POLICY "Admins can update invoice notes templates"
 
 CREATE POLICY "Admins can delete invoice notes templates"
   ON invoice_notes_templates FOR DELETE
-  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM users

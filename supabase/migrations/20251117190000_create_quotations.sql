@@ -31,7 +31,7 @@
   Stores individual line items for each quotation
   - `id` (uuid, primary key) - Unique item identifier
   - `quotation_id` (text, references quotations) - Parent quotation reference
-  - `product_id` (uuid, references products) - Product reference
+  - `product_id` (text, references products) - Product reference
   - `product_name` (text) - Product name snapshot
   - `product_barcode` (text) - Product barcode/SKU snapshot
   - `selected_variant` (text) - Selected color variant
@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS quotations (
 CREATE TABLE IF NOT EXISTS quotation_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   quotation_id text NOT NULL REFERENCES quotations(id) ON DELETE CASCADE,
-  product_id uuid REFERENCES products(id),
+  product_id text REFERENCES products(id),
   product_name text NOT NULL,
   product_barcode text,
   selected_variant text,

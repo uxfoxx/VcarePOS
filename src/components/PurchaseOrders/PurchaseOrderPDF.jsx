@@ -11,9 +11,9 @@ export function PurchaseOrderPDF({ order, id }) {
   };
 
   return (
-    <div id={id} className="p-8 bg-white" style={{ width: '210mm', fontFamily: 'Arial, sans-serif' }}>
+    <div id={id} className="bg-white" style={{ width: '210mm', height: '297mm', fontFamily: 'Arial, sans-serif', position: 'relative', overflow: 'hidden', boxSizing: 'border-box' }}>
       {/* Header */}
-      <div className="text-center mb-8">
+      <div className="text-center" style={{ padding: '8mm 10mm 0 10mm', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
         <div className="flex items-center justify-center space-x-4 mb-4">
           <div className=" rounded-xl flex items-center justify-center">
             <img 
@@ -27,12 +27,14 @@ export function PurchaseOrderPDF({ order, id }) {
           
         </div>
         <Divider />
-        <Title level={3} className="text-gray-800">PURCHASE ORDER</Title>
+        <Title level={3} className="text-gray-800" style={{ marginBottom: '4px' }}>PURCHASE ORDER</Title>
         <Text className="text-lg font-bold">{order.id}</Text>
       </div>
 
-      {/* Order Info */}
-      <div className="flex justify-between mb-6">
+      {/* Content Section */}
+      <div style={{ position: 'absolute', top: '50mm', left: '10mm', right: '10mm', bottom: '30mm', overflow: 'hidden' }}>
+        {/* Order Info */}
+        <div className="flex justify-between" style={{ marginBottom: '12px' }}>
         <div>
           <Title level={5} className="mb-2">Vendor:</Title>
           <div className="text-sm">
@@ -70,17 +72,17 @@ export function PurchaseOrderPDF({ order, id }) {
         </div>
       </div>
 
-      {/* Ship To */}
-      <div className="mb-6">
-        <Title level={5} className="mb-2">Ship To:</Title>
-        <div className="border-l-4 border-blue-600 pl-4 text-sm">
-          <Text className="whitespace-pre-line">{order.shippingAddress}</Text>
+        {/* Ship To */}
+        <div style={{ marginBottom: '12px' }}>
+          <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Ship To:</Title>
+          <div className="border-l-4 border-blue-600 pl-4 text-sm">
+            <Text className="whitespace-pre-line">{order.shippingAddress}</Text>
+          </div>
         </div>
-      </div>
 
-      {/* Order Items */}
-      <Title level={5} className="mb-4">Order Items:</Title>
-      <table className="w-full border-collapse mb-6">
+        {/* Order Items */}
+        <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Order Items:</Title>
+        <table className="w-full border-collapse" style={{ marginBottom: '12px' }}>
         <thead className="bg-gray-100">
           <tr>
             <th className="border p-2 text-left">Item</th>
@@ -119,33 +121,36 @@ export function PurchaseOrderPDF({ order, id }) {
         </tfoot>
       </table>
 
-      {/* Notes */}
-      {order.notes && (
-        <div className="mb-6">
-          <Title level={5} className="mb-2">Notes:</Title>
-          <div className="bg-gray-50 p-4 rounded border text-sm">
-            <Text>{order.notes}</Text>
+        {/* Notes */}
+        {order.notes && (
+          <div style={{ marginBottom: '12px' }}>
+            <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Notes:</Title>
+            <div className="bg-gray-50 p-4 rounded border text-sm">
+              <Text>{order.notes}</Text>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Terms & Conditions */}
-      <div className="mb-6">
-        <Title level={5} className="mb-2">Terms & Conditions:</Title>
-        <div className="text-xs text-gray-600">
-          <ol className="list-decimal pl-4 space-y-1">
-            <li>All prices are in LKR and exclude applicable taxes unless otherwise stated.</li>
-            <li>Payment is due according to the terms specified in this purchase order.</li>
-            <li>Please confirm receipt of this purchase order within 2 business days.</li>
-            <li>Any changes to this purchase order must be approved in writing.</li>
-            <li>Goods must be delivered to the shipping address specified above.</li>
-            <li>All goods must be delivered in good condition and as per specifications.</li>
-          </ol>
+        {/* Terms & Conditions */}
+        <div style={{ marginBottom: '12px' }}>
+          <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Terms & Conditions:</Title>
+          <div className="text-xs text-gray-600">
+            <ol className="list-decimal pl-4 space-y-1">
+              <li>All prices are in LKR and exclude applicable taxes unless otherwise stated.</li>
+              <li>Payment is due according to the terms specified in this purchase order.</li>
+              <li>Please confirm receipt of this purchase order within 2 business days.</li>
+              <li>Any changes to this purchase order must be approved in writing.</li>
+              <li>Goods must be delivered to the shipping address specified above.</li>
+              <li>All goods must be delivered in good condition and as per specifications.</li>
+            </ol>
+          </div>
         </div>
       </div>
 
-      {/* Signatures */}
-      <div className="flex justify-between mt-12">
+      {/* Footer */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10, padding: '10mm' }}>
+        {/* Signatures */}
+        <div className="flex justify-between" style={{ marginBottom: '12px' }}>
         <div className="w-1/3">
           <div className="border-t border-gray-400 pt-2">
             <Text className="text-sm">Authorized By</Text>
@@ -156,15 +161,14 @@ export function PurchaseOrderPDF({ order, id }) {
             <Text className="text-sm">Approved By</Text>
           </div>
         </div>
-        <div className="w-1/3">
-          <div className="border-t border-gray-400 pt-2">
-            <Text className="text-sm">Received By</Text>
+          <div className="w-1/3">
+            <div className="border-t border-gray-400 pt-2">
+              <Text className="text-sm">Received By</Text>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Footer */}
-      <div className="mt-12 pt-4 border-t text-center text-xs text-gray-500">
+        <div className="pt-4 border-t text-center text-xs text-gray-500">
         {(() => {
           const branding = localStorage.getItem('vcare_branding') ? JSON.parse(localStorage.getItem('vcare_branding')) : {};
           const parts = [];
@@ -185,6 +189,7 @@ export function PurchaseOrderPDF({ order, id }) {
             </>
           ) : null;
         })()}
+        </div>
       </div>
     </div>
   );

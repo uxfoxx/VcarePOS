@@ -223,16 +223,16 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
             style={{
               fontFamily: 'Arial, sans-serif',
               width: '210mm',
-              minHeight: '297mm',
+              height: '297mm',
               position: 'relative',
-              padding: '10mm',
-              paddingBottom: '25mm',
               boxSizing: 'border-box',
-              margin: '0 auto'
+              margin: '0 auto',
+              overflow: 'hidden'
             }}
           >
-            <div style={{ minHeight: 'calc(297mm - 80px)', paddingBottom: '20px' }}>
-              <div className="mb-6">
+            {/* Header Section */}
+            <div style={{ padding: '8mm 10mm 5mm 10mm', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
+              <div style={{ marginBottom: '12px' }}>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-4">
                     <img
@@ -241,17 +241,20 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
                       className="h-16 object-contain"
                       crossOrigin="anonymous"
                     />
-                    
+
                   </div>
                   <div className="text-right">
-                    <h1 className="text-4xl font-bold text-black m-0" style={{ fontSize: '36px' }}>
+                    <h1 className="text-4xl font-bold text-black m-0" style={{ fontSize: '32px', marginTop: 0, marginBottom: 0 }}>
                       INVOICE
                     </h1>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-8 mb-6">
+            {/* Content Section */}
+            <div style={{ position: 'absolute', top: '45mm', left: '10mm', right: '10mm', bottom: '25mm', overflow: 'hidden' }}>
+              <div className="grid grid-cols-2 gap-8" style={{ marginBottom: '12px' }}>
                 <div>
                   <p className="font-bold mb-2">Invoice to:</p>
                   <p className="font-bold text-base m-0">{order.customerName}</p>
@@ -271,22 +274,22 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
                 </div>
               </div>
 
-              <table className="w-full border-collapse" style={{ marginTop: '24px' }}>
+              <table className="w-full border-collapse" style={{ marginTop: '12px' }}>
                 <thead>
                   <tr style={{ background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)' }}>
-                    <th className="p-3 text-left text-white font-bold" style={{ width: '55%' }}>DESCRIPTION</th>
-                    <th className="p-3 text-center text-white font-bold" style={{ width: '15%' }}>QTY</th>
-                    <th className="p-3 text-right text-white font-bold" style={{ width: '30%' }}>AMOUNT</th>
+                    <th className="p-2 text-left text-white font-bold" style={{ width: '55%' }}>DESCRIPTION</th>
+                    <th className="p-2 text-center text-white font-bold" style={{ width: '15%' }}>QTY</th>
+                    <th className="p-2 text-right text-white font-bold" style={{ width: '30%' }}>AMOUNT</th>
                   </tr>
                 </thead>
                 <tbody>
                   {order.items.map((item, index) => (
                     <tr key={index} className="border-b border-gray-200">
-                      <td className="p-4">
+                      <td className="p-2">
                         <div>
-                          <p className="font-bold text-base m-0">{item.productName}</p>
+                          <p className="font-bold text-sm m-0">{item.productName}</p>
                           {(item.selectedColorId || item.selectedSize) && (
-                            <p className="text-sm text-gray-500 mt-1 m-0">
+                            <p className="text-xs text-gray-500 mt-1 m-0">
                               {item.selectedColorId && `Color: ${item.selectedColorId}`}
                               {item.selectedColorId && item.selectedSize && ' • '}
                               {item.selectedSize && `Size: ${item.selectedSize}`}
@@ -294,11 +297,11 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
                           )}
                         </div>
                       </td>
-                      <td className="p-4 text-center">
-                        <span className="text-base">{item.quantity}NOS</span>
+                      <td className="p-2 text-center">
+                        <span className="text-sm">{item.quantity}NOS</span>
                       </td>
-                      <td className="p-4 text-right">
-                        <span className="text-base font-medium">
+                      <td className="p-2 text-right">
+                        <span className="text-sm font-medium">
                           {((item.unitPrice || 0) * item.quantity).toLocaleString('en-US', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2
@@ -310,7 +313,7 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
                 </tbody>
               </table>
 
-              <div className="mt-6 flex justify-end">
+              <div style={{ marginTop: '12px' }} className="flex justify-end">
                 <div className="w-1/2 space-y-2">
                   <div className="flex justify-between py-2 border-b">
                     <span className="text-base">TOTAL</span>
@@ -336,12 +339,12 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
               </div>
 
               {invoiceConfig?.bankAccount && order.paymentMethod === 'bank_transfer' && (
-                <div className="mt-8">
-                  <h3 className="text-base font-bold mb-3">Account details</h3>
+                <div style={{ marginTop: '12px' }}>
+                  <h3 style={{ fontSize: '14px', marginBottom: '8px' }} className="font-bold">Account details</h3>
                   <div className="space-y-1">
-                    <p className="text-base m-0">{invoiceConfig.bankAccount.account_holder_name}</p>
-                    <p className="text-base m-0">{invoiceConfig.bankAccount.account_number}</p>
-                    <p className="text-base m-0">
+                    <p className="text-sm m-0">{invoiceConfig.bankAccount.account_holder_name}</p>
+                    <p className="text-sm m-0">{invoiceConfig.bankAccount.account_number}</p>
+                    <p className="text-sm m-0">
                       {invoiceConfig.bankAccount.bank_name} {invoiceConfig.bankAccount.branch_name}
                     </p>
                   </div>
@@ -349,21 +352,21 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
               )}
 
               {invoiceConfig?.notesTemplate && (
-                <div className="mt-8">
-                  <h3 className="text-base font-bold mb-3">Note:-</h3>
-                  <div className="space-y-2">
+                <div style={{ marginTop: '12px' }}>
+                  <h3 style={{ fontSize: '14px', marginBottom: '8px' }} className="font-bold">Note:-</h3>
+                  <div className="space-y-1">
                     {invoiceConfig.notesTemplate.warranty_terms && (
-                      <p className="text-sm text-gray-700 m-0" style={{ lineHeight: '1.6' }}>
+                      <p className="text-xs text-gray-700 m-0" style={{ lineHeight: '1.4' }}>
                         {invoiceConfig.notesTemplate.warranty_terms}
                       </p>
                     )}
                     {invoiceConfig.notesTemplate.quotation_validity && (
-                      <p className="text-sm text-gray-700 mt-2 m-0" style={{ lineHeight: '1.6' }}>
+                      <p className="text-xs text-gray-700 m-0" style={{ lineHeight: '1.4', marginTop: '4px' }}>
                         {invoiceConfig.notesTemplate.quotation_validity}
                       </p>
                     )}
                     {invoiceConfig.notesTemplate.custom_notes && (
-                      <p className="text-sm text-gray-700 mt-2 m-0" style={{ lineHeight: '1.6' }}>
+                      <p className="text-xs text-gray-700 m-0" style={{ lineHeight: '1.4', marginTop: '4px' }}>
                         {invoiceConfig.notesTemplate.custom_notes}
                       </p>
                     )}
@@ -372,23 +375,20 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
               )}
             </div>
 
-            <div
-              style={{
-                background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '40px',
-                position: 'absolute',
-                bottom: '10mm',
-                left: 0,
-                right: 0,
-                width: '100%',
-                padding: '16px',
-                marginTop: '20px',
-                pageBreakInside: 'avoid'
-              }}
-            >
+            {/* Footer Section */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10 }}>
+              <div
+                style={{
+                  background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '40px',
+                  width: '100%',
+                  padding: '16px',
+                  pageBreakInside: 'avoid'
+                }}
+              >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <svg
                   width="20"
@@ -415,6 +415,7 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 <span style={{ color: 'white', fontSize: '14px' }}>{businessAddress || ''}</span>
+              </div>
               </div>
             </div>
           </div>

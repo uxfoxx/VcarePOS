@@ -29,9 +29,9 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
   };
 
   return (
-    <div id={id} className="p-8 bg-white" style={{ width: '210mm', minHeight: '297mm', fontFamily: 'Arial, sans-serif' }}>
+    <div id={id} className="bg-white" style={{ width: '210mm', height: '297mm', fontFamily: 'Arial, sans-serif', position: 'relative', overflow: 'hidden', boxSizing: 'border-box' }}>
       {/* Header */}
-      <div className="mb-6">
+      <div style={{ padding: '8mm 10mm 5mm 10mm', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-4">
             <img
@@ -43,17 +43,19 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
             
           </div>
           <div className="text-right">
-            <Title level={1} className="m-0" style={{ fontSize: '36px', fontWeight: 'bold', color: '#000' }}>
+            <Title level={1} className="m-0" style={{ fontSize: '32px', fontWeight: 'bold', color: '#000', marginTop: 0, marginBottom: 0 }}>
               QUOTATION
             </Title>
           </div>
         </div>
       </div>
 
-      <Divider />
+      {/* Content Section */}
+      <div style={{ position: 'absolute', top: '45mm', left: '10mm', right: '10mm', bottom: '25mm', overflow: 'hidden' }}>
+        <Divider style={{ marginTop: 0, marginBottom: '12px' }} />
 
-      {/* Quotation Info */}
-      <div className="flex justify-between mb-6">
+        {/* Quotation Info */}
+        <div className="flex justify-between" style={{ marginBottom: '12px' }}>
         <div>
           <Title level={5} className="mb-2">Quotation To:</Title>
           <div className="text-sm">
@@ -87,52 +89,52 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
               <Text strong>Status:</Text> <span className="capitalize">{quotation.status}</span>
             </div>
           </div>
+          </div>
         </div>
-      </div>
 
-      {/* Items Table */}
-      <Title level={5} className="mb-4">Quoted Items:</Title>
-      <table className="w-full border-collapse mb-6">
-        <thead>
-          <tr style={{ background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)' }}>
-            <th className="p-3 text-left text-white font-bold" style={{ width: '50%' }}>DESCRIPTION</th>
-            <th className="p-3 text-center text-white font-bold" style={{ width: '15%' }}>QTY</th>
-            <th className="p-3 text-right text-white font-bold" style={{ width: '17.5%' }}>UNIT PRICE</th>
-            <th className="p-3 text-right text-white font-bold" style={{ width: '17.5%' }}>TOTAL</th>
-          </tr>
-        </thead>
-        <tbody>
-          {quotation.items && quotation.items.map((item, index) => (
-            <tr key={index} className="border-b border-gray-200">
-              <td className="p-4">
-                <Text strong className="block text-base">{item.product_name || item.productName}</Text>
-                {item.description && (
-                  <Text className="block text-sm text-gray-600 mt-1">{item.description}</Text>
-                )}
-                {(item.selected_variant || item.selectedVariant || item.selected_size || item.selectedSize) && (
-                  <Text className="block text-sm text-gray-500 mt-1">
-                    {(item.selected_variant || item.selectedVariant) && `Color: ${item.selected_variant || item.selectedVariant}`}
-                    {(item.selected_variant || item.selectedVariant) && (item.selected_size || item.selectedSize) && ' • '}
-                    {(item.selected_size || item.selectedSize) && `Size: ${item.selected_size || item.selectedSize}`}
-                  </Text>
-                )}
-              </td>
-              <td className="p-4 text-center">
-                <Text className="text-base">{item.quantity}</Text>
-              </td>
-              <td className="p-4 text-right">
-                <Text className="text-base">LKR {(item.unit_price || item.unitPrice || 0).toFixed(2)}</Text>
-              </td>
-              <td className="p-4 text-right">
-                <Text className="text-base font-medium">LKR {(item.total_price || item.totalPrice || 0).toFixed(2)}</Text>
-              </td>
+        {/* Items Table */}
+        <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Quoted Items:</Title>
+        <table className="w-full border-collapse" style={{ marginBottom: '12px' }}>
+          <thead>
+            <tr style={{ background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)' }}>
+              <th className="p-2 text-left text-white font-bold" style={{ width: '50%' }}>DESCRIPTION</th>
+              <th className="p-2 text-center text-white font-bold" style={{ width: '15%' }}>QTY</th>
+              <th className="p-2 text-right text-white font-bold" style={{ width: '17.5%' }}>UNIT PRICE</th>
+              <th className="p-2 text-right text-white font-bold" style={{ width: '17.5%' }}>TOTAL</th>
             </tr>
-          ))}
-        </tbody>
+          </thead>
+          <tbody>
+            {quotation.items && quotation.items.map((item, index) => (
+              <tr key={index} className="border-b border-gray-200">
+                <td className="p-2">
+                  <Text strong className="block text-sm">{item.product_name || item.productName}</Text>
+                  {item.description && (
+                    <Text className="block text-xs text-gray-600 mt-1">{item.description}</Text>
+                  )}
+                  {(item.selected_variant || item.selectedVariant || item.selected_size || item.selectedSize) && (
+                    <Text className="block text-xs text-gray-500 mt-1">
+                      {(item.selected_variant || item.selectedVariant) && `Color: ${item.selected_variant || item.selectedVariant}`}
+                      {(item.selected_variant || item.selectedVariant) && (item.selected_size || item.selectedSize) && ' • '}
+                      {(item.selected_size || item.selectedSize) && `Size: ${item.selected_size || item.selectedSize}`}
+                    </Text>
+                  )}
+                </td>
+                <td className="p-2 text-center">
+                  <Text className="text-sm">{item.quantity}</Text>
+                </td>
+                <td className="p-2 text-right">
+                  <Text className="text-sm">LKR {(item.unit_price || item.unitPrice || 0).toFixed(2)}</Text>
+                </td>
+                <td className="p-2 text-right">
+                  <Text className="text-sm font-medium">LKR {(item.total_price || item.totalPrice || 0).toFixed(2)}</Text>
+                </td>
+              </tr>
+            ))}
+          </tbody>
       </table>
 
-      {/* Totals Summary */}
-      <div className="mt-6 mb-6">
+        {/* Totals Summary */}
+        <div style={{ marginTop: '12px', marginBottom: '12px' }}>
         <div className="flex justify-end">
           <div className="w-1/2 space-y-2">
             <div className="flex justify-between py-2 border-b">
@@ -155,48 +157,48 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
               <Text strong className="text-base">TOTAL AMOUNT</Text>
               <Text strong className="text-base">LKR {(quotation.total || 0).toFixed(2)}</Text>
             </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Notes */}
-      {quotation.notes && (
-        <div className="mb-6">
-          <Title level={5} className="mb-2">Notes:</Title>
-          <div className="bg-gray-50 p-4 rounded border text-sm">
-            <Text>{quotation.notes}</Text>
+        {/* Notes */}
+        {quotation.notes && (
+          <div style={{ marginBottom: '12px' }}>
+            <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Notes:</Title>
+            <div className="bg-gray-50 p-4 rounded border text-sm">
+              <Text>{quotation.notes}</Text>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Terms & Conditions */}
-      <div className="mb-6">
-        <Title level={5} className="mb-2">Terms & Conditions:</Title>
-        <div className="text-xs text-gray-600">
-          <ol className="list-decimal pl-4 space-y-1">
-            <li>This quotation is valid until the date specified above.</li>
-            <li>Prices are in LKR and may be subject to change without notice.</li>
-            <li>Payment terms will be discussed upon order confirmation.</li>
-            <li>Delivery timelines will be confirmed after order placement.</li>
-            <li>This quotation does not constitute a binding contract until order confirmation.</li>
-          </ol>
+        {/* Terms & Conditions */}
+        <div style={{ marginBottom: '12px' }}>
+          <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Terms & Conditions:</Title>
+          <div className="text-xs text-gray-600">
+            <ol className="list-decimal pl-4 space-y-1">
+              <li>This quotation is valid until the date specified above.</li>
+              <li>Prices are in LKR and may be subject to change without notice.</li>
+              <li>Payment terms will be discussed upon order confirmation.</li>
+              <li>Delivery timelines will be confirmed after order placement.</li>
+              <li>This quotation does not constitute a binding contract until order confirmation.</li>
+            </ol>
+          </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div
-        style={{
-          background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '40px',
-          width: '100%',
-          padding: '16px',
-          marginTop: 'auto',
-          marginBottom: '10mm'
-        }}
-      >
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10 }}>
+        <div
+          style={{
+            background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '40px',
+            width: '100%',
+            padding: '16px'
+          }}
+        >
         {phoneNumber && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <svg width="20" height="20" fill="none" stroke="white" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
@@ -214,6 +216,7 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
             <span style={{ color: 'white', fontSize: '14px', fontWeight: '500' }}>{businessAddress}</span>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

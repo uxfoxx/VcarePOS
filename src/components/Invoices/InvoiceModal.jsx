@@ -224,20 +224,37 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
         style={{
           fontFamily: 'Arial, sans-serif',
           width: '210mm',
-          minHeight: '297mm',
-          display: 'flex',
-          flexDirection: 'column',
-          padding: '10mm',
-          boxSizing: 'border-box'
+          height: '297mm',
+          boxSizing: 'border-box',
+          position: 'relative',
+          overflow: 'hidden'
         }}
       >
-        <div style={{ flex: '1', paddingBottom: '20px' }}>
+        {/* Header Section - Fixed at top */}
+        <div style={{
+          padding: '8mm 10mm 5mm 10mm',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10
+        }}>
           <InvoiceHeader
             businessName={businessName}
             logoPreview={logoPreview}
           />
+        </div>
 
-          <Row gutter={32} className="mb-6">
+        {/* Content Section - Scrollable middle */}
+        <div style={{
+          position: 'absolute',
+          top: '45mm',
+          left: '10mm',
+          right: '10mm',
+          bottom: '25mm',
+          overflow: 'hidden'
+        }}>
+          <Row gutter={32} style={{ marginBottom: '12px' }}>
             <Col span={12}>
               <InvoiceCustomerSection
                 customerName={transaction.customerName}
@@ -279,10 +296,19 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
           )}
         </div>
 
-        <InvoiceFooter
-          businessAddress={businessAddress}
-          phoneNumber={phoneNumber}
-        />
+        {/* Footer Section - Fixed at bottom */}
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10
+        }}>
+          <InvoiceFooter
+            businessAddress={businessAddress}
+            phoneNumber={phoneNumber}
+          />
+        </div>
       </div>
     );
   };

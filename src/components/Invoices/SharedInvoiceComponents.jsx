@@ -4,7 +4,7 @@ import { Typography, Divider } from 'antd';
 const { Title, Text } = Typography;
 
 export const InvoiceHeader = ({ businessName, logoPreview }) => (
-  <div className="mb-6">
+  <div style={{ marginBottom: '12px' }}>
     <div className="flex items-start justify-between">
       <div className="flex items-center space-x-4">
         <img
@@ -13,10 +13,10 @@ export const InvoiceHeader = ({ businessName, logoPreview }) => (
           className="h-16 object-contain"
           crossOrigin="anonymous"
         />
-        
+
       </div>
       <div className="text-right">
-        <Title level={1} className="m-0" style={{ fontSize: '36px', fontWeight: 'bold', color: '#000' }}>
+        <Title level={1} className="m-0" style={{ fontSize: '32px', fontWeight: 'bold', color: '#000', marginTop: 0, marginBottom: 0 }}>
           INVOICE
         </Title>
       </div>
@@ -48,28 +48,28 @@ export const InvoiceCustomerSection = ({ customerName, customerAddress, customer
 );
 
 export const InvoiceItemsTable = ({ items, showImages = false }) => (
-  <div className="mb-6">
-    <table className="w-full border-collapse" style={{ marginTop: '24px' }}>
+  <div style={{ marginBottom: '12px' }}>
+    <table className="w-full border-collapse" style={{ marginTop: '12px' }}>
       <thead>
         <tr style={{ background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)' }}>
-          <th className="p-3 text-left text-white font-bold" style={{ width: '55%' }}>DESCRIPTION</th>
-          <th className="p-3 text-center text-white font-bold" style={{ width: '15%' }}>QTY</th>
-          <th className="p-3 text-right text-white font-bold" style={{ width: '30%' }}>AMOUNT</th>
+          <th className="p-2 text-left text-white font-bold" style={{ width: '55%' }}>DESCRIPTION</th>
+          <th className="p-2 text-center text-white font-bold" style={{ width: '15%' }}>QTY</th>
+          <th className="p-2 text-right text-white font-bold" style={{ width: '30%' }}>AMOUNT</th>
         </tr>
       </thead>
       <tbody>
         {items.map((item, index) => (
           <tr key={index} className="border-b border-gray-200">
-            <td className="p-4">
+            <td className="p-2">
               <div>
-                <Text strong className="block text-base">{item.name || item.product?.name || item.productName}</Text>
+                <Text strong className="block text-sm">{item.name || item.product?.name || item.productName}</Text>
                 {item.description && (
-                  <Text className="block text-sm text-gray-600 mt-1" style={{ whiteSpace: 'pre-wrap' }}>
+                  <Text className="block text-xs text-gray-600 mt-1" style={{ whiteSpace: 'pre-wrap' }}>
                     {item.description}
                   </Text>
                 )}
                 {(item.selectedVariant || item.selectedSize) && (
-                  <Text className="block text-sm text-gray-500 mt-1">
+                  <Text className="block text-xs text-gray-500 mt-1">
                     {item.selectedVariant && `Color: ${item.selectedVariant}`}
                     {item.selectedVariant && item.selectedSize && ' • '}
                     {item.selectedSize && `Size: ${item.selectedSize}`}
@@ -77,11 +77,11 @@ export const InvoiceItemsTable = ({ items, showImages = false }) => (
                 )}
               </div>
             </td>
-            <td className="p-4 text-center">
-              <Text className="text-base">{item.quantity}{item.unit ? ` ${item.unit}` : 'NOS'}</Text>
+            <td className="p-2 text-center">
+              <Text className="text-sm">{item.quantity}{item.unit ? ` ${item.unit}` : 'NOS'}</Text>
             </td>
-            <td className="p-4 text-right">
-              <Text className="text-base font-medium">
+            <td className="p-2 text-right">
+              <Text className="text-sm font-medium">
                 {((item.product?.price || item.unitPrice || item.price || 0) * item.quantity).toLocaleString('en-US', {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2
@@ -165,12 +165,12 @@ export const InvoiceAccountDetails = ({ bankAccount }) => {
   if (!bankAccount) return null;
 
   return (
-    <div className="mt-8">
-      <Title level={5} className="mb-3">Account details</Title>
+    <div style={{ marginTop: '12px' }}>
+      <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Account details</Title>
       <div className="space-y-1">
-        <Text className="block text-base">{bankAccount.account_holder_name || bankAccount.accountHolderName}</Text>
-        <Text className="block text-base">{bankAccount.account_number || bankAccount.accountNumber}</Text>
-        <Text className="block text-base">{bankAccount.bank_name || bankAccount.bankName} {bankAccount.branch_name || bankAccount.branchName}</Text>
+        <Text className="block text-sm">{bankAccount.account_holder_name || bankAccount.accountHolderName}</Text>
+        <Text className="block text-sm">{bankAccount.account_number || bankAccount.accountNumber}</Text>
+        <Text className="block text-sm">{bankAccount.bank_name || bankAccount.bankName} {bankAccount.branch_name || bankAccount.branchName}</Text>
       </div>
     </div>
   );
@@ -180,21 +180,21 @@ export const InvoiceNotes = ({ notesTemplate }) => {
   if (!notesTemplate) return null;
 
   return (
-    <div className="mt-8">
-      <Title level={5} className="mb-3">Note:-</Title>
-      <div className="space-y-2">
+    <div style={{ marginTop: '12px' }}>
+      <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Note:-</Title>
+      <div className="space-y-1">
         {notesTemplate.warranty_terms && (
-          <Text className="block text-sm text-gray-700" style={{ lineHeight: '1.6' }}>
+          <Text className="block text-xs text-gray-700" style={{ lineHeight: '1.4' }}>
             {notesTemplate.warranty_terms || notesTemplate.warrantyTerms}
           </Text>
         )}
         {notesTemplate.quotation_validity && (
-          <Text className="block text-sm text-gray-700 mt-2" style={{ lineHeight: '1.6' }}>
+          <Text className="block text-xs text-gray-700" style={{ lineHeight: '1.4', marginTop: '4px' }}>
             {notesTemplate.quotation_validity || notesTemplate.quotationValidity}
           </Text>
         )}
         {notesTemplate.custom_notes && (
-          <Text className="block text-sm text-gray-700 mt-2" style={{ lineHeight: '1.6' }}>
+          <Text className="block text-xs text-gray-700" style={{ lineHeight: '1.4', marginTop: '4px' }}>
             {notesTemplate.custom_notes || notesTemplate.customNotes}
           </Text>
         )}

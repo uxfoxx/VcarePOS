@@ -12,9 +12,9 @@ export function GoodsReceiveNotePDF({ order, grnData, id }) {
   };
 
   return (
-    <div id={id} className="p-8 bg-white" style={{ width: '210mm', fontFamily: 'Arial, sans-serif' }}>
+    <div id={id} className="bg-white" style={{ width: '210mm', height: '297mm', fontFamily: 'Arial, sans-serif', position: 'relative', overflow: 'hidden', boxSizing: 'border-box' }}>
       {/* Header */}
-      <div className="text-center mb-8">
+      <div className="text-center" style={{ padding: '8mm 10mm 0 10mm', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
         <div className="flex items-center justify-center space-x-4 mb-4">
           <div className=" rounded-xl flex items-center justify-center">
             <img
@@ -44,12 +44,14 @@ export function GoodsReceiveNotePDF({ order, grnData, id }) {
           })()}
         </div>
         <Divider />
-        <Title level={3} className="text-gray-800">GOODS RECEIVE NOTE</Title>
+        <Title level={3} className="text-gray-800" style={{ marginBottom: '4px' }}>GOODS RECEIVE NOTE</Title>
         <Text className="text-lg font-bold">{grnData.id}</Text>
       </div>
 
-      {/* Reference Info */}
-      <div className="flex justify-between mb-6">
+      {/* Content Section */}
+      <div style={{ position: 'absolute', top: '50mm', left: '10mm', right: '10mm', bottom: '30mm', overflow: 'hidden' }}>
+        {/* Reference Info */}
+        <div className="flex justify-between" style={{ marginBottom: '12px' }}>
         <div>
           <Title level={5} className="mb-2">Vendor:</Title>
           <div className="text-sm">
@@ -71,12 +73,12 @@ export function GoodsReceiveNotePDF({ order, grnData, id }) {
               <Text strong>Receive Date:</Text> {formatDate(grnData.receivedDate)}
             </div>
           </div>
+          </div>
         </div>
-      </div>
 
-      {/* Received Items */}
-      <Title level={5} className="mb-4">Received Items:</Title>
-      <table className="w-full border-collapse mb-6">
+        {/* Received Items */}
+        <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Received Items:</Title>
+        <table className="w-full border-collapse" style={{ marginBottom: '12px' }}>
         <thead className="bg-gray-100">
           <tr>
             <th className="border p-2 text-left">Item</th>
@@ -105,18 +107,21 @@ export function GoodsReceiveNotePDF({ order, grnData, id }) {
         </tbody>
       </table>
 
-      {/* Notes */}
-      {grnData.notes && (
-        <div className="mb-6">
-          <Title level={5} className="mb-2">Notes:</Title>
-          <div className="bg-gray-50 p-4 rounded border text-sm">
-            <Text>{grnData.notes}</Text>
+        {/* Notes */}
+        {grnData.notes && (
+          <div style={{ marginBottom: '12px' }}>
+            <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Notes:</Title>
+            <div className="bg-gray-50 p-4 rounded border text-sm">
+              <Text>{grnData.notes}</Text>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Signatures */}
-      <div className="flex justify-between mt-12">
+      {/* Footer */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10, padding: '10mm' }}>
+        {/* Signatures */}
+        <div className="flex justify-between" style={{ marginBottom: '12px' }}>
         <div className="w-1/3">
           <div className="border-t border-gray-400 pt-2">
             <Text className="text-sm">Received By: {grnData.receivedBy}</Text>
@@ -127,15 +132,14 @@ export function GoodsReceiveNotePDF({ order, grnData, id }) {
             <Text className="text-sm">Checked By: {grnData.checkedBy}</Text>
           </div>
         </div>
-        <div className="w-1/3">
-          <div className="border-t border-gray-400 pt-2">
-            <Text className="text-sm">Authorized Signature</Text>
+          <div className="w-1/3">
+            <div className="border-t border-gray-400 pt-2">
+              <Text className="text-sm">Authorized Signature</Text>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Footer */}
-      <div className="mt-12 pt-4 border-t text-center text-xs text-gray-500">
+        <div className="pt-4 border-t text-center text-xs text-gray-500">
         {(() => {
           const branding = localStorage.getItem('vcare_branding') ? JSON.parse(localStorage.getItem('vcare_branding')) : {};
           const parts = [];
@@ -156,8 +160,9 @@ export function GoodsReceiveNotePDF({ order, grnData, id }) {
             </>
           ) : null;
         })()}
-        <br />
-        <Text className="text-xs mt-2">GRN #{grnData.id} - Generated on {new Date().toLocaleDateString()}</Text>
+          <br />
+          <Text className="text-xs mt-2">GRN #{grnData.id} - Generated on {new Date().toLocaleDateString()}</Text>
+        </div>
       </div>
     </div>
   );

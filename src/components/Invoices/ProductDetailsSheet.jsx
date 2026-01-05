@@ -59,9 +59,9 @@ export function ProductDetailsSheet({ open, onClose, product }) {
     printContainer.style.position = 'absolute';
     printContainer.style.top = '0';
     printContainer.style.left = '0';
-    printContainer.style.width = '210mm';
-    printContainer.style.height = 'auto';
-    printContainer.style.backgroundColor = '#ffffff';
+    printContainer.style.width = '6in';
+    printContainer.style.height = '4in';
+    printContainer.style.backgroundColor = '#f5f5f5';
 
     const clonedContent = element.cloneNode(true);
     printContainer.appendChild(clonedContent);
@@ -95,16 +95,15 @@ export function ProductDetailsSheet({ open, onClose, product }) {
         scale: 3,
         useCORS: true,
         allowTaint: false,
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f5f5f5',
         width: element.scrollWidth,
         height: element.scrollHeight
       });
 
-      const imgWidth = 210;
-      const pageHeight = 297;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgWidth = 152.4; // 6 inches in mm
+      const imgHeight = 101.6; // 4 inches in mm
 
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdf = new jsPDF('l', 'mm', [152.4, 101.6]); // landscape, 6x4 inches
       pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
 
       if (action === 'download') {
@@ -143,12 +142,12 @@ export function ProductDetailsSheet({ open, onClose, product }) {
               position: absolute;
               top: 0;
               left: 0;
-              width: 210mm;
-              height: auto;
+              width: 6in;
+              height: 4in;
               margin: 0;
               padding: 0;
               box-sizing: border-box;
-              background-color: #ffffff;
+              background-color: #f5f5f5;
             }
             .ant-modal,
             .ant-modal-content,
@@ -158,7 +157,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
             }
           }
           @page {
-            size: A4;
+            size: 6in 4in landscape;
             margin: 0;
           }
         `}
@@ -208,160 +207,137 @@ export function ProductDetailsSheet({ open, onClose, product }) {
             id="product-sheet-content"
             style={{
               fontFamily: 'Arial, sans-serif',
-              width: '210mm',
-              minHeight: '297mm',
-              backgroundColor: '#ffffff',
-              padding: '15mm 20mm',
+              width: '6in',
+              height: '4in',
+              backgroundColor: '#f5f5f5',
               boxSizing: 'border-box',
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'space-between'
+              position: 'relative',
+              border: '3px solid #000'
             }}
           >
-            <div style={{ flex: 1 }}>
-              {/* Top Border */}
-              <div style={{
-                borderTop: '2px solid #000',
-                marginBottom: '20px'
-              }} />
+            {/* Logo Section */}
+            <div style={{
+              textAlign: 'center',
+              padding: '0.3in 0.4in 0.25in 0.4in',
+              borderBottom: '1px solid #ddd'
+            }}>
+              <img
+                src={logoPreview}
+                alt="Logo"
+                style={{
+                  height: '0.5in',
+                  maxWidth: '3in',
+                  objectFit: 'contain',
+                  display: 'block',
+                  margin: '0 auto'
+                }}
+                crossOrigin="anonymous"
+              />
+            </div>
 
-              {/* Logo Section */}
+            {/* Product Name */}
+            <div style={{
+              textAlign: 'center',
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0 0.5in'
+            }}>
               <div style={{
-                textAlign: 'center',
-                marginBottom: '20px',
-                paddingBottom: '20px',
-                borderBottom: '1px solid #000'
+                fontSize: '36px',
+                fontWeight: 'bold',
+                lineHeight: '1.1',
+                color: '#000',
+                letterSpacing: '-0.5px'
               }}>
-                <img
-                  src={logoPreview}
-                  alt="Logo"
-                  style={{
-                    height: '40px',
-                    maxWidth: '180px',
-                    objectFit: 'contain'
-                  }}
-                  crossOrigin="anonymous"
-                />
-              </div>
-
-              {/* Product Name */}
-              <div style={{
-                textAlign: 'center',
-                marginTop: '60px',
-                marginBottom: '80px'
-              }}>
-                <div style={{
-                  fontSize: '48px',
-                  fontWeight: 'bold',
-                  lineHeight: '1.2',
-                  color: '#000'
-                }}>
-                  {product.name}
-                </div>
-              </div>
-
-              {/* SKU Section */}
-              <div style={{
-                textAlign: 'center',
-                marginBottom: '40px'
-              }}>
-                <div style={{
-                  fontSize: '14px',
-                  fontWeight: 'normal',
-                  marginBottom: '10px',
-                  color: '#666'
-                }}>
-                  SKU
-                </div>
-                <div style={{
-                  fontFamily: 'Courier New, monospace',
-                  fontSize: '20px',
-                  letterSpacing: '3px',
-                  fontWeight: 'bold',
-                  color: '#000'
-                }}>
-                  {product.barcode || 'N/A'}
-                </div>
-              </div>
-
-              {/* Barcode */}
-              {barcodeDataUrl && (
-                <div style={{
-                  textAlign: 'center',
-                  marginBottom: '50px'
-                }}>
-                  <img
-                    src={barcodeDataUrl}
-                    alt="Barcode"
-                    style={{
-                      width: '60%',
-                      maxWidth: '300px',
-                      height: 'auto'
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Decorative Curved Line */}
-              <div style={{
-                textAlign: 'center',
-                marginBottom: '60px',
-                padding: '0 40px'
-              }}>
-                <svg
-                  width="100%"
-                  height="40"
-                  viewBox="0 0 600 40"
-                  preserveAspectRatio="none"
-                  style={{ display: 'block' }}
-                >
-                  <circle cx="15" cy="8" r="8" fill="#4A90E2" />
-                  <path
-                    d="M 15 8 Q 300 35, 585 8"
-                    stroke="#4A90E2"
-                    strokeWidth="2.5"
-                    fill="none"
-                  />
-                  <circle cx="585" cy="8" r="8" fill="#4A90E2" />
-                </svg>
+                {product.name}
               </div>
             </div>
 
+            {/* SKU Section */}
+            <div style={{
+              textAlign: 'center',
+              padding: '0 0.4in',
+              marginBottom: '0.15in'
+            }}>
+              <div style={{
+                fontSize: '11px',
+                fontWeight: '600',
+                marginBottom: '0.08in',
+                color: '#666',
+                letterSpacing: '1px'
+              }}>
+                SKU
+              </div>
+              <div style={{
+                fontFamily: 'Courier New, monospace',
+                fontSize: '16px',
+                letterSpacing: '2px',
+                fontWeight: 'bold',
+                color: '#000'
+              }}>
+                {product.barcode || 'N/A'}
+              </div>
+            </div>
+
+            {/* Barcode */}
+            {barcodeDataUrl && (
+              <div style={{
+                textAlign: 'center',
+                marginBottom: '0.2in',
+                padding: '0 0.4in'
+              }}>
+                <img
+                  src={barcodeDataUrl}
+                  alt="Barcode"
+                  style={{
+                    width: '3.5in',
+                    height: 'auto',
+                    maxHeight: '0.6in',
+                    display: 'block',
+                    margin: '0 auto'
+                  }}
+                />
+              </div>
+            )}
+
+            
+
             {/* Footer Section */}
-            <div>
+            <div style={{
+              padding: '0 0.4in 0.25in 0.4in'
+            }}>
               <div style={{
                 display: 'flex',
-                justifyContent: 'space-between',
+                justifyContent: 'center',
                 alignItems: 'center',
-                fontSize: '14px',
-                marginBottom: '20px'
+                gap: '1in',
+                fontSize: '12px'
               }}>
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  gap: '6px'
                 }}>
-                  <Phone size={18} color="#000" strokeWidth={2} />
-                  <span style={{ color: '#000' }}>
+                  <Phone size={16} color="#000" strokeWidth={2} />
+                  <span style={{ color: '#000', fontWeight: '500' }}>
                     {phoneNumber}
                   </span>
                 </div>
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  gap: '6px'
                 }}>
-                  <MapPin size={18} color="#000" strokeWidth={2} />
-                  <span style={{ color: '#000' }}>
+                  <MapPin size={16} color="#000" strokeWidth={2} />
+                  <span style={{ color: '#000', fontWeight: '500' }}>
                     {businessAddress}
                   </span>
                 </div>
               </div>
-
-              {/* Bottom Border */}
-              <div style={{
-                borderBottom: '2px solid #000'
-              }} />
             </div>
           </div>
         </div>

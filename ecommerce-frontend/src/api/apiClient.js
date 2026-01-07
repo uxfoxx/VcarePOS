@@ -184,6 +184,6 @@ export const ordersApi = {
 // Delivery Charges API
 export const deliveryChargesApi = {
   getActive: async () => {
-    return makeRequest('/delivery-charges?is_active=true');
+    return makeRequest('/delivery-charges?source=ecommerce');
   },
 };

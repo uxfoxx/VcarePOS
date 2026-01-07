@@ -36,10 +36,10 @@ const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState('cash_on_delivery');
   const [tempReceiptFile, setTempReceiptFile] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [deliveryCharges, setDeliveryCharges] = useState([]);
-  const [selectedDeliveryLocation, setSelectedDeliveryLocation] = useState('');
+  const [deliverySettings, setDeliverySettings] = useState([]);
+  const [selectedDeliveryType, setSelectedDeliveryType] = useState('');
   const [deliveryCharge, setDeliveryCharge] = useState(0);
-  const [loadingDeliveryCharges, setLoadingDeliveryCharges] = useState(false);
+  const [loadingDeliverySettings, setLoadingDeliverySettings] = useState(false);
 
   useEffect(() => {
     // Redirect if cart is empty
@@ -56,18 +56,18 @@ const CheckoutPage = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    const loadDeliveryCharges = async () => {
-      setLoadingDeliveryCharges(true);
+    const loadDeliverySettings = async () => {
+      setLoadingDeliverySettings(true);
       try {
-        const charges = await deliveryChargesApi.getActive();
-        setDeliveryCharges(charges);
+        const settings = await deliveryChargesApi.getActive();
+        setDeliverySettings(settings);
       } catch (error) {
-        console.error('Failed to load delivery charges:', error);
+        console.error('Failed to load delivery settings:', error);
       } finally {
-        setLoadingDeliveryCharges(false);
+        setLoadingDeliverySettings(false);
       }
     };
-    loadDeliveryCharges();
+    loadDeliverySettings();
   }, []);
 
   useEffect(() => {
@@ -91,34 +91,34 @@ const CheckoutPage = () => {
   }, 0);
 
   // Filter active delivery settings for e-commerce
-  const activeDeliverySettings = deliveryCharges.filter(s => s.is_active && s.is_enabled_ecommerce);
+  const activeDeliverySettings = deliverySettings.filter(s => s.is_active);
 
   // Function to calculate delivery charge based on weight
   const calculateDeliveryCharge = (deliverySetting, weight) => {
     if (!deliverySetting) return 0;
 
-    if (deliverySetting.delivery_type === 'free') {
+    if (deliverySetting.type === 'free_delivery') {
       return 0;
-    } else if (deliverySetting.delivery_type === 'inside_colombo') {
-      return parseFloat(deliverySetting.flat_rate || 0);
-    } else if (deliverySetting.delivery_type === 'out_of_colombo') {
-      const baseWeight = parseFloat(deliverySetting.base_weight_kg || 0);
-      const baseCharge = parseFloat(deliverySetting.base_charge || 0);
-      const perKgCharge = parseFloat(deliverySetting.per_kg_charge || 0);
+    } else if (deliverySetting.type === 'inside_colombo') {
+      return parseFloat(deliverySetting.inside_colombo_amount || 0);
+    } else if (deliverySetting.type === 'out_of_colombo') {
+      const baseWeight = parseFloat(deliverySetting.out_of_colombo_base_weight || 0);
+      const baseAmount = parseFloat(deliverySetting.out_of_colombo_base_amount || 0);
+      const perKgAmount = parseFloat(deliverySetting.out_of_colombo_per_kg_amount || 0);
 
       if (weight <= baseWeight) {
-        return baseCharge;
+        return baseAmount;
       } else {
         const extraWeight = weight - baseWeight;
-        return baseCharge + (extraWeight * perKgCharge);
+        return baseAmount + (extraWeight * perKgAmount);
       }
     }
     return 0;
   };
 
-  const handleDeliveryLocationChange = (settingId) => {
-    setSelectedDeliveryLocation(settingId);
-    const setting = activeDeliverySettings.find(s => s.id === settingId);
+  const handleDeliveryTypeChange = (settingType) => {
+    setSelectedDeliveryType(settingType);
+    const setting = activeDeliverySettings.find(s => s.type === settingType);
     const charge = calculateDeliveryCharge(setting, totalWeight);
     setDeliveryCharge(charge);
   };
@@ -171,12 +171,7 @@ const CheckoutPage = () => {
       return;
     }
 
-    if (deliveryCharge > 0 && !selectedDeliveryLocation) {
-      toast.error('Please select a delivery location');
-      return;
-    }
-
-    const selectedDeliverySetting = activeDeliverySettings.find(s => s.id === selectedDeliveryLocation);
+    const selectedDeliverySetting = activeDeliverySettings.find(s => s.type === selectedDeliveryType);
 
     const orderData = {
       customerName: customerInfo.name,
@@ -190,8 +185,8 @@ const CheckoutPage = () => {
         selectedSize: item.selectedSize,
         quantity: item.quantity,
       })),
-      deliveryLocation: selectedDeliverySetting?.location_name || null,
-      deliveryType: selectedDeliverySetting?.delivery_type || null,
+      deliveryLocation: selectedDeliverySetting?.type || null,
+      deliveryType: selectedDeliverySetting?.type || null,
       deliveryCharge: deliveryCharge || 0,
       totalWeight: totalWeight,
     };
@@ -341,14 +336,14 @@ const CheckoutPage = () => {
                         </div>
                       </div>
 
-                      {loadingDeliveryCharges ? (
+                      {loadingDeliverySettings ? (
                         <p className="text-sm text-gray-500">Loading delivery options...</p>
                       ) : (
                         <div className="space-y-3">
                           {/* No Delivery Option */}
                           <label
                             className={`block p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                              selectedDeliveryLocation === '' ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                              selectedDeliveryType === '' ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
                             }`}
                           >
                             <div className="flex items-start">
@@ -356,8 +351,8 @@ const CheckoutPage = () => {
                                 type="radio"
                                 name="delivery"
                                 value=""
-                                checked={selectedDeliveryLocation === ''}
-                                onChange={(e) => handleDeliveryLocationChange(e.target.value)}
+                                checked={selectedDeliveryType === ''}
+                                onChange={(e) => handleDeliveryTypeChange(e.target.value)}
                                 className="mt-1 mr-3"
                               />
                               <div className="flex-1">
@@ -375,39 +370,43 @@ const CheckoutPage = () => {
                           {/* Delivery Options */}
                           {activeDeliverySettings.map((setting) => {
                             const charge = calculateDeliveryCharge(setting, totalWeight);
+                            let displayName = '';
                             let description = '';
 
-                            if (setting.delivery_type === 'free') {
+                            if (setting.type === 'free_delivery') {
+                              displayName = 'Free Delivery';
                               description = 'Free delivery on all orders';
-                            } else if (setting.delivery_type === 'inside_colombo') {
+                            } else if (setting.type === 'inside_colombo') {
+                              displayName = 'Inside Colombo';
                               description = 'Flat rate for Colombo area';
-                            } else if (setting.delivery_type === 'out_of_colombo') {
-                              const baseWeight = parseFloat(setting.base_weight_kg || 0);
-                              const baseCharge = parseFloat(setting.base_charge || 0);
-                              const perKgCharge = parseFloat(setting.per_kg_charge || 0);
-                              description = `Rs. ${baseCharge.toFixed(2)} for first ${baseWeight} kg, then Rs. ${perKgCharge.toFixed(2)} per kg`;
+                            } else if (setting.type === 'out_of_colombo') {
+                              displayName = 'Out of Colombo';
+                              const baseWeight = parseFloat(setting.out_of_colombo_base_weight || 0);
+                              const baseAmount = parseFloat(setting.out_of_colombo_base_amount || 0);
+                              const perKgAmount = parseFloat(setting.out_of_colombo_per_kg_amount || 0);
+                              description = `Rs. ${baseAmount.toFixed(2)} for first ${baseWeight} kg, then Rs. ${perKgAmount.toFixed(2)} per kg`;
                             }
 
                             return (
                               <label
-                                key={setting.id}
+                                key={setting.type}
                                 className={`block p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                                  selectedDeliveryLocation === setting.id ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                                  selectedDeliveryType === setting.type ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
                                 }`}
                               >
                                 <div className="flex items-start">
                                   <input
                                     type="radio"
                                     name="delivery"
-                                    value={setting.id}
-                                    checked={selectedDeliveryLocation === setting.id}
-                                    onChange={(e) => handleDeliveryLocationChange(e.target.value)}
+                                    value={setting.type}
+                                    checked={selectedDeliveryType === setting.type}
+                                    onChange={(e) => handleDeliveryTypeChange(e.target.value)}
                                     className="mt-1 mr-3"
                                   />
                                   <div className="flex-1">
                                     <div className="flex justify-between items-start">
                                       <div>
-                                        <p className="font-medium text-gray-900">{setting.location_name}</p>
+                                        <p className="font-medium text-gray-900">{displayName}</p>
                                         <p className="text-sm text-gray-600">{description}</p>
                                       </div>
                                       <p className="font-semibold text-blue-600">Rs. {charge.toFixed(2)}</p>
@@ -421,27 +420,27 @@ const CheckoutPage = () => {
                       )}
 
                       {/* Delivery Charge Breakdown */}
-                      {deliveryCharge > 0 && selectedDeliveryLocation && (
+                      {deliveryCharge > 0 && selectedDeliveryType && (
                         <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                           <p className="font-semibold text-blue-900 mb-2">Delivery Charge Breakdown</p>
                           {(() => {
-                            const setting = activeDeliverySettings.find(s => s.id === selectedDeliveryLocation);
-                            if (setting?.delivery_type === 'out_of_colombo') {
-                              const baseWeight = parseFloat(setting.base_weight_kg || 0);
-                              const baseCharge = parseFloat(setting.base_charge || 0);
-                              const perKgCharge = parseFloat(setting.per_kg_charge || 0);
+                            const setting = activeDeliverySettings.find(s => s.type === selectedDeliveryType);
+                            if (setting?.type === 'out_of_colombo') {
+                              const baseWeight = parseFloat(setting.out_of_colombo_base_weight || 0);
+                              const baseAmount = parseFloat(setting.out_of_colombo_base_amount || 0);
+                              const perKgAmount = parseFloat(setting.out_of_colombo_per_kg_amount || 0);
                               const extraWeight = Math.max(0, totalWeight - baseWeight);
 
                               return (
                                 <div className="space-y-1 text-sm">
                                   <div className="flex justify-between">
                                     <span className="text-gray-700">Base charge (up to {baseWeight} kg):</span>
-                                    <span>Rs. {baseCharge.toFixed(2)}</span>
+                                    <span>Rs. {baseAmount.toFixed(2)}</span>
                                   </div>
                                   {extraWeight > 0 && (
                                     <div className="flex justify-between">
-                                      <span className="text-gray-700">Extra weight ({extraWeight.toFixed(2)} kg × Rs. {perKgCharge.toFixed(2)}):</span>
-                                      <span>Rs. {(extraWeight * perKgCharge).toFixed(2)}</span>
+                                      <span className="text-gray-700">Extra weight ({extraWeight.toFixed(2)} kg × Rs. {perKgAmount.toFixed(2)}):</span>
+                                      <span>Rs. {(extraWeight * perKgAmount).toFixed(2)}</span>
                                     </div>
                                   )}
                                   <div className="pt-2 mt-2 border-t border-blue-300 flex justify-between font-semibold">
@@ -571,9 +570,14 @@ const CheckoutPage = () => {
                       </>
                     )}
                     <strong>Address:</strong> {customerInfo.address}<br />
-                    {selectedDeliveryLocation && (
+                    {selectedDeliveryType && (
                       <>
-                        <strong>Delivery Location:</strong> {activeDeliverySettings.find(s => s.id === selectedDeliveryLocation)?.location_name}<br />
+                        <strong>Delivery Type:</strong> {
+                          activeDeliverySettings.find(s => s.type === selectedDeliveryType)?.type === 'free_delivery' ? 'Free Delivery' :
+                          activeDeliverySettings.find(s => s.type === selectedDeliveryType)?.type === 'inside_colombo' ? 'Inside Colombo' :
+                          activeDeliverySettings.find(s => s.type === selectedDeliveryType)?.type === 'out_of_colombo' ? 'Out of Colombo' :
+                          selectedDeliveryType
+                        }<br />
                         <strong>Delivery Charge:</strong> Rs. {deliveryCharge.toFixed(2)}<br />
                         <strong>Total Weight:</strong> {totalWeight.toFixed(2)} kg
                       </>
@@ -771,7 +775,12 @@ const CheckoutPage = () => {
               </div>
               {deliveryCharge > 0 ? (
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Delivery Charge ({activeDeliverySettings.find(s => s.id === selectedDeliveryLocation)?.location_name || 'Selected'})</span>
+                  <span className="text-gray-600">Delivery Charge ({
+                    selectedDeliveryType === 'free_delivery' ? 'Free Delivery' :
+                    selectedDeliveryType === 'inside_colombo' ? 'Inside Colombo' :
+                    selectedDeliveryType === 'out_of_colombo' ? 'Out of Colombo' :
+                    'Selected'
+                  })</span>
                   <span className="font-medium text-blue-600">LKR {deliveryCharge.toFixed(2)}</span>
                 </div>
               ) : (

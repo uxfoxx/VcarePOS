@@ -44,15 +44,30 @@ export const useBarcodeScanner = (options = {}) => {
   }, [config]);
 
   /**
-   * Check if the current focused element is an input field
+   * Check if the current focused element is an input field or has barcode protection
    */
   const isInputElement = useCallback((element) => {
     if (!element) return false;
-    
+
+    // Check if element or any parent (up to 2 levels) has barcode-ignore attribute
+    // This handles Ant Design wrapped inputs
+    let currentElement = element;
+    for (let i = 0; i < 3; i++) {
+      if (!currentElement) break;
+
+      // Check for protection attributes
+      if (currentElement.hasAttribute('data-barcode-ignore') ||
+          currentElement.hasAttribute('data-scanner-ignore')) {
+        return true;
+      }
+
+      currentElement = currentElement.parentElement;
+    }
+
     const inputTypes = ['INPUT', 'TEXTAREA', 'SELECT'];
     const isContentEditable = element.contentEditable === 'true';
     const isInputField = inputTypes.includes(element.tagName);
-    
+
     return isInputField || isContentEditable;
   }, []);
 
@@ -158,12 +173,13 @@ export const useBarcodeScanner = (options = {}) => {
     if (!config.enabled || status === SCANNER_STATUS.DISABLED) {
       return;
     }
-    
+
+    // CRITICAL: Check for protected inputs FIRST before any event manipulation
     // Skip if focused on input field and not allowed
     if (!config.allowInInputs && isInputElement(event.target)) {
       return;
     }
-    
+
     // Handle end keys (Enter, Tab, etc.)
     if (config.endKeys.includes(event.code) || config.endKeys.includes(event.key)) {
       if (bufferRef.current.length >= config.minLength) {
@@ -173,7 +189,7 @@ export const useBarcodeScanner = (options = {}) => {
       clearBuffer();
       return;
     }
-    
+
     // Handle character input
     if (event.key.length === 1) {
       // CRITICAL FIX: Prevent default FIRST to ensure we capture ALL characters

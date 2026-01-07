@@ -633,12 +633,14 @@ export function Cart() {
                   <div className="space-y-2">
                     <div className="flex space-x-1">
                       <Input
+                        id="coupon-code-input"
                         placeholder="Enter coupon code"
                         value={couponCode}
                         onChange={(e) => setCouponCode(e.target.value)}
                         size="middle"
                         onPressEnter={handleApplyCoupon}
                         className="flex-1"
+                        data-barcode-ignore="true"
                       />
                       <Button
                         size="middle"

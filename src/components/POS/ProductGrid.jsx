@@ -52,6 +52,32 @@ export function ProductGrid({ collapsed }) {
     );
   }, [products]);
 
+  // Find product by exact SKU or barcode match (case-insensitive)
+  const findProductByExactMatch = useCallback((searchValue) => {
+    if (!searchValue || !Array.isArray(products)) return null;
+
+    const normalizedSearch = searchValue.trim().toLowerCase();
+
+    // Search for exact match in products and variants
+    return products.find(product => {
+      // Check main product SKU and barcode
+      if (product.sku?.toLowerCase() === normalizedSearch ||
+          product.barcode?.toLowerCase() === normalizedSearch) {
+        return true;
+      }
+
+      // Check variants SKU and barcode
+      if (product.variants && Array.isArray(product.variants)) {
+        return product.variants.some(variant =>
+          variant.sku?.toLowerCase() === normalizedSearch ||
+          variant.barcode?.toLowerCase() === normalizedSearch
+        );
+      }
+
+      return false;
+    });
+  }, [products]);
+
   const handleAddToCart = useCallback((product) => {
     if (product.colors && product.colors.length > 0) {
       // Show color and size selection modal
@@ -78,6 +104,34 @@ export function ProductGrid({ collapsed }) {
     }
   }, [findProductByBarcode, handleAddToCart]);
 
+  // Handle search field submit (Enter key or search button click)
+  const handleSearchSubmit = useCallback((value) => {
+    const trimmedValue = value?.trim();
+
+    if (!trimmedValue) {
+      // If empty, just update search term to show all products
+      setSearchTerm('');
+      return;
+    }
+
+    // Try to find exact match by SKU or barcode
+    const exactMatch = findProductByExactMatch(trimmedValue);
+
+    if (exactMatch) {
+      // Found exact match - add to cart and clear search
+      message.success({
+        content: `Found and adding: ${exactMatch.name}`,
+        duration: 2,
+        style: { marginTop: '60px' }
+      });
+      handleAddToCart(exactMatch);
+      setSearchTerm(''); // Clear search field after adding
+    } else {
+      // No exact match - keep search term to filter products
+      setSearchTerm(trimmedValue);
+    }
+  }, [findProductByExactMatch, handleAddToCart]);
+
   const handleScannerError = useCallback((error) => {
     console.error('Barcode scanner error:', error);
     message.error('Barcode scanner error: ' + error.message);
@@ -100,6 +154,7 @@ export function ProductGrid({ collapsed }) {
   const { status: scannerStatus } = useBarcodeScanner({
     ...DEFAULT_SCANNER_OPTIONS,
     enabled: isScannerActive && BARCODE_SCANNER_CONFIG.ENABLED,
+    allowInInputs: false, // Must be false to allow normal typing in protected fields (coupon, search)
     onScan: handleBarcodeScanned,
     onError: handleScannerError
   });
@@ -259,12 +314,14 @@ export function ProductGrid({ collapsed }) {
             </div>
             <Space>
               <Search
-                placeholder="Search by product name or barcode..."
+                id="product-search-input"
+                placeholder="Search by product name, SKU, or barcode..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onSearch={setSearchTerm}
+                onSearch={handleSearchSubmit}
                 className="w-80"
                 size="large"
+                data-barcode-ignore="true"
               />
               {/* Scan button to activate barcode scanner */}
               {BARCODE_SCANNER_CONFIG.ENABLED && (

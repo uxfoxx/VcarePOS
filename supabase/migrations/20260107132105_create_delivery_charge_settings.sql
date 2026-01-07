@@ -18,7 +18,7 @@
   2. Security
     - Enable RLS on `delivery_charge_settings` table
     - Add policy for public to read active settings
-    - Add policy for authenticated users to manage settings
+    - Add policy for all users to manage settings (auth handled at app level)
 
   3. Default Data
     - Insert default settings for all three delivery types
@@ -48,11 +48,10 @@ CREATE POLICY "Anyone can view delivery settings"
   FOR SELECT
   USING (true);
 
--- Policy: Authenticated users can manage delivery settings (for admin panel)
-CREATE POLICY "Authenticated users can manage delivery settings"
+-- Policy: All users can manage delivery settings (auth handled at app level)
+CREATE POLICY "All users can manage delivery settings"
   ON delivery_charge_settings
   FOR ALL
-  TO authenticated
   USING (true)
   WITH CHECK (true);
 

@@ -125,76 +125,27 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl">
-        <Row gutter={32} align="middle">
+      <div className="w-full max-w-xl">
+        
           {/* Left Side - Branding */}
-          <Col xs={24} lg={12} className="text-center lg:text-left mb-8 lg:mb-0">
-            <div className="space-y-6">
-              <div className="flex items-center justify-center lg:justify-start space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <img 
+          
+
+          {/* Right Side - Login Form */}
+          
+            <Card className="shadow-xl border-0 bg-white/95 backdrop-blur">
+              <div className="text-center mb-6">
+
+                <img 
                     src={localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
                       ? JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
                       : "/VCARELogo 1.png"} 
                     alt="VCare Logo" 
-                    className="w-10 h-10 object-contain"
+                    className="h-[60px] object-contain m-auto"
                   />
-                </div>
-                <div>
-                  <Title level={1} className="m-0 text-gray-900">
-                    {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).businessName 
-                      ? JSON.parse(localStorage.getItem('vcare_branding')).businessName.split(' ')[0] 
-                      : "VCare"} POS System
-                  </Title>
-                  <Text type="secondary" className="text-lg">
-                    {localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).tagline 
-                      ? JSON.parse(localStorage.getItem('vcare_branding')).tagline 
-                      : "Furniture Store Management System"}
-                  </Text>
-                </div>
+                
+                
               </div>
-              
-              <div className="space-y-4">
-                <Title level={3} className="text-gray-700">
-                  Welcome Back
-                </Title>
-                <Text type="secondary" className="text-base block">
-                  Sign in to access your furniture store management dashboard. 
-                  Manage inventory, process sales, and track your business performance.
-                </Text>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-                <div className="text-center p-4 bg-white rounded-lg shadow-sm border">
-                  <Icon name="inventory_2" className="text-blue-500 text-2xl mb-2" />
-                  <Text strong className="block">Inventory</Text>
-                  <Text type="secondary" className="text-sm">Manage Products</Text>
-                </div>
-                <div className="text-center p-4 bg-white rounded-lg shadow-sm border">
-                  <Icon name="point_of_sale" className="text-green-500 text-2xl mb-2" />
-                  <Text strong className="block">Sales</Text>
-                  <Text type="secondary" className="text-sm">Process Orders</Text>
-                </div>
-                <div className="text-center p-4 bg-white rounded-lg shadow-sm border">
-                  <Icon name="analytics" className="text-purple-500 text-2xl mb-2" />
-                  <Text strong className="block">Reports</Text>
-                  <Text type="secondary" className="text-sm">Track Performance</Text>
-                </div>
-              </div>
-            </div>
-          </Col>
-
-          {/* Right Side - Login Form */}
-          <Col xs={24} lg={12}>
-            <Card className="shadow-xl border-0 bg-white/95 backdrop-blur">
-              <div className="text-center mb-6">
-                <Title level={3} className="text-gray-900 mb-2">
-                  Sign In
-                </Title>
-                <Text type="secondary">
-                  Enter your credentials to access the system
-                </Text>
-              </div>
+              <hr></hr>
 
               {getErrorMessage() && (
                 <Alert
@@ -350,8 +301,8 @@ export function LoginPage() {
                 </Text>
               </div>
             </Card>
-          </Col>
-        </Row>
+          
+        
       </div>
     </div>
   );

@@ -5,22 +5,18 @@ const { Title, Text } = Typography;
 
 export const InvoiceHeader = ({ businessName, logoPreview }) => (
   <div style={{ marginBottom: '12px' }}>
-    <div className="flex items-start justify-between">
-      <div className="flex items-center space-x-4">
+    
+      
         <img
-          src={logoPreview || (localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview) || "/VCARELogo 1.png"}
+          src="/public/quotationTop.png"
           alt="Business Logo"
-          className="h-16 object-contain"
+          className="w-full object-contain"
           crossOrigin="anonymous"
         />
 
-      </div>
-      <div className="text-right">
-        <Title level={1} className="m-0" style={{ fontSize: '32px', fontWeight: 'bold', color: '#000', marginTop: 0, marginBottom: 0 }}>
-          INVOICE
-        </Title>
-      </div>
-    </div>
+      
+      
+    
   </div>
 );
 

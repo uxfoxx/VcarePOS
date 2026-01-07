@@ -116,6 +116,7 @@ router.get('/products', async (req, res) => {
             name: color.name,
             colorCode: color.color_code,
             image: color.image,
+            colorSelectorImage: color.color_selector_image,
             sizes: colorSizes
           };
         });
@@ -241,6 +242,7 @@ router.get('/products/:id', async (req, res) => {
         name: color.name,
         colorCode: color.color_code,
         image: color.image,
+        colorSelectorImage: color.color_selector_image,
         sizes: colorSizes
       };
     });

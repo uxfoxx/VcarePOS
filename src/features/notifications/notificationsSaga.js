@@ -8,6 +8,22 @@ import { message } from 'antd';
 const getExistingNotifications = (state) => state.notifications.notifications;
 
 /**
+ * Play notification sound for new orders
+ */
+function playNotificationSound() {
+  try {
+    // Better notification sound - pleasant two-tone chime
+    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFA==');
+    audio.volume = 0.6; // Increased volume for better audibility
+    audio.play().catch((err) => {
+      console.warn('[Notifications] Could not play notification sound:', err.message);
+    });
+  } catch (err) {
+    console.warn('[Notifications] Error creating notification sound:', err.message);
+  }
+}
+
+/**
  * Create an event channel for Supabase Realtime subscriptions
  */
 function createRealtimeChannel() {
@@ -33,16 +49,6 @@ function createRealtimeChannel() {
         console.log('[Realtime] Subscription status:', status);
         if (status === 'SUBSCRIBED') {
           console.log('[Realtime] Successfully subscribed to e-commerce orders');
-          // Play notification sound
-          try {
-            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBziR1/LMeSwFJHfH8N2QQAoUXrTp66hVFA==');
-            audio.volume = 0.3;
-            audio.play().catch(() => {
-              // Ignore errors if audio can't play
-            });
-          } catch (err) {
-            // Ignore audio errors
-          }
         }
 
         if (status === 'CHANNEL_ERROR') {
@@ -83,6 +89,9 @@ function* watchRealtimeEvents() {
         const exists = existingNotifications.some(notif => notif.id === notificationId);
 
         if (!exists) {
+          // Play notification sound when new order arrives
+          playNotificationSound();
+
           const now = new Date().toISOString();
 
           const notificationPayload = {

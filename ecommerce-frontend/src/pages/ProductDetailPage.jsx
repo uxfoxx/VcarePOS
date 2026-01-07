@@ -45,7 +45,7 @@ const ProductDetailPage = () => {
     );
   };
 
-  // Build complete gallery with all product images
+  // Build complete gallery with all product images (excluding color selector images)
   const galleryImages = useMemo(() => {
     if (!currentProduct) return [];
 
@@ -82,7 +82,8 @@ const ProductDetailPage = () => {
       });
     }
 
-    // Add all variation images
+    // Add all variation images (full-size product images in that color)
+    // Note: colorSelectorImage is NOT added here - it's only for the selector thumbnail
     if (Array.isArray(currentProduct.colors)) {
       currentProduct.colors.forEach(variation => {
         if (variation.image) {
@@ -298,50 +299,61 @@ const ProductDetailPage = () => {
             </span>
           </div>
 
-          {/* Variation Selection with Thumbnails */}
+          {/* Variation Selection with Small Circle Thumbnails */}
           {currentProduct.colors?.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold mb-3">Variation</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="flex flex-wrap gap-3">
                 {currentProduct.colors.map((variation) => {
-                  const variationImageUrl = getImageUrl(variation.image);
+                  const selectorImageUrl = variation.colorSelectorImage
+                    ? getImageUrl(variation.colorSelectorImage)
+                    : null;
+
                   return (
                     <button
                       key={variation.id}
                       onClick={() => handleVariationChange(variation)}
-                      className={`relative group p-3 border-2 rounded-lg transition-all hover:shadow-md ${
+                      className={`flex flex-col items-center gap-2 p-2 border-2 rounded-lg transition-all hover:shadow-md ${
                         selectedVariation?.id === variation.id
                           ? "border-primary-600 bg-primary-50 ring-2 ring-primary-200"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
-                      {/* Variation Thumbnail */}
-                      {variation.image ? (
-                        <div className="aspect-square mb-2 rounded overflow-hidden bg-gray-100">
-                          <img
-                            src={variationImageUrl}
-                            alt={variation.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.src = fallbackImage;
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <div className="aspect-square mb-2 rounded overflow-hidden bg-gray-100 flex items-center justify-center">
+                      {/* Small Circle Thumbnail */}
+                      <div className="relative">
+                        {selectorImageUrl ? (
+                          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm">
+                            <img
+                              src={selectorImageUrl}
+                              alt={variation.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'block';
+                              }}
+                            />
+                            <div
+                              style={{
+                                display: 'none',
+                                backgroundColor: variation.colorCode || '#ccc'
+                              }}
+                              className="w-full h-full rounded-full"
+                            />
+                          </div>
+                        ) : (
                           <div
-                            className="w-16 h-16 rounded-full border-4 border-white shadow-sm"
+                            className="w-12 h-12 rounded-full border-2 border-white shadow-sm"
                             style={{ backgroundColor: variation.colorCode || '#ccc' }}
                           />
-                        </div>
-                      )}
+                        )}
+                        {selectedVariation?.id === variation.id && (
+                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary-600 rounded-full border-2 border-white" />
+                        )}
+                      </div>
 
                       {/* Variation Name */}
                       <div className="text-center">
-                        <div className="font-medium text-sm truncate">{variation.name}</div>
-                        {selectedVariation?.id === variation.id && (
-                          <div className="text-xs text-primary-600 mt-1">Selected</div>
-                        )}
+                        <div className="font-medium text-xs truncate max-w-[80px]">{variation.name}</div>
                       </div>
                     </button>
                   );

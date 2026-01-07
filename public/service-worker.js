@@ -1,5 +1,5 @@
 // Service Worker for HTTP caching
-const CACHE_NAME = 'vcare-pos-cache-v1';
+const CACHE_NAME = 'vcare-pos-cache-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -37,19 +37,22 @@ self.addEventListener('activate', event => {
 // Fetch event - serve from cache or network
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-  
+
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
-  
+
   // Different caching strategies based on request type
   if (url.pathname.startsWith('/api/')) {
     // Network first, then cache for API requests
     event.respondWith(networkFirstStrategy(event.request));
+  } else if (url.pathname.match(/\.(js|css)$/)) {
+    // Network first for JS and CSS to always get latest code
+    event.respondWith(networkFirstStrategy(event.request));
   } else if (
-    STATIC_ASSETS.includes(url.pathname) || 
-    url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico)$/)
+    STATIC_ASSETS.includes(url.pathname) ||
+    url.pathname.match(/\.(png|jpg|jpeg|gif|svg|ico)$/)
   ) {
-    // Cache first for static assets
+    // Cache first only for images and static assets
     event.respondWith(cacheFirstStrategy(event.request));
   } else {
     // Network only for other requests

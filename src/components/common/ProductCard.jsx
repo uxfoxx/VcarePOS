@@ -141,6 +141,12 @@ export function ProductCard({
 
         {showDetails && !product.isCustom && (
           <div className="space-y-1">
+            {product.weight && (
+              <Text type="secondary" className="text-xs block">
+                <Icon name="scale" size="text-xs" className="mr-1" />
+                {product.weight} kg
+              </Text>
+            )}
             {product.material && (
               <Text type="secondary" className="text-xs block">
                 <Icon name="texture" size="text-xs" className="mr-1" />

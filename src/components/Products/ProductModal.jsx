@@ -99,6 +99,7 @@ export function ProductModal({
         name: editingProduct.name || '',
         category: editingProduct.category || '',
         price: editingProduct.price || 0,
+        weight: editingProduct.weight || 0,
         barcode: editingProduct.barcode || '',
         description: editingProduct.description || '',
         color: editingProduct.color || '',
@@ -619,14 +620,14 @@ export function ProductModal({
       const currentFormValues = productForm.getFieldsValue();
       const finalProductData = { ...productData, ...currentFormValues };
 
-      const requiredFields = ['name', 'category', 'price'];
+      const requiredFields = ['name', 'category', 'price', 'weight'];
 
       const missingFields = [];
       requiredFields.forEach(field => {
         const value = finalProductData[field];
         if (value === undefined || value === null || value === '') {
           missingFields.push(field);
-        } else if (field === 'price' && Number(value) < 0) {
+        } else if ((field === 'price' || field === 'weight') && Number(value) < 0) {
           missingFields.push(field);
         }
       });
@@ -636,6 +637,7 @@ export function ProductModal({
           'name': 'Product Name',
           'category': 'Category',
           'price': 'Price',
+          'weight': 'Weight',
         };
         const missingLabels = missingFields.map(field => fieldLabels[field] || field);
         setStepError(`Please fill in required fields: ${missingLabels.join(', ')}`);
@@ -671,6 +673,7 @@ export function ProductModal({
 
         // Fixed price for the product
         price: Number(finalProductData.price) || 0,
+        weight: Number(finalProductData.weight) || 0,
         // Calculate total stock from all color sizes
         stock: colors.reduce((total, color) =>
           total + (color.sizes || []).reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
@@ -903,7 +906,7 @@ export function ProductModal({
       </Row>
 
       <Row gutter={16}>
-        <Col span={24}>
+        <Col span={12}>
           <Form.Item
             name="price"
             label="Price (LKR)"
@@ -919,6 +922,26 @@ export function ProductModal({
               className="w-full"
               formatter={value => `LKR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
               parser={value => value.replace(/LKR\s?|(,*)/g, '')}
+            />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item
+            name="weight"
+            label="Weight (kg)"
+            rules={[
+              { required: true, message: 'Please enter product weight' },
+              { type: 'number', min: 0.1, message: 'Weight must be at least 0.1 kg' }
+            ]}
+            tooltip="Weight is required for delivery charge calculation"
+          >
+            <InputNumber
+              min={0.1}
+              step={0.1}
+              placeholder="0.0"
+              className="w-full"
+              formatter={value => value ? `${value} kg` : ''}
+              parser={value => value.replace(' kg', '')}
             />
           </Form.Item>
         </Col>

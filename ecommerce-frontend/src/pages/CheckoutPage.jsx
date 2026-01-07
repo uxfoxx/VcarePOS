@@ -84,16 +84,43 @@ const CheckoutPage = () => {
     });
   };
 
-  const handleDeliveryLocationChange = (e) => {
-    const location = e.target.value;
-    setSelectedDeliveryLocation(location);
+  // Calculate total cart weight
+  const totalWeight = items.reduce((sum, item) => {
+    const weight = item.product.weight || 0;
+    return sum + (weight * item.quantity);
+  }, 0);
 
-    if (location) {
-      const charge = deliveryCharges.find(c => c.location_name === location);
-      setDeliveryCharge(charge ? parseFloat(charge.charge_amount) : 0);
-    } else {
-      setDeliveryCharge(0);
+  // Filter active delivery settings for e-commerce
+  const activeDeliverySettings = deliveryCharges.filter(s => s.is_active && s.is_enabled_ecommerce);
+
+  // Function to calculate delivery charge based on weight
+  const calculateDeliveryCharge = (deliverySetting, weight) => {
+    if (!deliverySetting) return 0;
+
+    if (deliverySetting.delivery_type === 'free') {
+      return 0;
+    } else if (deliverySetting.delivery_type === 'inside_colombo') {
+      return parseFloat(deliverySetting.flat_rate || 0);
+    } else if (deliverySetting.delivery_type === 'out_of_colombo') {
+      const baseWeight = parseFloat(deliverySetting.base_weight_kg || 0);
+      const baseCharge = parseFloat(deliverySetting.base_charge || 0);
+      const perKgCharge = parseFloat(deliverySetting.per_kg_charge || 0);
+
+      if (weight <= baseWeight) {
+        return baseCharge;
+      } else {
+        const extraWeight = weight - baseWeight;
+        return baseCharge + (extraWeight * perKgCharge);
+      }
     }
+    return 0;
+  };
+
+  const handleDeliveryLocationChange = (settingId) => {
+    setSelectedDeliveryLocation(settingId);
+    const setting = activeDeliverySettings.find(s => s.id === settingId);
+    const charge = calculateDeliveryCharge(setting, totalWeight);
+    setDeliveryCharge(charge);
   };
 
   const handleFileChange = (e) => {
@@ -149,6 +176,8 @@ const CheckoutPage = () => {
       return;
     }
 
+    const selectedDeliverySetting = activeDeliverySettings.find(s => s.id === selectedDeliveryLocation);
+
     const orderData = {
       customerName: customerInfo.name,
       customerEmail: customerInfo.email,
@@ -161,8 +190,10 @@ const CheckoutPage = () => {
         selectedSize: item.selectedSize,
         quantity: item.quantity,
       })),
-      deliveryLocation: selectedDeliveryLocation || null,
+      deliveryLocation: selectedDeliverySetting?.location_name || null,
+      deliveryType: selectedDeliverySetting?.delivery_type || null,
       deliveryCharge: deliveryCharge || 0,
+      totalWeight: totalWeight,
     };
 
     // Include receipt details if bank transfer
@@ -293,32 +324,144 @@ const CheckoutPage = () => {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Delivery Location (Optional)
-                    </label>
-                    <select
-                      value={selectedDeliveryLocation}
-                      onChange={handleDeliveryLocationChange}
-                      className="input-field"
-                      disabled={loadingDeliveryCharges}
-                    >
-                      <option value="">Select delivery location (No delivery charge)</option>
-                      {deliveryCharges.map((charge) => (
-                        <option key={charge.id} value={charge.location_name}>
-                          {charge.location_name} - Rs. {parseFloat(charge.charge_amount).toFixed(2)}
-                        </option>
-                      ))}
-                    </select>
-                    {loadingDeliveryCharges && (
-                      <p className="text-sm text-gray-500 mt-1">Loading delivery options...</p>
-                    )}
-                    {deliveryCharge > 0 && (
-                      <p className="text-sm text-blue-600 mt-1 font-medium">
-                        Delivery charge: Rs. {deliveryCharge.toFixed(2)}
-                      </p>
-                    )}
-                  </div>
+                  {activeDeliverySettings.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Delivery Options
+                      </label>
+
+                      {/* Weight Display */}
+                      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                          </svg>
+                          <span className="text-sm text-gray-600">Total Order Weight:</span>
+                          <span className="text-sm font-semibold">{totalWeight.toFixed(2)} kg</span>
+                        </div>
+                      </div>
+
+                      {loadingDeliveryCharges ? (
+                        <p className="text-sm text-gray-500">Loading delivery options...</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {/* No Delivery Option */}
+                          <label
+                            className={`block p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                              selectedDeliveryLocation === '' ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <div className="flex items-start">
+                              <input
+                                type="radio"
+                                name="delivery"
+                                value=""
+                                checked={selectedDeliveryLocation === ''}
+                                onChange={(e) => handleDeliveryLocationChange(e.target.value)}
+                                className="mt-1 mr-3"
+                              />
+                              <div className="flex-1">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <p className="font-medium text-gray-900">No Delivery</p>
+                                    <p className="text-sm text-gray-600">Customer pickup</p>
+                                  </div>
+                                  <p className="font-semibold text-gray-900">Rs. 0.00</p>
+                                </div>
+                              </div>
+                            </div>
+                          </label>
+
+                          {/* Delivery Options */}
+                          {activeDeliverySettings.map((setting) => {
+                            const charge = calculateDeliveryCharge(setting, totalWeight);
+                            let description = '';
+
+                            if (setting.delivery_type === 'free') {
+                              description = 'Free delivery on all orders';
+                            } else if (setting.delivery_type === 'inside_colombo') {
+                              description = 'Flat rate for Colombo area';
+                            } else if (setting.delivery_type === 'out_of_colombo') {
+                              const baseWeight = parseFloat(setting.base_weight_kg || 0);
+                              const baseCharge = parseFloat(setting.base_charge || 0);
+                              const perKgCharge = parseFloat(setting.per_kg_charge || 0);
+                              description = `Rs. ${baseCharge.toFixed(2)} for first ${baseWeight} kg, then Rs. ${perKgCharge.toFixed(2)} per kg`;
+                            }
+
+                            return (
+                              <label
+                                key={setting.id}
+                                className={`block p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                                  selectedDeliveryLocation === setting.id ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                                }`}
+                              >
+                                <div className="flex items-start">
+                                  <input
+                                    type="radio"
+                                    name="delivery"
+                                    value={setting.id}
+                                    checked={selectedDeliveryLocation === setting.id}
+                                    onChange={(e) => handleDeliveryLocationChange(e.target.value)}
+                                    className="mt-1 mr-3"
+                                  />
+                                  <div className="flex-1">
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <p className="font-medium text-gray-900">{setting.location_name}</p>
+                                        <p className="text-sm text-gray-600">{description}</p>
+                                      </div>
+                                      <p className="font-semibold text-blue-600">Rs. {charge.toFixed(2)}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Delivery Charge Breakdown */}
+                      {deliveryCharge > 0 && selectedDeliveryLocation && (
+                        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                          <p className="font-semibold text-blue-900 mb-2">Delivery Charge Breakdown</p>
+                          {(() => {
+                            const setting = activeDeliverySettings.find(s => s.id === selectedDeliveryLocation);
+                            if (setting?.delivery_type === 'out_of_colombo') {
+                              const baseWeight = parseFloat(setting.base_weight_kg || 0);
+                              const baseCharge = parseFloat(setting.base_charge || 0);
+                              const perKgCharge = parseFloat(setting.per_kg_charge || 0);
+                              const extraWeight = Math.max(0, totalWeight - baseWeight);
+
+                              return (
+                                <div className="space-y-1 text-sm">
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-700">Base charge (up to {baseWeight} kg):</span>
+                                    <span>Rs. {baseCharge.toFixed(2)}</span>
+                                  </div>
+                                  {extraWeight > 0 && (
+                                    <div className="flex justify-between">
+                                      <span className="text-gray-700">Extra weight ({extraWeight.toFixed(2)} kg × Rs. {perKgCharge.toFixed(2)}):</span>
+                                      <span>Rs. {(extraWeight * perKgCharge).toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  <div className="pt-2 mt-2 border-t border-blue-300 flex justify-between font-semibold">
+                                    <span className="text-blue-900">Total Delivery Charge:</span>
+                                    <span className="text-blue-600">Rs. {deliveryCharge.toFixed(2)}</span>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return (
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-700">Flat Rate:</span>
+                                <span className="font-semibold text-blue-600">Rs. {deliveryCharge.toFixed(2)}</span>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-6 flex justify-end">
@@ -430,8 +573,9 @@ const CheckoutPage = () => {
                     <strong>Address:</strong> {customerInfo.address}<br />
                     {selectedDeliveryLocation && (
                       <>
-                        <strong>Delivery Location:</strong> {selectedDeliveryLocation}<br />
-                        <strong>Delivery Charge:</strong> Rs. {deliveryCharge.toFixed(2)}
+                        <strong>Delivery Location:</strong> {activeDeliverySettings.find(s => s.id === selectedDeliveryLocation)?.location_name}<br />
+                        <strong>Delivery Charge:</strong> Rs. {deliveryCharge.toFixed(2)}<br />
+                        <strong>Total Weight:</strong> {totalWeight.toFixed(2)} kg
                       </>
                     )}
                   </p>
@@ -627,7 +771,7 @@ const CheckoutPage = () => {
               </div>
               {deliveryCharge > 0 ? (
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Delivery Charge ({selectedDeliveryLocation})</span>
+                  <span className="text-gray-600">Delivery Charge ({activeDeliverySettings.find(s => s.id === selectedDeliveryLocation)?.location_name || 'Selected'})</span>
                   <span className="font-medium text-blue-600">LKR {deliveryCharge.toFixed(2)}</span>
                 </div>
               ) : (

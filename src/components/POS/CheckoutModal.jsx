@@ -96,14 +96,46 @@ export function CheckoutModal({
 
     // Add addon prices if any
     if (item.product.addons) {
-      const addonTotal = item.product.addons.reduce((addonSum, addon) => 
+      const addonTotal = item.product.addons.reduce((addonSum, addon) =>
         addonSum + addon.price*addon.quantity, 0);
       itemTotal += addonTotal;
     }
 
     return sum + itemTotal;
   }, 0);
-  
+
+  // Calculate total cart weight
+  const totalWeight = cartItems.reduce((sum, item) => {
+    const weight = item.product.weight || 0;
+    return sum + (weight * item.quantity);
+  }, 0);
+
+  // Filter active delivery settings for POS
+  const activeDeliverySettings = (allSettings || []).filter(s => s.is_active && s.is_enabled_pos);
+
+  // Function to calculate delivery charge based on weight
+  const calculateDeliveryCharge = (deliverySetting, weight) => {
+    if (!deliverySetting) return 0;
+
+    if (deliverySetting.delivery_type === 'free') {
+      return 0;
+    } else if (deliverySetting.delivery_type === 'inside_colombo') {
+      return parseFloat(deliverySetting.flat_rate || 0);
+    } else if (deliverySetting.delivery_type === 'out_of_colombo') {
+      const baseWeight = parseFloat(deliverySetting.base_weight_kg || 0);
+      const baseCharge = parseFloat(deliverySetting.base_charge || 0);
+      const perKgCharge = parseFloat(deliverySetting.per_kg_charge || 0);
+
+      if (weight <= baseWeight) {
+        return baseCharge;
+      } else {
+        const extraWeight = weight - baseWeight;
+        return baseCharge + (extraWeight * perKgCharge);
+      }
+    }
+    return 0;
+  };
+
   const taxableAmount = subtotal + (categoryTaxTotal || 0) - (couponDiscount || 0);
   const total = taxableAmount + (fullBillTaxTotal || 0) + deliveryCharge;
 
@@ -169,6 +201,8 @@ export function CheckoutModal({
       // Use the persistent customer data state instead of form data
       const salesperson = users.find(u => u.id === selectedSalesperson);
       
+      const selectedDeliverySetting = activeDeliverySettings.find(s => s.id === selectedDeliveryLocation);
+
       const transaction = {
         id: `TXN-${Date.now()}`,
         subtotal,
@@ -186,8 +220,10 @@ export function CheckoutModal({
         customerPhone: customerData.customerPhone,
         customerEmail: customerData.customerEmail,
         customerAddress: customerData.customerAddress,
-        deliveryLocation: selectedDeliveryLocation,
+        deliveryLocation: selectedDeliverySetting?.location_name || null,
+        deliveryType: selectedDeliverySetting?.delivery_type || null,
         deliveryCharge: deliveryCharge,
+        totalWeight: totalWeight,
         appliedCoupon: appliedCoupon?.code,
         notes: orderNotes,
         status: 'completed',
@@ -324,6 +360,7 @@ export function CheckoutModal({
                       LKR {item.product.price.toFixed(2)} × {item.quantity}
                       {addonPrice > 0 && ` + LKR ${addonPrice.toFixed(2)} addons`}
                       {itemTaxAmount > 0 && ` + LKR ${itemTaxAmount.toFixed(2)} tax`}
+                      {item.product.weight && ` | ${(item.product.weight * item.quantity).toFixed(2)} kg`}
                     </Text>
                     <Text type="secondary">SKU: {item.product.barcode}</Text>
                   </div>
@@ -474,33 +511,116 @@ export function CheckoutModal({
             />
           </Form.Item>
 
-          <Form.Item name="deliveryLocation" label="Delivery Location (Optional)">
-            <Select
-              placeholder="Select delivery location for delivery charges"
-              allowClear
-              value={selectedDeliveryLocation}
-              onChange={(value) => {
-                setSelectedDeliveryLocation(value);
-                const charge = activeDeliveryCharges?.find(c => c.location_name === value);
-                setDeliveryCharge(charge ? parseFloat(charge.charge_amount) : 0);
-              }}
-            >
-              {(activeDeliveryCharges || []).map(charge => (
-                <Option key={charge.id} value={charge.location_name}>
-                  {charge.location_name} - Rs. {parseFloat(charge.charge_amount).toFixed(2)}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
+          {activeDeliverySettings.length > 0 && (
+            <>
+              <Form.Item label="Delivery Options">
+                <div className="bg-gray-50 p-4 rounded-lg mb-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon name="scale" className="text-gray-600" />
+                    <Text type="secondary">Total Order Weight: </Text>
+                    <Text strong>{totalWeight.toFixed(2)} kg</Text>
+                  </div>
+                </div>
+                <Radio.Group
+                  value={selectedDeliveryLocation}
+                  onChange={(e) => {
+                    const settingId = e.target.value;
+                    setSelectedDeliveryLocation(settingId);
+                    const setting = activeDeliverySettings.find(s => s.id === settingId);
+                    const charge = calculateDeliveryCharge(setting, totalWeight);
+                    setDeliveryCharge(charge);
+                  }}
+                  className="w-full"
+                >
+                  <Space direction="vertical" className="w-full">
+                    <Radio value={null} className="w-full">
+                      <div className="flex justify-between items-center w-full pr-4">
+                        <div>
+                          <Text strong>No Delivery</Text>
+                          <br />
+                          <Text type="secondary" className="text-sm">Customer pickup</Text>
+                        </div>
+                        <Text strong>Rs. 0.00</Text>
+                      </div>
+                    </Radio>
+                    {activeDeliverySettings.map(setting => {
+                      const charge = calculateDeliveryCharge(setting, totalWeight);
+                      let description = '';
 
-          {deliveryCharge > 0 && (
-            <div className="bg-blue-50 p-3 rounded-lg flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <Icon name="local_shipping" className="text-blue-600" />
-                <Text>Delivery Charge</Text>
-              </div>
-              <Text strong className="text-blue-600">Rs. {deliveryCharge.toFixed(2)}</Text>
-            </div>
+                      if (setting.delivery_type === 'free') {
+                        description = 'Free delivery on all orders';
+                      } else if (setting.delivery_type === 'inside_colombo') {
+                        description = `Flat rate for Colombo area`;
+                      } else if (setting.delivery_type === 'out_of_colombo') {
+                        const baseWeight = parseFloat(setting.base_weight_kg || 0);
+                        const baseCharge = parseFloat(setting.base_charge || 0);
+                        const perKgCharge = parseFloat(setting.per_kg_charge || 0);
+                        description = `Rs. ${baseCharge.toFixed(2)} for first ${baseWeight} kg, then Rs. ${perKgCharge.toFixed(2)} per kg`;
+                      }
+
+                      return (
+                        <Radio key={setting.id} value={setting.id} className="w-full">
+                          <div className="flex justify-between items-center w-full pr-4">
+                            <div>
+                              <Text strong>{setting.location_name}</Text>
+                              <br />
+                              <Text type="secondary" className="text-sm">{description}</Text>
+                            </div>
+                            <Text strong className="text-blue-600">Rs. {charge.toFixed(2)}</Text>
+                          </div>
+                        </Radio>
+                      );
+                    })}
+                  </Space>
+                </Radio.Group>
+              </Form.Item>
+
+              {deliveryCharge > 0 && selectedDeliveryLocation && (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center gap-2">
+                      <Icon name="local_shipping" className="text-blue-600" />
+                      <Text strong>Delivery Charge Breakdown</Text>
+                    </div>
+                  </div>
+                  {(() => {
+                    const setting = activeDeliverySettings.find(s => s.id === selectedDeliveryLocation);
+                    if (setting?.delivery_type === 'out_of_colombo') {
+                      const baseWeight = parseFloat(setting.base_weight_kg || 0);
+                      const baseCharge = parseFloat(setting.base_charge || 0);
+                      const perKgCharge = parseFloat(setting.per_kg_charge || 0);
+                      const extraWeight = Math.max(0, totalWeight - baseWeight);
+
+                      return (
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <Text type="secondary">Base charge (up to {baseWeight} kg):</Text>
+                            <Text>Rs. {baseCharge.toFixed(2)}</Text>
+                          </div>
+                          {extraWeight > 0 && (
+                            <div className="flex justify-between">
+                              <Text type="secondary">Extra weight ({extraWeight.toFixed(2)} kg × Rs. {perKgCharge.toFixed(2)}):</Text>
+                              <Text>Rs. {(extraWeight * perKgCharge).toFixed(2)}</Text>
+                            </div>
+                          )}
+                          <Divider className="my-2" />
+                          <div className="flex justify-between">
+                            <Text strong>Total Delivery Charge:</Text>
+                            <Text strong className="text-blue-600">Rs. {deliveryCharge.toFixed(2)}</Text>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="flex justify-between">
+                        <Text>Flat Rate:</Text>
+                        <Text strong className="text-blue-600">Rs. {deliveryCharge.toFixed(2)}</Text>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </>
           )}
         </Form>
 

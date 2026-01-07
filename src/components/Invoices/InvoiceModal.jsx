@@ -12,11 +12,15 @@ import {
   InvoicePaymentSummary,
   InvoiceAccountDetails,
   InvoiceNotes,
+  InvoiceTermsAndConditions,
+  InvoiceSignatureSection,
   InvoiceFooter
 } from './SharedInvoiceComponents';
 import apiClient from '../../api/apiClient';
 
 const { Title, Text } = Typography;
+
+const ITEMS_PER_PAGE = 10;
 
 const convertImageToBase64 = (url) => {
   return new Promise((resolve, reject) => {
@@ -38,6 +42,15 @@ const convertImageToBase64 = (url) => {
     img.onerror = reject;
     img.src = url;
   });
+};
+
+// Chunk array into smaller arrays
+const chunkArray = (array, size) => {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
 };
 
 export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) {
@@ -71,91 +84,64 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
   if (!transaction) return null;
 
   const handlePrint = async () => {
-    const element = document.getElementById('invoice-content');
-    if (!element) {
-      console.error('Invoice content element not found');
+    const printContainer = document.getElementById('invoice-print-container');
+    if (!printContainer) {
+      console.error('Invoice print container not found');
       return;
     }
-
-    const printContainer = document.createElement('div');
-    printContainer.id = 'print-container';
-    printContainer.style.position = 'absolute';
-    printContainer.style.top = '0';
-    printContainer.style.left = '0';
-    printContainer.style.width = '210mm';
-    printContainer.style.minHeight = '297mm';
-    printContainer.style.padding = '0';
-    printContainer.style.backgroundColor = '#ffffff';
-
-    const clonedContent = element.cloneNode(true);
-    printContainer.appendChild(clonedContent);
-    document.body.appendChild(printContainer);
-
-    clonedContent.style.display = 'none';
-    clonedContent.offsetHeight;
-    clonedContent.style.display = 'block';
-
-    await new Promise((resolve) => setTimeout(resolve, 200));
 
     try {
       window.print();
     } catch (error) {
       console.error('Error during print:', error);
-    } finally {
-      document.body.removeChild(printContainer);
     }
   };
 
   const generatePDF = async () => {
-    const element = document.getElementById('invoice-content');
-    if (!element) {
-      console.error('Invoice content element not found');
+    const pages = document.querySelectorAll('.invoice-page');
+    if (!pages || pages.length === 0) {
+      console.error('No invoice pages found');
       return null;
     }
 
     try {
-      const savedBranding = localStorage.getItem('vcare_branding') ? JSON.parse(localStorage.getItem('vcare_branding')) : null;
-      const logoPreview = invoiceConfig?.settings?.logo_url || savedBranding?.logoPreview || '/VCARELogo 1.png';
-
-      const logoElements = element.querySelectorAll('img');
-      for (let img of logoElements) {
-        try {
-          const base64Image = await convertImageToBase64(img.src);
-          img.src = base64Image;
-        } catch (error) {
-          console.warn('Failed to convert image to base64:', error);
-        }
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      const canvas = await html2canvas(element, {
-        scale: 1.5,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        imageTimeout: 0
-      });
-
-      // Cache the image data to avoid regenerating it for each page
-      const imgData = canvas.toDataURL('image/jpeg', 0.85);
-      const imgWidth = 210;
-      const pageHeight = 297;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
       const pdf = new jsPDF('p', 'mm', 'a4');
-      let position = 0;
 
-      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      for (let i = 0; i < pages.length; i++) {
+        const page = pages[i];
 
-      let heightLeft = imgHeight - pageHeight;
+        // Convert images to base64
+        const logoElements = page.querySelectorAll('img');
+        for (let img of logoElements) {
+          try {
+            const base64Image = await convertImageToBase64(img.src);
+            img.src = base64Image;
+          } catch (error) {
+            console.warn('Failed to convert image to base64:', error);
+          }
+        }
 
-      // Only add new page if significant content remains (> 20mm)
-      while (heightLeft > 20) {
-        position = position - pageHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        const canvas = await html2canvas(page, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          logging: false,
+          imageTimeout: 0,
+          width: page.offsetWidth,
+          height: page.offsetHeight
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const imgWidth = 210;
+        const imgHeight = 297;
+
+        if (i > 0) {
+          pdf.addPage();
+        }
+
+        pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
       }
 
       return pdf;
@@ -217,98 +203,142 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
       savedBranding?.logoPreview ||
       '/VCARELogo 1.png';
 
+    // Split items into pages of 10
+    const itemPages = chunkArray(transaction.items, ITEMS_PER_PAGE);
+    const totalPages = itemPages.length;
+
     return (
-      <div
-        id="invoice-content"
-        className="bg-white"
-        style={{
-          fontFamily: 'Arial, sans-serif',
-          width: '210mm',
-          height: '297mm',
-          boxSizing: 'border-box',
-          position: 'relative',
-          overflow: 'hidden'
-        }}
-      >
-        {/* Header Section - Fixed at top */}
-        <div style={{
-          padding: '8mm 10mm 5mm 10mm',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 10
-        }}>
-          <InvoiceHeader
-            businessName={businessName}
-            logoPreview={logoPreview}
-          />
-        </div>
+      <div id="invoice-print-container">
+        {itemPages.map((pageItems, pageIndex) => {
+          const isFirstPage = pageIndex === 0;
+          const isLastPage = pageIndex === totalPages - 1;
 
-        {/* Content Section - Scrollable middle */}
-        <div style={{
-          position: 'absolute',
-          top: '45mm',
-          left: '10mm',
-          right: '10mm',
-          bottom: '25mm',
-          overflow: 'hidden'
-        }}>
-          <Row gutter={32} style={{ marginBottom: '12px' }}>
-            <Col span={12}>
-              <InvoiceCustomerSection
-                customerName={transaction.customerName}
-                customerAddress={transaction.customerAddress}
-                customerEmail={transaction.customerEmail}
-                customerPhone={transaction.customerPhone}
-              />
-            </Col>
-            <Col span={12}>
-              <InvoiceDetails
-                invoiceNumber={transaction.id}
-                dateIssued={new Date(transaction.timestamp).toLocaleDateString('en-US', {
-                  month: '2-digit',
-                  day: '2-digit',
-                  year: 'numeric'
-                })}
-              />
-            </Col>
-          </Row>
+          return (
+            <div
+              key={pageIndex}
+              className="invoice-page"
+              style={{
+                fontFamily: 'Arial, sans-serif',
+                width: '210mm',
+                height: '297mm',
+                boxSizing: 'border-box',
+                position: 'relative',
+                overflow: 'hidden',
+                backgroundColor: '#ffffff',
+                pageBreakAfter: isLastPage ? 'auto' : 'always',
+                breakAfter: isLastPage ? 'auto' : 'page',
+                margin: '0 auto',
+                marginBottom: pageIndex < totalPages - 1 ? '10mm' : '0'
+              }}
+            >
+              {/* Header Section - Fixed at top */}
+              <div style={{
+                padding: '8mm 10mm 5mm 10mm',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                zIndex: 10
+              }}>
+                <InvoiceHeader
+                  businessName={businessName}
+                  logoPreview={logoPreview}
+                />
+              </div>
 
-          <InvoiceItemsTable items={transaction.items} />
+              {/* Content Section */}
+              <div style={{
+                position: 'absolute',
+                top: '45mm',
+                left: '10mm',
+                right: '10mm',
+                bottom: '30mm',
+                overflow: 'hidden'
+              }}>
+                {/* Customer and Invoice Details - First Page Only */}
+                {isFirstPage && (
+                  <Row gutter={32} style={{ marginBottom: '12px' }}>
+                    <Col span={12}>
+                      <InvoiceCustomerSection
+                        customerName={transaction.customerName}
+                        customerAddress={transaction.customerAddress}
+                        customerEmail={transaction.customerEmail}
+                        customerPhone={transaction.customerPhone}
+                      />
+                    </Col>
+                    <Col span={12}>
+                      <InvoiceDetails
+                        invoiceNumber={transaction.id}
+                        dateIssued={new Date(transaction.timestamp).toLocaleDateString('en-US', {
+                          month: '2-digit',
+                          day: '2-digit',
+                          year: 'numeric'
+                        })}
+                      />
+                    </Col>
+                  </Row>
+                )}
 
-          <InvoicePaymentSummary
-            subtotal={transaction.subtotal}
-            discount={transaction.discount || 0}
-            grandTotal={transaction.total}
-            deliveryCharge={transaction.deliveryCharge || 0}
-            advancedPayment={transaction.advancedPayment || 0}
-            balancePayment={transaction.balancePayment || 0}
-            tax={transaction.totalTax || 0}
-          />
+                {/* Page indicator for multi-page */}
+                {totalPages > 1 && (
+                  <div style={{ textAlign: 'right', marginBottom: '8px' }}>
+                    <Text className="text-xs text-gray-500">
+                      Page {pageIndex + 1} of {totalPages}
+                    </Text>
+                  </div>
+                )}
 
-          {invoiceConfig?.bankAccount && (
-            <InvoiceAccountDetails bankAccount={invoiceConfig.bankAccount} />
-          )}
+                {/* Items Table */}
+                <InvoiceItemsTable items={pageItems} />
 
-          {invoiceConfig?.notesTemplate && (
-            <InvoiceNotes notesTemplate={invoiceConfig.notesTemplate} />
-          )}
-        </div>
+                {/* Totals, Bank Details, Terms, Signatures - Last Page Only */}
+                {isLastPage && (
+                  <>
+                    <InvoicePaymentSummary
+                      subtotal={transaction.subtotal}
+                      discount={transaction.discount || 0}
+                      grandTotal={transaction.total}
+                      deliveryCharge={transaction.deliveryCharge || 0}
+                      advancedPayment={transaction.advancedPayment || 0}
+                      balancePayment={transaction.balancePayment || 0}
+                      tax={transaction.totalTax || 0}
+                    />
 
-        {/* Footer Section - Fixed at bottom */}
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 10
-        }}>
-          <InvoiceFooter
-            businessAddress={businessAddress}
-            phoneNumber={phoneNumber}
-          />
-        </div>
+                    {/* Bank Details - Always show if available */}
+                    {invoiceConfig?.bankAccount && (
+                      <InvoiceAccountDetails bankAccount={invoiceConfig.bankAccount} />
+                    )}
+
+                    {/* Notes */}
+                    {invoiceConfig?.notesTemplate && (
+                      <InvoiceNotes notesTemplate={invoiceConfig.notesTemplate} />
+                    )}
+
+                    {/* Terms and Conditions */}
+                    <InvoiceTermsAndConditions />
+
+                    {/* Signature Section */}
+                    <InvoiceSignatureSection />
+                  </>
+                )}
+              </div>
+
+              {/* Footer Section - Fixed at bottom */}
+              <div style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                zIndex: 10
+              }}>
+                <InvoiceFooter
+                  businessAddress={businessAddress}
+                  phoneNumber={phoneNumber}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -410,24 +440,25 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
             body * {
               visibility: hidden;
             }
-            #print-container,
-            #print-container * {
+            #invoice-print-container,
+            #invoice-print-container * {
               visibility: visible;
             }
-            #print-container {
+            #invoice-print-container {
               position: absolute;
               top: 0;
               left: 0;
-              width: 210mm;
-              min-height: 297mm;
               margin: 0;
               padding: 0;
-              box-sizing: border-box;
-              background-color: #ffffff;
             }
-            #print-container .page-break-after {
+            .invoice-page {
               page-break-after: always;
               break-after: page;
+              margin: 0 !important;
+            }
+            .invoice-page:last-child {
+              page-break-after: auto;
+              break-after: auto;
             }
             .ant-modal,
             .ant-modal-content,

@@ -48,17 +48,22 @@ export const InvoiceItemsTable = ({ items, showImages = false }) => (
     <table className="w-full border-collapse" style={{ marginTop: '12px' }}>
       <thead>
         <tr style={{ background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)' }}>
-          <th className="p-2 text-left text-white font-bold" style={{ width: '45%' }}>DESCRIPTION</th>
-          <th className="p-2 text-center text-white font-bold" style={{ width: '15%' }}>QTY</th>
-          <th className="p-2 text-right text-white font-bold" style={{ width: '20%' }}>RATE</th>
-          <th className="p-2 text-right text-white font-bold" style={{ width: '20%' }}>AMOUNT</th>
+          <th className="p-2 text-left text-white font-bold" style={{ width: '15%' }}>ITEM CODE</th>
+          <th className="p-2 text-left text-white font-bold" style={{ width: '35%' }}>DESCRIPTION</th>
+          <th className="p-2 text-center text-white font-bold" style={{ width: '12%' }}>QTY</th>
+          <th className="p-2 text-right text-white font-bold" style={{ width: '19%' }}>RATE</th>
+          <th className="p-2 text-right text-white font-bold" style={{ width: '19%' }}>AMOUNT</th>
         </tr>
       </thead>
       <tbody>
         {items.map((item, index) => {
           const unitPrice = item.product?.price || item.unitPrice || item.price || 0;
+          const itemCode = item.product?.barcode || item.product?.sku || item.itemCode || item.sku || `ITEM-${String(index + 1).padStart(3, '0')}`;
           return (
             <tr key={index} className="border-b border-gray-200">
+              <td className="p-2">
+                <Text className="text-xs font-mono">{itemCode}</Text>
+              </td>
               <td className="p-2">
                 <div>
                   <Text strong className="block text-sm">{item.name || item.product?.name || item.productName}</Text>
@@ -206,6 +211,56 @@ export const InvoiceNotes = ({ notesTemplate }) => {
             {notesTemplate.custom_notes || notesTemplate.customNotes}
           </Text>
         )}
+      </div>
+    </div>
+  );
+};
+
+export const InvoiceTermsAndConditions = () => {
+  return (
+    <div style={{ marginTop: '12px' }}>
+      <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Terms & Conditions:</Title>
+      <div className="text-xs text-gray-700" style={{ lineHeight: '1.6' }}>
+        <ol className="list-decimal pl-4 space-y-1">
+          <li>Payment is due within 30 days from the date of invoice unless otherwise agreed.</li>
+          <li>All prices are in LKR and include applicable taxes unless stated otherwise.</li>
+          <li>Delivery charges may apply and will be calculated based on location and order size.</li>
+          <li>Products are covered by manufacturer warranty. Terms apply as per warranty card.</li>
+          <li>Returns accepted within 7 days with original packaging and receipt.</li>
+          <li>Custom orders and special requests are non-refundable once production begins.</li>
+          <li>The company reserves the right to make changes without prior notice.</li>
+        </ol>
+      </div>
+    </div>
+  );
+};
+
+export const InvoiceSignatureSection = () => {
+  return (
+    <div style={{ marginTop: '20px', marginBottom: '12px' }}>
+      <div className="grid grid-cols-2 gap-8">
+        <div>
+          <div style={{ borderBottom: '1px solid #333', paddingBottom: '2px', marginBottom: '4px' }}>
+            <Text className="text-xs text-gray-500">Signature:</Text>
+          </div>
+          <div className="flex justify-between items-end" style={{ marginTop: '30px' }}>
+            <div style={{ flex: 1, borderBottom: '1px solid #333', marginRight: '8px' }}></div>
+            <Text className="text-xs text-gray-600">Date:</Text>
+            <div style={{ width: '80px', borderBottom: '1px solid #333', marginLeft: '8px' }}></div>
+          </div>
+          <Text strong className="text-xs block mt-1">Received By</Text>
+        </div>
+        <div>
+          <div style={{ borderBottom: '1px solid #333', paddingBottom: '2px', marginBottom: '4px' }}>
+            <Text className="text-xs text-gray-500">Signature:</Text>
+          </div>
+          <div className="flex justify-between items-end" style={{ marginTop: '30px' }}>
+            <div style={{ flex: 1, borderBottom: '1px solid #333', marginRight: '8px' }}></div>
+            <Text className="text-xs text-gray-600">Date:</Text>
+            <div style={{ width: '80px', borderBottom: '1px solid #333', marginLeft: '8px' }}></div>
+          </div>
+          <Text strong className="text-xs block mt-1">Checked By</Text>
+        </div>
       </div>
     </div>
   );

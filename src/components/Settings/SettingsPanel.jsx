@@ -46,11 +46,6 @@ export function SettingsPanel() {
       <Title level={4}>General Settings</Title>
       <Row gutter={16}>
         <Col span={12}>
-          <Form.Item name="businessName" label="Business Name" initialValue="VCare Furniture Store">
-            <Input />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
           <Form.Item name="timezone" label="Time Zone" initialValue="UTC+5:30">
             <Select>
               <Option value="UTC+5:30">UTC+5:30 (Sri Lanka)</Option>
@@ -66,7 +61,7 @@ export function SettingsPanel() {
       <div className="bg-blue-50 p-4 rounded-lg mt-4 mb-4">
         <Text className="text-sm">
           <Icon name="info" className="mr-2 text-blue-600" />
-          <strong>Note:</strong> Currency and tax rate settings are configured in the Invoice Settings section. Business contact information can be configured in Invoice Settings as well.
+          <strong>Note:</strong> Business information (name, address, contact details) is configured in the <strong>Invoice Settings</strong> section. Branding (logo, colors, fonts) is configured in the <strong>Branding</strong> section.
         </Text>
       </div>
 

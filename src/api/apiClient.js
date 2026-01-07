@@ -515,32 +515,40 @@ export const vendorsApi = {
 
 // Delivery Charges API
 export const deliveryChargesApi = {
-  getAll: async (is_active) => {
-    const query = is_active !== undefined ? `?is_active=${is_active}` : '';
+  getAllSettings: async (source) => {
+    const query = source ? `?source=${source}` : '';
     return apiRequest(`/delivery-charges${query}`);
   },
 
-  getById: async (id) => {
-    return apiRequest(`/delivery-charges/${id}`);
+  getByType: async (type) => {
+    return apiRequest(`/delivery-charges/${type}`);
   },
 
-  create: async (deliveryCharge) => {
-    return apiRequest('/delivery-charges', {
+  calculateCharge: async ({ weight, deliveryType, source, items }) => {
+    return apiRequest('/delivery-charges/calculate', {
       method: 'POST',
-      body: JSON.stringify(deliveryCharge)
+      body: JSON.stringify({ weight, deliveryType, source, items })
     });
   },
 
-  update: async (id, deliveryCharge) => {
-    return apiRequest(`/delivery-charges/${id}`, {
+  updateFreeDelivery: async (settings) => {
+    return apiRequest('/delivery-charges/free-delivery', {
       method: 'PUT',
-      body: JSON.stringify(deliveryCharge)
+      body: JSON.stringify(settings)
     });
   },
 
-  delete: async (id) => {
-    return apiRequest(`/delivery-charges/${id}`, {
-      method: 'DELETE'
+  updateInsideColombo: async (settings) => {
+    return apiRequest('/delivery-charges/inside-colombo', {
+      method: 'PUT',
+      body: JSON.stringify(settings)
+    });
+  },
+
+  updateOutOfColombo: async (settings) => {
+    return apiRequest('/delivery-charges/out-of-colombo', {
+      method: 'PUT',
+      body: JSON.stringify(settings)
     });
   }
 };

@@ -1,8 +1,13 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  deliveryCharges: [],
-  activeDeliveryCharges: [],
+  allSettings: [],
+  settings: {
+    freeDelivery: null,
+    insideColombo: null,
+    outOfColombo: null,
+  },
+  calculation: null,
   loading: false,
   error: null,
   lastFetch: null,
@@ -12,84 +17,115 @@ const deliveryChargesSlice = createSlice({
   name: 'deliveryCharges',
   initialState,
   reducers: {
-    fetchDeliveryChargesRequest: (state) => {
+    fetchDeliverySettingsRequest: (state) => {
       state.loading = true;
       state.error = null;
     },
-    fetchDeliveryChargesSuccess: (state, action) => {
-      state.deliveryCharges = action.payload;
-      state.activeDeliveryCharges = action.payload.filter(charge => charge.is_active);
+    fetchDeliverySettingsSuccess: (state, action) => {
+      state.allSettings = action.payload;
+      action.payload.forEach(setting => {
+        if (setting.type === 'free_delivery') {
+          state.settings.freeDelivery = setting;
+        } else if (setting.type === 'inside_colombo') {
+          state.settings.insideColombo = setting;
+        } else if (setting.type === 'out_of_colombo') {
+          state.settings.outOfColombo = setting;
+        }
+      });
       state.loading = false;
       state.lastFetch = Date.now();
     },
-    fetchDeliveryChargesFailure: (state, action) => {
+    fetchDeliverySettingsFailure: (state, action) => {
       state.loading = false;
       state.error = action.payload;
     },
-    createDeliveryChargeRequest: (state) => {
+    updateFreeDeliveryRequest: (state) => {
       state.loading = true;
       state.error = null;
     },
-    createDeliveryChargeSuccess: (state, action) => {
-      state.deliveryCharges.push(action.payload);
-      if (action.payload.is_active) {
-        state.activeDeliveryCharges.push(action.payload);
-      }
-      state.loading = false;
-    },
-    createDeliveryChargeFailure: (state, action) => {
-      state.loading = false;
-      state.error = action.payload;
-    },
-    updateDeliveryChargeRequest: (state) => {
-      state.loading = true;
-      state.error = null;
-    },
-    updateDeliveryChargeSuccess: (state, action) => {
-      const index = state.deliveryCharges.findIndex(charge => charge.id === action.payload.id);
+    updateFreeDeliverySuccess: (state, action) => {
+      state.settings.freeDelivery = action.payload;
+      const index = state.allSettings.findIndex(s => s.type === 'free_delivery');
       if (index !== -1) {
-        state.deliveryCharges[index] = action.payload;
+        state.allSettings[index] = action.payload;
       }
-      state.activeDeliveryCharges = state.deliveryCharges.filter(charge => charge.is_active);
       state.loading = false;
     },
-    updateDeliveryChargeFailure: (state, action) => {
+    updateFreeDeliveryFailure: (state, action) => {
       state.loading = false;
       state.error = action.payload;
     },
-    deleteDeliveryChargeRequest: (state) => {
+    updateInsideColomboRequest: (state) => {
       state.loading = true;
       state.error = null;
     },
-    deleteDeliveryChargeSuccess: (state, action) => {
-      state.deliveryCharges = state.deliveryCharges.filter(charge => charge.id !== action.payload);
-      state.activeDeliveryCharges = state.deliveryCharges.filter(charge => charge.is_active);
+    updateInsideColomboSuccess: (state, action) => {
+      state.settings.insideColombo = action.payload;
+      const index = state.allSettings.findIndex(s => s.type === 'inside_colombo');
+      if (index !== -1) {
+        state.allSettings[index] = action.payload;
+      }
       state.loading = false;
     },
-    deleteDeliveryChargeFailure: (state, action) => {
+    updateInsideColomboFailure: (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+    updateOutOfColomboRequest: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
+    updateOutOfColomboSuccess: (state, action) => {
+      state.settings.outOfColombo = action.payload;
+      const index = state.allSettings.findIndex(s => s.type === 'out_of_colombo');
+      if (index !== -1) {
+        state.allSettings[index] = action.payload;
+      }
+      state.loading = false;
+    },
+    updateOutOfColomboFailure: (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+    calculateDeliveryChargeRequest: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
+    calculateDeliveryChargeSuccess: (state, action) => {
+      state.calculation = action.payload;
+      state.loading = false;
+    },
+    calculateDeliveryChargeFailure: (state, action) => {
       state.loading = false;
       state.error = action.payload;
     },
     clearError: (state) => {
       state.error = null;
     },
+    clearCalculation: (state) => {
+      state.calculation = null;
+    },
   },
 });
 
 export const {
-  fetchDeliveryChargesRequest,
-  fetchDeliveryChargesSuccess,
-  fetchDeliveryChargesFailure,
-  createDeliveryChargeRequest,
-  createDeliveryChargeSuccess,
-  createDeliveryChargeFailure,
-  updateDeliveryChargeRequest,
-  updateDeliveryChargeSuccess,
-  updateDeliveryChargeFailure,
-  deleteDeliveryChargeRequest,
-  deleteDeliveryChargeSuccess,
-  deleteDeliveryChargeFailure,
+  fetchDeliverySettingsRequest,
+  fetchDeliverySettingsSuccess,
+  fetchDeliverySettingsFailure,
+  updateFreeDeliveryRequest,
+  updateFreeDeliverySuccess,
+  updateFreeDeliveryFailure,
+  updateInsideColomboRequest,
+  updateInsideColomboSuccess,
+  updateInsideColomboFailure,
+  updateOutOfColomboRequest,
+  updateOutOfColomboSuccess,
+  updateOutOfColomboFailure,
+  calculateDeliveryChargeRequest,
+  calculateDeliveryChargeSuccess,
+  calculateDeliveryChargeFailure,
   clearError,
+  clearCalculation,
 } = deliveryChargesSlice.actions;
 
 export default deliveryChargesSlice.reducer;

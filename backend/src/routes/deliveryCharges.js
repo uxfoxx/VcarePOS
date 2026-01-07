@@ -1,131 +1,105 @@
 const express = require('express');
 const { pool } = require('../utils/db');
 const { authenticate } = require('../middleware/auth');
-const { v4: uuidv4 } = require('uuid');
 const asyncHandler = require('express-async-handler');
+const {
+  getActiveDeliverySettings,
+  calculateDeliveryCharge,
+  calculateTotalWeight
+} = require('../utils/deliveryCalculator');
 
 const router = express.Router();
 
 router.get('/', asyncHandler(async (req, res) => {
-  const { is_active } = req.query;
+  const { source } = req.query;
 
-  let query = 'SELECT * FROM delivery_charges';
+  let query = 'SELECT * FROM delivery_charge_settings ORDER BY type';
   const values = [];
 
-  if (is_active !== undefined) {
-    query += ' WHERE is_active = $1';
-    values.push(is_active === 'true');
+  if (source === 'pos' || source === 'ecommerce') {
+    query = 'SELECT * FROM delivery_charge_settings WHERE enabled_for_' + source + ' = true ORDER BY type';
   }
 
-  query += ' ORDER BY location_name ASC';
-
   const result = await pool.query(query, values);
-
   res.json(result.rows);
 }));
 
-router.get('/:id', asyncHandler(async (req, res) => {
-  const { id } = req.params;
+router.get('/:type', asyncHandler(async (req, res) => {
+  const { type } = req.params;
+
+  const validTypes = ['free_delivery', 'inside_colombo', 'out_of_colombo'];
+  if (!validTypes.includes(type)) {
+    return res.status(400).json({ error: 'Invalid delivery type' });
+  }
 
   const result = await pool.query(
-    'SELECT * FROM delivery_charges WHERE id = $1',
-    [id]
+    'SELECT * FROM delivery_charge_settings WHERE type = $1',
+    [type]
   );
 
   if (result.rows.length === 0) {
-    return res.status(404).json({ error: 'Delivery charge not found' });
+    return res.status(404).json({ error: 'Delivery setting not found' });
   }
 
   res.json(result.rows[0]);
 }));
 
-router.post('/', authenticate, asyncHandler(async (req, res) => {
-  const { location_name, charge_amount, is_active = true } = req.body;
+router.post('/calculate', asyncHandler(async (req, res) => {
+  const { weight, deliveryType, source, items } = req.body;
 
-  if (!location_name || charge_amount === undefined) {
-    return res.status(400).json({ error: 'Location name and charge amount are required' });
+  let totalWeight = weight;
+
+  if (items && Array.isArray(items)) {
+    totalWeight = calculateTotalWeight(items);
   }
 
-  if (charge_amount < 0) {
-    return res.status(400).json({ error: 'Charge amount cannot be negative' });
+  if (!totalWeight || totalWeight <= 0) {
+    return res.status(400).json({ error: 'Invalid weight' });
   }
 
-  const checkExisting = await pool.query(
-    'SELECT id FROM delivery_charges WHERE LOWER(location_name) = LOWER($1)',
-    [location_name]
-  );
-
-  if (checkExisting.rows.length > 0) {
-    return res.status(409).json({ error: 'A delivery charge for this location already exists' });
+  if (!deliveryType) {
+    return res.status(400).json({ error: 'Delivery type is required' });
   }
 
-  const id = `DELIV-${uuidv4().substring(0, 8).toUpperCase()}`;
+  const settings = await getActiveDeliverySettings(source);
 
-  const result = await pool.query(
-    `INSERT INTO delivery_charges (id, location_name, charge_amount, is_active, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-     RETURNING *`,
-    [id, location_name, charge_amount, is_active]
-  );
+  const result = calculateDeliveryCharge(totalWeight, deliveryType, settings);
 
-  res.status(201).json(result.rows[0]);
+  res.json(result);
 }));
 
-router.put('/:id', authenticate, asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const { location_name, charge_amount, is_active } = req.body;
-
-  const checkExisting = await pool.query(
-    'SELECT id FROM delivery_charges WHERE id = $1',
-    [id]
-  );
-
-  if (checkExisting.rows.length === 0) {
-    return res.status(404).json({ error: 'Delivery charge not found' });
-  }
-
-  if (charge_amount !== undefined && charge_amount < 0) {
-    return res.status(400).json({ error: 'Charge amount cannot be negative' });
-  }
-
-  if (location_name) {
-    const checkDuplicate = await pool.query(
-      'SELECT id FROM delivery_charges WHERE LOWER(location_name) = LOWER($1) AND id != $2',
-      [location_name, id]
-    );
-
-    if (checkDuplicate.rows.length > 0) {
-      return res.status(409).json({ error: 'A delivery charge for this location already exists' });
-    }
-  }
+router.put('/free-delivery', authenticate, asyncHandler(async (req, res) => {
+  const { is_active, enabled_for_pos, enabled_for_ecommerce } = req.body;
 
   const updates = [];
   const values = [];
   let paramCount = 1;
-
-  if (location_name !== undefined) {
-    updates.push(`location_name = $${paramCount++}`);
-    values.push(location_name);
-  }
-
-  if (charge_amount !== undefined) {
-    updates.push(`charge_amount = $${paramCount++}`);
-    values.push(charge_amount);
-  }
 
   if (is_active !== undefined) {
     updates.push(`is_active = $${paramCount++}`);
     values.push(is_active);
   }
 
+  if (enabled_for_pos !== undefined) {
+    updates.push(`enabled_for_pos = $${paramCount++}`);
+    values.push(enabled_for_pos);
+  }
+
+  if (enabled_for_ecommerce !== undefined) {
+    updates.push(`enabled_for_ecommerce = $${paramCount++}`);
+    values.push(enabled_for_ecommerce);
+  }
+
+  if (updates.length === 0) {
+    return res.status(400).json({ error: 'No valid fields to update' });
+  }
+
   updates.push(`updated_at = CURRENT_TIMESTAMP`);
 
-  values.push(id);
-
   const result = await pool.query(
-    `UPDATE delivery_charges
+    `UPDATE delivery_charge_settings
      SET ${updates.join(', ')}
-     WHERE id = $${paramCount}
+     WHERE type = 'free_delivery'
      RETURNING *`,
     values
   );
@@ -133,19 +107,121 @@ router.put('/:id', authenticate, asyncHandler(async (req, res) => {
   res.json(result.rows[0]);
 }));
 
-router.delete('/:id', authenticate, asyncHandler(async (req, res) => {
-  const { id } = req.params;
+router.put('/inside-colombo', authenticate, asyncHandler(async (req, res) => {
+  const { is_active, enabled_for_pos, enabled_for_ecommerce, inside_colombo_amount } = req.body;
 
-  const result = await pool.query(
-    'DELETE FROM delivery_charges WHERE id = $1 RETURNING *',
-    [id]
-  );
+  const updates = [];
+  const values = [];
+  let paramCount = 1;
 
-  if (result.rows.length === 0) {
-    return res.status(404).json({ error: 'Delivery charge not found' });
+  if (is_active !== undefined) {
+    updates.push(`is_active = $${paramCount++}`);
+    values.push(is_active);
   }
 
-  res.json({ message: 'Delivery charge deleted successfully', deleted: result.rows[0] });
+  if (enabled_for_pos !== undefined) {
+    updates.push(`enabled_for_pos = $${paramCount++}`);
+    values.push(enabled_for_pos);
+  }
+
+  if (enabled_for_ecommerce !== undefined) {
+    updates.push(`enabled_for_ecommerce = $${paramCount++}`);
+    values.push(enabled_for_ecommerce);
+  }
+
+  if (inside_colombo_amount !== undefined) {
+    if (inside_colombo_amount < 0) {
+      return res.status(400).json({ error: 'Amount cannot be negative' });
+    }
+    updates.push(`inside_colombo_amount = $${paramCount++}`);
+    values.push(inside_colombo_amount);
+  }
+
+  if (updates.length === 0) {
+    return res.status(400).json({ error: 'No valid fields to update' });
+  }
+
+  updates.push(`updated_at = CURRENT_TIMESTAMP`);
+
+  const result = await pool.query(
+    `UPDATE delivery_charge_settings
+     SET ${updates.join(', ')}
+     WHERE type = 'inside_colombo'
+     RETURNING *`,
+    values
+  );
+
+  res.json(result.rows[0]);
+}));
+
+router.put('/out-of-colombo', authenticate, asyncHandler(async (req, res) => {
+  const {
+    is_active,
+    enabled_for_pos,
+    enabled_for_ecommerce,
+    out_of_colombo_base_weight,
+    out_of_colombo_base_amount,
+    out_of_colombo_per_kg_amount
+  } = req.body;
+
+  const updates = [];
+  const values = [];
+  let paramCount = 1;
+
+  if (is_active !== undefined) {
+    updates.push(`is_active = $${paramCount++}`);
+    values.push(is_active);
+  }
+
+  if (enabled_for_pos !== undefined) {
+    updates.push(`enabled_for_pos = $${paramCount++}`);
+    values.push(enabled_for_pos);
+  }
+
+  if (enabled_for_ecommerce !== undefined) {
+    updates.push(`enabled_for_ecommerce = $${paramCount++}`);
+    values.push(enabled_for_ecommerce);
+  }
+
+  if (out_of_colombo_base_weight !== undefined) {
+    if (out_of_colombo_base_weight < 0) {
+      return res.status(400).json({ error: 'Base weight cannot be negative' });
+    }
+    updates.push(`out_of_colombo_base_weight = $${paramCount++}`);
+    values.push(out_of_colombo_base_weight);
+  }
+
+  if (out_of_colombo_base_amount !== undefined) {
+    if (out_of_colombo_base_amount < 0) {
+      return res.status(400).json({ error: 'Base amount cannot be negative' });
+    }
+    updates.push(`out_of_colombo_base_amount = $${paramCount++}`);
+    values.push(out_of_colombo_base_amount);
+  }
+
+  if (out_of_colombo_per_kg_amount !== undefined) {
+    if (out_of_colombo_per_kg_amount < 0) {
+      return res.status(400).json({ error: 'Per kg amount cannot be negative' });
+    }
+    updates.push(`out_of_colombo_per_kg_amount = $${paramCount++}`);
+    values.push(out_of_colombo_per_kg_amount);
+  }
+
+  if (updates.length === 0) {
+    return res.status(400).json({ error: 'No valid fields to update' });
+  }
+
+  updates.push(`updated_at = CURRENT_TIMESTAMP`);
+
+  const result = await pool.query(
+    `UPDATE delivery_charge_settings
+     SET ${updates.join(', ')}
+     WHERE type = 'out_of_colombo'
+     RETURNING *`,
+    values
+  );
+
+  res.json(result.rows[0]);
 }));
 
 module.exports = router;

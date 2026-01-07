@@ -1,61 +1,73 @@
 import { call, put, takeLatest } from 'redux-saga/effects';
 import {
-  fetchDeliveryChargesRequest,
-  fetchDeliveryChargesSuccess,
-  fetchDeliveryChargesFailure,
-  createDeliveryChargeRequest,
-  createDeliveryChargeSuccess,
-  createDeliveryChargeFailure,
-  updateDeliveryChargeRequest,
-  updateDeliveryChargeSuccess,
-  updateDeliveryChargeFailure,
-  deleteDeliveryChargeRequest,
-  deleteDeliveryChargeSuccess,
-  deleteDeliveryChargeFailure,
+  fetchDeliverySettingsRequest,
+  fetchDeliverySettingsSuccess,
+  fetchDeliverySettingsFailure,
+  updateFreeDeliveryRequest,
+  updateFreeDeliverySuccess,
+  updateFreeDeliveryFailure,
+  updateInsideColomboRequest,
+  updateInsideColomboSuccess,
+  updateInsideColomboFailure,
+  updateOutOfColomboRequest,
+  updateOutOfColomboSuccess,
+  updateOutOfColomboFailure,
+  calculateDeliveryChargeRequest,
+  calculateDeliveryChargeSuccess,
+  calculateDeliveryChargeFailure,
 } from './deliveryChargesSlice';
 import { deliveryChargesApi } from '../../api/apiClient';
 
-function* fetchDeliveryChargesSaga(action) {
+function* fetchDeliverySettingsSaga(action) {
   try {
-    const { is_active } = action.payload || {};
-    const data = yield call(deliveryChargesApi.getAll, is_active);
-    yield put(fetchDeliveryChargesSuccess(data));
+    const { source } = action.payload || {};
+    const data = yield call(deliveryChargesApi.getAllSettings, source);
+    yield put(fetchDeliverySettingsSuccess(data));
   } catch (error) {
-    yield put(fetchDeliveryChargesFailure(error.message));
+    yield put(fetchDeliverySettingsFailure(error.message));
   }
 }
 
-function* createDeliveryChargeSaga(action) {
+function* updateFreeDeliverySaga(action) {
   try {
-    const data = yield call(deliveryChargesApi.create, action.payload);
-    yield put(createDeliveryChargeSuccess(data));
+    const data = yield call(deliveryChargesApi.updateFreeDelivery, action.payload);
+    yield put(updateFreeDeliverySuccess(data));
   } catch (error) {
-    yield put(createDeliveryChargeFailure(error.message));
+    yield put(updateFreeDeliveryFailure(error.message));
   }
 }
 
-function* updateDeliveryChargeSaga(action) {
+function* updateInsideColomboSaga(action) {
   try {
-    const { id, ...updateData } = action.payload;
-    const data = yield call(deliveryChargesApi.update, id, updateData);
-    yield put(updateDeliveryChargeSuccess(data));
+    const data = yield call(deliveryChargesApi.updateInsideColombo, action.payload);
+    yield put(updateInsideColomboSuccess(data));
   } catch (error) {
-    yield put(updateDeliveryChargeFailure(error.message));
+    yield put(updateInsideColomboFailure(error.message));
   }
 }
 
-function* deleteDeliveryChargeSaga(action) {
+function* updateOutOfColomboSaga(action) {
   try {
-    yield call(deliveryChargesApi.delete, action.payload);
-    yield put(deleteDeliveryChargeSuccess(action.payload));
+    const data = yield call(deliveryChargesApi.updateOutOfColombo, action.payload);
+    yield put(updateOutOfColomboSuccess(data));
   } catch (error) {
-    yield put(deleteDeliveryChargeFailure(error.message));
+    yield put(updateOutOfColomboFailure(error.message));
+  }
+}
+
+function* calculateDeliveryChargeSaga(action) {
+  try {
+    const data = yield call(deliveryChargesApi.calculateCharge, action.payload);
+    yield put(calculateDeliveryChargeSuccess(data));
+  } catch (error) {
+    yield put(calculateDeliveryChargeFailure(error.message));
   }
 }
 
 export default function* deliveryChargesSaga() {
-  yield takeLatest(fetchDeliveryChargesRequest.type, fetchDeliveryChargesSaga);
-  yield takeLatest(createDeliveryChargeRequest.type, createDeliveryChargeSaga);
-  yield takeLatest(updateDeliveryChargeRequest.type, updateDeliveryChargeSaga);
-  yield takeLatest(deleteDeliveryChargeRequest.type, deleteDeliveryChargeSaga);
+  yield takeLatest(fetchDeliverySettingsRequest.type, fetchDeliverySettingsSaga);
+  yield takeLatest(updateFreeDeliveryRequest.type, updateFreeDeliverySaga);
+  yield takeLatest(updateInsideColomboRequest.type, updateInsideColomboSaga);
+  yield takeLatest(updateOutOfColomboRequest.type, updateOutOfColomboSaga);
+  yield takeLatest(calculateDeliveryChargeRequest.type, calculateDeliveryChargeSaga);
 }

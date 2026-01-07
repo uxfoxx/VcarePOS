@@ -24,17 +24,17 @@ import { useSelector, useDispatch } from 'react-redux';
 import { fetchUsers } from '../../features/users/usersSlice';
 import { clearCart } from '../../features/cart/cartSlice';
 import { createTransaction } from '../../features/transactions/transactionsSlice';
-import { fetchDeliveryChargesRequest } from '../../features/deliveryCharges/deliveryChargesSlice';
+import { fetchDeliverySettingsRequest } from '../../features/deliveryCharges/deliveryChargesSlice';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
-export function CheckoutModal({ 
-  open, 
-  onClose, 
-  cartItems, 
-  appliedCoupon, 
+export function CheckoutModal({
+  open,
+  onClose,
+  cartItems,
+  appliedCoupon,
   couponDiscount,
   itemTaxes,
   fullBillTaxes,
@@ -43,7 +43,7 @@ export function CheckoutModal({
 }) {
   const dispatch = useDispatch();
   const users = useSelector(state => state.users.usersList);
-  const { activeDeliveryCharges } = useSelector(state => state.deliveryCharges);
+  const { settings: deliverySettings, allSettings } = useSelector(state => state.deliveryCharges);
   const { currentUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [customerForm] = Form.useForm();
@@ -71,7 +71,7 @@ export function CheckoutModal({
   React.useEffect(() => {
     if (open) {
       dispatch(fetchUsers());
-      dispatch(fetchDeliveryChargesRequest({ is_active: true }));
+      dispatch(fetchDeliverySettingsRequest({ source: 'pos' }));
       // Reset forms and customer data when modal opens
       setCustomerData({
         customerName: '',

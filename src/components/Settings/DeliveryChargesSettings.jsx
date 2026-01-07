@@ -1,244 +1,355 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  Table,
-  Button,
-  Modal,
-  Form,
-  Input,
-  InputNumber,
-  Switch,
-  Space,
-  Popconfirm,
-  message,
-  Typography,
   Card,
+  Switch,
+  InputNumber,
+  Divider,
+  Space,
+  Typography,
+  Slider,
+  message,
+  Spin,
+  Alert,
 } from 'antd';
-import { Icon } from '../common/Icon';
-import { ActionButton } from '../common/ActionButton';
 import {
-  fetchDeliveryChargesRequest,
-  createDeliveryChargeRequest,
-  updateDeliveryChargeRequest,
-  deleteDeliveryChargeRequest,
+  fetchDeliverySettingsRequest,
+  updateFreeDeliveryRequest,
+  updateInsideColomboRequest,
+  updateOutOfColomboRequest,
 } from '../../features/deliveryCharges/deliveryChargesSlice';
+import { calculateDeliveryCharge, formatCurrency } from '../../utils/deliveryCalculator';
 
 const { Title, Text } = Typography;
 
 export function DeliveryChargesSettings() {
   const dispatch = useDispatch();
-  const { deliveryCharges, loading, error } = useSelector(state => state.deliveryCharges);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingCharge, setEditingCharge] = useState(null);
-  const [form] = Form.useForm();
-  const [lastAction, setLastAction] = useState(null);
+  const { settings, loading, error } = useSelector(state => state.deliveryCharges);
+  const [testWeight, setTestWeight] = useState(6);
   const prevLoadingRef = React.useRef(loading);
 
   useEffect(() => {
-    dispatch(fetchDeliveryChargesRequest({}));
+    dispatch(fetchDeliverySettingsRequest({}));
   }, [dispatch]);
 
   useEffect(() => {
-    // Show success/error messages when operations complete
-    if (prevLoadingRef.current && !loading && lastAction) {
-      if (error) {
-        message.error(error);
-      } else {
-        const messages = {
-          create: 'Delivery charge created successfully',
-          update: 'Delivery charge updated successfully',
-          delete: 'Delivery charge deleted successfully',
-        };
-        if (messages[lastAction]) {
-          message.success(messages[lastAction]);
-        }
-        if (lastAction !== 'delete') {
-          setModalVisible(false);
-          form.resetFields();
-        }
-      }
-      setLastAction(null);
+    if (prevLoadingRef.current && !loading && !error) {
+      message.success('Delivery settings updated successfully');
+    }
+    if (prevLoadingRef.current && !loading && error) {
+      message.error(error);
     }
     prevLoadingRef.current = loading;
-  }, [loading, error, lastAction, form]);
+  }, [loading, error]);
 
-  const handleCreate = () => {
-    setEditingCharge(null);
-    form.resetFields();
-    setModalVisible(true);
+  const handleFreeDeliveryChange = (field, value) => {
+    const updatedSettings = {
+      ...settings.freeDelivery,
+      [field]: value
+    };
+    dispatch(updateFreeDeliveryRequest(updatedSettings));
   };
 
-  const handleEdit = (record) => {
-    setEditingCharge(record);
-    form.setFieldsValue(record);
-    setModalVisible(true);
+  const handleInsideColomboChange = (field, value) => {
+    const updatedSettings = {
+      ...settings.insideColombo,
+      [field]: value
+    };
+    dispatch(updateInsideColomboRequest(updatedSettings));
   };
 
-  const handleDelete = (id) => {
-    setLastAction('delete');
-    dispatch(deleteDeliveryChargeRequest(id));
+  const handleOutOfColomboChange = (field, value) => {
+    const updatedSettings = {
+      ...settings.outOfColombo,
+      [field]: value
+    };
+    dispatch(updateOutOfColomboRequest(updatedSettings));
   };
 
-  const handleSubmit = (values) => {
-    if (editingCharge) {
-      setLastAction('update');
-      dispatch(updateDeliveryChargeRequest({ id: editingCharge.id, ...values }));
-    } else {
-      setLastAction('create');
-      dispatch(createDeliveryChargeRequest(values));
-    }
+  const renderCalculationExample = () => {
+    if (!settings.outOfColombo) return null;
+
+    const result = calculateDeliveryCharge(testWeight, 'out_of_colombo', settings.outOfColombo);
+    const { breakdown } = result;
+
+    return (
+      <div className="mt-4 p-4 bg-gray-50 rounded">
+        <div className="mb-3">
+          <Text strong>Live Calculation Example</Text>
+          <div className="mt-2">
+            <Text type="secondary">Test Weight: {testWeight}kg</Text>
+            <Slider
+              min={0.5}
+              max={20}
+              step={0.5}
+              value={testWeight}
+              onChange={setTestWeight}
+              marks={{
+                0.5: '0.5kg',
+                5: '5kg',
+                10: '10kg',
+                20: '20kg'
+              }}
+            />
+          </div>
+        </div>
+
+        <Divider className="my-3" />
+
+        <div className="space-y-2">
+          {breakdown.baseWeight && (
+            <>
+              <div className="flex justify-between">
+                <Text>Base charge (up to {breakdown.baseWeight}kg):</Text>
+                <Text strong>{formatCurrency(breakdown.baseAmount)}</Text>
+              </div>
+              {breakdown.additionalWeight > 0 && (
+                <>
+                  <div className="flex justify-between">
+                    <Text>Additional weight ({breakdown.additionalWeight.toFixed(2)}kg @ {formatCurrency(breakdown.perKgAmount)}/kg):</Text>
+                    <Text strong>{formatCurrency(breakdown.additionalCharge)}</Text>
+                  </div>
+                  <Divider className="my-2" />
+                </>
+              )}
+              <div className="flex justify-between">
+                <Text strong className="text-lg">Total Delivery Charge:</Text>
+                <Text strong className="text-lg text-blue-600">{formatCurrency(result.deliveryCharge)}</Text>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
   };
 
-  const columns = [
-    {
-      title: 'Location',
-      dataIndex: 'location_name',
-      key: 'location_name',
-      sorter: (a, b) => a.location_name.localeCompare(b.location_name),
-    },
-    {
-      title: 'Charge Amount',
-      dataIndex: 'charge_amount',
-      key: 'charge_amount',
-      render: (amount) => `Rs. ${parseFloat(amount).toFixed(2)}`,
-      sorter: (a, b) => parseFloat(a.charge_amount) - parseFloat(b.charge_amount),
-    },
-    {
-      title: 'Status',
-      dataIndex: 'is_active',
-      key: 'is_active',
-      render: (isActive) => (
-        <span className={`px-2 py-1 rounded text-xs ${isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-          {isActive ? 'Active' : 'Inactive'}
-        </span>
-      ),
-      filters: [
-        { text: 'Active', value: true },
-        { text: 'Inactive', value: false },
-      ],
-      onFilter: (value, record) => record.is_active === value,
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (_, record) => (
-        <Space>
-          <Button
-            type="link"
-            icon={<Icon name="edit" />}
-            onClick={() => handleEdit(record)}
-          >
-            Edit
-          </Button>
-          <Popconfirm
-            title="Are you sure you want to delete this delivery charge?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button
-              type="link"
-              danger
-              icon={<Icon name="delete" />}
-            >
-              Delete
-            </Button>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+  if (!settings.freeDelivery || !settings.insideColombo || !settings.outOfColombo) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div className="mb-4 flex justify-between items-center">
-        <div>
-          <Title level={4}>Delivery Charges</Title>
-          <Text type="secondary">
-            Manage delivery charges for different locations
-          </Text>
-        </div>
-        <ActionButton.Primary onClick={handleCreate} icon={<Icon name="add" />}>
-          Add Delivery Charge
-        </ActionButton.Primary>
+      <div className="mb-6">
+        <Title level={4}>Delivery Charges</Title>
+        <Text type="secondary">
+          Configure delivery options with weight-based calculations
+        </Text>
       </div>
 
-      <Table
-        columns={columns}
-        dataSource={deliveryCharges}
-        rowKey="id"
-        loading={loading}
-        pagination={{
-          pageSize: 10,
-          showSizeChanger: true,
-          showTotal: (total) => `Total ${total} charges`,
-        }}
-      />
+      {error && (
+        <Alert
+          message="Error"
+          description={error}
+          type="error"
+          closable
+          className="mb-4"
+        />
+      )}
 
-      <Modal
-        title={editingCharge ? 'Edit Delivery Charge' : 'Add Delivery Charge'}
-        open={modalVisible}
-        onCancel={() => {
-          setModalVisible(false);
-          form.resetFields();
-        }}
-        footer={null}
-        width={600}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-          initialValues={{ is_active: true }}
-        >
-          <Form.Item
-            name="location_name"
-            label="Location Name"
-            rules={[{ required: true, message: 'Please enter location name' }]}
-          >
-            <Input placeholder="e.g., Colombo, Kandy" />
-          </Form.Item>
-
-          <Form.Item
-            name="charge_amount"
-            label="Charge Amount (Rs.)"
-            rules={[
-              { required: true, message: 'Please enter charge amount' },
-              { type: 'number', min: 0, message: 'Amount must be positive' },
-            ]}
-          >
-            <InputNumber
-              className="w-full"
-              min={0}
-              step={50}
-              precision={2}
-              placeholder="e.g., 500.00"
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card
+          title="Free Delivery"
+          className="shadow-sm"
+          extra={
+            <Switch
+              checked={settings.freeDelivery.is_active}
+              loading={loading}
+              onChange={(checked) => handleFreeDeliveryChange('is_active', checked)}
             />
-          </Form.Item>
+          }
+        >
+          <Space direction="vertical" className="w-full" size="middle">
+            <div>
+              <Text type="secondary">Enable this option to offer free delivery</Text>
+            </div>
 
-          <Form.Item
-            name="is_active"
-            label="Status"
-            valuePropName="checked"
-          >
-            <Switch checkedChildren="Active" unCheckedChildren="Inactive" />
-          </Form.Item>
+            <Divider className="my-2" />
 
-          <Form.Item className="mb-0 mt-6">
-            <Space className="w-full justify-end">
-              <Button onClick={() => {
-                setModalVisible(false);
-                form.resetFields();
-              }}>
-                Cancel
-              </Button>
-              <ActionButton.Primary htmlType="submit" loading={loading}>
-                {editingCharge ? 'Update' : 'Create'}
-              </ActionButton.Primary>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Modal>
+            <div className="flex items-center justify-between">
+              <Text>Enable for POS:</Text>
+              <Switch
+                checked={settings.freeDelivery.enabled_for_pos}
+                disabled={!settings.freeDelivery.is_active}
+                loading={loading}
+                onChange={(checked) => handleFreeDeliveryChange('enabled_for_pos', checked)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Text>Enable for E-commerce:</Text>
+              <Switch
+                checked={settings.freeDelivery.enabled_for_ecommerce}
+                disabled={!settings.freeDelivery.is_active}
+                loading={loading}
+                onChange={(checked) => handleFreeDeliveryChange('enabled_for_ecommerce', checked)}
+              />
+            </div>
+
+            <div className="mt-4 p-3 bg-green-50 rounded">
+              <Text strong className="text-green-700">Delivery Charge: Rs. 0</Text>
+            </div>
+          </Space>
+        </Card>
+
+        <Card
+          title="Inside Colombo"
+          className="shadow-sm"
+          extra={
+            <Switch
+              checked={settings.insideColombo.is_active}
+              loading={loading}
+              onChange={(checked) => handleInsideColomboChange('is_active', checked)}
+            />
+          }
+        >
+          <Space direction="vertical" className="w-full" size="middle">
+            <div>
+              <Text type="secondary">Flat rate delivery charge for Inside Colombo</Text>
+            </div>
+
+            <div>
+              <Text strong>Flat Rate Amount (Rs.):</Text>
+              <InputNumber
+                className="w-full mt-2"
+                min={0}
+                step={50}
+                precision={2}
+                value={settings.insideColombo.inside_colombo_amount}
+                disabled={!settings.insideColombo.is_active || loading}
+                onChange={(value) => handleInsideColomboChange('inside_colombo_amount', value)}
+              />
+            </div>
+
+            <Divider className="my-2" />
+
+            <div className="flex items-center justify-between">
+              <Text>Enable for POS:</Text>
+              <Switch
+                checked={settings.insideColombo.enabled_for_pos}
+                disabled={!settings.insideColombo.is_active}
+                loading={loading}
+                onChange={(checked) => handleInsideColomboChange('enabled_for_pos', checked)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Text>Enable for E-commerce:</Text>
+              <Switch
+                checked={settings.insideColombo.enabled_for_ecommerce}
+                disabled={!settings.insideColombo.is_active}
+                loading={loading}
+                onChange={(checked) => handleInsideColomboChange('enabled_for_ecommerce', checked)}
+              />
+            </div>
+
+            <div className="mt-4 p-3 bg-blue-50 rounded">
+              <Text strong className="text-blue-700">
+                Delivery Charge: {formatCurrency(settings.insideColombo.inside_colombo_amount)}
+              </Text>
+            </div>
+          </Space>
+        </Card>
+
+        <Card
+          title="Out of Colombo"
+          className="shadow-sm"
+          extra={
+            <Switch
+              checked={settings.outOfColombo.is_active}
+              loading={loading}
+              onChange={(checked) => handleOutOfColomboChange('is_active', checked)}
+            />
+          }
+        >
+          <Space direction="vertical" className="w-full" size="middle">
+            <div>
+              <Text type="secondary">Weight-based delivery charge calculation</Text>
+            </div>
+
+            <div>
+              <Text strong>Base Weight (kg):</Text>
+              <InputNumber
+                className="w-full mt-2"
+                min={0}
+                step={0.5}
+                precision={1}
+                value={settings.outOfColombo.out_of_colombo_base_weight}
+                disabled={!settings.outOfColombo.is_active || loading}
+                onChange={(value) => handleOutOfColomboChange('out_of_colombo_base_weight', value)}
+              />
+            </div>
+
+            <div>
+              <Text strong>Base Amount (Rs.):</Text>
+              <InputNumber
+                className="w-full mt-2"
+                min={0}
+                step={50}
+                precision={2}
+                value={settings.outOfColombo.out_of_colombo_base_amount}
+                disabled={!settings.outOfColombo.is_active || loading}
+                onChange={(value) => handleOutOfColomboChange('out_of_colombo_base_amount', value)}
+              />
+            </div>
+
+            <div>
+              <Text strong>Per Kg Amount (Rs.):</Text>
+              <InputNumber
+                className="w-full mt-2"
+                min={0}
+                step={10}
+                precision={2}
+                value={settings.outOfColombo.out_of_colombo_per_kg_amount}
+                disabled={!settings.outOfColombo.is_active || loading}
+                onChange={(value) => handleOutOfColomboChange('out_of_colombo_per_kg_amount', value)}
+              />
+            </div>
+
+            <Divider className="my-2" />
+
+            <div className="flex items-center justify-between">
+              <Text>Enable for POS:</Text>
+              <Switch
+                checked={settings.outOfColombo.enabled_for_pos}
+                disabled={!settings.outOfColombo.is_active}
+                loading={loading}
+                onChange={(checked) => handleOutOfColomboChange('enabled_for_pos', checked)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Text>Enable for E-commerce:</Text>
+              <Switch
+                checked={settings.outOfColombo.enabled_for_ecommerce}
+                disabled={!settings.outOfColombo.is_active}
+                loading={loading}
+                onChange={(checked) => handleOutOfColomboChange('enabled_for_ecommerce', checked)}
+              />
+            </div>
+
+            {settings.outOfColombo.is_active && renderCalculationExample()}
+          </Space>
+        </Card>
+      </div>
+
+      <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded">
+        <Text strong>How weight-based calculation works:</Text>
+        <ul className="mt-2 ml-4 space-y-1">
+          <li>
+            <Text>If total weight is up to the base weight, the base amount is charged</Text>
+          </li>
+          <li>
+            <Text>If total weight exceeds the base weight, additional charges apply per kg</Text>
+          </li>
+          <li>
+            <Text>Example: 6kg order with 5kg base @ Rs.600 + 1kg @ Rs.100/kg = Rs.700 total</Text>
+          </li>
+        </ul>
+      </div>
     </div>
   );
 }

@@ -48,44 +48,56 @@ export const InvoiceItemsTable = ({ items, showImages = false }) => (
     <table className="w-full border-collapse" style={{ marginTop: '12px' }}>
       <thead>
         <tr style={{ background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)' }}>
-          <th className="p-2 text-left text-white font-bold" style={{ width: '55%' }}>DESCRIPTION</th>
+          <th className="p-2 text-left text-white font-bold" style={{ width: '45%' }}>DESCRIPTION</th>
           <th className="p-2 text-center text-white font-bold" style={{ width: '15%' }}>QTY</th>
-          <th className="p-2 text-right text-white font-bold" style={{ width: '30%' }}>AMOUNT</th>
+          <th className="p-2 text-right text-white font-bold" style={{ width: '20%' }}>RATE</th>
+          <th className="p-2 text-right text-white font-bold" style={{ width: '20%' }}>AMOUNT</th>
         </tr>
       </thead>
       <tbody>
-        {items.map((item, index) => (
-          <tr key={index} className="border-b border-gray-200">
-            <td className="p-2">
-              <div>
-                <Text strong className="block text-sm">{item.name || item.product?.name || item.productName}</Text>
-                {item.description && (
-                  <Text className="block text-xs text-gray-600 mt-1" style={{ whiteSpace: 'pre-wrap' }}>
-                    {item.description}
-                  </Text>
-                )}
-                {(item.selectedVariant || item.selectedSize) && (
-                  <Text className="block text-xs text-gray-500 mt-1">
-                    {item.selectedVariant && `Color: ${item.selectedVariant}`}
-                    {item.selectedVariant && item.selectedSize && ' • '}
-                    {item.selectedSize && `Size: ${item.selectedSize}`}
-                  </Text>
-                )}
-              </div>
-            </td>
-            <td className="p-2 text-center">
-              <Text className="text-sm">{item.quantity}{item.unit ? ` ${item.unit}` : 'NOS'}</Text>
-            </td>
-            <td className="p-2 text-right">
-              <Text className="text-sm font-medium">
-                {((item.product?.price || item.unitPrice || item.price || 0) * item.quantity).toLocaleString('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                })}
-              </Text>
-            </td>
-          </tr>
-        ))}
+        {items.map((item, index) => {
+          const unitPrice = item.product?.price || item.unitPrice || item.price || 0;
+          return (
+            <tr key={index} className="border-b border-gray-200">
+              <td className="p-2">
+                <div>
+                  <Text strong className="block text-sm">{item.name || item.product?.name || item.productName}</Text>
+                  {item.description && (
+                    <Text className="block text-xs text-gray-600 mt-1" style={{ whiteSpace: 'pre-wrap' }}>
+                      {item.description}
+                    </Text>
+                  )}
+                  {(item.selectedVariant || item.selectedSize) && (
+                    <Text className="block text-xs text-gray-500 mt-1">
+                      {item.selectedVariant && `Color: ${item.selectedVariant}`}
+                      {item.selectedVariant && item.selectedSize && ' • '}
+                      {item.selectedSize && `Size: ${item.selectedSize}`}
+                    </Text>
+                  )}
+                </div>
+              </td>
+              <td className="p-2 text-center">
+                <Text className="text-sm">{item.quantity}{item.unit ? ` ${item.unit}` : ' NOS'}</Text>
+              </td>
+              <td className="p-2 text-right">
+                <Text className="text-sm">
+                  LKR {unitPrice.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
+                </Text>
+              </td>
+              <td className="p-2 text-right">
+                <Text className="text-sm font-medium">
+                  LKR {(unitPrice * item.quantity).toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
+                </Text>
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   </div>
@@ -199,10 +211,7 @@ export const InvoiceNotes = ({ notesTemplate }) => {
   );
 };
 
-export const InvoiceFooter = ({ businessAddress, phoneNumber }) => {
-  const address = businessAddress || '';
-  const phone = phoneNumber || '';
-
+export const InvoiceFooter = () => {
   return (
     <div
       style={{
@@ -218,37 +227,32 @@ export const InvoiceFooter = ({ businessAddress, phoneNumber }) => {
         breakInside: 'avoid'
       }}
     >
-      {phone && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <svg
-            width="20"
-            height="20"
-            fill="none"
-            stroke="white"
-            viewBox="0 0 24 24"
-            style={{ flexShrink: 0 }}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-          </svg>
-          <span style={{ color: 'white', fontSize: '14px', fontWeight: '500' }}>{phone}</span>
-        </div>
-      )}
-      {address && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <svg
-            width="20"
-            height="20"
-            fill="none"
-            stroke="white"
-            viewBox="0 0 24 24"
-            style={{ flexShrink: 0 }}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          <span style={{ color: 'white', fontSize: '14px', fontWeight: '500' }}>{address}</span>
-        </div>
-      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <svg
+          width="20"
+          height="20"
+          fill="none"
+          stroke="white"
+          viewBox="0 0 24 24"
+          style={{ flexShrink: 0 }}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+        </svg>
+        <span style={{ color: 'white', fontSize: '14px', fontWeight: '500' }}>0112870330</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <svg
+          width="20"
+          height="20"
+          fill="none"
+          stroke="white"
+          viewBox="0 0 24 24"
+          style={{ flexShrink: 0 }}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+        <span style={{ color: 'white', fontSize: '14px', fontWeight: '500' }}>vcarepvtltd@gmail.com</span>
+      </div>
     </div>
   );
 };

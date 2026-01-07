@@ -14,7 +14,9 @@ import {
   Switch,
   Table,
   Modal,
-  Popconfirm
+  Popconfirm,
+  Select,
+  InputNumber
 } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
@@ -22,6 +24,7 @@ import apiClient from '../../api/apiClient';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
+const { Option } = Select;
 
 export function InvoiceSettings() {
   const [form] = Form.useForm();
@@ -50,7 +53,9 @@ export function InvoiceSettings() {
           businessAddress: response.data.business_address,
           phoneNumber: response.data.phone_number,
           emailAddress: response.data.email_address,
-          website: response.data.website
+          website: response.data.website,
+          currency: response.data.currency || 'LKR',
+          taxRate: response.data.tax_rate || 8
         });
       }
     } catch (error) {
@@ -318,6 +323,51 @@ export function InvoiceSettings() {
               </Form.Item>
             </Col>
           </Row>
+
+          <Divider />
+
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item
+                name="currency"
+                label="Currency"
+                initialValue="LKR"
+                rules={[{ required: true, message: 'Please select currency' }]}
+              >
+                <Select placeholder="Select currency">
+                  <Option value="LKR">LKR (Rs)</Option>
+                  <Option value="USD">USD ($)</Option>
+                  <Option value="EUR">EUR (€)</Option>
+                  <Option value="GBP">GBP (£)</Option>
+                  <Option value="INR">INR (₹)</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+
+            <Col span={12}>
+              <Form.Item
+                name="taxRate"
+                label="Default Tax Rate (%)"
+                initialValue={8}
+                rules={[{ required: true, message: 'Please enter tax rate' }]}
+              >
+                <InputNumber
+                  min={0}
+                  max={100}
+                  step={0.01}
+                  className="w-full"
+                  placeholder="Enter tax rate"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <div className="bg-blue-50 p-4 rounded-lg mb-4">
+            <Text className="text-sm">
+              <Icon name="info" className="mr-2 text-blue-600" />
+              <strong>Note:</strong> Currency and tax rate settings will be used as defaults for all new invoices and quotations. You can override these values for individual transactions.
+            </Text>
+          </div>
 
           <div className="flex justify-end mt-4">
             <Button type="primary" htmlType="submit" loading={loading} icon={<Icon name="save" />}>

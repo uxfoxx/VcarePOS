@@ -206,30 +206,30 @@ export function QuotationManagement() {
 
     try {
       const canvas = await html2canvas(element, {
-        scale: 3,
+        scale: 1.5,
         useCORS: true,
-        allowTaint: false,
         backgroundColor: '#ffffff',
-        width: element.scrollWidth,
-        height: element.scrollHeight,
         logging: false
       });
 
+      // Cache the image data to avoid regenerating it for each page
+      const imgData = canvas.toDataURL('image/jpeg', 0.85);
       const imgWidth = 210;
       const pageHeight = 297;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
 
       const pdf = new jsPDF('p', 'mm', 'a4');
       let position = 0;
 
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
 
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
+      let heightLeft = imgHeight - pageHeight;
+
+      // Only add new page if significant content remains (> 20mm)
+      while (heightLeft > 20) {
+        position = position - pageHeight;
         pdf.addPage();
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
       }
 

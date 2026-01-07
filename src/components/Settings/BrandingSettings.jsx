@@ -350,10 +350,6 @@ export function BrandingSettings() {
       accentColor: '#fa8c16',
       darkModeSupport: false,
       fontFamily: 'Inter',
-      emailAddress: 'info@vcarefurniture.com',
-      phoneNumber: '(555) 123-4567',
-      address: '123 Main Street, City, State 12345',
-      website: 'www.vcarefurniture.com',
       receiptFooter: 'Thank you for your business!',
       invoiceNotes: 'Payment is due within 30 days.'
     });
@@ -367,7 +363,7 @@ export function BrandingSettings() {
     const defaultTheme = {
       primaryColor: '#333333', // Dark gray
       primaryTextColor: '#ffffff', // White text
-      secondaryColor: '#666666', // Medium gray 
+      secondaryColor: '#666666', // Medium gray
       secondaryTextColor: '#ffffff', // White text
       accentColor: '#999999', // Light gray
       accentTextColor: '#ffffff', // White text
@@ -375,10 +371,6 @@ export function BrandingSettings() {
       fontFamily: 'Inter',
       businessName: 'VCare Furniture Store',
       tagline: 'Premium Furniture Solutions',
-      emailAddress: 'info@vcarefurniture.com',
-      phoneNumber: '(555) 123-4567',
-      address: '123 Main Street, City, State 12345',
-      website: 'www.vcarefurniture.com',
       receiptFooter: 'Thank you for your business!',
       invoiceNotes: 'Payment is due within 30 days.',
       logoPreview: '/VCARELogo 1.png'
@@ -543,50 +535,18 @@ export function BrandingSettings() {
               </Form.Item>
             </Col>
             
-            <Col span={12}>
-              <Form.Item
-                name="emailAddress"
-                label="Email Address"
-                initialValue="info@vcarefurniture.com"
-              >
-                <Input placeholder="Enter business email" />
-              </Form.Item>
-              
-              <Form.Item
-                name="phoneNumber"
-                label="Phone Number"
-                initialValue="(555) 123-4567"
-              >
-                <Input placeholder="Enter business phone" />
-              </Form.Item>
-              
-              <Form.Item
-                name="address"
-                label="Business Address"
-                initialValue="123 Main Street, City, State 12345"
-              >
-                <TextArea 
-                  rows={3}
-                  placeholder="Enter business address"
-                />
-              </Form.Item>
-              
-              <Form.Item
-                name="website"
-                label="Website"
-                initialValue="www.vcarefurniture.com"
-              >
-                <Input placeholder="Enter website URL" />
-              </Form.Item>
+          </Row>
+
+          <Row gutter={24}>
+            <Col span={24}>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <Text className="text-sm">
+                  <Icon name="info" className="mr-2 text-blue-600" />
+                  <strong>Note:</strong> Business contact information (email, phone, address) can be configured in the Invoice Settings section.
+                </Text>
+              </div>
             </Col>
           </Row>
-          
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <Text className="text-sm">
-              <Icon name="info" className="mr-2 text-blue-600" />
-              <strong>Note:</strong> These details will appear on all invoices, receipts, and other customer-facing documents.
-            </Text>
-          </div>
         </div>
       )
     },
@@ -888,10 +848,6 @@ export function BrandingSettings() {
           accentColor: '#fa8c16',
           accentTextColor: '#ffffff',
           fontFamily: 'Inter',
-          emailAddress: 'info@vcarefurniture.com',
-          phoneNumber: '(555) 123-4567',
-          address: '123 Main Street, City, State 12345',
-          website: 'www.vcarefurniture.com',
           receiptFooter: 'Thank you for your business!',
           invoiceNotes: 'Payment is due within 30 days.'
         }}

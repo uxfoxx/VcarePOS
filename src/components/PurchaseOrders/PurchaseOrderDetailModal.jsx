@@ -58,33 +58,29 @@ export function PurchaseOrderDetailModal({
   
         // Create canvas from the element
         const canvas = await html2canvas(element, {
-          scale: 2,
+          scale: 1.5,
           useCORS: true,
-          allowTaint: true,
-          backgroundColor: '#ffffff',
-          width: element.scrollWidth,
-          height: element.scrollHeight
+          backgroundColor: '#ffffff'
         });
-  
-        // Calculate PDF dimensions
-        const imgWidth = 210; // A4 width in mm
-        const pageHeight = 295; // A4 height in mm
+
+        // Cache the image data to avoid regenerating it for each page
+        const imgData = canvas.toDataURL('image/jpeg', 0.85);
+        const imgWidth = 210;
+        const pageHeight = 297;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        let heightLeft = imgHeight;
-  
-        // Create PDF
+
         const pdf = new jsPDF('p', 'mm', 'a4');
         let position = 0;
-  
-        // Add first page
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-  
-        // Add additional pages if needed
-        while (heightLeft >= 0) {
-          position = heightLeft - imgHeight;
+
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+
+        let heightLeft = imgHeight - pageHeight;
+
+        // Only add new page if significant content remains (> 20mm)
+        while (heightLeft > 20) {
+          position = position - pageHeight;
           pdf.addPage();
-          pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+          pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
           heightLeft -= pageHeight;
         }
   

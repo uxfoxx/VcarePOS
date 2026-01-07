@@ -29,34 +29,16 @@ const { Option } = Select;
 export function SettingsPanel() {
   const [activeSection, setActiveSection] = useState('general');
   const [form] = Form.useForm();
-  const [cacheForm] = Form.useForm();
 
   const sections = [
     { key: 'general', label: 'General', icon: <Icon name="settings" /> },
     { key: 'branding', label: 'Branding', icon: <Icon name="branding_watermark" /> },
     { key: 'invoice', label: 'Invoice Settings', icon: <Icon name="receipt" /> },
-    { key: 'delivery', label: 'Delivery Charges', icon: <Icon name="local_shipping" /> },
-    { key: 'store', label: 'Store Info', icon: <Icon name="store" /> },
-    { key: 'users', label: 'User Management', icon: <Icon name="people" /> },
-    { key: 'payment', label: 'Payment Methods', icon: <Icon name="payment" /> },
-    { key: 'notifications', label: 'Notifications', icon: <Icon name="notifications" /> },
-    { key: 'security', label: 'Security', icon: <Icon name="security" /> },
-    { key: 'hardware', label: 'Hardware', icon: <Icon name="print" /> }
+    { key: 'delivery', label: 'Delivery Charges', icon: <Icon name="local_shipping" /> }
   ];
 
   const handleSave = () => {
     message.success('Settings saved successfully!');
-  };
-
-  const handleSaveCacheSettings = (values) => {
-    message.success('Cache settings saved successfully!');
-    
-    // Apply cache settings
-    if (values.clearAllCaches) {
-      flushCache();
-      clearCache();
-      message.info('All caches have been cleared');
-    }
   };
 
   const renderGeneralSettings = () => (
@@ -66,21 +48,6 @@ export function SettingsPanel() {
         <Col span={12}>
           <Form.Item name="businessName" label="Business Name" initialValue="VCare Furniture Store">
             <Input />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item name="currency" label="Currency" initialValue="LKR">
-            <Select>
-              <Option value="LKR">LKR (Rs)</Option>
-              <Option value="USD">USD ($)</Option>
-              <Option value="EUR">EUR (€)</Option>
-              <Option value="GBP">GBP (£)</Option>
-            </Select>
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item name="taxRate" label="Tax Rate (%)" initialValue={8}>
-            <InputNumber min={0} max={100} step={0.01} className="w-full" />
           </Form.Item>
         </Col>
         <Col span={12}>
@@ -95,6 +62,14 @@ export function SettingsPanel() {
           </Form.Item>
         </Col>
       </Row>
+
+      <div className="bg-blue-50 p-4 rounded-lg mt-4 mb-4">
+        <Text className="text-sm">
+          <Icon name="info" className="mr-2 text-blue-600" />
+          <strong>Note:</strong> Currency and tax rate settings are configured in the Invoice Settings section. Business contact information can be configured in Invoice Settings as well.
+        </Text>
+      </div>
+
       <ActionButton.Primary htmlType="submit">Save Changes</ActionButton.Primary>
     </Form>
   );
@@ -122,15 +97,7 @@ export function SettingsPanel() {
       case 'delivery':
         return renderDeliverySettings();
       default:
-        return (
-          <div className="text-center py-12">
-            <Icon name="settings" className="text-6xl text-gray-300 mb-4" />
-            <Title level={4} type="secondary">
-              {sections.find(s => s.key === activeSection)?.label} settings coming soon
-            </Title>
-            <Text type="secondary">This section is under development</Text>
-          </div>
-        );
+        return renderGeneralSettings();
     }
   };
 

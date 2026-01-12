@@ -26,7 +26,22 @@
     - Single row table (only one branding configuration per system)
     - Logo stored as file path, not Base64
     - Default color values provided
+    - Compatible with standard PostgreSQL (auth handled at application level)
 */
+
+-- Create auth schema and functions for compatibility with regular PostgreSQL
+CREATE SCHEMA IF NOT EXISTS auth;
+
+-- Create stub auth.uid() function for regular PostgreSQL
+-- This returns NULL since authentication is handled at the application level via JWT
+CREATE OR REPLACE FUNCTION auth.uid()
+RETURNS text AS $$
+BEGIN
+  -- Return NULL as auth is handled by the application layer
+  -- Application uses JWT tokens for authentication
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql STABLE;
 
 -- Create branding_settings table
 CREATE TABLE IF NOT EXISTS branding_settings (
@@ -52,14 +67,12 @@ ALTER TABLE branding_settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Authenticated users can read branding settings"
   ON branding_settings
   FOR SELECT
-  TO authenticated
   USING (true);
 
 -- Policy: Users with settings:edit permission can insert branding settings
 CREATE POLICY "Users with settings permission can insert branding"
   ON branding_settings
   FOR INSERT
-  TO authenticated
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM users
@@ -72,7 +85,6 @@ CREATE POLICY "Users with settings permission can insert branding"
 CREATE POLICY "Users with settings permission can update branding"
   ON branding_settings
   FOR UPDATE
-  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM users

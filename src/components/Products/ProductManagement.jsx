@@ -124,25 +124,37 @@ export function ProductManagement() {
       fixed: 'left',
       width: 300,
       render: (text, record) => {
-        const getImageMedia = () => {
+        const getAllImages = () => {
+          const images = [];
+
           if (record.media && Array.isArray(record.media) && record.media.length > 0) {
-            return record.media.filter(
+            const imageMedia = record.media.filter(
               (m) =>
                 !m.startsWith('data:video/') &&
                 !m.toLowerCase().endsWith('.mp4') &&
                 !m.toLowerCase().endsWith('.webm') &&
                 !m.toLowerCase().endsWith('.mov')
             );
+            images.push(...imageMedia);
           }
-          return [];
+
+          if (record.colors && Array.isArray(record.colors) && record.colors.length > 0) {
+            record.colors.forEach(color => {
+              if (color.image && !images.includes(color.image)) {
+                images.push(color.image);
+              }
+            });
+          }
+
+          return images;
         };
 
-        const imageMedia = getImageMedia();
-        const primaryImage = imageMedia.length > 0
-          ? `${import.meta.env.VITE_API_URL}${imageMedia[0]}`
+        const allImages = getAllImages();
+        const primaryImage = allImages.length > 0
+          ? `${import.meta.env.VITE_API_URL}${allImages[0]}`
           : record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
 
-        const totalImages = imageMedia.length || (record.image ? 1 : 0);
+        const totalImages = allImages.length || (record.image ? 1 : 0);
 
         return (
           <div className="flex items-center space-x-3">
@@ -157,7 +169,7 @@ export function ProductManagement() {
                   mask: <div className="flex flex-col items-center"><Icon name="search" /><span className="text-xs mt-1">View {totalImages}</span></div>,
                   imageRender: () => (
                     <div className="grid grid-cols-2 gap-2 p-4">
-                      {imageMedia.map((media, idx) => (
+                      {allImages.map((media, idx) => (
                         <img
                           key={idx}
                           src={`${import.meta.env.VITE_API_URL}${media}`}
@@ -376,25 +388,37 @@ export function ProductManagement() {
         fixed: 'left',
         width: 300,
         render: (text, record) => {
-          const getImageMedia = () => {
+          const getAllImages = () => {
+            const images = [];
+
             if (record.media && Array.isArray(record.media) && record.media.length > 0) {
-              return record.media.filter(
+              const imageMedia = record.media.filter(
                 (m) =>
                   !m.startsWith('data:video/') &&
                   !m.toLowerCase().endsWith('.mp4') &&
                   !m.toLowerCase().endsWith('.webm') &&
                   !m.toLowerCase().endsWith('.mov')
               );
+              images.push(...imageMedia);
             }
-            return [];
+
+            if (record.colors && Array.isArray(record.colors) && record.colors.length > 0) {
+              record.colors.forEach(color => {
+                if (color.image && !images.includes(color.image)) {
+                  images.push(color.image);
+                }
+              });
+            }
+
+            return images;
           };
 
-          const imageMedia = getImageMedia();
-          const primaryImage = imageMedia.length > 0
-            ? `${import.meta.env.VITE_API_URL}${imageMedia[0]}`
+          const allImages = getAllImages();
+          const primaryImage = allImages.length > 0
+            ? `${import.meta.env.VITE_API_URL}${allImages[0]}`
             : record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
 
-          const totalImages = imageMedia.length || (record.image ? 1 : 0);
+          const totalImages = allImages.length || (record.image ? 1 : 0);
 
           return (
             <div className="flex items-center space-x-3">
@@ -409,7 +433,7 @@ export function ProductManagement() {
                     mask: <div className="flex flex-col items-center"><Icon name="search" /><span className="text-xs mt-1">View {totalImages}</span></div>,
                     imageRender: () => (
                       <div className="grid grid-cols-2 gap-2 p-4">
-                        {imageMedia.map((media, idx) => (
+                        {allImages.map((media, idx) => (
                           <img
                             key={idx}
                             src={`${import.meta.env.VITE_API_URL}${media}`}

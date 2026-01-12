@@ -142,17 +142,8 @@ const ProductDetailPage = () => {
     }
   }, [currentProduct]);
 
-  // When variation changes, update the displayed image to that variation's image
-  useEffect(() => {
-    if (selectedVariation?.image && galleryImages.length > 0) {
-      const variationImageIndex = galleryImages.findIndex(
-        img => img.variationId === selectedVariation.id
-      );
-      if (variationImageIndex !== -1) {
-        setSelectedImageIndex(variationImageIndex);
-      }
-    }
-  }, [selectedVariation, galleryImages]);
+  // DO NOT automatically switch images when variation changes
+  // This allows users to browse all images without interruption
 
   // Max stock based on size or simple product
   const maxQuantity = selectedSize ? selectedSize.stock : currentProduct?.stock || 0;

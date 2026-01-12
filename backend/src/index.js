@@ -20,6 +20,7 @@ const ecommerceRoutes = require('./routes/ecommerce');
 const invoiceSettingsRoutes = require('./routes/invoiceSettings');
 const quotationsRoutes = require('./routes/quotations');
 const deliveryChargesRoutes = require('./routes/deliveryCharges');
+const settingsRoutes = require('./routes/settings');
 
 // Import middleware
 const { logAction } = require('./middleware/auth');
@@ -102,6 +103,7 @@ app.use('/api/ecommerce', ecommerceRoutes);
 app.use('/api/invoice-settings', invoiceSettingsRoutes);
 app.use('/api/quotations', quotationsRoutes);
 app.use('/api/delivery-charges', deliveryChargesRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Swagger docs
 setupSwagger(app);

@@ -22,10 +22,12 @@ import {
   Collapse,
   Alert,
   Badge,
-  Tooltip
+  Tooltip,
+  Spin
 } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
+import { settingsApi } from '../../api/apiClient';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -51,38 +53,72 @@ export function ColorManagementPanel({
   const [activeSizeId, setActiveSizeId] = useState(null);
   const [editingSizeId, setEditingSizeId] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [imagePath, setImagePath] = useState(null);
   const [colorSelectorImagePreview, setColorSelectorImagePreview] = useState(null);
+  const [colorSelectorImagePath, setColorSelectorImagePath] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingColorSelectorImage, setUploadingColorSelectorImage] = useState(false);
   const [materialSearchTerm, setMaterialSearchTerm] = useState('');
 
   const handleAddColor = (values) => {
     const newColor = {
       name: values.name,
       colorCode: '#000000',
-      image: imagePreview || '',
-      colorSelectorImage: colorSelectorImagePreview || ''
+      image: imagePath || '',
+      colorSelectorImage: colorSelectorImagePath || ''
     };
 
     onAddColor(newColor);
     colorForm.resetFields();
     setImagePreview(null);
+    setImagePath(null);
     setColorSelectorImagePreview(null);
+    setColorSelectorImagePath(null);
   };
 
-  const handleImageUpload = (file) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target.result);
-    };
-    reader.readAsDataURL(file);
+  const handleImageUpload = async (file) => {
+    try {
+      setUploadingImage(true);
+      const response = await settingsApi.uploadColorImage(file);
+
+      if (response.success) {
+        const fullPath = response.filePath.startsWith('http')
+          ? response.filePath
+          : `${import.meta.env.VITE_API_URL}${response.filePath}`;
+
+        setImagePath(response.filePath);
+        setImagePreview(fullPath);
+        message.success('Color image uploaded successfully');
+      }
+    } catch (error) {
+      console.error('Failed to upload color image:', error);
+      message.error('Failed to upload color image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+    }
     return false;
   };
 
-  const handleColorSelectorImageUpload = (file) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setColorSelectorImagePreview(e.target.result);
-    };
-    reader.readAsDataURL(file);
+  const handleColorSelectorImageUpload = async (file) => {
+    try {
+      setUploadingColorSelectorImage(true);
+      const response = await settingsApi.uploadColorImage(file);
+
+      if (response.success) {
+        const fullPath = response.filePath.startsWith('http')
+          ? response.filePath
+          : `${import.meta.env.VITE_API_URL}${response.filePath}`;
+
+        setColorSelectorImagePath(response.filePath);
+        setColorSelectorImagePreview(fullPath);
+        message.success('Color selector image uploaded successfully');
+      }
+    } catch (error) {
+      console.error('Failed to upload color selector image:', error);
+      message.error('Failed to upload color selector image. Please try again.');
+    } finally {
+      setUploadingColorSelectorImage(false);
+    }
     return false;
   };
 

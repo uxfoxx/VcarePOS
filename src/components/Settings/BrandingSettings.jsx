@@ -1,26 +1,28 @@
-import React, { useState } from 'react';
-import { 
-  Card, 
-  Form, 
-  Input, 
-  Button, 
-  Typography, 
-  Space, 
-  Divider, 
-  Row, 
-  Col, 
-  Upload, 
-  ColorPicker, 
+import React, { useState, useEffect } from 'react';
+import {
+  Card,
+  Form,
+  Input,
+  Button,
+  Typography,
+  Space,
+  Divider,
+  Row,
+  Col,
+  Upload,
+  ColorPicker,
   message,
   Select,
   Switch,
   Tabs,
-  Modal
+  Modal,
+  Spin
 } from 'antd';
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
+import { settingsApi } from '../../api/apiClient';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -29,8 +31,11 @@ const { Option } = Select;
 export function BrandingSettings() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [fetchingSettings, setFetchingSettings] = useState(true);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState('/VCARELogo 1.png');
+  const [logoPath, setLogoPath] = useState(null);
   const [primaryColor, setPrimaryColor] = useState('#0E72BD');
   const [secondaryColor, setSecondaryColor] = useState('#52c41a');
   const [primaryTextColor, setPrimaryTextColor] = useState('#ffffff');
@@ -41,13 +46,53 @@ export function BrandingSettings() {
   const [showCropModal, setShowCropModal] = useState(false);
   const [cropSrc, setCropSrc] = useState(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [darkModeSupport, setDarkModeSupport] = useState(
-    localStorage.getItem('vcare_branding') ? 
-      JSON.parse(localStorage.getItem('vcare_branding')).darkModeSupport || false : 
-      false
-  );
+  const [darkModeSupport, setDarkModeSupport] = useState(false);
   const [crop, setCrop] = useState();
   const [imgRef, setImgRef] = useState(null);
+
+  useEffect(() => {
+    loadBrandingSettings();
+  }, []);
+
+  const loadBrandingSettings = async () => {
+    try {
+      setFetchingSettings(true);
+      const settings = await settingsApi.getBranding();
+
+      if (settings) {
+        setPrimaryColor(settings.primary_color || settings.primaryColor || '#0E72BD');
+        setSecondaryColor(settings.secondary_color || settings.secondaryColor || '#52c41a');
+        setAccentColor(settings.accent_color || settings.accentColor || '#fa8c16');
+        setFontFamily(settings.font_family || settings.fontFamily || 'Inter');
+        setDarkModeSupport(settings.dark_mode_support || settings.darkModeSupport || false);
+
+        if (settings.logo_path || settings.logoPath) {
+          const path = settings.logo_path || settings.logoPath;
+          setLogoPath(path);
+          setLogoPreview(path.startsWith('http') ? path : `${import.meta.env.VITE_API_URL}${path}`);
+        }
+
+        form.setFieldsValue({
+          businessName: settings.business_name || settings.businessName || '',
+          tagline: settings.tagline || '',
+          primaryColor: settings.primary_color || settings.primaryColor || '#0E72BD',
+          secondaryColor: settings.secondary_color || settings.secondaryColor || '#52c41a',
+          accentColor: settings.accent_color || settings.accentColor || '#fa8c16',
+          fontFamily: settings.font_family || settings.fontFamily || 'Inter',
+          darkModeSupport: settings.dark_mode_support || settings.darkModeSupport || false,
+          receiptFooter: settings.receipt_footer || settings.receiptFooter || '',
+          invoiceNotes: settings.invoice_notes || settings.invoiceNotes || ''
+        });
+
+        applyBrandingChanges(settings);
+      }
+    } catch (error) {
+      console.error('Failed to load branding settings:', error);
+      message.error('Failed to load branding settings');
+    } finally {
+      setFetchingSettings(false);
+    }
+  };
   
   // Apply branding changes to the document
   const applyBrandingChanges = (values) => {
@@ -225,46 +270,44 @@ export function BrandingSettings() {
     });
   };
   
-  const handleSave = (values) => {
-    setLoading(true);
-    
-    // Update state values
-    setPrimaryColor(values.primaryColor || primaryColor);
-    setSecondaryColor(values.secondaryColor || secondaryColor);
-    setPrimaryTextColor(values.primaryTextColor || primaryTextColor);
-    setPrimaryTextColor(values.secondaryTextColor || secondaryTextColor);
-    setAccentColor(values.accentColor || accentColor);
-    setAccentTextColor(values.accentTextColor || accentTextColor);
-    setFontFamily(values.fontFamily || fontFamily);
-    setDarkModeSupport(values.darkModeSupport || false);
-    
-    // Prepare branding data
-    const brandingData = {
-      ...values,
-      primaryColor: values.primaryColor || primaryColor,
-      secondaryColor: values.secondaryColor || secondaryColor,
-      primaryTextColor: values.primaryTextColor || primaryTextColor,
-      secondaryTextColor: values.secondaryTextColor || secondaryTextColor,
-      accentColor: values.accentColor || accentColor,
-      accentTextColor: values.accentTextColor || accentTextColor,
-      fontFamily: values.fontFamily || fontFamily,
-      darkModeSupport: values.darkModeSupport || darkModeSupport,
-      logoPreview
-    };
-    
-    // Apply branding changes
-    applyBrandingChanges(brandingData);
-    
-    // Save to localStorage for persistence
-    localStorage.setItem('vcare_branding', JSON.stringify(brandingData));
-    
-    message.success('Branding settings saved and applied successfully');
-    setLoading(false);
-    
-    // Force reload to apply all changes
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
+  const handleSave = async (values) => {
+    try {
+      setLoading(true);
+
+      const brandingData = {
+        businessName: values.businessName,
+        tagline: values.tagline,
+        logoPath: logoPath,
+        primaryColor: values.primaryColor || primaryColor,
+        secondaryColor: values.secondaryColor || secondaryColor,
+        accentColor: values.accentColor || accentColor,
+        fontFamily: values.fontFamily || fontFamily,
+        darkModeSupport: values.darkModeSupport || darkModeSupport,
+        receiptFooter: values.receiptFooter,
+        invoiceNotes: values.invoiceNotes
+      };
+
+      await settingsApi.updateBranding(brandingData);
+
+      setPrimaryColor(brandingData.primaryColor);
+      setSecondaryColor(brandingData.secondaryColor);
+      setAccentColor(brandingData.accentColor);
+      setFontFamily(brandingData.fontFamily);
+      setDarkModeSupport(brandingData.darkModeSupport);
+
+      applyBrandingChanges(brandingData);
+
+      message.success('Branding settings saved successfully');
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error('Failed to save branding settings:', error);
+      message.error('Failed to save branding settings');
+    } finally {
+      setLoading(false);
+    }
   };
   
   const handleLogoUpload = (file) => {
@@ -301,37 +344,64 @@ export function BrandingSettings() {
     setCrop(crop);
   };
   
-  const handleCompleteCrop = () => {
+  const handleCompleteCrop = async () => {
     if (!crop || !imgRef) {
       message.error('Please select a crop area');
       return;
     }
-    
-    const canvas = document.createElement('canvas');
-    const scaleX = imgRef.naturalWidth / imgRef.width;
-    const scaleY = imgRef.naturalHeight / imgRef.height;
-    
-    canvas.width = crop.width;
-    canvas.height = crop.height;
-    
-    const ctx = canvas.getContext('2d');
-    
-    ctx.drawImage(
-      imgRef,
-      crop.x * scaleX,
-      crop.y * scaleY,
-      crop.width * scaleX,
-      crop.height * scaleY,
-      0,
-      0,
-      crop.width,
-      crop.height
-    );
-    
-    // Convert to base64
-    const base64Image = canvas.toDataURL('image/png');
-    setLogoPreview(base64Image);
-    setShowCropModal(false);
+
+    try {
+      setUploadingLogo(true);
+
+      const canvas = document.createElement('canvas');
+      const scaleX = imgRef.naturalWidth / imgRef.width;
+      const scaleY = imgRef.naturalHeight / imgRef.height;
+
+      canvas.width = crop.width;
+      canvas.height = crop.height;
+
+      const ctx = canvas.getContext('2d');
+
+      ctx.drawImage(
+        imgRef,
+        crop.x * scaleX,
+        crop.y * scaleY,
+        crop.width * scaleX,
+        crop.height * scaleY,
+        0,
+        0,
+        crop.width,
+        crop.height
+      );
+
+      canvas.toBlob(async (blob) => {
+        try {
+          const file = new File([blob], logoFile.name || 'logo.png', { type: 'image/png' });
+
+          const response = await settingsApi.uploadBrandingLogo(file);
+
+          if (response.success) {
+            const fullPath = response.filePath.startsWith('http')
+              ? response.filePath
+              : `${import.meta.env.VITE_API_URL}${response.filePath}`;
+
+            setLogoPath(response.filePath);
+            setLogoPreview(fullPath);
+            setShowCropModal(false);
+            message.success('Logo uploaded successfully');
+          }
+        } catch (error) {
+          console.error('Failed to upload logo:', error);
+          message.error('Failed to upload logo. Please try again.');
+        } finally {
+          setUploadingLogo(false);
+        }
+      }, 'image/png');
+    } catch (error) {
+      console.error('Failed to process logo:', error);
+      message.error('Failed to process logo. Please try again.');
+      setUploadingLogo(false);
+    }
   };
   
   const handleResetDefaults = () => {

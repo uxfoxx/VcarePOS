@@ -1158,9 +1158,32 @@ router.post('/media', authenticate, hasPermission('products', 'edit'), upload.ar
   }
 });
 
+/**
+ * @route POST /api/products/colors/upload-image
+ * @desc  Upload color image
+ */
+const { colorUpload } = require('../utils/brandingUpload');
 
+router.post('/colors/upload-image',
+  authenticate,
+  hasPermission('products', 'edit'),
+  colorUpload.single('colorImage'),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
 
-
-
+      res.json({
+        success: true,
+        filePath: `/api/uploads/colors/${req.file.filename}`,
+        originalFilename: req.file.originalname,
+        fileSize: req.file.size
+      });
+    } catch (error) {
+      handleRouteError(error, req, res, 'Products - Upload Color Image');
+    }
+  }
+);
 
 module.exports = router;

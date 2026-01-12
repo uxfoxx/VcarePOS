@@ -553,6 +553,120 @@ export const deliveryChargesApi = {
   }
 };
 
+// Settings API
+export const settingsApi = {
+  uploadBrandingLogo: async (file) => {
+    const token = localStorage.getItem('vcare_token');
+    const formData = new FormData();
+    formData.append('logo', file);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+
+    try {
+      const response = await fetch(`${API_URL}/settings/branding/upload-logo`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData,
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.status === 401) {
+        handleAuthError();
+        throw createApiError('Authentication failed. Please log in again.', 401);
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw createApiError(data.message || 'Failed to upload logo', response.status, data);
+      }
+
+      return data;
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      if (error.name === 'AbortError') {
+        throw createApiError('Request timeout', 408);
+      }
+
+      if (error.isApiError) {
+        throw error;
+      }
+
+      throw createApiError(error.message || 'Failed to upload logo', null, error);
+    }
+  },
+
+  uploadColorImage: async (file) => {
+    const token = localStorage.getItem('vcare_token');
+    const formData = new FormData();
+    formData.append('colorImage', file);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+
+    try {
+      const response = await fetch(`${API_URL}/products/colors/upload-image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData,
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.status === 401) {
+        handleAuthError();
+        throw createApiError('Authentication failed. Please log in again.', 401);
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw createApiError(data.message || 'Failed to upload color image', response.status, data);
+      }
+
+      return data;
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      if (error.name === 'AbortError') {
+        throw createApiError('Request timeout', 408);
+      }
+
+      if (error.isApiError) {
+        throw error;
+      }
+
+      throw createApiError(error.message || 'Failed to upload color image', null, error);
+    }
+  },
+
+  getBranding: async () => {
+    return apiRequest('/settings/branding');
+  },
+
+  updateBranding: async (settings) => {
+    return apiRequest('/settings/branding', {
+      method: 'PUT',
+      body: JSON.stringify(settings)
+    });
+  },
+
+  deleteLogo: async (filename) => {
+    return apiRequest(`/settings/branding/logo/${filename}`, {
+      method: 'DELETE'
+    });
+  }
+};
+
 // E-commerce Orders API (for POS system)
 export const ecommerceOrdersApi = {
   getAll: async () => {

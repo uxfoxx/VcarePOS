@@ -49,6 +49,21 @@ const ProductDetailPage = () => {
   const galleryImages = useMemo(() => {
     if (!currentProduct) return [];
 
+    console.log('Building gallery for product:', {
+      productId: currentProduct.id,
+      productName: currentProduct.name,
+      mainImage: currentProduct.image,
+      mediaCount: currentProduct.media?.length || 0,
+      media: currentProduct.media,
+      colorsCount: currentProduct.colors?.length || 0,
+      colors: currentProduct.colors?.map(c => ({
+        id: c.id,
+        name: c.name,
+        image: c.image,
+        colorSelectorImage: c.colorSelectorImage
+      }))
+    });
+
     const images = [];
     const seen = new Set();
 
@@ -65,6 +80,7 @@ const ProductDetailPage = () => {
           variationId,
           originalUrl: url
         });
+        console.log(`Added image from ${source}:`, { url, fullUrl, variationId });
       }
     };
 
@@ -74,8 +90,10 @@ const ProductDetailPage = () => {
     }
 
     // Add all media images (non-videos)
-    if (Array.isArray(currentProduct.media)) {
-      currentProduct.media.forEach(mediaUrl => {
+    if (Array.isArray(currentProduct.media) && currentProduct.media.length > 0) {
+      console.log(`Processing ${currentProduct.media.length} media items`);
+      currentProduct.media.forEach((mediaUrl, index) => {
+        console.log(`Media item ${index}:`, mediaUrl, 'isVideo:', isVideo(mediaUrl));
         if (!isVideo(mediaUrl)) {
           addImage(mediaUrl, 'media');
         }
@@ -84,8 +102,10 @@ const ProductDetailPage = () => {
 
     // Add all variation images (full-size product images in that color)
     // Note: colorSelectorImage is NOT added here - it's only for the selector thumbnail
-    if (Array.isArray(currentProduct.colors)) {
-      currentProduct.colors.forEach(variation => {
+    if (Array.isArray(currentProduct.colors) && currentProduct.colors.length > 0) {
+      console.log(`Processing ${currentProduct.colors.length} color variations`);
+      currentProduct.colors.forEach((variation, index) => {
+        console.log(`Color ${index}:`, variation.name, 'image:', variation.image);
         if (variation.image) {
           addImage(variation.image, 'variation', variation.id);
         }
@@ -102,6 +122,7 @@ const ProductDetailPage = () => {
       });
     }
 
+    console.log('Final gallery images:', images.length, images);
     return images;
   }, [currentProduct]);
 

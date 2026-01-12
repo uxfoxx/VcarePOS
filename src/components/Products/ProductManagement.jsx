@@ -123,49 +123,67 @@ export function ProductManagement() {
       key: 'name',
       fixed: 'left',
       width: 300,
-      render: (text, record) => (
-        <div className="flex items-center space-x-3">
-          <Image
-            // src={
-            //   record.media && Array.isArray(record.media) && record.media.length > 0
-            //     ? `${import.meta.env.VITE_API_URL}${record.media[0]}`
-            //     : record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
-            // }
+      render: (text, record) => {
+        const getImageMedia = () => {
+          if (record.media && Array.isArray(record.media) && record.media.length > 0) {
+            return record.media.filter(
+              (m) =>
+                !m.startsWith('data:video/') &&
+                !m.toLowerCase().endsWith('.mp4') &&
+                !m.toLowerCase().endsWith('.webm') &&
+                !m.toLowerCase().endsWith('.mov')
+            );
+          }
+          return [];
+        };
 
-            src={
-              record.media && Array.isArray(record.media) && record.media.length > 0
-                ? (() => {
-                  // Find the first media that is NOT a video
-                  const imageMedia = record.media.find(
-                    (m) =>
-                      !m.startsWith('data:video/') &&
-                      !m.toLowerCase().endsWith('.mp4') &&
-                      !m.toLowerCase().endsWith('.webm') &&
-                      !m.toLowerCase().endsWith('.mov')
-                  );
-                  return imageMedia
-                    ? `${import.meta.env.VITE_API_URL}${imageMedia}`
-                    : record.image ||
-                    'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
-                })()
-                : record.image ||
-                'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
-            }
-            // src={record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=100'}
-            alt={record.name}
-            width={50}
-            height={50}
-            className="object-cover rounded"
-            preview={false}
-            style={{ aspectRatio: '1/1', objectFit: 'cover' }}
-          />
-          <div>
-            <Text strong>{record.name}</Text>
-            <br />
-            <Text type="secondary" className="text-xs">SKU: {record.barcode}</Text>
+        const imageMedia = getImageMedia();
+        const primaryImage = imageMedia.length > 0
+          ? `${import.meta.env.VITE_API_URL}${imageMedia[0]}`
+          : record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
+
+        const totalImages = imageMedia.length || (record.image ? 1 : 0);
+
+        return (
+          <div className="flex items-center space-x-3">
+            <div className="relative">
+              <Image
+                src={primaryImage}
+                alt={record.name}
+                width={50}
+                height={50}
+                className="object-cover rounded"
+                preview={totalImages > 1 ? {
+                  mask: <div className="flex flex-col items-center"><Icon name="search" /><span className="text-xs mt-1">View {totalImages}</span></div>,
+                  imageRender: () => (
+                    <div className="grid grid-cols-2 gap-2 p-4">
+                      {imageMedia.map((media, idx) => (
+                        <img
+                          key={idx}
+                          src={`${import.meta.env.VITE_API_URL}${media}`}
+                          alt={`${record.name} - ${idx + 1}`}
+                          className="w-full h-auto rounded"
+                        />
+                      ))}
+                    </div>
+                  )
+                } : false}
+                style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+              />
+              {totalImages > 1 && (
+                <div className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+                  {totalImages}
+                </div>
+              )}
+            </div>
+            <div>
+              <Text strong>{record.name}</Text>
+              <br />
+              <Text type="secondary" className="text-xs">SKU: {record.barcode}</Text>
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       title: 'Category',
@@ -357,24 +375,67 @@ export function ProductManagement() {
         key: 'name',
         fixed: 'left',
         width: 300,
-        render: (text, record) => (
-          <div className="flex items-center space-x-3">
-            <Image
-              src={record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=100'}
-              alt={record.name}
-              width={50}
-              height={50}
-              className="object-cover rounded"
-              preview={false}
-              style={{ aspectRatio: '1/1', objectFit: 'cover' }}
-            />
-            <div>
-              <Text strong>{record.name}</Text>
-              <br />
-              <Text type="secondary" className="text-xs">SKU: {record.barcode}</Text>
+        render: (text, record) => {
+          const getImageMedia = () => {
+            if (record.media && Array.isArray(record.media) && record.media.length > 0) {
+              return record.media.filter(
+                (m) =>
+                  !m.startsWith('data:video/') &&
+                  !m.toLowerCase().endsWith('.mp4') &&
+                  !m.toLowerCase().endsWith('.webm') &&
+                  !m.toLowerCase().endsWith('.mov')
+              );
+            }
+            return [];
+          };
+
+          const imageMedia = getImageMedia();
+          const primaryImage = imageMedia.length > 0
+            ? `${import.meta.env.VITE_API_URL}${imageMedia[0]}`
+            : record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
+
+          const totalImages = imageMedia.length || (record.image ? 1 : 0);
+
+          return (
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <Image
+                  src={primaryImage}
+                  alt={record.name}
+                  width={50}
+                  height={50}
+                  className="object-cover rounded"
+                  preview={totalImages > 1 ? {
+                    mask: <div className="flex flex-col items-center"><Icon name="search" /><span className="text-xs mt-1">View {totalImages}</span></div>,
+                    imageRender: () => (
+                      <div className="grid grid-cols-2 gap-2 p-4">
+                        {imageMedia.map((media, idx) => (
+                          <img
+                            key={idx}
+                            src={`${import.meta.env.VITE_API_URL}${media}`}
+                            alt={`${record.name} - ${idx + 1}`}
+                            className="w-full h-auto rounded"
+                          />
+                        ))}
+                      </div>
+                    )
+                  } : false}
+                  style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                />
+                {totalImages > 1 && (
+                  <div className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+                    {totalImages}
+                  </div>
+                )}
+              </div>
+              <div>
+                <Text strong>{record.name}</Text>
+                <br />
+                <Text type="secondary" className="text-xs">SKU: {record.barcode}</Text>
+              </div>
             </div>
-          </div>
-        ),
+          );
+        },
       },
       {
         title: 'Category',

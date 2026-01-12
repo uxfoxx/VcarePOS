@@ -51,6 +51,9 @@ const ProductsPage = () => {
     });
   }, [products, categories, listLoading]);
 
+  // Seed data products to exclude (demo/sample products)
+  const SEED_PRODUCT_IDS = ['PROD-001', 'PROD-002', 'PROD-003'];
+
   // Filter and sort products with memoization for performance
   const filteredProducts = useMemo(() => {
     if (!products || !Array.isArray(products)) return [];
@@ -59,6 +62,9 @@ const ProductsPage = () => {
       .filter(product => {
         if (!product) return false;
 
+        // Exclude seed data products
+        const isNotSeedData = !SEED_PRODUCT_IDS.includes(product.id);
+
         const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
         const searchLower = (searchTerm || '').toLowerCase();
         const matchesSearch =
@@ -66,7 +72,7 @@ const ProductsPage = () => {
           product.description?.toLowerCase().includes(searchLower);
         const hasStock = product.stock > 0; // Only show products with stock available
 
-        return matchesCategory && matchesSearch && hasStock;
+        return isNotSeedData && matchesCategory && matchesSearch && hasStock;
       })
       .sort((a, b) => {
         let aValue = a[sortBy];

@@ -616,7 +616,13 @@ const HomePage = () => {
     };
   }, [products]);
 
-  const featuredProducts = products.slice(0, 8);
+  // Seed data products to exclude (demo/sample products)
+  const SEED_PRODUCT_IDS = ['PROD-001', 'PROD-002', 'PROD-003'];
+
+  // Filter out seed data products and select first 8 for featured section
+  const featuredProducts = products
+    .filter(product => !SEED_PRODUCT_IDS.includes(product.id) && product.stock > 0)
+    .slice(0, 8);
 
   return (
     <div className="min-h-screen">

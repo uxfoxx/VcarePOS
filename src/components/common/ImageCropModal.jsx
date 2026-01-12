@@ -11,7 +11,10 @@ import { Icon } from './Icon';
 export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspectRatio = 4 / 3 }) {
   const [crop, setCrop] = useState({
     unit: '%',
+    x: 5,
+    y: 5,
     width: 90,
+    height: 90 / aspectRatio,
     aspect: aspectRatio
   });
   const [completedCrop, setCompletedCrop] = useState(null);
@@ -151,7 +154,10 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
     setRotate(0);
     setCrop({
       unit: '%',
+      x: 5,
+      y: 5,
       width: 90,
+      height: 90 / aspectRatio,
       aspect: aspectRatio
     });
     message.info('Reset to default');

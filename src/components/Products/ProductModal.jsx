@@ -361,10 +361,6 @@ export function ProductModal({
     };
     reader.readAsDataURL(file); // Works for both images and videos
   };
-  console.log("sadasdasdsadasd", {
-    imagePreview,
-    mediaPreviews,
-  })
 
   const handleRemoveMedia = (index) => {
     setMediaPreviews(prev => prev.filter((_, i) => i !== index));

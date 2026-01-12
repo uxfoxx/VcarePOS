@@ -1176,7 +1176,7 @@ router.post('/colors/upload-image',
 
       res.json({
         success: true,
-        filePath: `/api/uploads/colors/${req.file.filename}`,
+        filePath: `/uploads/colors/${req.file.filename}`,
         originalFilename: req.file.originalname,
         fileSize: req.file.size
       });

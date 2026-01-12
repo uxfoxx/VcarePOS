@@ -14,7 +14,7 @@ export function DetailModal({
   actions = []
 }) {
   if (!data) return null;
-  console.log("sssssdfsddsfdsf", data.media && data.media.length && `${import.meta.env.VITE_API_URL}${data.media[0]}`)
+
   const renderProductDetails = () => (
     <div className="space-y-6">
       {/* Product Image and Basic Info */}

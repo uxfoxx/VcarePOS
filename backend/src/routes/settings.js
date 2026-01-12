@@ -58,7 +58,7 @@ router.post('/branding/upload-logo',
 
       res.json({
         success: true,
-        filePath: `/api/uploads/branding/${req.file.filename}`,
+        filePath: `/uploads/branding/${req.file.filename}`,
         originalFilename: req.file.originalname,
         fileSize: req.file.size
       });

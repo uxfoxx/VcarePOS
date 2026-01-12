@@ -36,16 +36,7 @@ dotenv.config();
 
 // Initialize express app
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Middleware
-// app.use(cors({
-//   origin: '*',
-//   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-//   allowedHeaders: ['Content-Type', 'Authorization'],
-//   credentials: true
-// }));
 // ------------------ CORS Setup ------------------
 app.use((req, res, next) => {
   const allowedOrigins = ['https://pos.vcaresl.com', 'https://vcaresl.com', 'http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'];
@@ -67,12 +58,16 @@ app.use((req, res, next) => {
   next();
 });
 
-
+// Body parser middleware with increased limits for image uploads
 app.use(express.json({
   limit: '50mb',
   verify: (req, res, buf) => {
     req.rawBody = buf.toString();
   }
+}));
+app.use(express.urlencoded({
+  limit: '50mb',
+  extended: true
 }));
 // Serve uploads folder
 // app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));

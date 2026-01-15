@@ -1,8 +1,17 @@
-
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '../../store/slices/cartSlice';
 
+const fallbackImage = 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
+
+const getImageUrl = (url) => {
+  if (!url) return fallbackImage;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const baseUrl = import.meta.env.VITE_API_URL || '';
+  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+};
 
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
@@ -54,26 +63,21 @@ const ProductCard = ({ product }) => {
     <Link to={`/products/${product.id}`} className="product-card group">
       <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200">
         <img
-          src={
-            product.media && Array.isArray(product.media) && product.media.length > 0
-              ? (() => {
-                // Find the first media that is NOT a video
-                const imageMedia = product.media.find(
-                  (m) =>
-                    !m.startsWith('data:video/') &&
-                    !m.toLowerCase().endsWith('.mp4') &&
-                    !m.toLowerCase().endsWith('.webm') &&
-                    !m.toLowerCase().endsWith('.mov')
-                );
-                return imageMedia
-                  ? `https://vcaresl.com/api${imageMedia}`
-                  : product.image ||
-                  'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
-              })()
-              : product.image ||
-              'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
-          }
-          // src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=400'}
+          src={(() => {
+            if (product.media && Array.isArray(product.media) && product.media.length > 0) {
+              const imageMedia = product.media.find(
+                (m) =>
+                  !m.startsWith('data:video/') &&
+                  !m.toLowerCase().endsWith('.mp4') &&
+                  !m.toLowerCase().endsWith('.webm') &&
+                  !m.toLowerCase().endsWith('.mov')
+              );
+              if (imageMedia) {
+                return getImageUrl(imageMedia);
+              }
+            }
+            return getImageUrl(product.image) || fallbackImage;
+          })()}
           alt={product.name}
           className="h-48 w-full object-cover object-center group-hover:scale-105 transition-transform duration-200"
           crossOrigin="anonymous"

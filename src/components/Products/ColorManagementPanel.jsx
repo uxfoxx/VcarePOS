@@ -33,6 +33,15 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 const { Panel } = Collapse;
 
+const getImageUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const baseUrl = import.meta.env.VITE_API_URL || '';
+  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 export function ColorManagementPanel({
   colors = [],
   rawMaterials = [],
@@ -447,7 +456,7 @@ export function ColorManagementPanel({
                   <div
                     className="w-10 h-10 rounded-full border-2 border-gray-300 flex-shrink-0"
                     style={{
-                      backgroundImage: color.image ? `url(${color.image})` : 'none',
+                      backgroundImage: color.image ? `url(${getImageUrl(color.image)})` : 'none',
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                       backgroundColor: color.colorCode || '#f0f0f0'
@@ -510,7 +519,7 @@ export function ColorManagementPanel({
               <div
                 className="w-12 h-12 rounded-full border-2 border-gray-300"
                 style={{
-                  backgroundImage: activeColor.image ? `url(${activeColor.image})` : 'none',
+                  backgroundImage: activeColor.image ? `url(${getImageUrl(activeColor.image)})` : 'none',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundColor: activeColor.colorCode || '#f0f0f0'

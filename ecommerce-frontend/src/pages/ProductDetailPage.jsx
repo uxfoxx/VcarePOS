@@ -22,16 +22,13 @@ const ProductDetailPage = () => {
 
   const fallbackImage = "https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=600";
 
-  // Helper function to properly construct image URLs
   const getImageUrl = (url) => {
     if (!url) return fallbackImage;
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
       return url;
     }
-    if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
-      return `https://vcaresl.com/api${url.startsWith('/') ? '' : '/'}${url}`;
-    }
-    return url;
+    const baseUrl = import.meta.env.VITE_API_URL || '';
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
   };
 
   // Detect if URL is a video

@@ -16,6 +16,15 @@ import { Icon } from '../common/Icon';
 
 const { Text, Title } = Typography;
 
+const getImageUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const baseUrl = import.meta.env.VITE_API_URL || '';
+  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 export function ColorAndSizeSelectionModal({
   open,
   onClose,
@@ -101,12 +110,12 @@ export function ColorAndSizeSelectionModal({
               <div className="space-y-3">
                 {/* Primary Media */}
                 <div className="relative">
-                  {product.media[0].startsWith('product:video/') ||
+                  {product.media[0].startsWith('data:video/') ||
                     product.media[0].toLowerCase().includes('.mp4') ||
                     product.media[0].toLowerCase().includes('.webm') ||
                     product.media[0].toLowerCase().includes('.mov') ? (
                     <video
-                      src={`${import.meta.env.VITE_API_URL}${product.media[0]}`}
+                      src={getImageUrl(product.media[0])}
                       width={200}
                       height={150}
                       className="object-cover rounded-lg"
@@ -115,7 +124,7 @@ export function ColorAndSizeSelectionModal({
                     />
                   ) : (
                     <Image
-                      src={`${import.meta.env.VITE_API_URL}${product.media[0]}`}
+                      src={getImageUrl(product.media[0])}
                       alt={product.name}
                       width={200}
                       height={150}
@@ -137,7 +146,7 @@ export function ColorAndSizeSelectionModal({
                 {product.media.length > 1 && (
                   <div className="grid grid-cols-4 gap-2">
                     {product.media.slice(1, 5).map((mediaUrl, index) => {
-                      const isVideo = mediaUrl.startsWith('product:video/') ||
+                      const isVideo = mediaUrl.startsWith('data:video/') ||
                         mediaUrl.toLowerCase().includes('.mp4') ||
                         mediaUrl.toLowerCase().includes('.webm') ||
                         mediaUrl.toLowerCase().includes('.mov');
@@ -150,7 +159,7 @@ export function ColorAndSizeSelectionModal({
                             </div>
                           ) : (
                             <Image
-                              src={`${import.meta.env.VITE_API_URL}${mediaUrl}`}
+                              src={getImageUrl(mediaUrl)}
                               alt={`${product.name} ${index + 2}`}
                               width={48}
                               height={48}
@@ -219,7 +228,7 @@ export function ColorAndSizeSelectionModal({
                           <div
                             className="w-12 h-12 rounded-full border-2 border-gray-300 overflow-hidden"
                             style={{
-                              backgroundImage: color.image ? `url(${color.image})` : 'none',
+                              backgroundImage: color.image ? `url(${getImageUrl(color.image)})` : 'none',
                               backgroundSize: 'cover',
                               backgroundPosition: 'center',
                               backgroundColor: color.colorCode || '#f0f0f0'
@@ -330,7 +339,7 @@ export function ColorAndSizeSelectionModal({
                     <div
                       className="w-4 h-4 rounded-full border"
                       style={{
-                        backgroundImage: selectedColor.image ? `url(${selectedColor.image})` : 'none',
+                        backgroundImage: selectedColor.image ? `url(${getImageUrl(selectedColor.image)})` : 'none',
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         backgroundColor: selectedColor.colorCode || '#f0f0f0'

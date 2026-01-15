@@ -1,14 +1,23 @@
-// import React from 'react';
 import { Card, Typography, Image, Badge, Tag, Button } from 'antd';
 import { Icon } from './Icon';
 
 const { Text } = Typography;
 
+const getImageUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const baseUrl = import.meta.env.VITE_API_URL || '';
+  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
+const fallbackImage = 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
+
 export function ProductCard({
   product,
   onAddToCart,
   showDetails = true,
-  showPriceRange = false,
   className = '',
   ...props
 }) {
@@ -16,7 +25,6 @@ export function ProductCard({
     e.stopPropagation();
     onAddToCart?.(product);
   };
-  console.log("showPriceRange", showPriceRange)
 
   // const getStockStatus = (stock) => {
   //   if (stock === 0) return 'out-of-stock';
@@ -37,26 +45,21 @@ export function ProductCard({
         <div className="relative h-48 overflow-hidden">
           <Image
             alt={product.name}
-            // src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
-            src={
-              product.media && Array.isArray(product.media) && product.media.length > 0
-                ? (() => {
-                  // Find the first media that is NOT a video
-                  const imageMedia = product.media.find(
-                    (m) =>
-                      !m.startsWith('data:video/') &&
-                      !m.toLowerCase().endsWith('.mp4') &&
-                      !m.toLowerCase().endsWith('.webm') &&
-                      !m.toLowerCase().endsWith('.mov')
-                  );
-                  return imageMedia
-                    ? `${import.meta.env.VITE_API_URL}${imageMedia}`
-                    : product.image ||
-                    'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
-                })()
-                : product.image ||
-                'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
-            }
+            src={(() => {
+              if (product.media && Array.isArray(product.media) && product.media.length > 0) {
+                const imageMedia = product.media.find(
+                  (m) =>
+                    !m.startsWith('data:video/') &&
+                    !m.toLowerCase().endsWith('.mp4') &&
+                    !m.toLowerCase().endsWith('.webm') &&
+                    !m.toLowerCase().endsWith('.mov')
+                );
+                if (imageMedia) {
+                  return getImageUrl(imageMedia);
+                }
+              }
+              return getImageUrl(product.image) || fallbackImage;
+            })()}
             className="w-full h-full object-cover"
             preview={false}
             crossOrigin="anonymous"

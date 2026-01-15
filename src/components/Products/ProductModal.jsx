@@ -52,6 +52,7 @@ export function ProductModal({
   const [imagePreview, setImagePreview] = useState(null);
   const [mediaFiles, setMediaFiles] = useState([]);
   const [mediaPreviews, setMediaPreviews] = useState([]);
+  const [existingMediaPaths, setExistingMediaPaths] = useState([]);
   const [productData, setProductData] = useState({});
   const [colors, setColors] = useState([]);
   const [materialSearchTerm, setMaterialSearchTerm] = useState('');
@@ -158,10 +159,19 @@ export function ProductModal({
       }
 
       setImagePreview(editingProduct.image);
-      if (editingProduct.media) {
-        // `${import.meta.env.VITE_API_URL}${product.media[0]}`
-        setMediaPreviews(editingProduct.media.map(mediaUrl => `${import.meta.env.VITE_API_URL}${mediaUrl}`));
+      if (editingProduct.media && editingProduct.media.length > 0) {
+        setExistingMediaPaths(editingProduct.media);
+        setMediaPreviews(editingProduct.media.map(mediaUrl => {
+          if (mediaUrl.startsWith('http')) {
+            return mediaUrl;
+          }
+          return `${import.meta.env.VITE_API_URL}${mediaUrl}`;
+        }));
+      } else {
+        setExistingMediaPaths([]);
+        setMediaPreviews([]);
       }
+      setMediaFiles([]);
       setCurrentStep(0);
     } else if (open && !editingProduct) {
       const initialData = {
@@ -187,6 +197,7 @@ export function ProductModal({
       setSelectedMaterialId(null);
       setMediaFiles([]);
       setMediaPreviews([]);
+      setExistingMediaPaths([]);
     }
   }, [editingProduct, open, productForm, rawMaterialsList]);
 
@@ -363,8 +374,16 @@ export function ProductModal({
   };
 
   const handleRemoveMedia = (index) => {
+    const existingCount = existingMediaPaths.length;
+
+    if (index < existingCount) {
+      setExistingMediaPaths(prev => prev.filter((_, i) => i !== index));
+    } else {
+      const newFileIndex = index - existingCount;
+      setMediaFiles(prev => prev.filter((_, i) => i !== newFileIndex));
+    }
+
     setMediaPreviews(prev => prev.filter((_, i) => i !== index));
-    setMediaFiles(prev => prev.filter((_, i) => i !== index));
     setProductData(prev => ({
       ...prev,
       media: (prev.media || []).filter((_, i) => i !== index)
@@ -654,23 +673,20 @@ export function ProductModal({
         setCurrentStep(1); // Colors step
         return;
       }
-      // Step 2a: Upload media first
-      const uploadedMediaPaths = await uploadProductMedia(productData.id);
+      const newUploadedMediaPaths = await uploadProductMedia(productData.id);
 
-      console.log("uploadedMediaPaths", uploadedMediaPaths)
+      const finalMediaPaths = [...existingMediaPaths, ...newUploadedMediaPaths];
+
       const productSubmissionData = {
         id: editingProduct?.id || productData.id,
         name: finalProductData.name,
         category: finalProductData.category,
         description: finalProductData.description || '',
         image: imagePreview || finalProductData.image || '',
-        // image: mediaPreviews.length > 0 ? mediaPreviews[0] : (imagePreview || finalProductData.image || ''),
         hasAddons: hasAddons,
 
-        // Fixed price for the product
         price: Number(finalProductData.price) || 0,
         weight: Number(finalProductData.weight) || 0,
-        // Calculate total stock from all color sizes
         stock: colors.reduce((total, color) =>
           total + (color.sizes || []).reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
         ),
@@ -678,11 +694,9 @@ export function ProductModal({
         color: finalProductData.color || '',
         material: finalProductData.material || '',
 
-        // New color-based structure
         colors: colors,
 
-        // Media array instead of single image
-        media: uploadedMediaPaths.length > 0 ? uploadedMediaPaths : [],
+        media: finalMediaPaths,
 
         addons: hasAddons ? selectedAddons : []
       };
@@ -714,6 +728,7 @@ export function ProductModal({
     setImagePreview(null);
     setMediaFiles([]);
     setMediaPreviews([]);
+    setExistingMediaPaths([]);
     setProductData({});
     setSelectedMaterialId(null);
     onClose();
@@ -1022,6 +1037,7 @@ export function ProductModal({
                     mediaUrl.toLowerCase().includes('.mp4') ||
                     mediaUrl.toLowerCase().includes('.webm') ||
                     mediaUrl.toLowerCase().includes('.mov');
+                  const isExisting = index < existingMediaPaths.length;
 
                   return (
                     <div key={index} className="relative group">
@@ -1044,7 +1060,6 @@ export function ProductModal({
                         )}
                       </div>
 
-                      {/* Remove button */}
                       <Button
                         type="text"
                         danger
@@ -1054,14 +1069,15 @@ export function ProductModal({
                         onClick={() => handleRemoveMedia(index)}
                       />
 
-                      {/* Media type indicator */}
-                      <div className="absolute bottom-1 left-1">
+                      <div className="absolute bottom-1 left-1 flex gap-1">
                         <Tag size="small" color={isVideo ? 'purple' : 'blue'}>
                           {isVideo ? 'Video' : 'Image'}
                         </Tag>
+                        {isExisting && (
+                          <Tag size="small" color="green">Saved</Tag>
+                        )}
                       </div>
 
-                      {/* Primary indicator */}
                       {index === 0 && (
                         <div className="absolute top-1 left-1">
                           <Tag size="small" color="gold">

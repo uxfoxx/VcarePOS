@@ -478,6 +478,7 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
         name: color.name,
         colorCode: color.color_code,
         image: color.image,
+        colorSelectorImage: color.color_selector_image,
         sizes: colorSizes
       };
     });

@@ -55,18 +55,26 @@ export function ColorManagementPanel({
   onUpdateColorSize
 }) {
   const [colorForm] = Form.useForm();
+  const [colorEditForm] = Form.useForm();
   const [sizeForm] = Form.useForm();
   const [materialForm] = Form.useForm();
   const [sizeEditForm] = Form.useForm();
   const [activeColorId, setActiveColorId] = useState(null);
   const [activeSizeId, setActiveSizeId] = useState(null);
   const [editingSizeId, setEditingSizeId] = useState(null);
+  const [editingColorId, setEditingColorId] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [imagePath, setImagePath] = useState(null);
   const [colorSelectorImagePreview, setColorSelectorImagePreview] = useState(null);
   const [colorSelectorImagePath, setColorSelectorImagePath] = useState(null);
+  const [editImagePreview, setEditImagePreview] = useState(null);
+  const [editImagePath, setEditImagePath] = useState(null);
+  const [editColorSelectorImagePreview, setEditColorSelectorImagePreview] = useState(null);
+  const [editColorSelectorImagePath, setEditColorSelectorImagePath] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingColorSelectorImage, setUploadingColorSelectorImage] = useState(false);
+  const [uploadingEditImage, setUploadingEditImage] = useState(false);
+  const [uploadingEditColorSelectorImage, setUploadingEditColorSelectorImage] = useState(false);
   const [materialSearchTerm, setMaterialSearchTerm] = useState('');
 
   const handleAddColor = (values) => {
@@ -129,6 +137,97 @@ export function ColorManagementPanel({
       setUploadingColorSelectorImage(false);
     }
     return false;
+  };
+
+  const handleEditImageUpload = async (file) => {
+    try {
+      setUploadingEditImage(true);
+      const response = await settingsApi.uploadColorImage(file);
+
+      if (response.success) {
+        const fullPath = response.filePath.startsWith('http')
+          ? response.filePath
+          : `${import.meta.env.VITE_API_URL}${response.filePath}`;
+
+        setEditImagePath(response.filePath);
+        setEditImagePreview(fullPath);
+        message.success('Color image uploaded successfully');
+      }
+    } catch (error) {
+      console.error('Failed to upload color image:', error);
+      message.error('Failed to upload color image. Please try again.');
+    } finally {
+      setUploadingEditImage(false);
+    }
+    return false;
+  };
+
+  const handleEditColorSelectorImageUpload = async (file) => {
+    try {
+      setUploadingEditColorSelectorImage(true);
+      const response = await settingsApi.uploadColorImage(file);
+
+      if (response.success) {
+        const fullPath = response.filePath.startsWith('http')
+          ? response.filePath
+          : `${import.meta.env.VITE_API_URL}${response.filePath}`;
+
+        setEditColorSelectorImagePath(response.filePath);
+        setEditColorSelectorImagePreview(fullPath);
+        message.success('Color selector image uploaded successfully');
+      }
+    } catch (error) {
+      console.error('Failed to upload color selector image:', error);
+      message.error('Failed to upload color selector image. Please try again.');
+    } finally {
+      setUploadingEditColorSelectorImage(false);
+    }
+    return false;
+  };
+
+  const handleStartEditColor = (color) => {
+    setEditingColorId(color.id);
+    colorEditForm.setFieldsValue({
+      name: color.name
+    });
+    setEditImagePath(color.image || null);
+    setEditImagePreview(color.image ? getImageUrl(color.image) : null);
+    setEditColorSelectorImagePath(color.colorSelectorImage || null);
+    setEditColorSelectorImagePreview(color.colorSelectorImage ? getImageUrl(color.colorSelectorImage) : null);
+  };
+
+  const handleCancelEditColor = () => {
+    setEditingColorId(null);
+    colorEditForm.resetFields();
+    setEditImagePath(null);
+    setEditImagePreview(null);
+    setEditColorSelectorImagePath(null);
+    setEditColorSelectorImagePreview(null);
+  };
+
+  const handleSaveEditColor = async () => {
+    try {
+      const values = await colorEditForm.validateFields();
+      const colorToUpdate = colors.find(c => c.id === editingColorId);
+
+      if (!colorToUpdate) {
+        message.error('Color not found');
+        return;
+      }
+
+      const updatedData = {
+        name: values.name,
+        image: editImagePath || colorToUpdate.image || '',
+        colorSelectorImage: editColorSelectorImagePath || colorToUpdate.colorSelectorImage || ''
+      };
+
+      onUpdateColor(editingColorId, updatedData);
+      handleCancelEditColor();
+      message.success('Color updated successfully');
+    } catch (error) {
+      console.error('Color update validation failed:', error);
+      message.error('Please fill in all required fields');
+    }
   };
 
   const handleAddSize = (values) => {
@@ -409,87 +508,187 @@ export function ColorManagementPanel({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {colors.map(color => (
-              <Card
-                key={color.id}
-                size="small"
-                className={`cursor-pointer transition-all hover:shadow-md ${activeColorId === color.id ? 'border-blue-500 bg-blue-50' : ''}`}
-                onClick={() => setActiveColorId(color.id)}
-                actions={[
-                  <Tooltip title="Manage Sizes" key="manage">
-                    <Button
-                      type="text"
-                      icon={<Icon name="straighten" />}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveColorId(color.id);
+              editingColorId === color.id ? (
+                <Card key={color.id} size="small" className="border-blue-500 bg-blue-50">
+                  <Form form={colorEditForm} layout="vertical">
+                    <Form.Item
+                      name="name"
+                      label="Color Name"
+                      rules={[{ required: true, message: 'Please enter color name' }]}
+                    >
+                      <Input placeholder="e.g., Natural Oak, Walnut, White" />
+                    </Form.Item>
+
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item label="Color Selector Image" help="Small thumbnail for color picker">
+                          <Upload
+                            accept="image/*"
+                            beforeUpload={handleEditColorSelectorImageUpload}
+                            showUploadList={false}
+                            maxCount={1}
+                          >
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-blue-400 transition-colors cursor-pointer">
+                              {editColorSelectorImagePreview ? (
+                                <div className="space-y-2">
+                                  <div className="flex justify-center">
+                                    <div
+                                      className="w-8 h-8 rounded-full border-2 border-gray-300"
+                                      style={{
+                                        backgroundImage: `url(${editColorSelectorImagePreview})`,
+                                        backgroundSize: 'cover',
+                                        backgroundPosition: 'center'
+                                      }}
+                                    />
+                                  </div>
+                                  <Button icon={<Icon name="upload" />} size="small">Change</Button>
+                                </div>
+                              ) : (
+                                <div className="space-y-1">
+                                  <Icon name="cloud_upload" className="text-xl text-gray-400" />
+                                  <div><Text className="text-xs">Upload thumbnail</Text></div>
+                                </div>
+                              )}
+                            </div>
+                          </Upload>
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item label="Product Image" help="Full-size product image">
+                          <Upload
+                            accept="image/*"
+                            beforeUpload={handleEditImageUpload}
+                            showUploadList={false}
+                            maxCount={1}
+                          >
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-blue-400 transition-colors cursor-pointer">
+                              {editImagePreview ? (
+                                <div className="space-y-2">
+                                  <div className="flex justify-center">
+                                    <img src={editImagePreview} alt="Product" className="h-10 w-10 object-cover rounded" />
+                                  </div>
+                                  <Button icon={<Icon name="upload" />} size="small">Change</Button>
+                                </div>
+                              ) : (
+                                <div className="space-y-1">
+                                  <Icon name="cloud_upload" className="text-xl text-gray-400" />
+                                  <div><Text className="text-xs">Upload image</Text></div>
+                                </div>
+                              )}
+                            </div>
+                          </Upload>
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    <div className="flex justify-end space-x-2 mt-2">
+                      <Button onClick={handleCancelEditColor}>Cancel</Button>
+                      <Button type="primary" onClick={handleSaveEditColor} icon={<Icon name="save" />}>
+                        Save Changes
+                      </Button>
+                    </div>
+                  </Form>
+                </Card>
+              ) : (
+                <Card
+                  key={color.id}
+                  size="small"
+                  className={`cursor-pointer transition-all hover:shadow-md ${activeColorId === color.id ? 'border-blue-500 bg-blue-50' : ''}`}
+                  onClick={() => setActiveColorId(color.id)}
+                  actions={[
+                    <Tooltip title="Edit Color" key="edit">
+                      <Button
+                        type="text"
+                        icon={<Icon name="edit" />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartEditColor(color);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    </Tooltip>,
+                    <Tooltip title="Manage Sizes" key="manage">
+                      <Button
+                        type="text"
+                        icon={<Icon name="straighten" />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveColorId(color.id);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    </Tooltip>,
+                    <Popconfirm
+                      key="delete"
+                      title="Delete this color?"
+                      description="This will also delete all sizes and raw materials for this color."
+                      onConfirm={(e) => {
+                        e?.stopPropagation();
+                        onRemoveColor(color.id);
+                        if (activeColorId === color.id) {
+                          setActiveColorId(null);
+                          setActiveSizeId(null);
+                          setEditingSizeId(null);
+                        }
                       }}
                     >
-                      Manage
-                    </Button>
-                  </Tooltip>,
-                  <Popconfirm
-                    key="delete"
-                    title="Delete this color?"
-                    description="This will also delete all sizes and raw materials for this color."
-                    onConfirm={(e) => {
-                      e?.stopPropagation();
-                      onRemoveColor(color.id);
-                      if (activeColorId === color.id) {
-                        setActiveColorId(null);
-                        setActiveSizeId(null);
-                        setEditingSizeId(null);
-                      }
-                    }}
-                  >
-                    <Button
-                      type="text"
-                      danger
-                      icon={<Icon name="delete" />}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Delete
-                    </Button>
-                  </Popconfirm>
-                ]}
-              >
-                <div className="flex items-center space-x-3">
-                  <div
-                    className="w-10 h-10 rounded-full border-2 border-gray-300 flex-shrink-0"
-                    style={{
-                      backgroundImage: color.image ? `url(${getImageUrl(color.image)})` : 'none',
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      backgroundColor: color.colorCode || '#f0f0f0'
-                    }}
-                  >
-                    {!color.image && (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Icon name="palette" className="text-gray-400" />
+                      <Button
+                        type="text"
+                        danger
+                        icon={<Icon name="delete" />}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Delete
+                      </Button>
+                    </Popconfirm>
+                  ]}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="flex flex-col items-center space-y-1">
+                      <div
+                        className="w-10 h-10 rounded-full border-2 border-gray-300 flex-shrink-0"
+                        style={{
+                          backgroundImage: color.colorSelectorImage ? `url(${getImageUrl(color.colorSelectorImage)})` : (color.image ? `url(${getImageUrl(color.image)})` : 'none'),
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                          backgroundColor: color.colorCode || '#f0f0f0'
+                        }}
+                      >
+                        {!color.colorSelectorImage && !color.image && (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Icon name="palette" className="text-gray-400" />
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <Text strong className="block">{color.name}</Text>
-                    <div className="flex space-x-2 mt-1">
-                      <Badge
-                        count={color.sizes?.length || 0}
-                        showZero
-                        style={{ backgroundColor: '#722ed1' }}
-                      />
-                      <Text type="secondary" className="text-xs">sizes</Text>
-                      <Badge
-                        count={color.sizes?.reduce((total, size) => total + (size.rawMaterials?.length || 0), 0) || 0}
-                        showZero
-                        style={{ backgroundColor: '#fa8c16' }}
-                      />
-                      <Text type="secondary" className="text-xs">materials</Text>
+                      {color.colorSelectorImage && (
+                        <Tag color="green" className="text-xs">Thumbnail</Tag>
+                      )}
                     </div>
-                    <Text type="secondary" className="text-xs block mt-1">
-                      Total Stock: {color.sizes?.reduce((sum, size) => sum + (size.stock || 0), 0) || 0} units
-                    </Text>
+                    <div className="flex-1">
+                      <Text strong className="block">{color.name}</Text>
+                      <div className="flex space-x-2 mt-1">
+                        <Badge
+                          count={color.sizes?.length || 0}
+                          showZero
+                          style={{ backgroundColor: '#722ed1' }}
+                        />
+                        <Text type="secondary" className="text-xs">sizes</Text>
+                        <Badge
+                          count={color.sizes?.reduce((total, size) => total + (size.rawMaterials?.length || 0), 0) || 0}
+                          showZero
+                          style={{ backgroundColor: '#fa8c16' }}
+                        />
+                        <Text type="secondary" className="text-xs">materials</Text>
+                      </div>
+                      <Text type="secondary" className="text-xs block mt-1">
+                        Total Stock: {color.sizes?.reduce((sum, size) => sum + (size.stock || 0), 0) || 0} units
+                      </Text>
+                    </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              )
             ))}
           </div>
         )}

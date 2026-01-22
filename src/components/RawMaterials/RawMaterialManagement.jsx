@@ -110,7 +110,7 @@ export function RawMaterialManagement() {
 
   const handleBulkDelete = (materialIds) => {
     materialIds.forEach(id => {
-      dispatch({ type: 'DELETE_RAW_MATERIAL', payload: id });
+      dispatch2(deleteRawMaterials({ materialId: id }));
     });
     message.success(`${materialIds.length} materials deleted successfully`);
     setSelectedRowKeys([]);

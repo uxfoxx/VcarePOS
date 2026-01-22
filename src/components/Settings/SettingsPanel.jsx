@@ -30,6 +30,18 @@ export function SettingsPanel() {
   const [activeSection, setActiveSection] = useState('general');
   const [form] = Form.useForm();
 
+  React.useEffect(() => {
+    const savedSettings = localStorage.getItem('generalSettings');
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings);
+        form.setFieldsValue(parsed);
+      } catch (e) {
+        console.warn('Failed to parse saved settings');
+      }
+    }
+  }, [form]);
+
   const sections = [
     { key: 'general', label: 'General', icon: <Icon name="settings" /> },
     { key: 'branding', label: 'Branding', icon: <Icon name="branding_watermark" /> },
@@ -37,8 +49,13 @@ export function SettingsPanel() {
     { key: 'delivery', label: 'Delivery Charges', icon: <Icon name="local_shipping" /> }
   ];
 
-  const handleSave = () => {
-    message.success('Settings saved successfully!');
+  const handleSave = (values) => {
+    try {
+      localStorage.setItem('generalSettings', JSON.stringify(values));
+      message.success('Settings saved successfully!');
+    } catch (error) {
+      message.error('Failed to save settings');
+    }
   };
 
   const renderGeneralSettings = () => (

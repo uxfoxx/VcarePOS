@@ -141,6 +141,11 @@ export function PurchaseOrderModal({
           return;
         }
 
+        if (!selectedColor || !selectedSize) {
+          message.error('Please select both color and size for the product');
+          return;
+        }
+
         itemDetails = {
           itemId,
           type: 'product',

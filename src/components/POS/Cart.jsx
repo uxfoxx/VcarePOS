@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Card,
   List,
@@ -51,16 +51,26 @@ export function Cart() {
   const [quotationData, setQuotationData] = useState(null);
   const [loadingPDF, setLoadingPDF] = useState(false);
 
-  // Check raw material availability and reset coupon when cart is cleared
+  // Track previous cart length to detect when cart becomes empty
+  const prevCartLengthRef = useRef(cart?.length || 0);
+
+  // Check raw material availability and reset coupon only when cart becomes empty
   useEffect(() => {
+    const currentCartLength = cart?.length || 0;
+    const prevCartLength = prevCartLengthRef.current;
+
     if (cart && cart.length > 0) {
       const warnings = checkRawMaterialAvailability(cart);
       setMaterialWarnings(warnings);
-    } else {
+    } else if (currentCartLength === 0 && prevCartLength > 0) {
+      // Only clear coupon when cart transitions from having items to being empty
       setMaterialWarnings({ unavailableMaterials: [], lowMaterials: [] });
-      setAppliedCoupon(null); // Reset applied coupon when cart is empty
-      setCouponCode(''); // Reset coupon code input when cart is empty
+      setAppliedCoupon(null);
+      setCouponCode('');
     }
+
+    // Update ref for next render
+    prevCartLengthRef.current = currentCartLength;
   }, [cart, checkRawMaterialAvailability]);
 
   // Fetch taxes and coupons on mount

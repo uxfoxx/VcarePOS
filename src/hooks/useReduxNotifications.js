@@ -1,7 +1,8 @@
+import { useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { message } from 'antd';
-import { 
-  addNotification, 
+import {
+  addNotification,
   checkStockLevels,
   markNotificationRead,
   markAllNotificationsRead,
@@ -73,10 +74,11 @@ export function useReduxNotifications() {
   };
 
   // Enhanced backward compatibility function for raw material availability
-  const checkRawMaterialAvailability = (cartItems, rawMaterials = rawMaterialsList) => {
+  // Memoized to prevent unnecessary re-renders in components that use this function
+  const checkRawMaterialAvailability = useCallback((cartItems, rawMaterials = rawMaterialsList) => {
     const unavailableMaterials = [];
     const lowMaterials = [];
-    
+
     // Ensure we have valid arrays to work with
     if (!Array.isArray(cartItems) || !Array.isArray(rawMaterials)) {
       return { unavailableMaterials, lowMaterials };
@@ -85,7 +87,7 @@ export function useReduxNotifications() {
     cartItems.forEach(cartItem => {
       // Get raw materials from the selected size
       let requiredMaterials = [];
-      
+
       // Find the selected size data which contains raw materials
       if (cartItem?.selectedColorId && cartItem?.selectedSize && cartItem?.product?.colors) {
         const selectedColor = cartItem.product.colors.find(color => color.id === cartItem.selectedColorId);
@@ -99,13 +101,13 @@ export function useReduxNotifications() {
         // Fallback for products without color/size structure
         requiredMaterials = cartItem.product.rawMaterials;
       }
-      
+
       if (requiredMaterials.length > 0) {
         requiredMaterials.forEach(requiredMaterial => {
           const material = rawMaterials.find(m => m.id === requiredMaterial.rawMaterialId);
           if (material) {
             const totalRequired = requiredMaterial.quantity * cartItem.quantity;
-            
+
             if (material.stockQuantity < totalRequired) {
               if (material.stockQuantity === 0) {
                 unavailableMaterials.push({
@@ -131,7 +133,7 @@ export function useReduxNotifications() {
     });
 
     return { unavailableMaterials, lowMaterials };
-  };
+  }, [rawMaterialsList]);
 
   return {
     // State - maintaining exact same structure as old context

@@ -5,18 +5,18 @@ const { Title, Text } = Typography;
 
 export const InvoiceHeader = ({ businessName, logoPreview }) => (
   <div style={{ marginBottom: '12px' }}>
-    
-      
-        <img
-          src="/public/quotationTop.png"
-          alt="Business Logo"
-          className="w-full object-contain"
-          crossOrigin="anonymous"
-        />
 
-      
-      
-    
+
+    <img
+      src="/quotationTop.png"
+      alt="Business Logo"
+      className="w-full object-contain"
+      crossOrigin="anonymous"
+    />
+
+
+
+
   </div>
 );
 

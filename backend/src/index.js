@@ -38,19 +38,37 @@ dotenv.config();
 const app = express();
 
 // ------------------ CORS Setup ------------------
+const allowedOrigins = [
+  'https://pos.vcaresl.com',
+  'https://vcaresl.com',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
+  'http://localhost:3003'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // allow requests with no origin (like curl, Postman, mobile apps)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) === -1) {
+      return callback(new Error('Not allowed by CORS'), false);
+    }
+    return callback(null, true);
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
+// Optional: Explicitly set the headers again for extra safety
 app.use((req, res, next) => {
-  const allowedOrigins = ['https://pos.vcaresl.com', 'https://vcaresl.com', 'http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'];
-  const origin = req.headers.origin;
-
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 
-  // Handle preflight OPTIONS request
+  // Handle preflight OPTIONS request quickly
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
   }

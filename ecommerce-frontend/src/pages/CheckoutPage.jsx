@@ -342,9 +342,8 @@ const CheckoutPage = () => {
                         <div className="space-y-3">
                           {/* No Delivery Option */}
                           <label
-                            className={`block p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                              selectedDeliveryType === '' ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-                            }`}
+                            className={`block p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedDeliveryType === '' ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                              }`}
                           >
                             <div className="flex items-start">
                               <input
@@ -390,9 +389,8 @@ const CheckoutPage = () => {
                             return (
                               <label
                                 key={setting.type}
-                                className={`block p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                                  selectedDeliveryType === setting.type ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-                                }`}
+                                className={`block p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedDeliveryType === setting.type ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                                  }`}
                               >
                                 <div className="flex items-start">
                                   <input
@@ -574,9 +572,9 @@ const CheckoutPage = () => {
                       <>
                         <strong>Delivery Type:</strong> {
                           activeDeliverySettings.find(s => s.type === selectedDeliveryType)?.type === 'free_delivery' ? 'Free Delivery' :
-                          activeDeliverySettings.find(s => s.type === selectedDeliveryType)?.type === 'inside_colombo' ? 'Inside Colombo' :
-                          activeDeliverySettings.find(s => s.type === selectedDeliveryType)?.type === 'out_of_colombo' ? 'Out of Colombo' :
-                          selectedDeliveryType
+                            activeDeliverySettings.find(s => s.type === selectedDeliveryType)?.type === 'inside_colombo' ? 'Inside Colombo' :
+                              activeDeliverySettings.find(s => s.type === selectedDeliveryType)?.type === 'out_of_colombo' ? 'Out of Colombo' :
+                                selectedDeliveryType
                         }<br />
                         <strong>Delivery Charge:</strong> Rs. {deliveryCharge.toFixed(2)}<br />
                         <strong>Total Weight:</strong> {totalWeight.toFixed(2)} kg
@@ -696,7 +694,7 @@ const CheckoutPage = () => {
                                     !m.toLowerCase().endsWith('.mov')
                                 );
                                 return imageMedia
-                                  ? `https://vcaresl.com/api${imageMedia}`
+                                  ? `${import.meta.env.VITE_API_URL}${imageMedia}`
                                   : item.image ||
                                   'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
                               })()
@@ -777,9 +775,9 @@ const CheckoutPage = () => {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Delivery Charge ({
                     selectedDeliveryType === 'free_delivery' ? 'Free Delivery' :
-                    selectedDeliveryType === 'inside_colombo' ? 'Inside Colombo' :
-                    selectedDeliveryType === 'out_of_colombo' ? 'Out of Colombo' :
-                    'Selected'
+                      selectedDeliveryType === 'inside_colombo' ? 'Inside Colombo' :
+                        selectedDeliveryType === 'out_of_colombo' ? 'Out of Colombo' :
+                          'Selected'
                   })</span>
                   <span className="font-medium text-blue-600">LKR {deliveryCharge.toFixed(2)}</span>
                 </div>

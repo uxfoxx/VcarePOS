@@ -60,7 +60,7 @@ const CartPage = () => {
                                 !m.toLowerCase().endsWith('.mov')
                             );
                             return imageMedia
-                              ? `https://vcaresl.com/api${imageMedia}`
+                              ? `${import.meta.env.VITE_API_URL}${imageMedia}`
                               : item.image ||
                               'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
                           })()

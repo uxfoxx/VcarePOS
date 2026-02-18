@@ -27,7 +27,7 @@ const ProductDetailPage = () => {
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
       return url;
     }
-    const baseUrl = 'https://vcaresl.com/api';
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
     return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
   };
 
@@ -275,8 +275,8 @@ const ProductDetailPage = () => {
                   key={index}
                   onClick={() => setSelectedImageIndex(index)}
                   className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${selectedImageIndex === index
-                      ? "border-primary-600 ring-2 ring-primary-200"
-                      : "border-gray-200 hover:border-gray-300"
+                    ? "border-primary-600 ring-2 ring-primary-200"
+                    : "border-gray-200 hover:border-gray-300"
                     }`}
                 >
                   <img
@@ -322,8 +322,8 @@ const ProductDetailPage = () => {
                       key={variation.id}
                       onClick={() => handleVariationChange(variation)}
                       className={`flex flex-col items-center gap-2 p-2 border-2 rounded-lg transition-all hover:shadow-md ${selectedVariation?.id === variation.id
-                          ? "border-primary-600 bg-primary-50 ring-2 ring-primary-200"
-                          : "border-gray-200 hover:border-gray-300"
+                        ? "border-primary-600 bg-primary-50 ring-2 ring-primary-200"
+                        : "border-gray-200 hover:border-gray-300"
                         }`}
                     >
                       {/* Small Circle Thumbnail */}
@@ -380,10 +380,10 @@ const ProductDetailPage = () => {
                     onClick={() => setSelectedSize(size)}
                     disabled={size.stock === 0}
                     className={`p-3 border-2 rounded-lg text-center transition-all ${selectedSize?.id === size.id
-                        ? "border-primary-600 bg-primary-50 ring-2 ring-primary-200"
-                        : size.stock === 0
-                          ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200"
-                          : "border-gray-200 hover:border-gray-300"
+                      ? "border-primary-600 bg-primary-50 ring-2 ring-primary-200"
+                      : size.stock === 0
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200"
+                        : "border-gray-200 hover:border-gray-300"
                       }`}
                   >
                     <div className="font-medium">{size.name}</div>

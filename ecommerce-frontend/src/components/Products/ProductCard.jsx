@@ -9,7 +9,7 @@ const getImageUrl = (url) => {
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
     return url;
   }
-  const baseUrl = 'https://vcaresl.com/api';
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
   return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 

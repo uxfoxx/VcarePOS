@@ -8,7 +8,7 @@ export const InvoiceHeader = ({ businessName, logoPreview }) => (
 
 
     <img
-      src="/quotationTop.png"
+      src="/invoiceTop.png"
       alt="Business Logo"
       className="w-full object-contain"
       crossOrigin="anonymous"

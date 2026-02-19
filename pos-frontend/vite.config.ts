@@ -10,6 +10,13 @@ export default defineConfig({
       jsxRuntime: 'automatic'
     })
   ],
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler' // Fixes "The legacy JS API is deprecated" warning
+      }
+    }
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

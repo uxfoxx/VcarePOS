@@ -16,7 +16,6 @@
     "resolveJsonModule": true,
 
     /* Path mapping */
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },

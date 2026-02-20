@@ -597,7 +597,7 @@ router.post(
             productId,
             color.name,
             color.colorCode,
-            color.image,
+            color.productImageInColor || color.image || null,
             color.colorSelectorImage || color.color_selector_image || null
           ]);
 
@@ -798,7 +798,7 @@ router.put(
             id,
             color.name,
             color.colorCode,
-            color.image,
+            color.productImageInColor || color.image || null,
             color.colorSelectorImage || color.color_selector_image || null
           ]);
 
@@ -887,8 +887,12 @@ router.put(
         color: product.color,
         material: product.material,
         hasAddons: product.has_addons,
+        weight: parseFloat(product.weight || 0),
         media: Array.isArray(product.media) ? product.media : [],
-        colors,
+        colors: colors ? colors.map(c => ({
+          ...c,
+          productImageInColor: c.image || c.productImageInColor
+        })) : [],
         addons,
         createdAt: product.created_at,
         updatedAt: product.updated_at

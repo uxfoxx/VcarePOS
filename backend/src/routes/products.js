@@ -349,7 +349,8 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
             id: color.id,
             name: color.name,
             colorCode: color.color_code,
-            image: color.image,
+            productImageInColor: color.image,
+            colorSelectorImage: color.color_selector_image,
             sizes: colorSizes
           };
         });
@@ -478,7 +479,7 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
         id: color.id,
         name: color.name,
         colorCode: color.color_code,
-        image: color.image,
+        productImageInColor: color.image,
         colorSelectorImage: color.color_selector_image,
         sizes: colorSizes
       };
@@ -552,6 +553,7 @@ router.post(
         description,
         category,
         price,
+        weight,
         barcode,
         image,
         color,
@@ -569,12 +571,12 @@ router.post(
       const mediaData = Array.isArray(media) ? media : [];
       const productResult = await client.query(`
         INSERT INTO products (
-          id, name, description, category, price, stock, barcode, image, 
+          id, name, description, category, price, weight, stock, barcode, image, 
           color, material, has_addons, media
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING *
       `, [
-        productId, name, description, category, price, 0, barcode, image,
+        productId, name, description, category, price, weight || 0, 0, barcode, image,
         color, material, hasAddons, JSON.stringify(mediaData)
       ]);
 
@@ -672,6 +674,7 @@ router.post(
         description: product.description,
         category: product.category,
         price: parseFloat(product.price),
+        weight: parseFloat(product.weight || 0),
         stock: totalStock,
         barcode: product.barcode,
         image: product.image,
@@ -738,6 +741,7 @@ router.put(
         description,
         category,
         price,
+        weight,
         barcode,
         image,
         color,
@@ -757,17 +761,18 @@ router.put(
           description = $2,
           category = $3,
           price = $4,
-          barcode = $5,
-          image = $6,
-          color = $7,
-          material = $8,
-          has_addons = $9,
-          media = $10,
+          weight = $5,
+          barcode = $6,
+          image = $7,
+          color = $8,
+          material = $9,
+          has_addons = $10,
+          media = $11,
           updated_at = CURRENT_TIMESTAMP
-        WHERE id = $11
+        WHERE id = $12
         RETURNING *
       `, [
-        name, description, category, price, barcode, image,
+        name, description, category, price, weight || 0, barcode, image,
         color, material, hasAddons, JSON.stringify(mediaData),
         id
       ]);
@@ -1039,7 +1044,8 @@ router.put(
           id: color.id,
           name: color.name,
           colorCode: color.color_code,
-          image: color.image,
+          productImageInColor: color.image,
+          colorSelectorImage: color.color_selector_image,
           sizes: sizesResult.rows.map(size => ({
             id: size.id,
             name: size.name,

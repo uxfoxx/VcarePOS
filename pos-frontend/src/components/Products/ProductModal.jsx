@@ -486,7 +486,8 @@ export function ProductModal({
       id: `COLOR-${Date.now()}`,
       name: colorData.name,
       colorCode: colorData.colorCode,
-      image: colorData.image,
+      productImageInColor: colorData.productImageInColor,
+      colorSelectorImage: colorData.colorSelectorImage,
       sizes: [],
       rawMaterials: []
     };
@@ -677,12 +678,14 @@ export function ProductModal({
 
       const finalMediaPaths = [...existingMediaPaths, ...newUploadedMediaPaths];
 
+      const finalImage = finalMediaPaths.length > 0 ? finalMediaPaths[0] : (finalProductData.image && !finalProductData.image.startsWith('data:') ? finalProductData.image : '');
+
       const productSubmissionData = {
         id: editingProduct?.id || productData.id,
         name: finalProductData.name,
         category: finalProductData.category,
         description: finalProductData.description || '',
-        image: imagePreview || finalProductData.image || '',
+        image: finalImage,
         hasAddons: hasAddons,
 
         price: Number(finalProductData.price) || 0,
@@ -1571,7 +1574,11 @@ export function ProductModal({
               </div>
             </div>
           ) : (
-            steps[currentStep].content()
+            steps.map((step, index) => (
+              <div key={index} style={{ display: currentStep === index ? 'block' : 'none' }}>
+                {step.content()}
+              </div>
+            ))
           )}
         </div>
 

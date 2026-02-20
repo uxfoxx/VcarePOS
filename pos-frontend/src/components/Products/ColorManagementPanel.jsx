@@ -81,7 +81,7 @@ export function ColorManagementPanel({
     const newColor = {
       name: values.name,
       colorCode: '#000000',
-      image: imagePath || '',
+      productImageInColor: imagePath || '',
       colorSelectorImage: colorSelectorImagePath || ''
     };
 
@@ -190,8 +190,8 @@ export function ColorManagementPanel({
     colorEditForm.setFieldsValue({
       name: color.name
     });
-    setEditImagePath(color.image || null);
-    setEditImagePreview(color.image ? getImageUrl(color.image) : null);
+    setEditImagePath(color.productImageInColor || null);
+    setEditImagePreview(color.productImageInColor ? getImageUrl(color.productImageInColor) : null);
     setEditColorSelectorImagePath(color.colorSelectorImage || null);
     setEditColorSelectorImagePreview(color.colorSelectorImage ? getImageUrl(color.colorSelectorImage) : null);
   };
@@ -217,7 +217,7 @@ export function ColorManagementPanel({
 
       const updatedData = {
         name: values.name,
-        image: editImagePath || colorToUpdate.image || '',
+        productImageInColor: editImagePath || colorToUpdate.productImageInColor || '',
         colorSelectorImage: editColorSelectorImagePath || colorToUpdate.colorSelectorImage || ''
       };
 
@@ -650,13 +650,13 @@ export function ColorManagementPanel({
                       <div
                         className="w-10 h-10 rounded-full border-2 border-gray-300 flex-shrink-0"
                         style={{
-                          backgroundImage: color.colorSelectorImage ? `url(${getImageUrl(color.colorSelectorImage)})` : (color.image ? `url(${getImageUrl(color.image)})` : 'none'),
+                          backgroundImage: color.colorSelectorImage ? `url(${getImageUrl(color.colorSelectorImage)})` : (color.productImageInColor ? `url(${getImageUrl(color.productImageInColor)})` : 'none'),
                           backgroundSize: 'cover',
                           backgroundPosition: 'center',
                           backgroundColor: color.colorCode || '#f0f0f0'
                         }}
                       >
-                        {!color.colorSelectorImage && !color.image && (
+                        {!color.colorSelectorImage && !color.productImageInColor && (
                           <div className="w-full h-full flex items-center justify-center">
                             <Icon name="palette" className="text-gray-400" />
                           </div>
@@ -718,13 +718,13 @@ export function ColorManagementPanel({
               <div
                 className="w-12 h-12 rounded-full border-2 border-gray-300"
                 style={{
-                  backgroundImage: activeColor.image ? `url(${getImageUrl(activeColor.image)})` : 'none',
+                  backgroundImage: activeColor.productImageInColor ? `url(${getImageUrl(activeColor.productImageInColor)})` : 'none',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundColor: activeColor.colorCode || '#f0f0f0'
                 }}
               >
-                {!activeColor.image && (
+                {!activeColor.productImageInColor && (
                   <div className="w-full h-full flex items-center justify-center">
                     <Icon name="palette" className="text-gray-400" />
                   </div>

@@ -140,8 +140,8 @@ export function ProductManagement() {
 
           if (record.colors && Array.isArray(record.colors) && record.colors.length > 0) {
             record.colors.forEach(color => {
-              if (color.image && !images.includes(color.image)) {
-                images.push(color.image);
+              if (color.productImageInColor && !images.includes(color.productImageInColor)) {
+                images.push(color.productImageInColor);
               }
             });
           }
@@ -404,8 +404,8 @@ export function ProductManagement() {
 
             if (record.colors && Array.isArray(record.colors) && record.colors.length > 0) {
               record.colors.forEach(color => {
-                if (color.image && !images.includes(color.image)) {
-                  images.push(color.image);
+                if (color.productImageInColor && !images.includes(color.productImageInColor)) {
+                  images.push(color.productImageInColor);
                 }
               });
             }

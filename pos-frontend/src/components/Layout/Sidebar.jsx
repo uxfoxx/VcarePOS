@@ -18,6 +18,12 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
 
   const allMenuItems = [
     {
+      key: 'dashboard',
+      icon: <Icon name="dashboard" />,
+      label: 'Dashboard',
+      module: 'dashboard'
+    },
+    {
       key: 'pos',
       icon: <Icon name="restaurant" />,
       label: 'Point of Sale',
@@ -112,9 +118,9 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
       <div className="flex items-center justify-between w-full">
         <span className="font-medium">{item.label}</span>
         {item.badge && (
-          <Badge 
-            count={item.badge.count} 
-            size="small" 
+          <Badge
+            count={item.badge.count}
+            size="small"
             style={{ backgroundColor: item.badge.color }}
           />
         )}
@@ -129,15 +135,15 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
       <div className={`${collapsed ? 'p-4' : 'p-6'} border-b border-gray-200 transition-all duration-200`}>
         <div className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'}`}>
           <div className="w-full  rounded-xl flex items-center justify-center">
-            <img 
-              src={localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
-                ? JSON.parse(localStorage.getItem('vcare_branding')).logoPreview 
-                : "/VCARELogo 1.png"} 
-              alt="VCare Logo" 
+            <img
+              src={localStorage.getItem('vcare_branding') && JSON.parse(localStorage.getItem('vcare_branding')).logoPreview
+                ? JSON.parse(localStorage.getItem('vcare_branding')).logoPreview
+                : "/VCARELogo 1.png"}
+              alt="VCare Logo"
               className="w-full  object-fill"
             />
           </div>
-          
+
         </div>
       </div>
 
@@ -150,7 +156,7 @@ export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
             </Text>
           </div>
         )}
-        
+
         <Menu
           mode="inline"
           selectedKeys={[activeTab]}

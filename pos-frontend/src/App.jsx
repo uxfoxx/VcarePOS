@@ -59,6 +59,7 @@ const AuditTrail = lazy(() => import('./components/AuditTrail/AuditTrail').then(
 const PurchaseOrderManagement = lazy(() => import('./components/PurchaseOrders/PurchaseOrderManagement').then(module => ({ default: module.PurchaseOrderManagement })));
 const EcommerceOrderManagement = lazy(() => import('./components/EcommerceOrders/EcommerceOrderManagement').then(module => ({ default: module.EcommerceOrderManagement })));
 const QuotationManagement = lazy(() => import('./components/Quotations/QuotationManagement').then(module => ({ default: module.QuotationManagement })));
+const Dashboard = lazy(() => import('./components/Dashboard/Dashboard').then(module => ({ default: module.Dashboard })));
 
 // Loading component
 const ComponentLoader = () => (
@@ -119,8 +120,62 @@ function TokenValidator() {
 
 function AppContent() {
   const { isAuthenticated } = useSelector(state => state.auth);
-  const [activeTab, setActiveTab] = useState('pos');
+
+  // Initialize activeTab from URL path if it exists, otherwise default to 'pos'
+  const getInitialTab = () => {
+    const path = window.location.pathname.substring(1); // remove leading slash
+
+    // Map of valid paths to active tabs
+    const validPaths = [
+      'dashboard', 'pos', 'products', 'raw-materials', 'transactions', 'quotations',
+      'reports', 'coupons', 'tax', 'purchase-orders', 'user-management',
+      'audit-trail', 'ecommerce-orders', 'settings'
+    ];
+
+    // Special alias mapping
+    if (path === 'orders') return 'transactions';
+    if (path === 'point-of-sales') return 'pos';
+    if (!path || path === '') return 'dashboard';
+
+    return validPaths.includes(path) ? path : 'dashboard';
+  };
+
+  const [activeTab, setActiveTab] = useState(getInitialTab);
   const [collapsed, setCollapsed] = useState(true);
+
+  // Sync state to URL when activeTab changes
+  useEffect(() => {
+    const currentPath = window.location.pathname.substring(1);
+
+    // Helper to map tab names to clean URLs if desired (optional)
+    const getPathForTab = (tab) => {
+      if (tab === 'transactions') return 'orders';
+      if (tab === 'pos') return 'point-of-sales';
+      if (tab === 'dashboard') return '';
+      return tab;
+    };
+
+    const desiredPath = getPathForTab(activeTab);
+
+    if (currentPath !== desiredPath) {
+      window.history.pushState({ tab: activeTab }, '', `/${desiredPath}`);
+    }
+  }, [activeTab]);
+
+  // Listen for back/forward browser navigation
+  useEffect(() => {
+    const handlePopState = (event) => {
+      if (event.state && event.state.tab) {
+        setActiveTab(event.state.tab);
+      } else {
+        // Fallback to reading URL if state is missing
+        setActiveTab(getInitialTab());
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Update document title based on active tab and branding
   useEffect(() => {
@@ -136,6 +191,7 @@ function AppContent() {
     const businessName = brandingData.businessName || 'VCare';
 
     const pageTitles = {
+      'dashboard': `${businessName} - Dashboard`,
       'pos': `${businessName} - POS`,
       'products': `${businessName} - Products`,
       'raw-materials': `${businessName} - Raw Materials`,
@@ -161,6 +217,11 @@ function AppContent() {
 
   const renderContent = () => {
     const contentMap = {
+      'dashboard': (
+        <Suspense fallback={<ComponentLoader />}>
+          <Dashboard onNavigate={setActiveTab} />
+        </Suspense>
+      ),
       'pos': (
         <ProtectedRoute module="pos" action="view">
           <div className="flex h-full gap-6">

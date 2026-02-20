@@ -6,6 +6,7 @@
  * who is logged in. Use this for features that should be universally accessible.
  */
 export const ALWAYS_ACCESSIBLE_MODULES = [
+  'dashboard',
   'quotations',
   'ecommerce-orders'
 ];

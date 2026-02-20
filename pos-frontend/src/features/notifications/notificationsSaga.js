@@ -1,7 +1,5 @@
-import { put, select, call, take, fork, cancel, cancelled, delay } from 'redux-saga/effects';
-import { eventChannel } from 'redux-saga';
-import { addNotification, failed } from './notificationsSlice';
-import { supabaseRealtime } from '../../utils/supabaseClient';
+import { put, select, call, fork, cancel, delay, take } from 'redux-saga/effects';
+import { addNotification } from './notificationsSlice';
 import { ecommerceOrdersApi } from '../../api/apiClient';
 import { message } from 'antd';
 
@@ -89,75 +87,10 @@ function* pollForNewOrders() {
   }
 }
 
-function createRealtimeChannel() {
-  return eventChannel(emitter => {
-    // console.log('[Realtime] Setting up e-commerce orders subscription...');
-
-    const channel = supabaseRealtime
-      .channel('ecommerce-orders-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'ecommerce_orders'
-        },
-        (payload) => {
-          // console.log('[Realtime] New order received:', payload);
-          emitter({ type: 'NEW_ORDER', order: payload.new });
-        }
-      )
-      .subscribe((status) => {
-        // console.log('[Realtime] Subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          // console.log('[Realtime] Successfully subscribed to e-commerce orders');
-        }
-
-        if (status === 'CHANNEL_ERROR') {
-          // console.error('[Realtime] Channel error');
-          emitter({ type: 'ERROR', error: 'Channel subscription error' });
-        }
-
-        if (status === 'TIMED_OUT') {
-          // console.error('[Realtime] Connection timed out');
-          emitter({ type: 'ERROR', error: 'Connection timed out' });
-        }
-      });
-
-    return () => {
-      // console.log('[Realtime] Unsubscribing from e-commerce orders');
-      supabaseRealtime.removeChannel(channel);
-    };
-  });
-}
-
-function* watchRealtimeEvents() {
-  const channel = yield call(createRealtimeChannel);
-
-  try {
-    while (true) {
-      const event = yield take(channel);
-
-      if (event.type === 'NEW_ORDER') {
-        yield call(processNewOrder, event.order);
-      } else if (event.type === 'ERROR') {
-        // console.error('[Realtime] Error:', event.error);
-        yield put(failed(event.error));
-      }
-    }
-  } finally {
-    if (yield cancelled()) {
-      channel.close();
-    }
-  }
-}
-
 function* notificationsSaga() {
-  const realtimeTask = yield fork(watchRealtimeEvents);
   const pollingTask = yield fork(pollForNewOrders);
 
   yield take('STOP_NOTIFICATIONS');
-  yield cancel(realtimeTask);
   yield cancel(pollingTask);
 }
 

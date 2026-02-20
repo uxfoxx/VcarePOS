@@ -649,6 +649,155 @@ router.get('/orders/:orderId', authenticate, hasPermission('ecommerce', 'view'),
 
 /**
  * @swagger
+ * /ecommerce/orders/{orderId}/receipt-status:
+ *   put:
+ *     summary: Verify or reject a bank transfer receipt
+ *     tags: [E-commerce]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [verified, rejected]
+ *               notes:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Receipt status updated
+ *       400:
+ *         description: Validations failed or invalid order
+ *       404:
+ *         description: Order or receipt not found
+ */
+router.put('/orders/:orderId/receipt-status', [
+  authenticate,
+  hasPermission('ecommerce-orders', 'edit'),
+  param('orderId').notEmpty().withMessage('Order ID is required'),
+  body('status').isIn(['verified', 'rejected']).withMessage('Invalid receipt status')
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { orderId } = req.params;
+  const { status, notes } = req.body;
+
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Check if order exists and is bank transfer
+    const orderResult = await client.query(
+      'SELECT * FROM ecommerce_orders WHERE id = $1',
+      [orderId]
+    );
+
+    if (orderResult.rows.length === 0) {
+      throw new Error('Order not found');
+    }
+
+    const order = orderResult.rows[0];
+
+    if (order.payment_method !== 'bank_transfer') {
+      return res.status(400).json({ message: 'Only bank transfer orders have receipts' });
+    }
+
+    // Check if receipt exists
+    const receiptResult = await client.query(
+      'SELECT id FROM bank_receipts WHERE ecommerce_order_id = $1',
+      [orderId]
+    );
+
+    if (receiptResult.rows.length === 0) {
+      return res.status(404).json({ message: 'No bank receipt found for this order' });
+    }
+
+    // Update the receipt status specifically
+    await client.query(
+      'UPDATE bank_receipts SET status = $1 WHERE ecommerce_order_id = $2',
+      [status, orderId]
+    );
+
+    let finalOrderStatus = order.order_status;
+    let timelineMessage = notes || `Bank receipt marked as ${status}.`;
+
+    // Only progress the order if it was successfully verified. 
+    // If it was rejected, we leave the order in 'pending_payment'.
+    if (status === 'verified' && order.order_status === 'pending_payment') {
+      finalOrderStatus = 'processing';
+
+      // Upgrade the order
+      await client.query(
+        'UPDATE ecommerce_orders SET order_status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        [finalOrderStatus, orderId]
+      );
+
+      // Log the processing stage to timeline
+      await client.query(
+        'INSERT INTO ecommerce_order_timeline (order_id, status, notes) VALUES ($1, $2, $3)',
+        [orderId, finalOrderStatus, timelineMessage]
+      );
+
+      // Fetch the full timeline array
+      const timelineData = await client.query(
+        'SELECT status, timestamp as updated_at FROM ecommerce_order_timeline WHERE order_id = $1 ORDER BY timestamp ASC',
+        [orderId]
+      );
+
+      // Fire off the visual email update
+      const emailBody = generateOrderStatusEmailBody(
+        order.id,
+        order.customer_name,
+        finalOrderStatus,
+        timelineData.rows,
+        notes
+      );
+      await sendEmail(order.customer_email, `Your Order #${order.id} Status Updated`, emailBody);
+    } else {
+      // Just drop a note in the timeline that the receipt was rejected/verified but order unchanged
+      await client.query(
+        'INSERT INTO ecommerce_order_timeline (order_id, status, notes) VALUES ($1, $2, $3)',
+        [orderId, order.order_status, timelineMessage]
+      );
+    }
+
+    await client.query('COMMIT');
+
+    res.json({
+      id: orderId,
+      orderStatus: finalOrderStatus,
+      receiptStatus: status,
+      message: `Receipt ${status} successfully`
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    if (error.message === 'Order not found') {
+      return res.status(404).json({ message: error.message });
+    }
+    handleRouteError(error, req, res, 'E-commerce - Update Receipt Status');
+  } finally {
+    client.release();
+  }
+});
+
+
+/**
+ * @swagger
  * /ecommerce/orders/{orderId}/status:
  *   put:
  *     summary: Update e-commerce order status (POS Admin)
@@ -712,15 +861,17 @@ router.put('/orders/:orderId/status', [
     // Only handle bank receipts if payment method is bank_transfer
     if (order.payment_method === 'bank_transfer') {
       let updatedBankStatus = status;
-      if (status === 'pending_payment') {
-        updatedBankStatus = 'pending_verification';
-      } else if (status === 'processing') {
+
+      // If order moves to processing, shipped, or completed: the receipt is implicitly verified
+      if (['processing', 'shipped', 'completed'].includes(status)) {
         updatedBankStatus = 'verified';
+      } else if (status === 'pending_payment') {
+        updatedBankStatus = 'pending_verification';
       } else if (status === 'cancelled') {
         updatedBankStatus = 'rejected';
       }
 
-      if (['pending_payment', 'processing', 'cancelled'].includes(status)) {
+      if (['pending_payment', 'processing', 'shipped', 'completed', 'cancelled'].includes(status)) {
         const receiptResult = await client.query(
           'SELECT * FROM bank_receipts WHERE ecommerce_order_id = $1',
           [orderId]

@@ -10,9 +10,11 @@ import {
   Select,
   Tooltip,
   Button,
-  message
+  message,
+  Popconfirm
 } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
+import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { EnhancedTable } from '../common/EnhancedTable';
@@ -22,6 +24,7 @@ import { AuthenticatedFile } from '../common/AuthenticatedFile';
 import {
   fetchEcommerceOrders,
   updateEcommerceOrderStatus,
+  updateEcommerceReceiptStatus,
   clearSelectedOrderId
 } from '../../features/ecommerceOrders/ecommerceOrdersSlice';
 
@@ -29,6 +32,7 @@ const { Text } = Typography;
 const { Option } = Select;
 
 export function EcommerceOrderManagement() {
+  const { currentUser } = useAuth();
   const dispatch = useDispatch();
   const ecommerceOrders = useSelector(state => state.ecommerceOrders?.ordersList || []);
   const loading = useSelector(state => state.ecommerceOrders?.loading || false);
@@ -66,6 +70,14 @@ export function EcommerceOrderManagement() {
       dispatch(fetchEcommerceOrders());
     }, 500); // Slight delay to ensure backend has processed the update
     message.success(`Order status updated to ${newStatus}`);
+  };
+
+  const handleReceiptVerification = (orderId, status) => {
+    dispatch(updateEcommerceReceiptStatus({ orderId, status }));
+    setTimeout(() => {
+      dispatch(fetchEcommerceOrders());
+    }, 500);
+    message.success(`Receipt marked as ${status}`);
   };
 
   const handleViewReceipt = (order) => {
@@ -171,7 +183,15 @@ export function EcommerceOrderManagement() {
             {method === 'cash_on_delivery' ? 'COD' : 'Bank Transfer'}
           </Tag>
           {method === 'bank_transfer' && record.bankReceipt && (
-            <div className="mt-1">
+            <div className="mt-2 text-xs flex flex-col gap-1">
+              <div>
+                Status: <Tag color={record.bankReceipt.status === 'verified' ? 'success' : record.bankReceipt.status === 'rejected' ? 'error' : 'warning'} className="m-0 text-[10px] leading-3 px-1">
+                  {record.bankReceipt.status.replace('_', ' ').toUpperCase()}
+                </Tag>
+              </div>
+
+
+
               <Button
                 type="link"
                 size="small"
@@ -179,9 +199,9 @@ export function EcommerceOrderManagement() {
                   e.stopPropagation();
                   handleViewReceipt(record);
                 }}
-                className="p-0 h-auto text-xs"
+                className="p-0 h-auto text-xs mt-1 text-left justify-start"
               >
-                View Receipt
+                View Receipt Image
               </Button>
             </div>
           )}
@@ -355,10 +375,47 @@ export function EcommerceOrderManagement() {
         }}
         width={800}
         footer={[
-          <ActionButton key="close" onClick={() => setShowReceiptModal(false)}>
+          (selectedOrder?.bankReceipt?.status === 'pending_verification' ||
+            (currentUser?.role === 'admin' && selectedOrder?.bankReceipt?.status !== 'verified')) && (
+            <Popconfirm
+              key="verify"
+              title="Verify Receipt"
+              description="Are you sure you want to approve this bank transfer and move the order to Processing?"
+              onConfirm={() => {
+                handleReceiptVerification(selectedOrder.id, 'verified');
+                setShowReceiptModal(false);
+              }}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button type="primary" className="bg-green-600 hover:bg-green-500">
+                Verify Receipt
+              </Button>
+            </Popconfirm>
+          ),
+          (selectedOrder?.bankReceipt?.status === 'pending_verification' ||
+            (currentUser?.role === 'admin' && selectedOrder?.bankReceipt?.status !== 'rejected')) && (
+            <Popconfirm
+              key="reject"
+              title="Reject Receipt"
+              description="Are you sure you want to reject this receipt? The order will remain pending payment."
+              onConfirm={() => {
+                handleReceiptVerification(selectedOrder.id, 'rejected');
+                setShowReceiptModal(false);
+              }}
+              okText="Yes"
+              cancelText="No"
+              okButtonProps={{ danger: true }}
+            >
+              <Button danger>
+                Reject Receipt
+              </Button>
+            </Popconfirm>
+          ),
+          <Button key="close" onClick={() => setShowReceiptModal(false)}>
             Close
-          </ActionButton>
-        ]}
+          </Button>
+        ].filter(Boolean)}
       >
         {selectedOrder?.bankReceipt && (
           <div className="space-y-4">

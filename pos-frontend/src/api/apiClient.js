@@ -684,6 +684,13 @@ export const ecommerceOrdersApi = {
     });
   },
 
+  updateReceiptStatus: async (orderId, status, notes) => {
+    return apiRequest(`/ecommerce/orders/${orderId}/receipt-status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, notes })
+    });
+  },
+
   getReceiptBlob: async (filename) => {
     // Get token from localStorage
     const token = localStorage.getItem('vcare_token');

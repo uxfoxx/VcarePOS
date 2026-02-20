@@ -27,6 +27,10 @@ const ecommerceOrdersSlice = createSlice({
       state.loading = true;
       state.error = null;
     },
+    updateEcommerceReceiptStatus(state) {
+      state.loading = true;
+      state.error = null;
+    },
     fetchReceiptBlob(state, action) {
       const { receiptId } = action.payload;
       if (!state.receipts[receiptId]) {
@@ -56,6 +60,26 @@ const ecommerceOrdersSlice = createSlice({
       if (state.currentOrder && state.currentOrder.id === action.payload.id) {
         state.currentOrder.orderStatus = action.payload.orderStatus;
         state.currentOrder.updatedAt = action.payload.updatedAt;
+      }
+    },
+    updateEcommerceReceiptStatusSucceeded(state, action) {
+      state.loading = false;
+      const idx = state.ordersList.findIndex(o => o.id === action.payload.id);
+      if (idx !== -1) {
+        state.ordersList[idx] = {
+          ...state.ordersList[idx],
+          orderStatus: action.payload.orderStatus,
+          bankReceipt: state.ordersList[idx].bankReceipt ? {
+            ...state.ordersList[idx].bankReceipt,
+            status: action.payload.receiptStatus
+          } : null
+        };
+      }
+      if (state.currentOrder && state.currentOrder.id === action.payload.id) {
+        state.currentOrder.orderStatus = action.payload.orderStatus;
+        if (state.currentOrder.bankReceipt) {
+          state.currentOrder.bankReceipt.status = action.payload.receiptStatus;
+        }
       }
     },
     fetchReceiptBlobSucceeded(state, action) {
@@ -123,15 +147,16 @@ const ecommerceOrdersSlice = createSlice({
     },
   },
 });
-
 export const {
   fetchEcommerceOrders,
   fetchEcommerceOrderById,
   updateEcommerceOrderStatus,
+  updateEcommerceReceiptStatus,
   fetchReceiptBlob,
   fetchEcommerceOrdersSucceeded,
   fetchEcommerceOrderByIdSucceeded,
   updateEcommerceOrderStatusSucceeded,
+  updateEcommerceReceiptStatusSucceeded,
   fetchReceiptBlobSucceeded,
   fetchReceiptBlobFailed,
   clearReceiptBlob,

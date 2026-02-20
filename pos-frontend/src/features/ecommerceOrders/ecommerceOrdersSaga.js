@@ -3,10 +3,12 @@ import {
   fetchEcommerceOrders,
   fetchEcommerceOrderById,
   updateEcommerceOrderStatus,
+  updateEcommerceReceiptStatus,
   fetchReceiptBlob,
   fetchEcommerceOrdersSucceeded,
   fetchEcommerceOrderByIdSucceeded,
   updateEcommerceOrderStatusSucceeded,
+  updateEcommerceReceiptStatusSucceeded,
   fetchReceiptBlobSucceeded,
   fetchReceiptBlobFailed,
   fetchNewOrders,
@@ -46,6 +48,15 @@ function* updateEcommerceOrderStatusSaga(action) {
   }
 }
 
+function* updateEcommerceReceiptStatusSaga(action) {
+  try {
+    const data = yield call(ecommerceOrdersApi.updateReceiptStatus, action.payload.orderId, action.payload.status, action.payload.notes);
+    yield put(updateEcommerceReceiptStatusSucceeded(data));
+  } catch (error) {
+    yield put(failed(error.message));
+  }
+}
+
 function* fetchReceiptBlobSaga(action) {
   try {
     const { receiptId, filename } = action.payload;
@@ -80,6 +91,7 @@ export default function* ecommerceOrdersSaga() {
   yield takeLatest(fetchEcommerceOrders.type, fetchEcommerceOrdersSaga);
   yield takeLatest(fetchEcommerceOrderById.type, fetchEcommerceOrderByIdSaga);
   yield takeLatest(updateEcommerceOrderStatus.type, updateEcommerceOrderStatusSaga);
+  yield takeLatest(updateEcommerceReceiptStatus.type, updateEcommerceReceiptStatusSaga);
   yield takeLatest(fetchReceiptBlob.type, fetchReceiptBlobSaga);
   yield takeLatest(fetchNewOrders.type, fetchNewOrdersSaga);
   yield takeLatest(markOrderNotified.type, markOrderNotifiedSaga);

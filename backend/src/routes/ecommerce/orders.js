@@ -478,6 +478,42 @@ router.get('/orders', authenticate, hasPermission('ecommerce-orders', 'view'), a
 
 /**
  * @swagger
+ * /ecommerce/orders/new:
+ *   get:
+ *     summary: Get new unread e-commerce orders
+ *     tags: [E-commerce]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: New unread orders
+ */
+router.get('/orders/new', [authenticate, hasPermission('ecommerce', 'view')], async (req, res) => {
+  try {
+    const client = await pool.connect();
+
+    const result = await client.query(`
+      SELECT
+        o.*,
+        COUNT(*) OVER() as total_count
+      FROM ecommerce_orders o
+      WHERE o.notified_at IS NULL
+      ORDER BY o.created_at DESC
+    `);
+
+    client.release();
+
+    res.json({
+      orders: result.rows,
+      count: result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0
+    });
+  } catch (error) {
+    handleRouteError(error, req, res, 'E-commerce - Get New Orders');
+  }
+});
+
+/**
+ * @swagger
  * /ecommerce/orders/{orderId}:
  *   get:
  *     summary: Get e-commerce order details (POS Admin)
@@ -710,34 +746,9 @@ router.put('/orders/:orderId/status', [
   }
 });
 
-router.get('/orders/new', [authenticate, hasPermission('ecommerce', 'view')], async (req, res) => {
-  try {
-    const client = await pool.connect();
 
-    const result = await client.query(`
-      SELECT
-        o.*,
-        COUNT(*) OVER() as total_count
-      FROM ecommerce_orders o
-      WHERE o.notified_at IS NULL
-      ORDER BY o.created_at DESC
-    `);
 
-    client.release();
-
-    res.json({
-      orders: result.rows,
-      count: result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0
-    });
-  } catch (error) {
-    handleRouteError(error, req, res, 'E-commerce - Get New Orders');
-  }
-});
-
-router.post('/orders/:orderId/mark-notified', [
-  authenticate,
-  hasPermission('ecommerce', 'edit')
-], async (req, res) => {
+router.post('/orders/:orderId/mark-notified', authenticate, async (req, res) => {
   const { orderId } = req.params;
 
   try {

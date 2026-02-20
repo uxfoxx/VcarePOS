@@ -730,7 +730,8 @@ export const ecommerceOrdersApi = {
   },
 
   getNewOrders: async () => {
-    return apiRequest('/ecommerce/orders/new');
+    const response = await apiRequest('/ecommerce/orders/new');
+    return response.orders || [];
   },
 
   markOrderNotified: async (orderId) => {

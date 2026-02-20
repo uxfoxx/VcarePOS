@@ -119,7 +119,8 @@ function TokenValidator() {
 }
 
 function AppContent() {
-  const { isAuthenticated } = useSelector(state => state.auth);
+  const { isAuthenticated, error, sessionExpiredMessage } = useSelector(state => state.auth);
+  const [isRestoringSession, setIsRestoringSession] = useState(() => !!localStorage.getItem('vcare_token'));
 
   // Initialize activeTab from URL path if it exists, otherwise default to 'pos'
   const getInitialTab = () => {
@@ -209,6 +210,26 @@ function AppContent() {
 
     document.title = pageTitles[activeTab] || businessName;
   }, [activeTab]);
+
+  // Handle session restoration state
+  useEffect(() => {
+    if (isAuthenticated || error || sessionExpiredMessage) {
+      setIsRestoringSession(false);
+    }
+
+    // Fallback timer to prevent getting stuck in loading state
+    const timer = setTimeout(() => setIsRestoringSession(false), 3000);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, error, sessionExpiredMessage]);
+
+  if (isRestoringSession && !isAuthenticated) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+        <ComponentLoader />
+        <div className="mt-4 text-gray-500 font-medium">Restoring your session...</div>
+      </div>
+    );
+  }
 
   // If not authenticated, show login page
   if (!isAuthenticated) {

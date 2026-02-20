@@ -1,4 +1,5 @@
-import { Modal, Descriptions, Typography, Space, Image, Tag, Divider } from 'antd';
+import { useState, useRef } from 'react';
+import { Modal, Descriptions, Typography, Space, Image, Tag, Divider, Carousel } from 'antd';
 import { Icon } from './Icon';
 import { ActionButton } from './ActionButton';
 
@@ -13,162 +14,183 @@ export function DetailModal({
   type = 'generic',
   actions = []
 }) {
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState(null);
+  const carouselRef = useRef(null);
+
   if (!data) return null;
 
-  const renderProductDetails = () => (
-    <div className="space-y-6">
-      {/* Product Image and Basic Info */}
-      <div className="flex gap-6">
-        <div className="flex-shrink-0">
-          {data.media && Array.isArray(data.media) && data.media.length > 0 ? (
-            <div className="space-y-3">
-              {/* Primary Media */}
-              <div className="relative">
-                {data.media[0].startsWith('data:video/') ||
-                  data.media[0].toLowerCase().includes('.mp4') ||
-                  data.media[0].toLowerCase().includes('.webm') ||
-                  data.media[0].toLowerCase().includes('.mov') ? (
-                  <video
-                    src={`${import.meta.env.VITE_API_URL}${data.media[0]}`}
-                    width={200}
-                    height={150}
-                    className="object-cover rounded-lg"
-                    controls
-                    style={{ aspectRatio: '4/3', objectFit: 'cover' }}
-                    crossOrigin="anonymous"
-                  />
-                ) : (
-                  <Image
-                    src={`${import.meta.env.VITE_API_URL}${data.media[0]}`}
-                    alt={data.name}
-                    width={200}
-                    height={150}
-                    className="object-cover rounded-lg"
-                    preview={true}
-                    style={{ aspectRatio: '4/3', objectFit: 'cover' }}
-                    crossOrigin="anonymous"
-                  />
-                )}
-                {data.media.length > 1 && (
-                  <div className="absolute top-2 right-2">
-                    <Tag color="purple" size="small">
-                      +{data.media.length - 1} more
-                    </Tag>
+  const renderProductDetails = () => {
+    // Collect all media including color variant images
+    let allMedia = [];
+    if (data.media && Array.isArray(data.media)) {
+      allMedia = [...data.media];
+    }
+
+    // Append unique color images
+    if (data.colors && Array.isArray(data.colors)) {
+      data.colors.forEach(color => {
+        if (color.productImageInColor && !allMedia.includes(color.productImageInColor)) {
+          allMedia.push(color.productImageInColor);
+        }
+      });
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Product Image and Basic Info */}
+        <div className="flex gap-6">
+          <div className="flex-shrink-0">
+            {allMedia.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                <div className="w-[360px] overflow-hidden rounded-lg bg-white border border-gray-100">
+                  <Image.PreviewGroup>
+                    <Carousel autoplay={false} dots={false} arrows={true} infinite={false} ref={carouselRef}>
+                      {allMedia.map((mediaItem, index) => {
+                        const isVideo = mediaItem.startsWith('data:video/') ||
+                          mediaItem.toLowerCase().includes('.mp4') ||
+                          mediaItem.toLowerCase().includes('.webm') ||
+                          mediaItem.toLowerCase().includes('.mov');
+
+                        return (
+                          <div key={index} className="flex justify-center items-center h-[360px] relative group">
+                            {isVideo ? (
+                              <div
+                                className="relative w-full h-full cursor-pointer flex items-center justify-center bg-black"
+                                onClick={() => setVideoPreviewUrl(`${import.meta.env.VITE_API_URL}${mediaItem}`)}
+                              >
+                                <video
+                                  src={`${import.meta.env.VITE_API_URL}${mediaItem}`}
+                                  className="object-cover h-[360px] w-full opacity-80"
+                                  crossOrigin="anonymous"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                  <Icon name="play_circle" className="text-white text-6xl drop-shadow-md opacity-70 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                              </div>
+                            ) : (
+                              <Image
+                                src={`${import.meta.env.VITE_API_URL}${mediaItem}`}
+                                alt={`${data.name} ${index + 1}`}
+                                className="object-cover h-[360px] w-full block"
+                                style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                                crossOrigin="anonymous"
+                                preview={true}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </Carousel>
+                  </Image.PreviewGroup>
+                </div>
+
+                {/* Thumbnails Row */}
+                {allMedia.length > 1 && (
+                  <div className="flex gap-2 w-[360px] overflow-x-auto pb-2 scrollbar-hide shrink-0">
+                    {allMedia.map((mediaItem, index) => {
+                      const isVideo = mediaItem.startsWith('data:video/') ||
+                        mediaItem.toLowerCase().includes('.mp4') ||
+                        mediaItem.toLowerCase().includes('.webm') ||
+                        mediaItem.toLowerCase().includes('.mov');
+
+                      return (
+                        <div
+                          key={`thumb-${index}`}
+                          onClick={() => carouselRef.current?.goTo(index)}
+                          className="w-16 h-16 flex-shrink-0 cursor-pointer rounded overflow-hidden border-2 border-transparent hover:border-blue-500 transition-colors relative bg-gray-100"
+                        >
+                          {isVideo ? (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Icon name="play_circle" className="text-gray-500 text-2xl" />
+                            </div>
+                          ) : (
+                            <img
+                              src={`${import.meta.env.VITE_API_URL}${mediaItem}`}
+                              className="w-full h-full object-cover"
+                              alt={`Thumbnail ${index + 1}`}
+                              crossOrigin="anonymous"
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
-
-              {/* Additional Media Thumbnails */}
-              {data.media.length > 1 && (
-                <div className="grid grid-cols-4 gap-2">
-                  {data.media.slice(1, 5).map((mediaUrl, index) => {
-                    const isVideo = mediaUrl.startsWith('data:video/') ||
-                      mediaUrl.toLowerCase().includes('.mp4') ||
-                      mediaUrl.toLowerCase().includes('.webm') ||
-                      mediaUrl.toLowerCase().includes('.mov');
-
-                    return (
-                      <div key={index + 1} className="relative w-12 h-12 bg-gray-100 rounded overflow-hidden">
-                        {isVideo ? (
-                          <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                            <Icon name="play_circle" className="text-gray-500 text-sm" />
-                          </div>
-                        ) : (
-                          <Image
-                            src={`${import.meta.env.VITE_API_URL}${mediaUrl}`}
-                            alt={`${data.name} ${index + 2}`}
-                            width={48}
-                            height={48}
-                            className="object-cover"
-                            preview={true}
-                            style={{ aspectRatio: '1/1', objectFit: 'cover' }}
-                            crossOrigin="anonymous"
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
-                  {data.media.length > 5 && (
-                    <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-                      <Text className="text-xs">+{data.media.length - 5}</Text>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : (
-            <Image
-              src={data.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
-              alt={data.name}
-              width={200}
-              height={150}
-              className="object-cover rounded-lg"
-              preview={false}
-              style={{ aspectRatio: '4/3', objectFit: 'cover' }}
-            />
-          )}
-        </div>
-        <div className="flex-1">
-          <Title level={3} className="mb-2">{data.name}</Title>
-          <Text type="secondary" className="text-base block mb-4">
-            {data.description || 'No description available'}
-          </Text>
-          <div className="space-y-2">
-            <div className="flex items-center space-x-4">
-              <Text strong className="text-2xl text-blue-600">
-                LKR {(data.price || 0).toFixed(2)}
-              </Text>
-              <Tag color={data.stock > 10 ? 'green' : data.stock > 0 ? 'orange' : 'red'}>
-                {data.stock} in stock
-              </Tag>
-            </div>
-            {data.isVariation && (
-              <div>
-                <Tag color="purple">Variation: {data.variantName}</Tag>
-                <Text type="secondary" className="ml-2">
-                  Part of: {data.parentProductName}
-                </Text>
+            ) : (
+              <div className="w-[360px]">
+                <Image
+                  src={data.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
+                  alt={data.name}
+                  className="object-cover h-[360px] w-full rounded-lg"
+                  preview={false}
+                  style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                />
               </div>
             )}
           </div>
+          <div className="flex-1">
+            <Title level={3} className="mb-2">{data.name}</Title>
+            <Text type="secondary" className="text-base block mb-4">
+              {data.description || 'No description available'}
+            </Text>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-4">
+                <Text strong className="text-2xl text-blue-600">
+                  LKR {(data.price || 0).toFixed(2)}
+                </Text>
+                <Tag color={data.stock > 10 ? 'green' : data.stock > 0 ? 'orange' : 'red'}>
+                  {data.stock} in stock
+                </Tag>
+              </div>
+              {data.isVariation && (
+                <div>
+                  <Tag color="purple">Variation: {data.variantName}</Tag>
+                  <Text type="secondary" className="ml-2">
+                    Part of: {data.parentProductName}
+                  </Text>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Detailed Information */}
-      <Descriptions bordered column={2} size="small">
-        <Descriptions.Item label="SKU">
-          <Text code>{data.barcode || 'N/A'}</Text>
-        </Descriptions.Item>
-        <Descriptions.Item label="Category">
-          <Tag color="blue">{data.category}</Tag>
-        </Descriptions.Item>
-        {/* <Descriptions.Item label="Weight">
+        {/* Detailed Information */}
+        <Descriptions bordered column={2} size="small">
+          <Descriptions.Item label="SKU">
+            <Text code>{data.barcode || 'N/A'}</Text>
+          </Descriptions.Item>
+          <Descriptions.Item label="Category">
+            <Tag color="blue">{data.category}</Tag>
+          </Descriptions.Item>
+          {/* <Descriptions.Item label="Weight">
           {data.weight ? `${data.weight} kg` : 'N/A'}
         </Descriptions.Item> */}
-        <Descriptions.Item label="Material">
-          {data?.colors[0]?.sizes[0]?.rawMaterials.map((material) => {
-            return <Tag key={material.rawMaterialId} color="blue">{material.name}</Tag>;
-          }) || 'N/A'}
-        </Descriptions.Item>
-        <Descriptions.Item label="Color">
-          {data.colors?.map((colorData) => {
-            return <Tag key={colorData.id} color="blue">{colorData.name}</Tag>;
-          }) || "N/A"}
-        </Descriptions.Item>
-        {data.rawMaterials && data.rawMaterials.length > 0 && (
-          <Descriptions.Item label="Raw Materials" span={2}>
-            <div className="space-y-1">
-              {data.rawMaterials.map((material, index) => (
-                <Tag key={index} className="mb-1">
-                  {material.name || `Material ${index + 1}`}: {material.quantity} units
-                </Tag>
-              ))}
-            </div>
+          <Descriptions.Item label="Material">
+            {data?.colors[0]?.sizes[0]?.rawMaterials.map((material) => {
+              return <Tag key={material.rawMaterialId} color="blue">{material.name}</Tag>;
+            }) || 'N/A'}
           </Descriptions.Item>
-        )}
-      </Descriptions>
-    </div>
-  );
+          <Descriptions.Item label="Color">
+            {data.colors?.map((colorData) => {
+              return <Tag key={colorData.id} color="blue">{colorData.name}</Tag>;
+            }) || "N/A"}
+          </Descriptions.Item>
+          {data.rawMaterials && data.rawMaterials.length > 0 && (
+            <Descriptions.Item label="Raw Materials" span={2}>
+              <div className="space-y-1">
+                {data.rawMaterials.map((material, index) => (
+                  <Tag key={index} className="mb-1">
+                    {material.name || `Material ${index + 1}`}: {material.quantity} units
+                  </Tag>
+                ))}
+              </div>
+            </Descriptions.Item>
+          )}
+        </Descriptions>
+      </div>
+    );
+  };
 
   const renderTransactionDetails = () => (
     <div className="space-y-6">
@@ -521,27 +543,51 @@ export function DetailModal({
   };
 
   return (
-    <Modal
-      title={
-        <Space>
-          {icon && <Icon name={icon} className="text-blue-600" />}
-          <span>{title}</span>
-        </Space>
-      }
-      open={open}
-      onCancel={onClose}
-      width={800}
-      footer={[
-        <ActionButton key="close" onClick={onClose}>
-          Close
-        </ActionButton>,
-        ...actions
-      ]}
-      destroyOnHidden
-    >
-      <div className="max-h-[70vh] overflow-y-auto">
-        {renderContent()}
-      </div>
-    </Modal>
+    <>
+      <Modal
+        title={
+          <Space>
+            {icon && <Icon name={icon} className="text-blue-600" />}
+            <span>{title}</span>
+          </Space>
+        }
+        open={open}
+        onCancel={onClose}
+        width={800}
+        footer={[
+          <ActionButton key="close" onClick={onClose}>
+            Close
+          </ActionButton>,
+          ...actions
+        ]}
+        destroyOnHidden
+      >
+        <div className="max-h-[70vh] overflow-y-auto">
+          {renderContent()}
+        </div>
+      </Modal>
+
+      {/* Standalone Video Preview Modal */}
+      <Modal
+        open={!!videoPreviewUrl}
+        title="Video Preview"
+        footer={null}
+        onCancel={() => setVideoPreviewUrl(null)}
+        width={800}
+        destroyOnClose
+        centered
+      >
+        {videoPreviewUrl && (
+          <video
+            src={videoPreviewUrl}
+            controls
+            autoPlay
+            className="w-full rounded-lg bg-black"
+            style={{ maxHeight: '70vh' }}
+            crossOrigin="anonymous"
+          />
+        )}
+      </Modal>
+    </>
   );
 }

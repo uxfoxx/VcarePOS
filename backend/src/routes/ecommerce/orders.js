@@ -775,5 +775,32 @@ router.post('/orders/:orderId/mark-notified', authenticate, async (req, res) => 
   }
 });
 
+router.post('/orders/:orderId/mark-sound-played', authenticate, async (req, res) => {
+  const { orderId } = req.params;
+
+  try {
+    const client = await pool.connect();
+
+    const result = await client.query(
+      'UPDATE ecommerce_orders SET sound_played_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *',
+      [orderId]
+    );
+
+    if (result.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    client.release();
+
+    res.json({
+      success: true,
+      order: result.rows[0]
+    });
+  } catch (error) {
+    handleRouteError(error, req, res, 'E-commerce - Mark Sound Played');
+  }
+});
+
 
 module.exports = router;

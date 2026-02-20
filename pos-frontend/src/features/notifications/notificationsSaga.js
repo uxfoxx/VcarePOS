@@ -25,9 +25,20 @@ function* processNewOrder(order) {
 
   const exists = existingNotifications.some(notif => notif.id === notificationId);
 
-  if (!exists) {
+  // 1. Play sound only if it hasn't been played according to the backend
+  if (!order.sound_played_at) {
     playNotificationSound();
 
+    try {
+      // Mark merely the sound as played on the backend, so we don't repeat the bell on reload
+      yield call(ecommerceOrdersApi.markSoundPlayed, order.id);
+    } catch (error) {
+      console.warn('[Notifications] Failed to mark sound as played:', error);
+    }
+  }
+
+  // 2. Add to Redux UI Notifications if not already present in the active session
+  if (!exists) {
     const now = new Date().toISOString();
 
     const notificationPayload = {
@@ -46,6 +57,7 @@ function* processNewOrder(order) {
 
     yield put(addNotification(notificationPayload));
 
+    // Show screen toaster only if it hasn't been seen this session
     message.success({
       content: `New order from ${order.customer_name || order.customerName}`,
       duration: 5,
@@ -54,14 +66,9 @@ function* processNewOrder(order) {
       }
     });
 
-    try {
-      yield call(ecommerceOrdersApi.markOrderNotified, order.id);
-    } catch (error) {
-      console.warn('[Notifications] Failed to mark order as notified:', error);
-    }
-
     return true;
   }
+
   return false;
 }
 

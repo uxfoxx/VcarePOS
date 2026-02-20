@@ -738,6 +738,12 @@ export const ecommerceOrdersApi = {
     return apiRequest(`/ecommerce/orders/${orderId}/mark-notified`, {
       method: 'POST'
     });
+  },
+
+  markSoundPlayed: async (orderId) => {
+    return apiRequest(`/ecommerce/orders/${orderId}/mark-sound-played`, {
+      method: 'POST'
+    });
   }
 };
 

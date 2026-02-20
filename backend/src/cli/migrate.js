@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 const { MigrationRunner } = require('../utils/migrationRunner');
-const { createLogger } = require('../utils/logger');
+const { createChildLogger } = require('../utils/logger');
 
-const logger = createLogger('MigrateCLI');
+const logger = createChildLogger('MigrateCLI');
 
 const command = process.argv[2];
 const args = process.argv.slice(3);

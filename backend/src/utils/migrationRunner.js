@@ -1,10 +1,10 @@
 const { pool } = require('./db');
-const { createLogger } = require('./logger');
+const { createChildLogger } = require('./logger');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const logger = createLogger('MigrationRunner');
+const logger = createChildLogger('MigrationRunner');
 
 /**
  * Enhanced Migration Runner with Rollback Support

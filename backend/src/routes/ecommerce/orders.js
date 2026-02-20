@@ -6,7 +6,7 @@ const { pool } = require('../../utils/db');
 const path = require('path');
 const fs = require('fs');
 const { sendEmail } = require('../../helper/mail.helper');
-const { generateOrderStatusEmailBody } = require('../../utils/mailHelper');
+const { generateOrderStatusEmailBody, generateOrderSummaryEmailBody } = require('../../utils/mailHelper');
 
 const router = express.Router();
 
@@ -186,7 +186,7 @@ router.post('/orders', [
       customerAddress,
       finalTotal,
       paymentMethod,
-      paymentMethod === 'cash_on_delivery' ? 'processing' : 'processing',
+      paymentMethod === 'bank_transfer' ? 'pending_payment' : 'processing',
       deliveryLocation || null,
       parseFloat(deliveryCharge) || 0
     ]);
@@ -280,6 +280,33 @@ router.post('/orders', [
     await client.query('COMMIT');
 
     const order = orderResult.rows[0];
+
+    // Insert initial status into timeline
+    await client.query(`
+      INSERT INTO ecommerce_order_timeline (order_id, status, notes)
+      VALUES ($1, $2, $3)
+    `, [order.id, order.order_status, 'Order placed']);
+
+    // Send order confirmation & summary emails
+    try {
+      const confirmationBody = generateOrderStatusEmailBody(
+        order.id,
+        order.customer_name,
+        order.order_status,
+        [{ status: order.order_status, updated_at: order.created_at }], // Initial timeline
+        '' // notes
+      );
+
+      const summaryBody = generateOrderSummaryEmailBody(order, validatedItems);
+
+      // Fire both emails concurrently
+      await Promise.all([
+        sendEmail(order.customer_email, `Your Order #${order.id} Confirmation`, confirmationBody),
+        sendEmail(order.customer_email, `Your Order #${order.id} Details`, summaryBody)
+      ]);
+    } catch (emailError) {
+      console.error('Failed to send order emails:', emailError);
+    }
 
     res.status(201).json({
       id: order.id,
@@ -716,11 +743,17 @@ router.put('/orders/:orderId/status', [
       [status, orderId]
     );
 
-    // // Optional: insert into timeline table
-    // await client.query(
-    //   'INSERT INTO ecommerce_order_timeline (order_id, status, notes, updated_by, timestamp) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)',
-    //   [orderId, status, notes || null, req.user.id]
-    // );
+    // Insert into timeline table
+    await client.query(
+      'INSERT INTO ecommerce_order_timeline (order_id, status, notes) VALUES ($1, $2, $3)',
+      [orderId, status, notes || null]
+    );
+
+    // Fetch the full timeline array
+    const timelineResult = await client.query(
+      'SELECT status, timestamp as updated_at FROM ecommerce_order_timeline WHERE order_id = $1 ORDER BY timestamp ASC',
+      [orderId]
+    );
 
     client.release();
 
@@ -728,12 +761,13 @@ router.put('/orders/:orderId/status', [
 
     // Send email to customer
     const emailBody = generateOrderStatusEmailBody(
-      order.customer_name,
+      updatedOrder.id,
+      updatedOrder.customer_name,
       updatedOrder.order_status,
-      notes,
-      updatedOrder.updated_at
+      timelineResult.rows,
+      notes
     );
-    await sendEmail(order.customer_email, `Your Order #${order.id} Status Updated`, emailBody);
+    await sendEmail(updatedOrder.customer_email, `Your Order #${updatedOrder.id} Status Updated`, emailBody);
 
     res.json({
       id: updatedOrder.id,

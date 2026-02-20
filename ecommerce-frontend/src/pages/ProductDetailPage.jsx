@@ -56,7 +56,7 @@ const ProductDetailPage = () => {
       colors: currentProduct.colors?.map(c => ({
         id: c.id,
         name: c.name,
-        image: c.image,
+        image: c.productImageInColor,
         colorSelectorImage: c.colorSelectorImage
       }))
     });
@@ -102,9 +102,9 @@ const ProductDetailPage = () => {
     if (Array.isArray(currentProduct.colors) && currentProduct.colors.length > 0) {
       console.log(`Processing ${currentProduct.colors.length} color variations`);
       currentProduct.colors.forEach((variation, index) => {
-        console.log(`Color ${index}:`, variation.name, 'image:', variation.image);
-        if (variation.image) {
-          addImage(variation.image, 'variation', variation.id);
+        console.log(`Color ${index}:`, variation.name, 'image:', variation.productImageInColor);
+        if (variation.productImageInColor) {
+          addImage(variation.productImageInColor, 'variation', variation.id);
         }
       });
     }
@@ -132,21 +132,31 @@ const ProductDetailPage = () => {
   // Auto select first variation + size
   useEffect(() => {
     if (currentProduct?.colors?.length > 0) {
-      setSelectedVariation(currentProduct.colors[0]);
-      if (currentProduct.colors[0].sizes?.length > 0) {
-        setSelectedSize(currentProduct.colors[0].sizes[0]);
+      const firstVariation = currentProduct.colors[0];
+      setSelectedVariation(firstVariation);
+      if (firstVariation.sizes?.length > 0) {
+        setSelectedSize(firstVariation.sizes[0]);
+      }
+      // Also try to select its image if it exists
+      const initialImageIndex = galleryImages.findIndex(img => img.variationId === firstVariation.id);
+      if (initialImageIndex !== -1) {
+        setSelectedImageIndex(initialImageIndex);
       }
     }
-  }, [currentProduct]);
-
-  // DO NOT automatically switch images when variation changes
-  // This allows users to browse all images without interruption
+  }, [currentProduct, galleryImages]);
 
   // Max stock based on size or simple product
   const maxQuantity = selectedSize ? selectedSize.stock : currentProduct?.stock || 0;
 
   const handleVariationChange = (variation) => {
     setSelectedVariation(variation);
+
+    // Automatically switch images when variation changes
+    const variationImageIndex = galleryImages.findIndex(img => img.variationId === variation.id);
+    if (variationImageIndex !== -1) {
+      setSelectedImageIndex(variationImageIndex);
+    }
+
     if (variation.sizes?.length > 0) {
       setSelectedSize(variation.sizes[0]);
     } else {

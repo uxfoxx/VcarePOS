@@ -1,25 +1,20 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Table,
   Card,
   Space,
   Button,
-  Dropdown,
   Checkbox,
   Input,
   Select,
-  DatePicker,
   Tooltip,
   Empty,
   Skeleton,
   Modal,
   Form,
-  Switch,
   Divider,
   Typography,
   message,
-  Row,
-  Col,
   Popconfirm
 } from 'antd';
 import { Icon } from './Icon';
@@ -27,7 +22,6 @@ import { ActionButton } from './ActionButton';
 
 const { Search } = Input;
 const { Option } = Select;
-const { RangePicker } = DatePicker;
 const { Text } = Typography;
 
 export function EnhancedTable({
@@ -41,11 +35,11 @@ export function EnhancedTable({
   onRow,
   extra,
   showSearch = true,
-  showFilters = true,
+  _showFilters = true,
   showColumnConfig = true,
   searchPlaceholder = "Search...",
   searchFields = [],
-  filterFields = [],
+  _filterFields = [],
   defaultPageSize = 10,
   scroll = { x: 1000 },
   emptyDescription = "No data available",
@@ -82,8 +76,8 @@ export function EnhancedTable({
     });
     return initial;
   });
-  const [filters, setFilters] = useState({});
-  const [sorter, setSorter] = useState(() => {
+  const [_filters, setFilters] = useState({});
+  const [_sorter, setSorter] = useState(() => {
     // Set default sort if specified
     if (defaultSortField) {
       return {
@@ -367,9 +361,9 @@ export function EnhancedTable({
         )}
 
         <Table
-        className='vcare-table'
-        
-        
+          className='vcare-table'
+
+
           columns={enhancedColumns}
           dataSource={filteredData}
           rowKey={rowKey}

@@ -26,7 +26,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
 
   if (!transaction) return null;
 
-  const businessName = brandingData.businessName || 'VCare Furniture';
+  const _businessName = brandingData.businessName || 'VCare Furniture';
   const businessAddress = brandingData.address || '123 Main Street, City, State 12345';
   const phoneNumber = brandingData.phoneNumber || '(555) 123-4567';
   const logoPreview = brandingData.logoPreview || '/VCARELogo 1.png';

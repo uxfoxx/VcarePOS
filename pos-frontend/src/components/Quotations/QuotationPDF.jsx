@@ -1,4 +1,3 @@
-import React from 'react';
 import { Typography, Divider } from 'antd';
 
 const { Title, Text } = Typography;
@@ -21,15 +20,15 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
     try {
       const branding = localStorage.getItem('vcare_branding');
       return branding ? JSON.parse(branding) : {};
-    } catch (error) {
+    } catch (_error) {
       return {};
     }
   })();
 
-  const businessName = brandingData.businessName || '';
-  const businessAddress = brandingData.address || '';
-  const phoneNumber = brandingData.phoneNumber || '';
-  const logoPreview = brandingData.logoPreview || '/VCARELogo 1.png';
+  const _businessName = brandingData.businessName || '';
+  const _businessAddress = brandingData.address || '';
+  const _phoneNumber = brandingData.phoneNumber || '';
+  const _logoPreview = brandingData.logoPreview || '/VCARELogo 1.png';
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-US', {

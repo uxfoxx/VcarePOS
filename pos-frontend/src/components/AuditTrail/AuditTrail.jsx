@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
-  Input,
   Select,
   Space,
   Typography,
@@ -14,7 +13,6 @@ import {
 } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
-import { SearchInput } from '../common/SearchInput';
 import { ActionButton } from '../common/ActionButton';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { DetailModal } from '../common/DetailModal';
@@ -24,7 +22,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { fetchAudit } from '../../features/audit/auditSlice';
 import dayjs from 'dayjs';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
@@ -33,18 +31,19 @@ export function AuditTrail() {
   const dispatch = useDispatch();
   const auditList = useSelector(state => state.audit.auditList);
   const loading = useSelector(state => state.audit.loading);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, _setSearchTerm] = useState('');
   const [filterAction, setFilterAction] = useState('all');
   const [filterModule, setFilterModule] = useState('all');
   const [dateRange, setDateRange] = useState(null);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [_selectedRowKeys, _setSelectedRowKeys] = useState([]);
 
   useEffect(() => {
     if (hasPermission('audit-trail', 'view')) {
       dispatch(fetchAudit());
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch]);
 
   const filteredAuditTrail = auditList.filter(entry => {

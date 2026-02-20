@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { 
-  Modal, 
-  Form, 
-  Input, 
-  Select, 
-  Typography, 
-  Divider, 
-  List, 
+import {
+  Modal,
+  Form,
+  Input,
+  Select,
+  Typography,
+  Divider,
+  List,
   Space,
   Radio,
   message,
@@ -43,7 +43,7 @@ export function CheckoutModal({
 }) {
   const dispatch = useDispatch();
   const users = useSelector(state => state.users.usersList);
-  const { settings: deliverySettings, allSettings } = useSelector(state => state.deliveryCharges);
+  const { settings: _deliverySettings, allSettings } = useSelector(state => state.deliveryCharges);
   const { currentUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [customerForm] = Form.useForm();
@@ -56,7 +56,7 @@ export function CheckoutModal({
   const [completedTransaction, setCompletedTransaction] = useState(null);
   const [showInvoice, setShowInvoice] = useState(false);
   const [showInventoryLabels, setShowInventoryLabels] = useState(false);
-  
+
   // Add state to store customer data persistently
   const [customerData, setCustomerData] = useState({
     customerName: '',
@@ -97,7 +97,7 @@ export function CheckoutModal({
     // Add addon prices if any
     if (item.product.addons) {
       const addonTotal = item.product.addons.reduce((addonSum, addon) =>
-        addonSum + addon.price*addon.quantity, 0);
+        addonSum + addon.price * addon.quantity, 0);
       itemTotal += addonTotal;
     }
 
@@ -165,7 +165,7 @@ export function CheckoutModal({
 
   const handleNext = async () => {
     setStepError('');
-    
+
     if (currentStep === 0) {
       // Moving from Order Summary to Customer Details
       setCurrentStep(currentStep + 1);
@@ -174,12 +174,12 @@ export function CheckoutModal({
       try {
         // Capture and store customer data in state
         const formData = customerForm.getFieldsValue();
-        
+
         // Update persistent customer data state
         setCustomerData(formData);
-        
+
         setCurrentStep(currentStep + 1);
-      } catch (error) {
+      } catch (_error) {
         setStepError('Error processing customer information');
         return;
       }
@@ -196,11 +196,11 @@ export function CheckoutModal({
   const handleCompleteOrder = async () => {
     setLoading(true);
     setStepError('');
-    
+
     try {
       // Use the persistent customer data state instead of form data
       const salesperson = users.find(u => u.id === selectedSalesperson);
-      
+
       const selectedDeliverySetting = activeDeliverySettings.find(s => s.id === selectedDeliveryLocation);
 
       const transaction = {
@@ -242,15 +242,15 @@ export function CheckoutModal({
 
       dispatch(createTransaction(transaction));
       dispatch(clearCart());
-      
+
       message.success('Order completed successfully!');
-      
+
       // Set completed transaction and show options
       setCompletedTransaction(transaction); // todo
-      
+
       // Close checkout modal
       onClose();
-      
+
       // Reset form states
       setCurrentStep(0);
       setOrderNotes('');
@@ -258,8 +258,8 @@ export function CheckoutModal({
       setSelectedSalesperson(currentUser?.id);
       customerForm.resetFields();
       paymentForm.resetFields();
-      
-    } catch (error) {
+
+    } catch (_error) {
       setStepError('Failed to complete order. Please try again.');
       message.error('Failed to complete order');
     } finally {
@@ -284,7 +284,7 @@ export function CheckoutModal({
   const renderOrderSummary = () => (
     <div className="space-y-4">
       <Title level={4}>Order Summary</Title>
-      
+
       {/* Salesperson Selection */}
       <div className="bg-blue-50 p-4 rounded-lg">
         <Title level={5} className="mb-3">Sales Person</Title>
@@ -316,21 +316,21 @@ export function CheckoutModal({
           This person will be credited as the sales person for this order
         </Text>
       </div>
-      
+
       <div className="max-h-64 overflow-y-auto border rounded-lg p-4">
         <List
           dataSource={cartItems}
-          renderItem={(item, index) => {
+          renderItem={(item, _index) => {
             const itemCategoryTaxes = (itemTaxes || []).filter(tax => tax.productId === item.product.id);
             const itemTaxAmount = itemCategoryTaxes.reduce((sum, tax) => sum + tax.amount, 0);
-            
+
             // Calculate addon price if any
-            const addonPrice = item.product.addons ? 
+            const addonPrice = item.product.addons ?
               item.product.addons.reduce((sum, addon) => sum + addon.price, 0) : 0;
-            
+
             // Calculate total price including addons
             const itemTotalPrice = (item.product.price + addonPrice) * item.quantity;
-            
+
             return (
               <List.Item className="px-0 py-2">
                 <div className="w-full">
@@ -364,7 +364,7 @@ export function CheckoutModal({
                     </Text>
                     <Text type="secondary">SKU: {item.product.barcode}</Text>
                   </div>
-                  
+
                   {/* Show addons if any */}
                   {item.product.addons && item.product.addons.length > 0 && (
                     <div className="mt-1 pl-4 border-l-2 border-blue-200">
@@ -375,7 +375,7 @@ export function CheckoutModal({
                       ))}
                     </div>
                   )}
-                  
+
                   {/* Show category taxes for this item */}
                   {itemCategoryTaxes.length > 0 && (
                     <div className="mt-1">
@@ -398,21 +398,21 @@ export function CheckoutModal({
           <Text>Subtotal</Text>
           <Text>LKR {(subtotal || 0).toFixed(2)}</Text>
         </div>
-        
+
         {categoryTaxTotal > 0 && (
           <div className="flex justify-between">
             <Text>Category Taxes</Text>
             <Text>LKR {(categoryTaxTotal || 0).toFixed(2)}</Text>
           </div>
         )}
-        
+
         {appliedCoupon && (
           <div className="flex justify-between">
             <Text className="text-green-600">Coupon ({appliedCoupon.code})</Text>
             <Text className="text-green-600">-LKR {(couponDiscount || 0).toFixed(2)}</Text>
           </div>
         )}
-        
+
         {fullBillTaxes && fullBillTaxes.map(tax => (
           <div key={tax.id} className="flex justify-between">
             <Text>{tax.name} ({tax.rate}%)</Text>
@@ -447,12 +447,12 @@ export function CheckoutModal({
     return (
       <div className="space-y-4">
         <Title level={4}>Customer Information</Title>
-        
+
         <Form form={customerForm} layout="vertical" preserve={true}>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="customerName" label="Customer Name">
-                <Input 
+                <Input
                   prefix={<Icon name="person" className="text-gray-400" />}
                   placeholder="Enter customer name (optional)"
                   onChange={(e) => {
@@ -464,13 +464,13 @@ export function CheckoutModal({
             </Col>
             <Col span={12}>
               <Form.Item name="customerPhone" label="Phone Number"
-              rules={[
-                {
-                  pattern: phoneNumberRegex,
-                  message: 'Please enter a valid phone number',
-                },
-              ]}>
-                <Input 
+                rules={[
+                  {
+                    pattern: phoneNumberRegex,
+                    message: 'Please enter a valid phone number',
+                  },
+                ]}>
+                <Input
                   prefix={<Icon name="phone" className="text-gray-400" />}
                   placeholder="Enter phone number (optional)"
                   onChange={(e) => {
@@ -481,15 +481,15 @@ export function CheckoutModal({
               </Form.Item>
             </Col>
           </Row>
-          
+
           <Form.Item name="customerEmail" label="Email Address"
-          rules={[
-            {
-              type: 'email',
-              message: 'Please enter a valid email address',
-            },
-          ]}>
-            <Input 
+            rules={[
+              {
+                type: 'email',
+                message: 'Please enter a valid email address',
+              },
+            ]}>
+            <Input
               prefix={<Icon name="email" className="text-gray-400" />}
               placeholder="Enter email address (optional)"
               type="email"
@@ -499,7 +499,7 @@ export function CheckoutModal({
               }}
             />
           </Form.Item>
-          
+
           <Form.Item name="customerAddress" label="Delivery Address">
             <TextArea
               placeholder="Enter delivery address (optional)"
@@ -642,48 +642,48 @@ export function CheckoutModal({
   const renderPayment = () => (
     <div className="space-y-4">
       <Title level={4}>Payment Method</Title>
-      
+
       <Form form={paymentForm} layout="vertical">
-              <Form.Item name="paymentMethod" label="Select Payment Method">
-        <Radio.Group 
-          value={paymentMethod} 
-          onChange={(e) => setPaymentMethod(e.target.value)}
-          className="w-full"
-        >
-          <Space direction="vertical" className="w-full">
-            <Radio value="card" className="w-full p-4 border rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Icon name="credit_card" className="text-blue-500" size="text-xl" />
-                <div>
-                  <Text strong>Credit/Debit Card</Text>
-                  <br />
-                  <Text type="secondary" className="text-sm">Pay with card</Text>
+        <Form.Item name="paymentMethod" label="Select Payment Method">
+          <Radio.Group
+            value={paymentMethod}
+            onChange={(e) => setPaymentMethod(e.target.value)}
+            className="w-full"
+          >
+            <Space direction="vertical" className="w-full">
+              <Radio value="card" className="w-full p-4 border rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <Icon name="credit_card" className="text-blue-500" size="text-xl" />
+                  <div>
+                    <Text strong>Credit/Debit Card</Text>
+                    <br />
+                    <Text type="secondary" className="text-sm">Pay with card</Text>
+                  </div>
                 </div>
-              </div>
-            </Radio>
-            <Radio value="cash" className="w-full p-4 border rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Icon name="payments" className="text-green-500" size="text-xl" />
-                <div>
-                  <Text strong>Cash</Text>
-                  <br />
-                  <Text type="secondary" className="text-sm">Pay with cash</Text>
+              </Radio>
+              <Radio value="cash" className="w-full p-4 border rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <Icon name="payments" className="text-green-500" size="text-xl" />
+                  <div>
+                    <Text strong>Cash</Text>
+                    <br />
+                    <Text type="secondary" className="text-sm">Pay with cash</Text>
+                  </div>
                 </div>
-              </div>
-            </Radio>
-            <Radio value="digital" className="w-full p-4 border rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Icon name="smartphone" className="text-purple-500" size="text-xl" />
-                <div>
-                  <Text strong>Digital Wallet</Text>
-                  <br />
-                  <Text type="secondary" className="text-sm">Apple Pay, Google Pay, etc.</Text>
+              </Radio>
+              <Radio value="digital" className="w-full p-4 border rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <Icon name="smartphone" className="text-purple-500" size="text-xl" />
+                  <div>
+                    <Text strong>Digital Wallet</Text>
+                    <br />
+                    <Text type="secondary" className="text-sm">Apple Pay, Google Pay, etc.</Text>
+                  </div>
                 </div>
-              </div>
-            </Radio>
-          </Space>
-        </Radio.Group>
-                </Form.Item>
+              </Radio>
+            </Space>
+          </Radio.Group>
+        </Form.Item>
       </Form>
 
       <div className="bg-gray-50 p-4 rounded-lg">
@@ -697,28 +697,28 @@ export function CheckoutModal({
             <Text>Items ({cartItems.length})</Text>
             <Text>LKR {subtotal.toFixed(2)}</Text>
           </div>
-          
+
           {categoryTaxTotal > 0 && (
             <div className="flex justify-between">
               <Text>Category Taxes</Text>
               <Text>LKR {categoryTaxTotal.toFixed(2)}</Text>
             </div>
           )}
-          
+
           {appliedCoupon && (
             <div className="flex justify-between">
               <Text className="text-green-600">Discount</Text>
               <Text className="text-green-600">-LKR {couponDiscount.toFixed(2)}</Text>
             </div>
           )}
-          
+
           {fullBillTaxes && fullBillTaxes.map(tax => (
             <div key={tax.id} className="flex justify-between">
               <Text>{tax.name}</Text>
               <Text>LKR {((taxableAmount * tax.rate) / 100).toFixed(2)}</Text>
             </div>
           ))}
-          
+
           <Divider className="my-2" />
           <div className="flex justify-between">
             <Title level={4} className="m-0">Total</Title>
@@ -760,7 +760,7 @@ export function CheckoutModal({
             status={stepError ? 'error' : 'process'}
             errorMessage={stepError}
           />
-          
+
           <div className="min-h-[400px]">
             {renderStepContent()}
           </div>
@@ -774,19 +774,19 @@ export function CheckoutModal({
                 </ActionButton>
               )}
             </div>
-            
+
             <div className="space-x-2">
               <ActionButton onClick={onClose}>
                 Cancel
               </ActionButton>
-              
+
               {currentStep < steps.length - 1 ? (
                 <ActionButton.Primary onClick={handleNext}>
                   Next
                   <Icon name="arrow_forward" className="ml-2" />
                 </ActionButton.Primary>
               ) : (
-                <ActionButton.Primary 
+                <ActionButton.Primary
                   onClick={handleCompleteOrder}
                   loading={loading}
                   icon="check"
@@ -810,15 +810,15 @@ export function CheckoutModal({
             <ActionButton key="close" onClick={handleCloseOrderComplete}>
               Close
             </ActionButton>,
-            <ActionButton 
-              key="inventory-labels" 
+            <ActionButton
+              key="inventory-labels"
               icon="label"
               onClick={handleShowInventoryLabels}
             >
               Print Inventory Labels
             </ActionButton>,
-            <ActionButton.Primary 
-              key="invoice" 
+            <ActionButton.Primary
+              key="invoice"
               icon="receipt_long"
               onClick={handleShowInvoice}
             >
@@ -834,7 +834,7 @@ export function CheckoutModal({
             <Text type="secondary" className="text-lg block mb-4">
               Order {completedTransaction.id} has been processed successfully.
             </Text>
-            
+
             <div className="bg-gray-50 p-4 rounded-lg">
               <Row gutter={16}>
                 <Col span={6}>
@@ -869,7 +869,7 @@ export function CheckoutModal({
                 </Col>
               </Row>
             </div>
-            
+
             <div className="mt-4 p-3 bg-blue-50 rounded-lg">
               <Text className="text-sm">
                 <Icon name="info" className="mr-2 text-blue-600" />

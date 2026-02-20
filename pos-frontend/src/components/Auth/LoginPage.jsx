@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   Form,
   Input,
   Button,
   Typography,
-  Space,
   Alert,
-  Row,
-  Col,
   Divider,
   Progress,
   Tooltip
@@ -18,7 +15,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
 import { clearAuthError } from '../../features/auth/authSlice';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 // Secure obfuscated demo accounts (access info only revealed on demand)
 const DEMO_ACCOUNTS = [
@@ -318,7 +315,7 @@ export function LoginPage() {
                                   </Text>
                                 </>
                               );
-                            } catch (err) {
+                            } catch (_err) {
                               return <Text type="danger">Error</Text>;
                             }
                           })()}

@@ -44,7 +44,7 @@ export function calculateDeliveryCharge(weight, deliveryType, settings) {
         }
       };
 
-    case 'inside_colombo':
+    case 'inside_colombo': {
       const insideColomboAmount = parseFloat(settings.inside_colombo_amount) || 0;
       return {
         deliveryCharge: insideColomboAmount,
@@ -55,8 +55,9 @@ export function calculateDeliveryCharge(weight, deliveryType, settings) {
           description: `Inside Colombo - Flat rate`
         }
       };
+    }
 
-    case 'out_of_colombo':
+    case 'out_of_colombo': {
       const baseWeight = parseFloat(settings.out_of_colombo_base_weight) || 0;
       const baseAmount = parseFloat(settings.out_of_colombo_base_amount) || 0;
       const perKgAmount = parseFloat(settings.out_of_colombo_per_kg_amount) || 0;
@@ -93,6 +94,7 @@ export function calculateDeliveryCharge(weight, deliveryType, settings) {
           }
         };
       }
+    }
 
     default:
       return {

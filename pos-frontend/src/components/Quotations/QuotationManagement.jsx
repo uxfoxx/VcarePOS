@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Form, Input, Button, Card, DatePicker, InputNumber, Select, Space, Table, message, Modal } from 'antd';
+import { useState } from 'react';
+import { Form, Input, Card, DatePicker, InputNumber, Select, Space, Table, message, Modal } from 'antd';
 import { Icon } from '../common/Icon';
 import { PageHeader } from '../common/PageHeader';
 import { ActionButton } from '../common/ActionButton';
@@ -20,7 +20,7 @@ export function QuotationManagement() {
   const [showPDF, setShowPDF] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedProductData, setSelectedProductData] = useState(null);
-  const [selectedColorData, setSelectedColorData] = useState(null);
+  const [_selectedColorData, setSelectedColorData] = useState(null);
   const [availableColors, setAvailableColors] = useState([]);
   const [availableSizes, setAvailableSizes] = useState([]);
 
@@ -184,7 +184,7 @@ export function QuotationManagement() {
 
       setQuotationData(quotation);
       setShowPDF(true);
-    }).catch(error => {
+    }).catch(_error => {
       message.error('Please fill in all required fields');
     });
   };

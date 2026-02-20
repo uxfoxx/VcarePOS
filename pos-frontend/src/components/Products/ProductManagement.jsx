@@ -479,7 +479,6 @@ export function ProductManagement() {
         width: 120,
         sorter: (a, b) => (a.stock || 0) - (b.stock || 0),
         render: (stock, record) => {
-          console.log(stock, record);
           let color = 'green';
           let status = 'In Stock';
 

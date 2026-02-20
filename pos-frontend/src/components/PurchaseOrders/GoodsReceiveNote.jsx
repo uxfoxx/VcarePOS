@@ -1,15 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Modal, 
-  Typography, 
-  Table, 
-  Form, 
-  Input, 
-  Checkbox, 
-  Button, 
-  Space, 
-  Divider, 
-  Row, 
+import { useState, useEffect } from 'react';
+import {
+  Modal,
+  Typography,
+  Table,
+  Form,
+  Input,
+  Checkbox,
+  Button,
+  Space,
+  Row,
   Col,
   InputNumber,
   Tag,
@@ -21,7 +20,6 @@ import {
 import { useDispatch } from 'react-redux';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
-import { ActionButton } from '../common/ActionButton';
 import { GoodsReceiveNotePDF } from './GoodsReceiveNotePDF';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -29,11 +27,12 @@ import { fetchUsers } from '../../features/users/usersSlice';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
+const { Option } = Select;
 
-export function GoodsReceiveNote({ 
-  open, 
-  onClose, 
-  order, 
+export function GoodsReceiveNote({
+  open,
+  onClose,
+  order,
   onComplete,
   onUpdateInventory
 }) {
@@ -55,31 +54,31 @@ export function GoodsReceiveNote({
         notes: ''
       }));
       setReceivedItems(items);
-      
+
       // Generate GRN number
       const timestamp = new Date().getTime().toString().slice(-6);
       setGrnNumber(`GRN-${order.id.replace('PO-', '')}-${timestamp}`);
-      
+
       // Set form values
       form.setFieldsValue({
         receivedBy: undefined,
         checkedBy: undefined,
         notes: '',
         receivedDate: new Date().toISOString().split('T')[0]
-      });     
+      });
     }
   }, [open, order, form]);
 
   useEffect(() => {
-      dispatch(fetchUsers());
-  },[dispatch]);
+    dispatch(fetchUsers());
+  }, [dispatch]);
 
   const handleItemCheck = (itemId, type, checked) => {
-    setReceivedItems(prevItems => 
+    setReceivedItems(prevItems =>
       prevItems.map(item => {
         if (item.itemId === itemId && item.type === type) {
-          return { 
-            ...item, 
+          return {
+            ...item,
             received: checked,
             receivedQuantity: checked ? item.quantity : 0
           };
@@ -90,11 +89,11 @@ export function GoodsReceiveNote({
   };
 
   const handleQuantityChange = (itemId, type, quantity) => {
-    setReceivedItems(prevItems => 
+    setReceivedItems(prevItems =>
       prevItems.map(item => {
         if (item.itemId === itemId && item.type === type) {
-          return { 
-            ...item, 
+          return {
+            ...item,
             receivedQuantity: quantity,
             received: quantity > 0
           };
@@ -105,7 +104,7 @@ export function GoodsReceiveNote({
   };
 
   const handleNotesChange = (itemId, type, notes) => {
-    setReceivedItems(prevItems => 
+    setReceivedItems(prevItems =>
       prevItems.map(item => {
         if (item.itemId === itemId && item.type === type) {
           return { ...item, notes };
@@ -118,19 +117,19 @@ export function GoodsReceiveNote({
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      
+
       // Validate form
       const values = await form.validateFields();
-      
+
       // Check if any items are received
       const hasReceivedItems = receivedItems.some(item => item.received);
-      
+
       if (!hasReceivedItems) {
         message.error('Please mark at least one item as received');
         setLoading(false);
         return;
       }
-      
+
       // Prepare GRN data
       const grnData = {
         id: grnNumber,
@@ -144,7 +143,7 @@ export function GoodsReceiveNote({
         items: receivedItems.filter(item => item.received),
         timestamp: new Date()
       };
-      
+
       // Update inventory with received items
       const receivedProducts = receivedItems
         .filter(item => item.received && item.type === 'product' && item.receivedQuantity > 0)
@@ -152,34 +151,34 @@ export function GoodsReceiveNote({
           id: item.itemId,
           quantity: item.receivedQuantity
         }));
-        
+
       const receivedMaterials = receivedItems
         .filter(item => item.received && item.type === 'material' && item.receivedQuantity > 0)
         .map(item => ({
           id: item.itemId,
           quantity: item.receivedQuantity
         }));
-      
+
       // Call the onUpdateInventory function to update inventory
       if (onUpdateInventory) {
         onUpdateInventory(receivedProducts, receivedMaterials);
       }
-      
+
       // Call the onComplete function to update the order status
       if (onComplete) {
         onComplete(order.id, grnData);
       }
-      
+
       message.success('Goods received successfully');
-      
+
       // Show PDF for printing
       setShowPdf(true);
-      
+
       // Wait for PDF to render then download
       setTimeout(() => {
         handleDownloadPdf();
       }, 0);
-      
+
     } catch (error) {
       console.error('Error submitting GRN:', error);
       message.error('Please fill in all required fields');
@@ -228,13 +227,13 @@ export function GoodsReceiveNote({
       // Download the PDF
       const filename = `goods-receive-note-${grnNumber}.pdf`;
       pdf.save(filename);
-      message.success('Goods Receive Note PDF downloaded successfully');      
-      
+      message.success('Goods Receive Note PDF downloaded successfully');
+
     } catch (error) {
       console.error('Error generating PDF:', error);
       message.error('Failed to generate PDF');
       setShowPdf(false);
-    } 
+    }
   };
 
   const columns = [
@@ -265,7 +264,7 @@ export function GoodsReceiveNote({
       key: 'name',
       render: (record) => (
         <div>
-          <Text strong>{record.name} {record.type === 'product' ? `| ${record.color.name} | ${record.size.name}`: ''}</Text>
+          <Text strong>{record.name} {record.type === 'product' ? `| ${record.color.name} | ${record.size.name}` : ''}</Text>
           <br />
           <Text type="secondary" className="text-xs">
             SKU: {record.sku} | {record.category}
@@ -330,16 +329,16 @@ export function GoodsReceiveNote({
           <Button key="cancel" onClick={onClose}>
             Cancel
           </Button>,
-          <Button 
-            key="view" 
+          <Button
+            key="view"
             onClick={() => setShowPdf(true)}
             icon={<Icon name="visibility" />}
           >
             Preview GRN
           </Button>,
-          <Button 
-            key="submit" 
-            type="primary" 
+          <Button
+            key="submit"
+            type="primary"
             onClick={handleSubmit}
             loading={loading}
             className="bg-green-600"
@@ -433,10 +432,10 @@ export function GoodsReceiveNote({
               <div className="flex justify-between items-center mb-2">
                 <Title level={5} className="m-0">Items Received</Title>
                 <Space>
-                  <Button 
-                    size="small" 
+                  <Button
+                    size="small"
                     onClick={() => {
-                      setReceivedItems(prevItems => 
+                      setReceivedItems(prevItems =>
                         prevItems.map(item => ({
                           ...item,
                           received: true,
@@ -447,10 +446,10 @@ export function GoodsReceiveNote({
                   >
                     Select All
                   </Button>
-                  <Button 
-                    size="small" 
+                  <Button
+                    size="small"
                     onClick={() => {
-                      setReceivedItems(prevItems => 
+                      setReceivedItems(prevItems =>
                         prevItems.map(item => ({
                           ...item,
                           received: false,
@@ -463,7 +462,7 @@ export function GoodsReceiveNote({
                   </Button>
                 </Space>
               </div>
-              
+
               <Table
                 columns={columns}
                 dataSource={receivedItems}
@@ -487,7 +486,7 @@ export function GoodsReceiveNote({
           <div className="bg-gray-50 p-4 rounded-lg">
             <Text className="text-sm">
               <Icon name="info" className="mr-2 text-blue-600" />
-              <strong>Note:</strong> Completing this form will update your inventory with the received items and change the purchase order status to "completed".
+              <strong>Note:</strong> Completing this form will update your inventory with the received items and change the purchase order status to &quot;completed&quot;.
             </Text>
           </div>
         </div>
@@ -508,8 +507,8 @@ export function GoodsReceiveNote({
           <Button key="close" onClick={() => setShowPdf(false)}>
             Close
           </Button>,
-          <Button 
-            key="download" 
+          <Button
+            key="download"
             type="primary"
             onClick={handleDownloadPdf}
             icon={<Icon name="download" />}
@@ -520,8 +519,8 @@ export function GoodsReceiveNote({
         ]}
       >
         <div className="max-h-[70vh] overflow-y-auto">
-          <GoodsReceiveNotePDF 
-            order={order} 
+          <GoodsReceiveNotePDF
+            order={order}
             grnData={{
               id: grnNumber,
               receivedDate: form.getFieldValue('receivedDate'),
@@ -530,7 +529,7 @@ export function GoodsReceiveNote({
               notes: form.getFieldValue('notes'),
               items: receivedItems.filter(item => item.received)
             }}
-            id="grn-pdf" 
+            id="grn-pdf"
           />
         </div>
       </Modal>

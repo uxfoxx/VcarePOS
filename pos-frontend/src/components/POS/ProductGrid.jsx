@@ -45,7 +45,7 @@ export function ProductGrid({ collapsed }) {
     return products.find(product => {
       // Check main product SKU and barcode
       if (product.sku?.toLowerCase() === normalizedSearch ||
-          product.barcode?.toLowerCase() === normalizedSearch) {
+        product.barcode?.toLowerCase() === normalizedSearch) {
         return true;
       }
 

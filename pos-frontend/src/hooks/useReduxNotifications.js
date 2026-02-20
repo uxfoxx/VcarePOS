@@ -29,7 +29,7 @@ export function useReduxNotifications() {
   } = useSelector(state => state.notifications);
 
   // Get products and raw materials for compatibility functions
-  const productsList = useSelector(state => state.products?.productsList || []);
+  const _productsList = useSelector(state => state.products?.productsList || []);
   const rawMaterialsList = useSelector(state => state.rawMaterials?.rawMaterialsList || []);
 
   const addNotificationWithDisplay = (notificationData) => {
@@ -40,7 +40,7 @@ export function useReduxNotifications() {
       showUINotification: true, // Always show UI notification for manually added ones
       ...notificationData
     };
-    
+
     dispatch(addNotification(newNotification));
   };
 
@@ -143,13 +143,13 @@ export function useReduxNotifications() {
     lastChecked,
     loading,
     error,
-    
+
     // Backward compatibility aliases for settings
     enableStockAlerts: settings.enableStockAlerts,
     lowStockThreshold: settings.lowStockThreshold,
     criticalStockThreshold: settings.criticalStockThreshold,
     enableLowStockWarnings: settings.enableLowStockWarnings,
-    
+
     // Actions - maintaining exact same function names as old context
     addNotification: addNotificationWithDisplay,
     checkStockLevels: checkStockLevelsAction,

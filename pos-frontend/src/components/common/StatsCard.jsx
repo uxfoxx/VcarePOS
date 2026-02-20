@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, Statistic, Space } from 'antd';
 import { Icon } from './Icon';
 

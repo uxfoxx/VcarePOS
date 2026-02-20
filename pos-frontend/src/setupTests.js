@@ -6,17 +6,17 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
     matches: false,
     media: query,
     onchange: null,
-    addListener: () => {}, // deprecated
-    removeListener: () => {}, // deprecated
-    addEventListener: () => {},
-    removeEventListener: () => {},
+    addListener: () => { }, // deprecated
+    removeListener: () => { }, // deprecated
+    addEventListener: () => { },
+    removeEventListener: () => { },
     dispatchEvent: () => false,
   });
 }
 
 // Provide a minimal getComputedStyle implementation used by some AntD utilities
 if (typeof window !== 'undefined') {
-  window.getComputedStyle = (elt) => ({
+  window.getComputedStyle = (_elt) => ({
     getPropertyValue: (prop) => {
       // return reasonable defaults for properties used by rc-table / rc-util
       if (prop === 'box-sizing' || prop === 'boxSizing') return 'border-box';
@@ -41,8 +41,8 @@ if (typeof window !== 'undefined' && !window.computedStyle) {
 // Ensure document.createRange exists for some libs
 if (typeof document !== 'undefined' && !document.createRange) {
   document.createRange = () => ({
-    setStart: () => {},
-    setEnd: () => {},
+    setStart: () => { },
+    setEnd: () => { },
     commonAncestorContainer: document.body,
   });
 }

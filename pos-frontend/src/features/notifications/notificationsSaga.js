@@ -68,7 +68,7 @@ function* processNewOrder(order) {
 }
 
 function* pollForNewOrders() {
-  console.log('[Notifications] Starting order polling...');
+  // console.log('[Notifications] Starting order polling...');
 
   while (true) {
     try {
@@ -91,7 +91,7 @@ function* pollForNewOrders() {
 
 function createRealtimeChannel() {
   return eventChannel(emitter => {
-    console.log('[Realtime] Setting up e-commerce orders subscription...');
+    // console.log('[Realtime] Setting up e-commerce orders subscription...');
 
     const channel = supabaseRealtime
       .channel('ecommerce-orders-changes')
@@ -103,29 +103,29 @@ function createRealtimeChannel() {
           table: 'ecommerce_orders'
         },
         (payload) => {
-          console.log('[Realtime] New order received:', payload);
+          // console.log('[Realtime] New order received:', payload);
           emitter({ type: 'NEW_ORDER', order: payload.new });
         }
       )
       .subscribe((status) => {
-        console.log('[Realtime] Subscription status:', status);
+        // console.log('[Realtime] Subscription status:', status);
         if (status === 'SUBSCRIBED') {
-          console.log('[Realtime] Successfully subscribed to e-commerce orders');
+          // console.log('[Realtime] Successfully subscribed to e-commerce orders');
         }
 
         if (status === 'CHANNEL_ERROR') {
-          console.error('[Realtime] Channel error');
+          // console.error('[Realtime] Channel error');
           emitter({ type: 'ERROR', error: 'Channel subscription error' });
         }
 
         if (status === 'TIMED_OUT') {
-          console.error('[Realtime] Connection timed out');
+          // console.error('[Realtime] Connection timed out');
           emitter({ type: 'ERROR', error: 'Connection timed out' });
         }
       });
 
     return () => {
-      console.log('[Realtime] Unsubscribing from e-commerce orders');
+      // console.log('[Realtime] Unsubscribing from e-commerce orders');
       supabaseRealtime.removeChannel(channel);
     };
   });
@@ -141,7 +141,7 @@ function* watchRealtimeEvents() {
       if (event.type === 'NEW_ORDER') {
         yield call(processNewOrder, event.order);
       } else if (event.type === 'ERROR') {
-        console.error('[Realtime] Error:', event.error);
+        // console.error('[Realtime] Error:', event.error);
         yield put(failed(event.error));
       }
     }

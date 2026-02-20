@@ -1,4 +1,3 @@
-import React from 'react';
 import { Layout, Typography, Space, Divider } from 'antd';
 
 const { Footer: AntFooter } = Layout;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal, Typography, Row, Col, Space, message } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
@@ -18,7 +18,7 @@ import {
 } from './SharedInvoiceComponents';
 import apiClient from '../../api/apiClient';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const ITEMS_PER_PAGE = 10;
 

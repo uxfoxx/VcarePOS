@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Alert, Tag, Space, Typography, Divider } from 'antd';
 import { Icon } from './Icon';
 import { ActionButton } from './ActionButton';

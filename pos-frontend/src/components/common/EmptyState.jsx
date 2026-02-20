@@ -1,5 +1,4 @@
-import React from 'react';
-import { Empty, Button, Typography } from 'antd';
+import { Empty, Typography } from 'antd';
 import { Icon } from './Icon';
 import { ActionButton } from './ActionButton';
 
@@ -26,11 +25,11 @@ export function EmptyState({
 
   const customImage = image || (
     <div className="flex flex-col items-center">
-      <div 
+      <div
         className="flex items-center justify-center rounded-full bg-gray-100 text-gray-400 mb-4"
-        style={{ 
-          width: getImageSize(), 
-          height: getImageSize() 
+        style={{
+          width: getImageSize(),
+          height: getImageSize()
         }}
       >
         <Icon name={icon} size={size === 'large' ? 'text-4xl' : size === 'small' ? 'text-xl' : 'text-2xl'} />
@@ -54,8 +53,8 @@ export function EmptyState({
         }
       >
         {(action || onAction) && (
-          <ActionButton.Primary 
-            icon="add" 
+          <ActionButton.Primary
+            icon="add"
             onClick={onAction}
             size={size === 'large' ? 'large' : 'default'}
           >

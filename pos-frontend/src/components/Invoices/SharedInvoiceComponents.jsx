@@ -1,9 +1,8 @@
-import React from 'react';
-import { Typography, Divider } from 'antd';
+import { Typography } from 'antd';
 
 const { Title, Text } = Typography;
 
-export const InvoiceHeader = ({ businessName, logoPreview }) => (
+export const InvoiceHeader = ({ businessName: _businessName, logoPreview: _logoPreview }) => (
   <div style={{ marginBottom: '12px' }}>
 
 
@@ -43,7 +42,7 @@ export const InvoiceCustomerSection = ({ customerName, customerAddress, customer
   </div>
 );
 
-export const InvoiceItemsTable = ({ items, showImages = false }) => (
+export const InvoiceItemsTable = ({ items, showImages: _showImages = false }) => (
   <div style={{ marginBottom: '12px' }}>
     <table className="w-full border-collapse" style={{ marginTop: '12px' }}>
       <thead>

@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   Space,
   Typography,
   Tag,
-  Image,
   Modal,
   Row,
   Col,
@@ -19,16 +18,14 @@ import { ActionButton } from '../common/ActionButton';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { DetailModal } from '../common/DetailModal';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
-import { EmptyState } from '../common/EmptyState';
 import { AuthenticatedFile } from '../common/AuthenticatedFile';
 import {
   fetchEcommerceOrders,
   updateEcommerceOrderStatus,
-  fetchEcommerceOrderById,
   clearSelectedOrderId
 } from '../../features/ecommerceOrders/ecommerceOrdersSlice';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { Option } = Select;
 
 export function EcommerceOrderManagement() {
@@ -40,7 +37,7 @@ export function EcommerceOrderManagement() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [_selectedRowKeys, _setSelectedRowKeys] = useState([]);
 
   useEffect(() => {
     dispatch(fetchEcommerceOrders());

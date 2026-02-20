@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Modal,
   Form,
@@ -9,13 +9,9 @@ import {
   Space,
   Divider,
   List,
-  Tag,
   Button,
   message,
-  Steps,
-  Card,
-  Row,
-  Col
+  Card
 } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchRawMaterials } from '../../features/rawMaterials/rawMaterialsSlice';
@@ -156,7 +152,7 @@ export function CustomProductModal({ open, onClose }) {
       dispatch(addToCart({ product: customProduct }));
       message.success('Custom product added to cart');
       onClose();
-    } catch (error) {
+    } catch (_error) {
       message.error('Failed to create custom product');
     } finally {
       setLoading(false);
@@ -327,6 +323,7 @@ export function CustomProductModal({ open, onClose }) {
                     className="flex justify-between items-center"
                     actions={[
                       <Button
+                        key="delete"
                         type="text"
                         danger
                         icon={<Icon name="delete" />}

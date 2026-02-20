@@ -107,7 +107,7 @@ const quotationsSlice = createSlice({
       state.loading = true;
       state.error = null;
     },
-    convertQuotationSuccess(state, action) {
+    convertQuotationSuccess(state, _action) {
       state.loading = false;
       state.error = null;
     },

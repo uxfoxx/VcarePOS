@@ -18,8 +18,8 @@ export default tseslint.config(
         tsconfigRootDir: import.meta.dirname,
       },
     },
-    settings: { 
-      react: { version: 'detect' } 
+    settings: {
+      react: { version: 'detect' }
     },
     plugins: {
       'react-hooks': reactHooks,
@@ -37,11 +37,12 @@ export default tseslint.config(
       'react/prop-types': 'off',
       'react/react-in-jsx-scope': 'off',
       '@typescript-eslint/no-unused-vars': [
-        'error', 
-        { 
+        'error',
+        {
           argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-          destructuredArrayIgnorePattern: '^_'
+          varsIgnorePattern: '^_|^React$',
+          destructuredArrayIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_'
         }
       ],
       '@typescript-eslint/no-explicit-any': 'warn',
@@ -61,8 +62,8 @@ export default tseslint.config(
         sourceType: 'module',
       },
     },
-    settings: { 
-      react: { version: 'detect' } 
+    settings: {
+      react: { version: 'detect' }
     },
     plugins: {
       'react-hooks': reactHooks,
@@ -80,11 +81,12 @@ export default tseslint.config(
       'react/prop-types': 'off',
       'react/react-in-jsx-scope': 'off',
       'no-unused-vars': [
-        'error', 
-        { 
+        'error',
+        {
           argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-          destructuredArrayIgnorePattern: '^_'
+          varsIgnorePattern: '^_|^React$',
+          destructuredArrayIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_'
         }
       ],
     },

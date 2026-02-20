@@ -1,21 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  Row, 
-  Col, 
-  Statistic, 
-  Typography, 
-  List, 
-  Progress, 
-  Space, 
-  Tag, 
+import { useState, useEffect } from 'react';
+import {
+  Card,
+  Row,
+  Col,
+  Statistic,
+  Typography,
+  List,
+  Progress,
+  Space,
+  Tag,
   Dropdown,
   DatePicker,
   Select,
   Tabs,
-  Table,
   Button,
-  Tooltip,
   Image
 } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
@@ -30,7 +28,6 @@ import { ActionButton } from '../common/ActionButton';
 import { StockAlert } from '../common/StockAlert';
 import { ExportModal } from '../common/ExportModal';
 import { EnhancedTable } from '../common/EnhancedTable';
-import { SearchInput } from '../common/SearchInput';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import dayjs from 'dayjs';
 
@@ -40,23 +37,23 @@ const { Option } = Select;
 
 export function ReportsOverview() {
   const dispatch = useDispatch();
-  
+
   // Get data from Redux store
   const { rawMaterialsList, loading: rawMaterialsLoading } = useSelector(state => state.rawMaterials);
   const { productsList, loading: productsLoading } = useSelector(state => state.products);
   const { transactionsList, loading: transactionsLoading } = useSelector(state => state.transactions);
   const { couponsList, loading: couponsLoading } = useSelector(state => state.coupons);
   const { categoriesList, loading: categoriesLoading } = useSelector(state => state.categories);
-  
-  const { stockAlerts } = useNotifications();
+
+  const { stockAlerts: _stockAlerts } = useNotifications();
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportDataType, setExportDataType] = useState('comprehensive');
   const [dateFilter, setDateFilter] = useState('all');
   const [dateRange, setDateRange] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  
+  const [searchTerm, _setSearchTerm] = useState('');
+  const [_selectedRowKeys, setSelectedRowKeys] = useState([]);
+
   // Load data from Redux stores
   useEffect(() => {
     // Fetch all required data from Redux stores
@@ -73,7 +70,7 @@ export function ReportsOverview() {
   // Filter transactions based on date
   const getFilteredTransactions = () => {
     let filtered = [...(transactionsList || [])];
-    
+
     if (dateFilter === 'today') {
       const today = dayjs().startOf('day');
       filtered = filtered.filter(t => dayjs(t.timestamp).isAfter(today));
@@ -86,21 +83,21 @@ export function ReportsOverview() {
     } else if (dateFilter === 'custom' && dateRange) {
       filtered = filtered.filter(t => {
         const transactionDate = dayjs(t.timestamp);
-        return transactionDate.isAfter(dateRange[0].startOf('day')) && 
-               transactionDate.isBefore(dateRange[1].endOf('day'));
+        return transactionDate.isAfter(dateRange[0].startOf('day')) &&
+          transactionDate.isBefore(dateRange[1].endOf('day'));
       });
     }
-    
+
     // Apply search filter if provided
     if (searchTerm) {
-      filtered = filtered.filter(t => 
+      filtered = filtered.filter(t =>
         t.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         t.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         t.cashier.toLowerCase().includes(searchTerm.toLowerCase()) ||
         t.salesperson?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
+
     return filtered;
   };
 
@@ -112,7 +109,7 @@ export function ReportsOverview() {
   const averageOrderValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
 
   // Calculate raw material value
-  const rawMaterialValue = (rawMaterialsList || []).reduce((sum, material) => 
+  const rawMaterialValue = (rawMaterialsList || []).reduce((sum, material) =>
     sum + (material.stockQuantity * material.unitPrice), 0
   );
 
@@ -423,7 +420,7 @@ export function ReportsOverview() {
       render: (record) => {
         const isOutOfStock = record.stockQuantity === 0;
         const isLowStock = record.stockQuantity > 0 && record.stockQuantity <= record.minimumStock;
-        
+
         return (
           <Tag color={isOutOfStock ? 'red' : isLowStock ? 'orange' : 'green'}>
             {isOutOfStock ? 'Out of Stock' : isLowStock ? 'Low Stock' : 'In Stock'}
@@ -438,7 +435,7 @@ export function ReportsOverview() {
       onFilter: (value, record) => {
         const isOutOfStock = record.stockQuantity === 0;
         const isLowStock = record.stockQuantity > 0 && record.stockQuantity <= record.minimumStock;
-        
+
         if (value === 'out-of-stock') return isOutOfStock;
         if (value === 'low-stock') return isLowStock;
         if (value === 'in-stock') return !isOutOfStock && !isLowStock;
@@ -472,7 +469,7 @@ export function ReportsOverview() {
           products={outOfStockProducts}
         />
       )}
-      
+
       {lowStockMaterials.length > 0 && (
         <StockAlert
           type="warning"
@@ -493,7 +490,7 @@ export function ReportsOverview() {
               </Text>
             </div>
           </div>
-          
+
           <Space>
             <Select
               value={dateFilter}
@@ -506,7 +503,7 @@ export function ReportsOverview() {
               <Option value="month">This Month</Option>
               <Option value="custom">Custom Range</Option>
             </Select>
-            
+
             {dateFilter === 'custom' && (
               <RangePicker
                 value={dateRange}
@@ -514,7 +511,7 @@ export function ReportsOverview() {
                 placeholder={['Start Date', 'End Date']}
               />
             )}
-            
+
             <Dropdown
               menu={{ items: exportMenuItems }}
               trigger={['click']}
@@ -531,7 +528,7 @@ export function ReportsOverview() {
             <Col key={index} xs={24} sm={12} lg={8} xl={4}>
               <Card className="text-center">
                 <div className="flex items-center justify-between mb-2">
-                  <div 
+                  <div
                     className="flex items-center justify-center w-10 h-10 rounded-lg text-white"
                     style={{ backgroundColor: stat.color }}
                   >
@@ -555,7 +552,7 @@ export function ReportsOverview() {
       <Row gutter={16}>
         {/* Top Selling Products */}
         <Col xs={24} lg={12}>
-          <Card 
+          <Card
             title={
               <Space>
                 <Icon name="inventory_2" className="text-blue-600" />
@@ -563,7 +560,7 @@ export function ReportsOverview() {
               </Space>
             }
             extra={
-              <ActionButton.Text 
+              <ActionButton.Text
                 icon="download"
                 onClick={() => {
                   setExportDataType('top-selling');
@@ -611,9 +608,9 @@ export function ReportsOverview() {
                           <Text type="secondary" className="text-xs">
                             {item.soldQuantity} units sold
                           </Text>
-                          <Progress 
-                            percent={Math.min((item.soldQuantity / (topProducts[0]?.soldQuantity || 1)) * 100, 100)} 
-                            size="small" 
+                          <Progress
+                            percent={Math.min((item.soldQuantity / (topProducts[0]?.soldQuantity || 1)) * 100, 100)}
+                            size="small"
                             showInfo={false}
                             className="mt-1"
                           />
@@ -634,7 +631,7 @@ export function ReportsOverview() {
 
         {/* Raw Material Status */}
         <Col xs={24} lg={12}>
-          <Card 
+          <Card
             title={
               <Space>
                 <Icon name="category" className="text-blue-600" />
@@ -642,7 +639,7 @@ export function ReportsOverview() {
               </Space>
             }
             extra={
-              <ActionButton.Text 
+              <ActionButton.Text
                 icon="download"
                 onClick={() => {
                   setExportDataType('raw-materials');
@@ -659,7 +656,7 @@ export function ReportsOverview() {
                 const stockPercentage = Math.min((material.stockQuantity / (material.minimumStock * 3)) * 100, 100);
                 const isOutOfStock = material.stockQuantity === 0;
                 const isLowStock = material.stockQuantity > 0 && material.stockQuantity <= material.minimumStock;
-                
+
                 return (
                   <List.Item>
                     <List.Item.Meta
@@ -681,9 +678,9 @@ export function ReportsOverview() {
                           <Text type="secondary">{material.category}</Text>
                           <br />
                           <div className="flex items-center justify-between mt-1">
-                            <Progress 
-                              percent={stockPercentage} 
-                              size="small" 
+                            <Progress
+                              percent={stockPercentage}
+                              size="small"
                               status={isOutOfStock ? 'exception' : isLowStock ? 'active' : 'normal'}
                               showInfo={false}
                               className="flex-1 mr-2"
@@ -712,7 +709,7 @@ export function ReportsOverview() {
         title="Product Reports"
         icon="inventory_2"
         columns={productColumns}
-        dataSource={productsList.filter(p => 
+        dataSource={productsList.filter(p =>
           p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
           p.barcode?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -726,8 +723,8 @@ export function ReportsOverview() {
         searchPlaceholder="Search products..."
         showSearch={true}
         extra={
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             icon={<Icon name="download" />}
             onClick={() => {
               setExportDataType('products');
@@ -772,7 +769,7 @@ export function ReportsOverview() {
               <Option value="month">This Month</Option>
               <Option value="custom">Custom Range</Option>
             </Select>
-            
+
             {dateFilter === 'custom' && (
               <RangePicker
                 value={dateRange}
@@ -780,9 +777,9 @@ export function ReportsOverview() {
                 placeholder={['Start Date', 'End Date']}
               />
             )}
-            
-            <Button 
-              type="primary" 
+
+            <Button
+              type="primary"
               icon={<Icon name="download" />}
               onClick={() => {
                 setExportDataType('transactions');
@@ -806,7 +803,7 @@ export function ReportsOverview() {
         title="Raw Material Reports"
         icon="category"
         columns={materialColumns}
-        dataSource={rawMaterialsList.filter(m => 
+        dataSource={rawMaterialsList.filter(m =>
           m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           m.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
           m.supplier?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -820,8 +817,8 @@ export function ReportsOverview() {
         searchPlaceholder="Search materials..."
         showSearch={true}
         extra={
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             icon={<Icon name="download" />}
             onClick={() => {
               setExportDataType('raw-materials');

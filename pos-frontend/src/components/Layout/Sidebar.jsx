@@ -1,14 +1,12 @@
-import React from 'react';
-import { Layout, Menu, Typography, Badge } from 'antd';
+import { Menu, Typography, Badge } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
 import { useReduxNotifications as useNotifications } from '../../hooks/useReduxNotifications';
 import { Icon } from '../common/Icon';
 import { ALWAYS_ACCESSIBLE_MODULES } from '../../constants/permissions';
 
-const { Sider } = Layout;
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
-export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse }) {
+export function Sidebar({ activeTab, onTabChange, collapsed, onCollapse: _onCollapse }) {
   const { hasPermission } = useAuth();
   const { stockAlerts } = useNotifications();
 

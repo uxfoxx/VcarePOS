@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Card,
-  Button,
   Input,
   Space,
   Modal,
@@ -27,13 +26,13 @@ import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { EmptyState } from '../common/EmptyState';
 import { fetchRawMaterials, addRawMaterials, updateRawMaterials, deleteRawMaterials } from '../../features/rawMaterials/rawMaterialsSlice';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
 export function RawMaterialManagement() {
   const dispatch2 = useDispatch();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, _setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -41,8 +40,8 @@ export function RawMaterialManagement() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const { rawMaterialsList, error } = useSelector(state => state.rawMaterials);
+  const [_selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const { rawMaterialsList, error: _error } = useSelector(state => state.rawMaterials);
   const [activeTab, setActiveTab] = useState('materials');
 
   useEffect(() => { dispatch2(fetchRawMaterials()); }, [dispatch2]);
@@ -89,7 +88,7 @@ export function RawMaterialManagement() {
       setShowModal(false);
       setEditingMaterial(null);
       form.resetFields();
-    } catch (error) {
+    } catch (_error) {
       message.error('Please fill in all required fields');
     } finally {
       setLoading(false);
@@ -342,8 +341,8 @@ export function RawMaterialManagement() {
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
                     className={`h-2 rounded-full ${isOutOfStock ? 'bg-red-500' :
-                        isLowStock ? 'bg-orange-500' :
-                          isAlmostLow ? 'bg-yellow-500' : 'bg-green-500'
+                      isLowStock ? 'bg-orange-500' :
+                        isAlmostLow ? 'bg-yellow-500' : 'bg-green-500'
                       }`}
                     style={{ width: `${Math.max(percentage, 5)}%` }}
                   />
@@ -447,8 +446,8 @@ export function RawMaterialManagement() {
             onRow={(record) => ({
               onClick: () => handleRowClick(record),
               className: `cursor-pointer hover:bg-blue-50 ${record.alertType === 'out-of-stock' ? 'bg-red-50' :
-                  record.alertType === 'low-stock' ? 'bg-orange-50' :
-                    'bg-yellow-50'
+                record.alertType === 'low-stock' ? 'bg-orange-50' :
+                  'bg-yellow-50'
                 }`
             })}
             searchFields={['name', 'category', 'supplier']}

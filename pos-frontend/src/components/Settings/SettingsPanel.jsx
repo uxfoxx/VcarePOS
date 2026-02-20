@@ -1,20 +1,14 @@
 import React, { useState } from 'react';
-import { 
-  Card, 
-  Menu, 
-  Row, 
-  Col, 
-  Form, 
-  Input, 
-  Select, 
-  InputNumber, 
-  Switch, 
-  Button, 
-  Typography, 
+import {
+  Card,
+  Menu,
+  Row,
+  Col,
+  Form,
+  Select,
+  Typography,
   Space,
-  Divider,
-  message,
-  Slider
+  message
 } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
@@ -23,7 +17,6 @@ import { InvoiceSettings } from './InvoiceSettings';
 import { DeliveryChargesSettings } from './DeliveryChargesSettings';
 
 const { Title, Text } = Typography;
-const { TextArea } = Input;
 const { Option } = Select;
 
 export function SettingsPanel() {
@@ -36,7 +29,7 @@ export function SettingsPanel() {
       try {
         const parsed = JSON.parse(savedSettings);
         form.setFieldsValue(parsed);
-      } catch (e) {
+      } catch {
         console.warn('Failed to parse saved settings');
       }
     }
@@ -53,7 +46,7 @@ export function SettingsPanel() {
     try {
       localStorage.setItem('generalSettings', JSON.stringify(values));
       message.success('Settings saved successfully!');
-    } catch (error) {
+    } catch {
       message.error('Failed to save settings');
     }
   };
@@ -114,7 +107,7 @@ export function SettingsPanel() {
   };
 
   return (
-    <Card 
+    <Card
       title={
         <Space>
           <Icon name="settings" className="text-[#0E72BD]" />

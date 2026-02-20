@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   fetchVendors,
 } from '../../features/vendors/vendorsSlice';
@@ -25,7 +25,6 @@ import {
 } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import { Icon } from '../common/Icon';
-import { ActionButton } from '../common/ActionButton';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;

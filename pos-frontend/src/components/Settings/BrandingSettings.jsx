@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   Form,
@@ -15,13 +15,11 @@ import {
   Select,
   Switch,
   Tabs,
-  Modal,
-  Spin
+  Modal
 } from 'antd';
-import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
+import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Icon } from '../common/Icon';
-import { ActionButton } from '../common/ActionButton';
 import { settingsApi } from '../../api/apiClient';
 
 const { Title, Text } = Typography;
@@ -31,8 +29,8 @@ const { Option } = Select;
 export function BrandingSettings() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [fetchingSettings, setFetchingSettings] = useState(true);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [_fetchingSettings, setFetchingSettings] = useState(true);
+  const [_uploadingLogo, setUploadingLogo] = useState(false);
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState('/VCARELogo 1.png');
   const [logoPath, setLogoPath] = useState(null);
@@ -52,6 +50,7 @@ export function BrandingSettings() {
 
   useEffect(() => {
     loadBrandingSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadBrandingSettings = async () => {
@@ -93,7 +92,7 @@ export function BrandingSettings() {
       setFetchingSettings(false);
     }
   };
-  
+
   // Apply branding changes to the document
   const applyBrandingChanges = (values) => {
     // Create a style element if it doesn't exist
@@ -103,7 +102,7 @@ export function BrandingSettings() {
       styleEl.id = 'branding-styles';
       document.head.appendChild(styleEl);
     }
-    
+
     // Update CSS variables
     styleEl.innerHTML = `
       :root {
@@ -113,9 +112,9 @@ export function BrandingSettings() {
         --secondary-text-color: ${values.secondaryTextColor || secondaryTextColor};
         --accent-color: ${values.accentColor || accentColor};
         --accent-text-color: ${values.accentTextColor || accentTextColor};
-        --primary-color-rgb: ${values.primaryColor ? 
-          `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
-          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`};
+        --primary-color-rgb: ${values.primaryColor ?
+        `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` :
+        `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`};
         --font-family: ${values.fontFamily || fontFamily}, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         --dark-mode: ${values.darkModeSupport ? 'true' : 'false'};
       }
@@ -126,15 +125,15 @@ export function BrandingSettings() {
         color: ${values.primaryTextColor || primaryTextColor} !important;
       }
       
-      .text-blue-600, .text-\[#0E72BD\] {
+      .text-blue-600, .text-\\[\\#0E72BD\\] {
         color: ${values.primaryColor || primaryColor} !important;
       }
       
-      .bg-blue-600, .bg-\[#0E72BD\] {
+      .bg-blue-600, .bg-\\[\\#0E72BD\\] {
         background-color: ${values.primaryColor || primaryColor} !important;
       }
       
-      .border-blue-600, .border-\[#0E72BD\] {
+      .border-blue-600, .border-\\[\\#0E72BD\\] {
         border-color: ${values.primaryColor || primaryColor} !important;
       }
 
@@ -188,39 +187,39 @@ export function BrandingSettings() {
       }
 
       .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
-        background-color: rgba(${values.primaryColor ? 
-          `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
-          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.1) !important;
+        background-color: rgba(${values.primaryColor ?
+        `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` :
+        `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.1) !important;
       }
 
       .ant-select-focused .ant-select-selector {
         border-color: ${values.primaryColor || primaryColor} !important;
-        box-shadow: 0 0 0 2px rgba(${values.primaryColor ? 
-          `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
-          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.2) !important;
+        box-shadow: 0 0 0 2px rgba(${values.primaryColor ?
+        `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` :
+        `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.2) !important;
       }
 
       .ant-input:focus, 
       .ant-input-focused {
         border-color: ${values.primaryColor || primaryColor} !important;
-        box-shadow: 0 0 0 2px rgba(${values.primaryColor ? 
-          `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
-          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.2) !important;
+        box-shadow: 0 0 0 2px rgba(${values.primaryColor ?
+        `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` :
+        `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.2) !important;
       }
 
       .ant-input-affix-wrapper:focus,
       .ant-input-affix-wrapper-focused {
         border-color: ${values.primaryColor || primaryColor} !important;
-        box-shadow: 0 0 0 2px rgba(${values.primaryColor ? 
-          `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
-          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.2) !important;
+        box-shadow: 0 0 0 2px rgba(${values.primaryColor ?
+        `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` :
+        `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.2) !important;
       }
 
       .ant-picker-focused {
         border-color: ${values.primaryColor || primaryColor} !important;
-        box-shadow: 0 0 0 2px rgba(${values.primaryColor ? 
-          `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
-          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.2) !important;
+        box-shadow: 0 0 0 2px rgba(${values.primaryColor ?
+        `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` :
+        `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.2) !important;
       }
 
       .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner {
@@ -229,12 +228,12 @@ export function BrandingSettings() {
 
       .ant-tag-blue {
         color: ${values.primaryColor || primaryColor} !important;
-        background: rgba(${values.primaryColor ? 
-          `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
-          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.1) !important;
-        border-color: rgba(${values.primaryColor ? 
-          `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` : 
-          `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.3) !important;
+        background: rgba(${values.primaryColor ?
+        `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` :
+        `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.1) !important;
+        border-color: rgba(${values.primaryColor ?
+        `${parseInt(values.primaryColor.slice(1, 3), 16)}, ${parseInt(values.primaryColor.slice(3, 5), 16)}, ${parseInt(values.primaryColor.slice(5, 7), 16)}` :
+        `${parseInt(primaryColor.slice(1, 3), 16)}, ${parseInt(primaryColor.slice(3, 5), 16)}, ${parseInt(primaryColor.slice(5, 7), 16)}`}, 0.3) !important;
       }
 
       .ant-progress-bg {
@@ -262,14 +261,14 @@ export function BrandingSettings() {
         font-family: ${values.fontFamily || fontFamily}, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
       }
     `;
-    
+
     // Update logo if changed
     const logoElements = document.querySelectorAll('img[src="/VCARELogo 1.png"]');
     logoElements.forEach(el => {
       el.src = logoPreview;
     });
   };
-  
+
   const handleSave = async (values) => {
     try {
       setLoading(true);
@@ -309,7 +308,7 @@ export function BrandingSettings() {
       setLoading(false);
     }
   };
-  
+
   const handleLogoUpload = (file) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -320,19 +319,19 @@ export function BrandingSettings() {
     reader.readAsDataURL(file);
     return false; // Prevent automatic upload
   };
-  
+
   const onImageLoad = (e) => {
     setImgRef(e.currentTarget);
-    
+
     const { width, height } = e.currentTarget;
     const cropPercentage = 0.8;
-    
+
     const cropWidth = width * cropPercentage;
     const cropHeight = height * cropPercentage;
-    
+
     const x = (width - cropWidth) / 2;
     const y = (height - cropHeight) / 2;
-    
+
     const crop = {
       unit: 'px',
       x,
@@ -340,10 +339,10 @@ export function BrandingSettings() {
       width: cropWidth,
       height: cropHeight,
     };
-    
+
     setCrop(crop);
   };
-  
+
   const handleCompleteCrop = async () => {
     if (!crop || !imgRef) {
       message.error('Please select a crop area');
@@ -403,7 +402,7 @@ export function BrandingSettings() {
       setUploadingLogo(false);
     }
   };
-  
+
   const handleResetDefaults = () => {
     setPrimaryColor('#0E72BD');
     setSecondaryColor('#52c41a');
@@ -411,7 +410,7 @@ export function BrandingSettings() {
     setDarkModeSupport(false);
     setFontFamily('Inter');
     setLogoPreview('/VCARELogo 1.png');
-    
+
     form.setFieldsValue({
       businessName: 'VCare Furniture Store',
       tagline: 'Premium Furniture Solutions',
@@ -423,7 +422,7 @@ export function BrandingSettings() {
       receiptFooter: 'Thank you for your business!',
       invoiceNotes: 'Payment is due within 30 days.'
     });
-    
+
     message.info('Branding settings reset to defaults');
   };
 
@@ -445,7 +444,7 @@ export function BrandingSettings() {
       invoiceNotes: 'Payment is due within 30 days.',
       logoPreview: '/VCARELogo 1.png'
     };
-    
+
     // Update state
     setPrimaryColor(defaultTheme.primaryColor);
     setSecondaryColor(defaultTheme.secondaryColor);
@@ -456,41 +455,41 @@ export function BrandingSettings() {
     setDarkModeSupport(defaultTheme.darkModeSupport);
     setFontFamily(defaultTheme.fontFamily);
     setLogoPreview(defaultTheme.logoPreview);
-    
+
     // Update form values
     form.setFieldsValue(defaultTheme);
-    
+
     // Apply changes
     applyBrandingChanges(defaultTheme);
     document.documentElement.style.setProperty('--primary-color-rgb', '51, 51, 51');
-    
+
     // Save to localStorage
     localStorage.setItem('vcare_branding', JSON.stringify(defaultTheme));
-    
+
     message.success('Reset to default black/gray/white theme');
-    
+
     // Close confirmation modal
     setShowResetConfirm(false);
-    
+
     // Force reload to apply all changes
     setTimeout(() => {
-      window.location.reload(); 
+      window.location.reload();
     }, 1000);
   };
 
   // Load saved branding on component mount
-  React.useEffect(() => {
+  useEffect(() => {
     const savedBranding = localStorage.getItem('vcare_branding');
-    
+
     if (savedBranding) {
       const parsedBranding = JSON.parse(savedBranding);
       form.setFieldsValue(parsedBranding);
-      
+
       // Set state values
       if (parsedBranding.logoPreview) {
         setLogoPreview(parsedBranding.logoPreview);
       }
-      
+
       // Helper function to extract hex color from object or string
       const extractHexColor = (colorValue, fallback) => {
         if (!colorValue) return fallback;
@@ -503,14 +502,14 @@ export function BrandingSettings() {
         }
         return fallback;
       };
-      
+
       if (parsedBranding.primaryColor) {
         const primaryColorHex = extractHexColor(parsedBranding.primaryColor, '#0E72BD');
         setPrimaryColor(primaryColorHex);
         // Set RGB values for the primary color
         document.documentElement.style.setProperty('--primary-color-rgb', `${parseInt(primaryColorHex.slice(1, 3), 16)}, ${parseInt(primaryColorHex.slice(3, 5), 16)}, ${parseInt(primaryColorHex.slice(5, 7), 16)}`);
       }
-      
+
       if (parsedBranding.primaryTextColor) {
         setPrimaryTextColor(extractHexColor(parsedBranding.primaryTextColor, '#ffffff'));
       }
@@ -522,7 +521,7 @@ export function BrandingSettings() {
       if (parsedBranding.secondaryTextColor) {
         setSecondaryTextColor(extractHexColor(parsedBranding.secondaryTextColor, '#ffffff'));
       }
-      
+
       if (parsedBranding.accentColor) {
         setAccentColor(extractHexColor(parsedBranding.accentColor, '#fa8c16'));
       }
@@ -530,11 +529,11 @@ export function BrandingSettings() {
       if (parsedBranding.accentTextColor) {
         setAccentTextColor(extractHexColor(parsedBranding.accentTextColor, '#ffffff'));
       }
-      
+
       if (parsedBranding.fontFamily) {
         setFontFamily(parsedBranding.fontFamily);
       }
-      
+
       if (parsedBranding.darkModeSupport !== undefined) {
         setDarkModeSupport(parsedBranding.darkModeSupport);
       }
@@ -544,7 +543,7 @@ export function BrandingSettings() {
       document.documentElement.style.setProperty('--primary-color-rgb', '14, 114, 189');
     }
   }, [form]);
-  
+
   const tabItems = [
     {
       key: 'general',
@@ -566,7 +565,7 @@ export function BrandingSettings() {
               >
                 <Input placeholder="Enter business name" />
               </Form.Item>
-              
+
               <Form.Item
                 name="tagline"
                 label="Tagline"
@@ -574,7 +573,7 @@ export function BrandingSettings() {
               >
                 <Input placeholder="Enter business tagline" />
               </Form.Item>
-              
+
               <Form.Item
                 label="Logo"
                 name="logo"
@@ -582,9 +581,9 @@ export function BrandingSettings() {
               >
                 <div className="space-y-4">
                   <div className="border rounded-lg p-4 flex items-center justify-center bg-gray-50">
-                    <img 
-                      src={logoPreview} 
-                      alt="Business Logo" 
+                    <img
+                      src={logoPreview}
+                      alt="Business Logo"
                       className="max-h-24 object-contain"
                     />
                   </div>
@@ -604,7 +603,7 @@ export function BrandingSettings() {
                 </div>
               </Form.Item>
             </Col>
-            
+
           </Row>
 
           <Row gutter={24}>
@@ -640,7 +639,7 @@ export function BrandingSettings() {
                   <div className="flex space-x-2">
                     <ColorPicker
                       value={primaryColor}
-                      onChange={(color) => {setPrimaryColor(color.toHexString()); document.documentElement.style.setProperty('--primary-color-rgb', `${parseInt(color.toHexString().slice(1, 3), 16)}, ${parseInt(color.toHexString().slice(3, 5), 16)}, ${parseInt(color.toHexString().slice(5, 7), 16)}`)}}
+                      onChange={(color) => { setPrimaryColor(color.toHexString()); document.documentElement.style.setProperty('--primary-color-rgb', `${parseInt(color.toHexString().slice(1, 3), 16)}, ${parseInt(color.toHexString().slice(3, 5), 16)}, ${parseInt(color.toHexString().slice(5, 7), 16)}`) }}
                       showText
                     />
                     <div>
@@ -662,7 +661,7 @@ export function BrandingSettings() {
                 </div>
               </Form.Item>
             </Col>
-            
+
             <Col span={8}>
               <Form.Item
                 label="Secondary Color"
@@ -672,7 +671,7 @@ export function BrandingSettings() {
                   <div className="flex space-x-2">
                     <ColorPicker
                       value={secondaryColor}
-                      onChange={(color) => {setSecondaryColor(color.toHexString())}}
+                      onChange={(color) => { setSecondaryColor(color.toHexString()) }}
                       showText
                     />
                     <div>
@@ -694,7 +693,7 @@ export function BrandingSettings() {
                 </div>
               </Form.Item>
             </Col>
-            
+
             <Col span={8}>
               <Form.Item
                 label="Accent Color"
@@ -704,7 +703,7 @@ export function BrandingSettings() {
                   <div className="flex space-x-2">
                     <ColorPicker
                       value={accentColor}
-                      onChange={(color) => {setAccentColor(color.toHexString())}}
+                      onChange={(color) => { setAccentColor(color.toHexString()) }}
                       showText
                     />
                     <div>
@@ -727,7 +726,7 @@ export function BrandingSettings() {
               </Form.Item>
             </Col>
           </Row>
-          
+
           <Row gutter={24}>
             <Col span={12}>
               <Form.Item
@@ -743,11 +742,11 @@ export function BrandingSettings() {
                 </Select>
               </Form.Item>
             </Col>
-            
+
             <Col span={12}>
               <Form.Item
                 label="Dark Mode Support"
-                name="darkModeSupport" 
+                name="darkModeSupport"
                 valuePropName="checked"
                 initialValue={false}
               >
@@ -758,14 +757,14 @@ export function BrandingSettings() {
               </Text>
             </Col>
           </Row>
-          
+
           <Divider />
-          
+
           <div className="p-6 border rounded-lg">
             <Title level={5} className="mb-4">Preview</Title>
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
-                <div 
+                <div
                   className="w-12 h-12 rounded-lg flex items-center justify-center text-white"
                   style={{ backgroundColor: primaryColor }}
                 >
@@ -783,30 +782,30 @@ export function BrandingSettings() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex space-x-2">
-                <Button 
-                  type="primary" 
+                <Button
+                  type="primary"
                   className="hover:opacity-90"
-                  style={{ 
-                    backgroundColor: primaryColor, 
-                    borderColor: primaryColor, 
-                    color: primaryTextColor 
+                  style={{
+                    backgroundColor: primaryColor,
+                    borderColor: primaryColor,
+                    color: primaryTextColor
                   }}
                 >
                   Primary Button
                 </Button>
-                <Button 
-                  style={{ 
-                    borderColor: primaryColor, 
-                    color: primaryColor 
-                  }} 
+                <Button
+                  style={{
+                    borderColor: primaryColor,
+                    color: primaryColor
+                  }}
                   className="hover:opacity-90"
                 >
                   Secondary Button
                 </Button>
-                <Button 
-                  type="text" 
+                <Button
+                  type="text"
                   style={{ color: accentColor }}
                   className="hover:opacity-90"
                 >
@@ -833,34 +832,34 @@ export function BrandingSettings() {
             label="Receipt Footer Text"
             initialValue="Thank you for your business!"
           >
-            <TextArea 
+            <TextArea
               rows={2}
               placeholder="Enter text to appear at the bottom of receipts"
             />
           </Form.Item>
-          
+
           <Form.Item
             name="invoiceNotes"
             label="Default Invoice Notes"
             initialValue="Payment is due within 30 days."
           >
-            <TextArea 
+            <TextArea
               rows={3}
               placeholder="Enter default notes for invoices"
             />
           </Form.Item>
-          
+
           <Form.Item
             name="termsAndConditions"
             label="Terms and Conditions"
             initialValue="All sales are final. Returns accepted within 30 days with receipt."
           >
-            <TextArea 
+            <TextArea
               rows={4}
               placeholder="Enter terms and conditions for invoices and receipts"
             />
           </Form.Item>
-          
+
           <Row gutter={24}>
             <Col span={12}>
               <Form.Item
@@ -872,7 +871,7 @@ export function BrandingSettings() {
                 <Switch />
               </Form.Item>
             </Col>
-            
+
             <Col span={12}>
               <Form.Item
                 name="taxId"
@@ -883,7 +882,7 @@ export function BrandingSettings() {
               </Form.Item>
             </Col>
           </Row>
-          
+
           <div className="bg-blue-50 p-4 rounded-lg">
             <Text className="text-sm">
               <Icon name="info" className="mr-2 text-blue-600" />
@@ -894,7 +893,7 @@ export function BrandingSettings() {
       )
     }
   ];
-  
+
   return (
     <Card
       title={
@@ -923,9 +922,9 @@ export function BrandingSettings() {
         }}
       >
         <Tabs items={tabItems} />
-        
+
         <Divider />
-        
+
         <div className="flex justify-end space-x-3">
           <Button onClick={() => setShowResetConfirm(true)}>
             Reset to Defaults
@@ -944,9 +943,9 @@ export function BrandingSettings() {
           }}>
             Refresh Page
           </Button>
-          <Button 
+          <Button
             type="primary"
-            htmlType="submit" 
+            htmlType="submit"
             loading={loading}
             icon={<Icon name="save" />}
             className="bg-primary"
@@ -955,7 +954,7 @@ export function BrandingSettings() {
           </Button>
         </div>
       </Form>
-      
+
       {/* Image Crop Modal */}
       <Modal
         title="Crop Logo"
@@ -965,9 +964,9 @@ export function BrandingSettings() {
           <Button key="cancel" onClick={() => setShowCropModal(false)}>
             Cancel
           </Button>,
-          <Button 
-            key="crop" 
-            type="primary" 
+          <Button
+            key="crop"
+            type="primary"
             onClick={handleCompleteCrop}
             className="bg-blue-600"
           >
@@ -980,7 +979,7 @@ export function BrandingSettings() {
           <Text type="secondary" className="mb-4 block">
             Drag to adjust the crop area for your logo
           </Text>
-          
+
           <div className="max-h-[60vh] overflow-auto">
             {cropSrc && (
               <ReactCrop crop={crop} onChange={c => setCrop(c)} aspect={1}>
@@ -990,7 +989,7 @@ export function BrandingSettings() {
           </div>
         </div>
       </Modal>
-      
+
       {/* Reset Confirmation Modal */}
       <Modal
         title="Reset Branding Settings"
@@ -1000,14 +999,14 @@ export function BrandingSettings() {
           <Button key="cancel" onClick={() => setShowResetConfirm(false)}>
             Cancel
           </Button>,
-          <Button 
-            key="reset-original" 
+          <Button
+            key="reset-original"
             onClick={handleResetDefaults}
           >
             Reset to Original Blue Theme
           </Button>,
-          <Button 
-            key="reset-default" 
+          <Button
+            key="reset-default"
             type="primary"
             onClick={handleResetToDefaultTheme}
             className="bg-gray-800"
@@ -1018,7 +1017,7 @@ export function BrandingSettings() {
       >
         <div className="space-y-4">
           <Text>Choose a default theme to reset to:</Text>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="border rounded-lg p-4 cursor-pointer hover:border-blue-500" onClick={handleResetDefaults}>
               <div className="flex items-center space-x-2 mb-2">
@@ -1031,7 +1030,7 @@ export function BrandingSettings() {
                 <div className="h-2 w-1/2 rounded-full bg-[#fa8c16]"></div>
               </div>
             </div>
-            
+
             <div className="border rounded-lg p-4 cursor-pointer hover:border-gray-500" onClick={handleResetToDefaultTheme}>
               <div className="flex items-center space-x-2 mb-2">
                 <div className="w-6 h-6 rounded-full bg-[#333333]"></div>
@@ -1044,7 +1043,7 @@ export function BrandingSettings() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-yellow-50 p-3 rounded-lg mt-4">
             <Text className="text-sm">
               <Icon name="warning" className="mr-2 text-yellow-600" />

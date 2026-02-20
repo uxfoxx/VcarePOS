@@ -1,19 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  Space, 
-  Typography, 
-  Button, 
-  Table, 
-  Tag, 
-  Tooltip, 
+import { useState, useEffect } from 'react';
+import {
+  Card,
+  Space,
+  Typography,
+  Tag,
+  Tooltip,
   Popconfirm,
   message,
-  Row,
-  Col,
   Select,
   DatePicker,
-  Input,
   Tabs
 } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
@@ -21,25 +16,21 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { EnhancedTable } from '../common/EnhancedTable';
-import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { PurchaseOrderModal } from './PurchaseOrderModal';
 import { PurchaseOrderDetailModal } from './PurchaseOrderDetailModal';
 import { VendorManagement } from './VendorManagement';
-import { 
+import {
   fetchPurchaseOrders,
   addPurchaseOrder,
   updatePurchaseOrder,
-  deletePurchaseOrder,
-  updatePurchaseOrderStatus
+  deletePurchaseOrder
 } from '../../features/purchaseOrders/purchaseOrdersSlice';
 import { fetchProducts } from '../../features/products/productsSlice';
 import { fetchRawMaterials } from '../../features/rawMaterials/rawMaterialsSlice';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { Option } = Select;
-const { Search } = Input;
-const { TabPane } = Tabs;
 
 export function PurchaseOrderManagement() {
   const dispatch = useDispatch();
@@ -47,15 +38,15 @@ export function PurchaseOrderManagement() {
   const loading = useSelector(state => state.purchaseOrders.loading);
   const products = useSelector(state => state.products.productsList);
   const rawMaterials = useSelector(state => state.rawMaterials.rawMaterialsList);
-  const { currentUser, hasPermission, logAction } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
+  const { currentUser, logAction, hasPermission: _hasPermission } = useAuth();
+  const [searchTerm, _setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [dateRange, setDateRange] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [activeTab, setActiveTab] = useState('orders'); 
+  const [_selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [activeTab, setActiveTab] = useState('orders');
 
   // Load purchase orders from state or cache
   useEffect(() => {
@@ -66,13 +57,13 @@ export function PurchaseOrderManagement() {
 
   // Filter purchase orders based on search term, status, and date range
   const filteredOrders = purchaseOrders.filter(order => {
-    const matchesSearch = 
+    const matchesSearch =
       order.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.vendorName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.createdBy?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
-    
+
     let matchesDate = true;
     if (dateRange && dateRange.length === 2) {
       const orderDate = new Date(order.orderDate);
@@ -80,7 +71,7 @@ export function PurchaseOrderManagement() {
       const endDate = dateRange[1].endOf('day').toDate();
       matchesDate = orderDate >= startDate && orderDate <= endDate;
     }
-    
+
     return matchesSearch && matchesStatus && matchesDate;
   });
 
@@ -101,10 +92,10 @@ export function PurchaseOrderManagement() {
         }
       ]
     };
-    
+
     // Add to state
     dispatch(addPurchaseOrder(newOrder));
-    
+
     // Log action
     if (logAction) {
       logAction(
@@ -114,7 +105,7 @@ export function PurchaseOrderManagement() {
         { orderId: newOrder.id, total: newOrder.total }
       );
     }
-    
+
     message.success('Purchase order created successfully');
     return newOrder;
   };
@@ -126,17 +117,17 @@ export function PurchaseOrderManagement() {
       message.error('Purchase order not found');
       return null;
     }
-    
+
     // In a real app, this would send to an API
     const updatedOrder = {
       ...existingOrder,
       ...orderData,
       updatedAt: new Date()
     };
-    
+
     // Update in state
     dispatch(updatePurchaseOrder(updatedOrder));
-    
+
     // Log action
     if (logAction) {
       logAction(
@@ -146,7 +137,7 @@ export function PurchaseOrderManagement() {
         { orderId: updatedOrder.id }
       );
     }
-    
+
     message.success('Purchase order updated successfully');
     return updatedOrder;
   };
@@ -154,7 +145,7 @@ export function PurchaseOrderManagement() {
   const handleDeleteOrder = (orderId) => {
     // In a real app, this would send to an API
     dispatch(deletePurchaseOrder({ id: orderId }));
-    
+
     // Log action
     if (logAction) {
       logAction(
@@ -164,14 +155,14 @@ export function PurchaseOrderManagement() {
         { orderId }
       );
     }
-    
+
     message.success('Purchase order deleted successfully');
   };
 
   const handleBulkDelete = (orderIds) => {
     orderIds.forEach(id => {
       dispatch(deletePurchaseOrder({ id }));
-      
+
       // Log action
       if (logAction) {
         logAction(
@@ -182,7 +173,7 @@ export function PurchaseOrderManagement() {
         );
       }
     });
-    
+
     message.success(`${orderIds.length} purchase orders deleted successfully`);
     setSelectedRowKeys([]);
   };
@@ -205,9 +196,9 @@ export function PurchaseOrderManagement() {
         }
       ]
     };
-    
+
     dispatch(updatePurchaseOrder(updatedOrder));
-    
+
     // Log action
     if (logAction) {
       logAction(
@@ -217,9 +208,9 @@ export function PurchaseOrderManagement() {
         { orderId, status: newStatus }
       );
     }
-    
+
     message.success(`Purchase order status updated to ${newStatus}`);
-    
+
     // If we're viewing the order details, update the selected order
     if (selectedOrder && selectedOrder.id === orderId) {
       setSelectedOrder(updatedOrder);
@@ -236,7 +227,7 @@ export function PurchaseOrderManagement() {
           quantity: product.quantity
         }
       });
-      
+
       // Log action
       if (logAction) {
         logAction(
@@ -258,7 +249,7 @@ export function PurchaseOrderManagement() {
             stockQuantity: rawMaterial.stockQuantity + material.quantity
           }
         });
-        
+
         // Log action
         if (logAction) {
           logAction(
@@ -337,7 +328,7 @@ export function PurchaseOrderManagement() {
         const totalItems = record.items.length;
         const productCount = record.items.filter(item => item.type === 'product').length;
         const materialCount = record.items.filter(item => item.type === 'material').length;
-        
+
         return (
           <div>
             <Tag color="blue">{totalItems} items</Tag>
@@ -477,7 +468,7 @@ export function PurchaseOrderManagement() {
               onChange={setDateRange}
               placeholder={['Start Date', 'End Date']}
             />
-            <ActionButton.Primary 
+            <ActionButton.Primary
               icon="add"
               onClick={() => {
                 setSelectedOrder(null);
@@ -534,8 +525,8 @@ export function PurchaseOrderManagement() {
           setShowCreateModal(false);
           setSelectedOrder(null);
         }}
-        onSubmit={selectedOrder ? 
-          (data) => handleUpdateOrder(selectedOrder.id, data) : 
+        onSubmit={selectedOrder ?
+          (data) => handleUpdateOrder(selectedOrder.id, data) :
           handleCreateOrder
         }
         editingOrder={selectedOrder}

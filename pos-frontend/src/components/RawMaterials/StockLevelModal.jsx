@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
-import { 
-  Modal, 
-  Table, 
-  Typography, 
-  Space, 
-  Tag, 
-  Progress, 
+import { useState } from 'react';
+import {
+  Modal,
+  Table,
+  Typography,
+  Space,
+  Tag,
+  Progress,
   Select,
-  Button,
-  Tooltip
+  Dropdown
 } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
@@ -17,10 +16,10 @@ import { ExportModal } from '../common/ExportModal';
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-export function StockLevelModal({ 
-  open, 
-  onClose, 
-  rawMaterials = [], 
+export function StockLevelModal({
+  open,
+  onClose,
+  rawMaterials = [],
   products = [],
   onEditMaterial,
   onEditProduct
@@ -75,7 +74,7 @@ export function StockLevelModal({
         const percentage = Math.min((record.stockQuantity / (record.minimumStock * 3)) * 100, 100);
         const isOutOfStock = record.stockQuantity === 0;
         const isLowStock = record.stockQuantity <= record.minimumStock;
-        
+
         return (
           <div className="space-y-1">
             <div className="flex items-center justify-between">
@@ -84,9 +83,9 @@ export function StockLevelModal({
                 {isOutOfStock ? 'Out of Stock' : isLowStock ? 'Low Stock' : 'In Stock'}
               </Tag>
             </div>
-            <Progress 
-              percent={percentage} 
-              size="small" 
+            <Progress
+              percent={percentage}
+              size="small"
               status={isOutOfStock ? 'exception' : isLowStock ? 'active' : 'normal'}
               showInfo={false}
             />
@@ -113,7 +112,7 @@ export function StockLevelModal({
       title: 'Actions',
       key: 'actions',
       render: (record) => (
-        <ActionButton.Text 
+        <ActionButton.Text
           icon="edit"
           onClick={() => onEditMaterial?.(record)}
           className="text-blue-600"
@@ -144,7 +143,7 @@ export function StockLevelModal({
         const percentage = Math.min((record.stock / 20) * 100, 100);
         const isOutOfStock = record.stock === 0;
         const isLowStock = record.stock <= 5;
-        
+
         return (
           <div className="space-y-1">
             <div className="flex items-center justify-between">
@@ -153,9 +152,9 @@ export function StockLevelModal({
                 {isOutOfStock ? 'Out of Stock' : isLowStock ? 'Low Stock' : 'In Stock'}
               </Tag>
             </div>
-            <Progress 
-              percent={percentage} 
-              size="small" 
+            <Progress
+              percent={percentage}
+              size="small"
               status={isOutOfStock ? 'exception' : isLowStock ? 'active' : 'normal'}
               showInfo={false}
             />
@@ -173,7 +172,7 @@ export function StockLevelModal({
       title: 'Actions',
       key: 'actions',
       render: (record) => (
-        <ActionButton.Text 
+        <ActionButton.Text
           icon="edit"
           onClick={() => onEditProduct?.(record)}
           className="text-blue-600"

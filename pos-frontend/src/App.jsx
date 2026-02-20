@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { ConfigProvider, Layout, theme, Spin, App as AntApp, Modal } from 'antd';
 import { AuthProvider } from './contexts/AuthContext';
 import { LoginPage } from './components/Auth/LoginPage';
@@ -124,7 +124,7 @@ function AppContent() {
 
   // Initialize activeTab from URL path if it exists, otherwise default to 'pos'
   const getInitialTab = () => {
-    const path = window.location.pathname.substring(1); // remove leading slash
+    const path = window.location.pathname.substring(1).replace(/^[/\\]+|[/\\]+$/g, '');
 
     // Map of valid paths to active tabs
     const validPaths = [

@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useEffect, useRef } from 'react';
+import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 import { notification } from 'antd';
 import { clearAuthError } from '../../features/auth/authSlice';
 import { failed as clearProductsError } from '../../features/products/productsSlice';
@@ -74,15 +74,15 @@ const errorSelectors = [
 
 export default function ReduxErrorNotification() {
   const dispatch = useDispatch();
-  
-  // Get all errors
-  const errors = errorSelectors.map(({ selector }) => useSelector(selector));
+
+  // Get all errors simultaneously using shallowEqual
+  const errors = useSelector(state => errorSelectors.map(({ selector }) => selector(state)), shallowEqual);
   const prevErrors = useRef(errors);
-  
+
   // Get session expiration message
   const sessionExpiredMessage = useSelector(state => state.auth.sessionExpiredMessage);
   const prevSessionExpiredMessage = useRef(sessionExpiredMessage);
-  
+
   // Handle regular errors
   useEffect(() => {
     errors.forEach((err, idx) => {
@@ -106,11 +106,11 @@ export default function ReduxErrorNotification() {
     });
     prevErrors.current = errors;
   }, [errors, dispatch]);
-  
+
   // Handle session expiration separately
   useEffect(() => {
     if (
-      sessionExpiredMessage && 
+      sessionExpiredMessage &&
       sessionExpiredMessage !== prevSessionExpiredMessage.current &&
       typeof sessionExpiredMessage === 'string' &&
       sessionExpiredMessage.trim() !== ''
@@ -121,7 +121,7 @@ export default function ReduxErrorNotification() {
         duration: 5,
         placement: 'top',
       });
-      
+
       // Don't automatically clear this message as it's important for the user to see
       // It will be cleared when they attempt to log in again
     }

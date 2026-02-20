@@ -264,12 +264,12 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
       }
     })();
 
-    const logoPreview = brandingData.logoPreview || '/VCARELogo 1.png';
+    const _logoPreview = brandingData.logoPreview || '/VCARELogo 1.png';
 
     if (activeTab === 'pos') {
       return (
         <div className="flex items-center gap-2">
-          
+
           <span>Point of Sale</span>
         </div>
       );

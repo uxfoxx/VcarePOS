@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Card,
   Form,
@@ -6,14 +6,10 @@ import {
   Select,
   InputNumber,
   Typography,
-  Space,
-  Divider,
-  List,
   Popconfirm,
   message,
   Button,
   Tabs,
-  Table,
   Row,
   Col,
   Upload,
@@ -22,8 +18,7 @@ import {
   Collapse,
   Alert,
   Badge,
-  Tooltip,
-  Spin
+  Tooltip
 } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
@@ -50,8 +45,8 @@ export function ColorManagementPanel({
   onRemoveColor,
   onAddColorSize,
   onRemoveColorSize,
-  onAddColorMaterial,
-  onRemoveColorMaterial,
+  _onAddColorMaterial,
+  _onRemoveColorMaterial,
   onUpdateColorSize
 }) {
   const [colorForm] = Form.useForm();
@@ -71,11 +66,11 @@ export function ColorManagementPanel({
   const [editImagePath, setEditImagePath] = useState(null);
   const [editColorSelectorImagePreview, setEditColorSelectorImagePreview] = useState(null);
   const [editColorSelectorImagePath, setEditColorSelectorImagePath] = useState(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [uploadingColorSelectorImage, setUploadingColorSelectorImage] = useState(false);
-  const [uploadingEditImage, setUploadingEditImage] = useState(false);
-  const [uploadingEditColorSelectorImage, setUploadingEditColorSelectorImage] = useState(false);
-  const [materialSearchTerm, setMaterialSearchTerm] = useState('');
+  const [_uploadingImage, setUploadingImage] = useState(false);
+  const [_uploadingColorSelectorImage, setUploadingColorSelectorImage] = useState(false);
+  const [_uploadingEditImage, setUploadingEditImage] = useState(false);
+  const [_uploadingEditColorSelectorImage, setUploadingEditColorSelectorImage] = useState(false);
+  const [materialSearchTerm, _setMaterialSearchTerm] = useState('');
 
   const handleAddColor = (values) => {
     const newColor = {
@@ -372,12 +367,12 @@ export function ColorManagementPanel({
     return colors.find(c => c.id === activeColorId);
   };
 
-  const getActiveSize = () => {
+  const _getActiveSize = () => {
     const color = getActiveColor();
     return color?.sizes?.find(s => s.id === activeSizeId);
   };
 
-  const filteredRawMaterials = rawMaterials.filter(material =>
+  const _filteredRawMaterials = rawMaterials.filter(material =>
     material.name.toLowerCase().includes(materialSearchTerm.toLowerCase()) ||
     material.category.toLowerCase().includes(materialSearchTerm.toLowerCase())
   );

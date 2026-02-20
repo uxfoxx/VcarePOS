@@ -1,4 +1,3 @@
-import React from 'react';
 import { Steps, Alert } from 'antd';
 import { Icon } from './Icon';
 

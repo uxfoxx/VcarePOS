@@ -19,7 +19,7 @@ class ErrorBoundaryFallback extends React.Component {
   componentDidCatch(error, errorInfo) {
     this.setState({ errorInfo });
     console.error('Error caught by ErrorBoundary:', error, errorInfo);
-    
+
     // Log error to monitoring service if available
     if (window.errorReporting) {
       window.errorReporting.captureException(error, { extra: errorInfo });
@@ -29,11 +29,11 @@ class ErrorBoundaryFallback extends React.Component {
   render() {
     if (this.state.hasError) {
       // Check if error is related to authentication
-      const isAuthError = this.state.error?.message?.toLowerCase().includes('auth') || 
-                         this.state.error?.message?.toLowerCase().includes('login') ||
-                         this.state.error?.message?.toLowerCase().includes('permission') ||
-                         this.state.error?.message?.toLowerCase().includes('unauthorized') ||
-                         this.state.error?.message?.toLowerCase().includes('token');
+      const isAuthError = this.state.error?.message?.toLowerCase().includes('auth') ||
+        this.state.error?.message?.toLowerCase().includes('login') ||
+        this.state.error?.message?.toLowerCase().includes('permission') ||
+        this.state.error?.message?.toLowerCase().includes('unauthorized') ||
+        this.state.error?.message?.toLowerCase().includes('token');
 
       return (
         <Result
@@ -42,7 +42,7 @@ class ErrorBoundaryFallback extends React.Component {
           subTitle={
             <div>
               <Paragraph>
-                {isAuthError 
+                {isAuthError
                   ? "There was a problem with your authentication. This could be due to an expired session or insufficient permissions."
                   : "We encountered an unexpected error. The development team has been notified."}
               </Paragraph>
@@ -54,7 +54,7 @@ class ErrorBoundaryFallback extends React.Component {
             </div>
           }
           extra={[
-            <ErrorActions 
+            <ErrorActions
               key="actions"
               isAuthError={isAuthError}
               onReset={() => {
@@ -74,31 +74,31 @@ class ErrorBoundaryFallback extends React.Component {
 // We use a functional component for actions to use hooks
 function ErrorActions({ isAuthError, onReset }) {
   const dispatch = useDispatch();
-  
+
   const handleLogout = () => {
     dispatch(logout());
   };
-  
+
   return (
     <div className="space-x-4">
       {isAuthError ? (
-        <Button 
-          type="primary" 
+        <Button
+          type="primary"
           onClick={handleLogout}
           icon={<Icon name="logout" />}
         >
           Log Out and Try Again
         </Button>
       ) : (
-        <Button 
-          type="primary" 
+        <Button
+          type="primary"
           onClick={onReset}
           icon={<Icon name="refresh" />}
         >
           Try Again
         </Button>
       )}
-      <Button 
+      <Button
         onClick={() => window.location.href = '/'}
         icon={<Icon name="home" />}
       >

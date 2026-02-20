@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Modal, Typography, Space } from 'antd';
+import { Modal, Space } from 'antd';
 import { Phone, MapPin } from 'lucide-react';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
@@ -7,7 +7,6 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import JsBarcode from 'jsbarcode';
 
-const { Text } = Typography;
 
 export function ProductDetailsSheet({ open, onClose, product }) {
   const [loading, setLoading] = useState(false);
@@ -26,7 +25,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
 
   if (!product) return null;
 
-  const businessName = brandingData.businessName || 'VCare Furniture';
+  const _businessName = brandingData.businessName || 'VCare Furniture';
   const businessAddress = brandingData.address || '123 Main Street, City, State 12345';
   const phoneNumber = brandingData.phoneNumber || '(555) 123-4567';
   const logoPreview = brandingData.logoPreview || '/VCARELogo 1.png';
@@ -304,7 +303,7 @@ export function ProductDetailsSheet({ open, onClose, product }) {
               </div>
             )}
 
-            
+
 
             {/* Footer Section */}
             <div style={{

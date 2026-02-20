@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Modal,
-  Form,
   Checkbox,
   Typography,
   Space,
@@ -10,10 +9,7 @@ import {
   Tag,
   InputNumber,
   message,
-  Button,
   Card,
-  Row,
-  Col,
   Input,
   Image
 } from 'antd';
@@ -114,7 +110,7 @@ export function ProductAddonsModal({ open, onClose, product }) {
       dispatch(addToCart({ product: productWithAddons, quantity }));
       message.success('Product added to cart with addons');
       onClose();
-    } catch (error) {
+    } catch (_error) {
       message.error('Failed to add product to cart');
     } finally {
       setLoading(false);

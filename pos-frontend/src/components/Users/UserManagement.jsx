@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   Space,
@@ -15,7 +15,6 @@ import {
 } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
 import { Icon } from '../common/Icon';
-import { SearchInput } from '../common/SearchInput';
 import { ActionButton } from '../common/ActionButton';
 import { UserModal } from './UserModal';
 import { DetailModal } from '../common/DetailModal';
@@ -26,7 +25,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchUsers, updateUser, deleteUser } from '../../features/users/usersSlice';
 import apiClient from '../../api/apiClient';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export function UserManagement() {
   const dispatch = useDispatch();
@@ -41,7 +40,7 @@ export function UserManagement() {
   const [editingUser, setEditingUser] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [_selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [customerStats, setCustomerStats] = useState({
     totalOrders: {},
     newCustomers: 0
@@ -52,6 +51,7 @@ export function UserManagement() {
       dispatch(fetchUsers());
       fetchCustomerStats();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, dispatch]);
 
   const fetchCustomerStats = async () => {
@@ -283,7 +283,7 @@ export function UserManagement() {
 
           <Tooltip title={
             !hasPermission('user-management', 'delete') ? 'No permission' :
-            record.id === currentUser?.id ? 'Cannot delete own account' : 'Delete User'
+              record.id === currentUser?.id ? 'Cannot delete own account' : 'Delete User'
           }>
             <Popconfirm
               title="Delete this user?"

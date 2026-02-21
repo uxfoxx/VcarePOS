@@ -3,55 +3,63 @@ import { Typography } from 'antd';
 const { Title, Text } = Typography;
 
 export const InvoiceHeader = ({ businessName: _businessName, logoPreview: _logoPreview }) => (
-  <div style={{ marginBottom: '12px' }}>
-
-
+  <div style={{ marginBottom: '10px' }}>
     <img
       src="/invoiceTop.png"
       alt="Business Logo"
       className="w-full object-contain"
       crossOrigin="anonymous"
     />
-
-
-
-
   </div>
 );
 
 export const InvoiceDetails = ({ invoiceNumber, dateIssued }) => (
-  <div className="space-y-1">
-    <div className="flex justify-between">
-      <Text strong>Date Issued:</Text>
-      <Text>{dateIssued}</Text>
-    </div>
-    <div className="flex justify-between">
-      <Text strong>No:</Text>
-      <Text code className="text-base">{invoiceNumber}</Text>
-    </div>
-  </div>
+  <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', lineHeight: '1.5' }}>
+    <tbody>
+      <tr>
+        <td style={{ fontWeight: 'bold', paddingBottom: '4px', textAlign: 'left', verticalAlign: 'middle' }}>Date Issued:</td>
+        <td style={{ paddingBottom: '4px', textAlign: 'right', verticalAlign: 'middle' }}>{dateIssued}</td>
+      </tr>
+      <tr>
+        <td style={{ fontWeight: 'bold', textAlign: 'left', verticalAlign: 'middle' }}>No:</td>
+        <td style={{ textAlign: 'right', verticalAlign: 'middle' }}>
+          <span style={{
+            display: 'inline-block',
+            fontFamily: 'monospace',
+            backgroundColor: '#f5f5f5',
+            padding: '2px 6px',
+            borderRadius: '2px',
+            border: '1px solid #d9d9d9',
+            fontSize: '11px'
+          }}>
+            {invoiceNumber}
+          </span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 );
 
 export const InvoiceCustomerSection = ({ customerName, customerAddress, customerEmail, customerPhone }) => (
-  <div className="space-y-1">
-    <Text strong className="block mb-2">Invoice to:</Text>
-    <Text strong className="block text-base">{customerName || 'Walk-in Customer'}</Text>
-    {customerAddress && <Text className="block text-sm text-gray-600">{customerAddress}</Text>}
-    {customerEmail && <Text className="block text-sm text-gray-600">{customerEmail}</Text>}
-    {customerPhone && <Text className="block text-sm text-gray-600">{customerPhone}</Text>}
+  <div style={{ fontSize: '11px' }}>
+    <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '11px' }}>Invoice to:</div>
+    <div style={{ fontWeight: 'bold', marginBottom: '2px', fontSize: '12px' }}>{customerName || 'Walk-in Customer'}</div>
+    {customerAddress && <div style={{ color: '#4b5563', fontSize: '11px', whiteSpace: 'pre-wrap', marginBottom: '2px' }}>{customerAddress}</div>}
+    {customerEmail && <div style={{ color: '#4b5563', fontSize: '11px', marginBottom: '2px' }}>{customerEmail}</div>}
+    {customerPhone && <div style={{ color: '#4b5563', fontSize: '11px' }}>{customerPhone}</div>}
   </div>
 );
 
 export const InvoiceItemsTable = ({ items, showImages: _showImages = false }) => (
-  <div style={{ marginBottom: '12px' }}>
-    <table className="w-full border-collapse" style={{ marginTop: '12px' }}>
+  <div style={{ marginBottom: '10px' }}>
+    <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
       <thead>
-        <tr style={{ background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)' }}>
-          <th className="p-2 text-left text-white font-bold" style={{ width: '15%' }}>ITEM CODE</th>
-          <th className="p-2 text-left text-white font-bold" style={{ width: '35%' }}>DESCRIPTION</th>
-          <th className="p-2 text-center text-white font-bold" style={{ width: '12%' }}>QTY</th>
-          <th className="p-2 text-right text-white font-bold" style={{ width: '19%' }}>RATE</th>
-          <th className="p-2 text-right text-white font-bold" style={{ width: '19%' }}>AMOUNT</th>
+        <tr style={{ backgroundColor: '#2563eb' }}>
+          <th style={{ textAlign: 'left', color: 'white', fontWeight: 'bold', width: '15%', fontSize: '10px', padding: '8px 4px' }}>ITEM CODE</th>
+          <th style={{ textAlign: 'left', color: 'white', fontWeight: 'bold', width: '35%', fontSize: '10px', padding: '8px 4px' }}>DESCRIPTION</th>
+          <th style={{ textAlign: 'center', color: 'white', fontWeight: 'bold', width: '12%', fontSize: '10px', padding: '8px 4px' }}>QTY</th>
+          <th style={{ textAlign: 'right', color: 'white', fontWeight: 'bold', width: '19%', fontSize: '10px', padding: '8px 4px' }}>RATE</th>
+          <th style={{ textAlign: 'right', color: 'white', fontWeight: 'bold', width: '19%', fontSize: '10px', padding: '8px 4px' }}>AMOUNT</th>
         </tr>
       </thead>
       <tbody>
@@ -59,45 +67,45 @@ export const InvoiceItemsTable = ({ items, showImages: _showImages = false }) =>
           const unitPrice = item.product?.price || item.unitPrice || item.price || 0;
           const itemCode = item.product?.barcode || item.product?.sku || item.itemCode || item.sku || `ITEM-${String(index + 1).padStart(3, '0')}`;
           return (
-            <tr key={index} className="border-b border-gray-200">
-              <td className="p-2">
-                <Text className="text-xs font-mono">{itemCode}</Text>
+            <tr key={index}>
+              <td style={{ padding: '8px 4px', borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}>
+                <div style={{ fontFamily: 'monospace', fontSize: '10px' }}>{itemCode}</div>
               </td>
-              <td className="p-2">
+              <td style={{ padding: '8px 4px', borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}>
                 <div>
-                  <Text strong className="block text-sm">{item.name || item.product?.name || item.productName}</Text>
+                  <div style={{ fontWeight: 'bold', fontSize: '11px' }}>{item.name || item.product?.name || item.productName}</div>
                   {item.description && (
-                    <Text className="block text-xs text-gray-600 mt-1" style={{ whiteSpace: 'pre-wrap' }}>
+                    <div style={{ color: '#4b5563', whiteSpace: 'pre-wrap', fontSize: '10px', marginTop: '2px' }}>
                       {item.description}
-                    </Text>
+                    </div>
                   )}
                   {(item.selectedVariant || item.selectedSize) && (
-                    <Text className="block text-xs text-gray-500 mt-1">
+                    <div style={{ color: '#6b7280', fontSize: '10px', marginTop: '2px' }}>
                       {item.selectedVariant && `Color: ${item.selectedVariant}`}
                       {item.selectedVariant && item.selectedSize && ' • '}
                       {item.selectedSize && `Size: ${item.selectedSize}`}
-                    </Text>
+                    </div>
                   )}
                 </div>
               </td>
-              <td className="p-2 text-center">
-                <Text className="text-sm">{item.quantity}{item.unit ? ` ${item.unit}` : ' NOS'}</Text>
+              <td style={{ padding: '8px 4px', borderBottom: '1px solid #e5e7eb', textAlign: 'center' }}>
+                <div style={{ fontSize: '11px' }}>{item.quantity}{item.unit ? ` ${item.unit}` : ' NOS'}</div>
               </td>
-              <td className="p-2 text-right">
-                <Text className="text-sm">
+              <td style={{ padding: '8px 4px', borderBottom: '1px solid #e5e7eb', textAlign: 'right' }}>
+                <div style={{ fontSize: '11px' }}>
                   LKR {unitPrice.toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                   })}
-                </Text>
+                </div>
               </td>
-              <td className="p-2 text-right">
-                <Text className="text-sm font-medium">
+              <td style={{ padding: '8px 4px', borderBottom: '1px solid #e5e7eb', textAlign: 'right', fontWeight: '500' }}>
+                <div style={{ fontSize: '11px' }}>
                   LKR {(unitPrice * item.quantity).toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                   })}
-                </Text>
+                </div>
               </td>
             </tr>
           );
@@ -120,55 +128,55 @@ export const InvoicePaymentSummary = ({
   const calculatedBalance = balancePayment || (calculatedGrandTotal - advancedPayment);
 
   return (
-    <div className="mt-6">
-      <div className="flex justify-end">
-        <div className="w-1/2 space-y-2">
-          <div className="flex justify-between py-2 border-b">
-            <Text className="text-base">TOTAL</Text>
-            <Text className="text-base font-medium">
+    <div style={{ marginTop: '16px' }}>
+      <table style={{ width: '50%', marginLeft: 'auto', fontSize: '11px', borderCollapse: 'collapse', lineHeight: '1.5' }}>
+        <tbody>
+          <tr>
+            <td style={{ textAlign: 'left', paddingBottom: '4px', borderBottom: '1px solid #e5e7eb' }}>TOTAL</td>
+            <td style={{ textAlign: 'right', paddingBottom: '4px', borderBottom: '1px solid #e5e7eb', fontWeight: '500' }}>
               {subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </Text>
-          </div>
+            </td>
+          </tr>
           {discount > 0 && (
-            <div className="flex justify-between py-2 border-b">
-              <Text className="text-base">DISCOUNT</Text>
-              <Text className="text-base font-medium">
+            <tr>
+              <td style={{ textAlign: 'left', padding: '4px 0', borderBottom: '1px solid #e5e7eb' }}>DISCOUNT</td>
+              <td style={{ textAlign: 'right', padding: '4px 0', borderBottom: '1px solid #e5e7eb', fontWeight: '500' }}>
                 {discount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </Text>
-            </div>
+              </td>
+            </tr>
           )}
           {deliveryCharge > 0 && (
-            <div className="flex justify-between py-2 border-b">
-              <Text className="text-base">DELIVERY CHARGE</Text>
-              <Text className="text-base font-medium">
+            <tr>
+              <td style={{ textAlign: 'left', padding: '4px 0', borderBottom: '1px solid #e5e7eb' }}>DELIVERY CHARGE</td>
+              <td style={{ textAlign: 'right', padding: '4px 0', borderBottom: '1px solid #e5e7eb', fontWeight: '500' }}>
                 {deliveryCharge.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </Text>
-            </div>
+              </td>
+            </tr>
           )}
-          <div className="flex justify-between py-2 border-b-2 border-gray-800">
-            <Text strong className="text-base">GRAND TOTAL</Text>
-            <Text strong className="text-base">
+          <tr>
+            <td style={{ textAlign: 'left', padding: '4px 0', borderBottom: '1px solid #374151', fontWeight: 'bold', fontSize: '12px' }}>GRAND TOTAL</td>
+            <td style={{ textAlign: 'right', padding: '4px 0', borderBottom: '1px solid #374151', fontWeight: 'bold', fontSize: '12px' }}>
               {calculatedGrandTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </Text>
-          </div>
+            </td>
+          </tr>
           {advancedPayment > 0 && (
-            <div className="flex justify-between py-2 border-b">
-              <Text className="text-base">ADVANCED</Text>
-              <Text className="text-base font-medium">
+            <tr>
+              <td style={{ textAlign: 'left', padding: '4px 0', borderBottom: '1px solid #e5e7eb' }}>ADVANCED</td>
+              <td style={{ textAlign: 'right', padding: '4px 0', borderBottom: '1px solid #e5e7eb', fontWeight: '500' }}>
                 {advancedPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </Text>
-            </div>
+              </td>
+            </tr>
           )}
           {(advancedPayment > 0 || balancePayment > 0) && (
-            <div className="flex justify-between py-2 border-b-2 border-gray-800">
-              <Text strong className="text-base">BALANCE PAYMENT</Text>
-              <Text strong className="text-base">
+            <tr>
+              <td style={{ textAlign: 'left', padding: '4px 0', borderBottom: '1px solid #374151', fontWeight: 'bold' }}>BALANCE PAYMENT</td>
+              <td style={{ textAlign: 'right', padding: '4px 0', borderBottom: '1px solid #374151', fontWeight: 'bold' }}>
                 {calculatedBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </Text>
-            </div>
+              </td>
+            </tr>
           )}
-        </div>
-      </div>
+        </tbody>
+      </table>
     </div>
   );
 };
@@ -178,11 +186,11 @@ export const InvoiceAccountDetails = ({ bankAccount }) => {
 
   return (
     <div style={{ marginTop: '12px' }}>
-      <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Account details</Title>
-      <div className="space-y-1">
-        <Text className="block text-sm">{bankAccount.account_holder_name || bankAccount.accountHolderName}</Text>
-        <Text className="block text-sm">{bankAccount.account_number || bankAccount.accountNumber}</Text>
-        <Text className="block text-sm">{bankAccount.bank_name || bankAccount.bankName} {bankAccount.branch_name || bankAccount.branchName}</Text>
+      <Title level={5} style={{ marginBottom: '4px', fontSize: '12px' }}>Account details</Title>
+      <div style={{ fontSize: '11px', lineHeight: '1.4' }}>
+        <Text className="block" style={{ fontSize: '11px' }}>{bankAccount.account_holder_name || bankAccount.accountHolderName}</Text>
+        <Text className="block" style={{ fontSize: '11px' }}>{bankAccount.account_number || bankAccount.accountNumber}</Text>
+        <Text className="block" style={{ fontSize: '11px' }}>{bankAccount.bank_name || bankAccount.bankName} {bankAccount.branch_name || bankAccount.branchName}</Text>
       </div>
     </div>
   );
@@ -193,20 +201,20 @@ export const InvoiceNotes = ({ notesTemplate }) => {
 
   return (
     <div style={{ marginTop: '12px' }}>
-      <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Note:-</Title>
-      <div className="space-y-1">
+      <Title level={5} style={{ marginBottom: '4px', fontSize: '12px' }}>Note:-</Title>
+      <div style={{ fontSize: '10px', lineHeight: '1.4' }}>
         {notesTemplate.warranty_terms && (
-          <Text className="block text-xs text-gray-700" style={{ lineHeight: '1.4' }}>
+          <Text className="block text-gray-700" style={{ fontSize: '10px' }}>
             {notesTemplate.warranty_terms || notesTemplate.warrantyTerms}
           </Text>
         )}
         {notesTemplate.quotation_validity && (
-          <Text className="block text-xs text-gray-700" style={{ lineHeight: '1.4', marginTop: '4px' }}>
+          <Text className="block text-gray-700" style={{ marginTop: '2px', fontSize: '10px' }}>
             {notesTemplate.quotation_validity || notesTemplate.quotationValidity}
           </Text>
         )}
         {notesTemplate.custom_notes && (
-          <Text className="block text-xs text-gray-700" style={{ lineHeight: '1.4', marginTop: '4px' }}>
+          <Text className="block text-gray-700" style={{ marginTop: '2px', fontSize: '10px' }}>
             {notesTemplate.custom_notes || notesTemplate.customNotes}
           </Text>
         )}
@@ -216,19 +224,30 @@ export const InvoiceNotes = ({ notesTemplate }) => {
 };
 
 export const InvoiceTermsAndConditions = () => {
+  const terms = [
+    "Payment is due within 30 days from the date of invoice unless otherwise agreed.",
+    "All prices are in LKR and include applicable taxes unless stated otherwise.",
+    "Delivery charges may apply and will be calculated based on location and order size.",
+    "Products are covered by manufacturer warranty. Terms apply as per warranty card.",
+    "Returns accepted within 7 days with original packaging and receipt.",
+    "Custom orders and special requests are non-refundable once production begins.",
+    "The company reserves the right to make changes without prior notice."
+  ];
+
   return (
     <div style={{ marginTop: '12px' }}>
-      <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Terms & Conditions:</Title>
-      <div className="text-xs text-gray-700" style={{ lineHeight: '1.6' }}>
-        <ol className="list-decimal pl-4 space-y-1">
-          <li>Payment is due within 30 days from the date of invoice unless otherwise agreed.</li>
-          <li>All prices are in LKR and include applicable taxes unless stated otherwise.</li>
-          <li>Delivery charges may apply and will be calculated based on location and order size.</li>
-          <li>Products are covered by manufacturer warranty. Terms apply as per warranty card.</li>
-          <li>Returns accepted within 7 days with original packaging and receipt.</li>
-          <li>Custom orders and special requests are non-refundable once production begins.</li>
-          <li>The company reserves the right to make changes without prior notice.</li>
-        </ol>
+      <Title level={5} style={{ marginBottom: '4px', fontSize: '12px' }}>Terms & Conditions:</Title>
+      <div style={{ color: '#374151', fontSize: '10px', lineHeight: '1.5' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <tbody>
+            {terms.map((term, i) => (
+              <tr key={i}>
+                <td style={{ verticalAlign: 'top', paddingRight: '4px', width: '12px' }}>{i + 1}.</td>
+                <td style={{ verticalAlign: 'top', paddingBottom: '2px' }}>{term}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -236,31 +255,44 @@ export const InvoiceTermsAndConditions = () => {
 
 export const InvoiceSignatureSection = () => {
   return (
-    <div style={{ marginTop: '20px', marginBottom: '12px' }}>
-      <div className="grid grid-cols-2 gap-8">
-        <div>
-          <div style={{ borderBottom: '1px solid #333', paddingBottom: '2px', marginBottom: '4px' }}>
-            <Text className="text-xs text-gray-500">Signature:</Text>
-          </div>
-          <div className="flex justify-between items-end" style={{ marginTop: '30px' }}>
-            <div style={{ flex: 1, borderBottom: '1px solid #333', marginRight: '8px' }}></div>
-            <Text className="text-xs text-gray-600">Date:</Text>
-            <div style={{ width: '80px', borderBottom: '1px solid #333', marginLeft: '8px' }}></div>
-          </div>
-          <Text strong className="text-xs block mt-1">Received By</Text>
-        </div>
-        <div>
-          <div style={{ borderBottom: '1px solid #333', paddingBottom: '2px', marginBottom: '4px' }}>
-            <Text className="text-xs text-gray-500">Signature:</Text>
-          </div>
-          <div className="flex justify-between items-end" style={{ marginTop: '30px' }}>
-            <div style={{ flex: 1, borderBottom: '1px solid #333', marginRight: '8px' }}></div>
-            <Text className="text-xs text-gray-600">Date:</Text>
-            <div style={{ width: '80px', borderBottom: '1px solid #333', marginLeft: '8px' }}></div>
-          </div>
-          <Text strong className="text-xs block mt-1">Checked By</Text>
-        </div>
-      </div>
+    <div style={{ marginTop: '16px', marginBottom: '8px' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <tbody>
+          <tr>
+            <td style={{ width: '45%', verticalAlign: 'top' }}>
+              <div style={{ borderBottom: '1px solid #333', paddingBottom: '2px', marginBottom: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#6b7280' }}>Signature:</span>
+              </div>
+              <table style={{ width: '100%', marginTop: '24px', borderCollapse: 'collapse' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ borderBottom: '1px solid #333' }}></td>
+                    <td style={{ width: '40px', textAlign: 'center', fontSize: '10px', color: '#4b5563', padding: '0 4px', verticalAlign: 'bottom' }}>Date:</td>
+                    <td style={{ width: '80px', borderBottom: '1px solid #333' }}></td>
+                  </tr>
+                </tbody>
+              </table>
+              <div style={{ fontWeight: 'bold', fontSize: '10px', marginTop: '4px' }}>Received By</div>
+            </td>
+            <td style={{ width: '10%' }}></td>
+            <td style={{ width: '45%', verticalAlign: 'top' }}>
+              <div style={{ borderBottom: '1px solid #333', paddingBottom: '2px', marginBottom: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#6b7280' }}>Signature:</span>
+              </div>
+              <table style={{ width: '100%', marginTop: '24px', borderCollapse: 'collapse' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ borderBottom: '1px solid #333' }}></td>
+                    <td style={{ width: '40px', textAlign: 'center', fontSize: '10px', color: '#4b5563', padding: '0 4px', verticalAlign: 'bottom' }}>Date:</td>
+                    <td style={{ width: '80px', borderBottom: '1px solid #333' }}></td>
+                  </tr>
+                </tbody>
+              </table>
+              <div style={{ fontWeight: 'bold', fontSize: '10px', marginTop: '4px' }}>Checked By</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 };
@@ -269,44 +301,40 @@ export const InvoiceFooter = () => {
   return (
     <div
       style={{
-        background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '40px',
         width: '100%',
-        padding: '16px',
-        marginTop: 'auto',
-        pageBreakInside: 'avoid',
-        breakInside: 'avoid'
+        backgroundColor: '#2563eb',
+        padding: '12px 0',
+        textAlign: 'center'
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <svg
-          width="20"
-          height="20"
-          fill="none"
-          stroke="white"
-          viewBox="0 0 24 24"
-          style={{ flexShrink: 0 }}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-        </svg>
-        <span style={{ color: 'white', fontSize: '14px', fontWeight: '500' }}>0112870330</span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <svg
-          width="20"
-          height="20"
-          fill="none"
-          stroke="white"
-          viewBox="0 0 24 24"
-          style={{ flexShrink: 0 }}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-        <span style={{ color: 'white', fontSize: '14px', fontWeight: '500' }}>vcarepvtltd@gmail.com</span>
-      </div>
+      <table style={{ display: 'inline-table', borderCollapse: 'collapse', marginRight: '32px' }}>
+        <tbody>
+          <tr>
+            <td style={{ padding: 0, paddingRight: '6px', verticalAlign: 'middle' }}>
+              <svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24" style={{ display: 'block' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+            </td>
+            <td style={{ padding: 0, verticalAlign: 'middle', color: 'white', fontSize: '12px', fontWeight: '500', lineHeight: '1' }}>
+              0112870330
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <table style={{ display: 'inline-table', borderCollapse: 'collapse' }}>
+        <tbody>
+          <tr>
+            <td style={{ padding: 0, paddingRight: '6px', verticalAlign: 'middle' }}>
+              <svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24" style={{ display: 'block' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </td>
+            <td style={{ padding: 0, verticalAlign: 'middle', color: 'white', fontSize: '12px', fontWeight: '500', lineHeight: '1' }}>
+              vcarepvtltd@gmail.com
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 };

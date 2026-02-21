@@ -86,95 +86,117 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
                 <>
                   <Divider style={{ marginTop: 0, marginBottom: '12px' }} />
 
-                  <div className="flex justify-between" style={{ marginBottom: '12px' }}>
-                    <div>
-                      <Title level={5} className="mb-2">Quotation To:</Title>
-                      <div className="text-sm">
-                        <Text strong className="block">{quotation.customer_name || quotation.customerName}</Text>
-                        {(quotation.customer_phone || quotation.customerPhone) && (
-                          <Text className="block">{quotation.customer_phone || quotation.customerPhone}</Text>
-                        )}
-                        {(quotation.customer_email || quotation.customerEmail) && (
-                          <Text className="block">{quotation.customer_email || quotation.customerEmail}</Text>
-                        )}
-                        {(quotation.customer_address || quotation.customerAddress) && (
-                          <Text className="block whitespace-pre-line">{quotation.customer_address || quotation.customerAddress}</Text>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <Title level={5} className="mb-2">Quotation Details:</Title>
-                      <div className="text-sm">
-                        <div className="mb-1">
-                          <Text strong>Quotation No:</Text> <Text code>{quotation.id}</Text>
-                        </div>
-                        <div className="mb-1">
-                          <Text strong>Date:</Text> {formatDate(quotation.created_at || quotation.createdAt || new Date())}
-                        </div>
-                        {(quotation.valid_until || quotation.validUntil) && (
-                          <div className="mb-1">
-                            <Text strong>Valid Until:</Text> {formatDate(quotation.valid_until || quotation.validUntil)}
+                  <table style={{ width: '100%', marginBottom: '12px', fontSize: '11px', borderCollapse: 'collapse' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ verticalAlign: 'top', width: '50%' }}>
+                          <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '12px' }}>Quotation To:</div>
+                          <div>
+                            <div style={{ fontWeight: 'bold', fontSize: '12px' }}>{quotation.customer_name || quotation.customerName}</div>
+                            {(quotation.customer_phone || quotation.customerPhone) && (
+                              <div style={{ color: '#4b5563', fontSize: '11px' }}>{quotation.customer_phone || quotation.customerPhone}</div>
+                            )}
+                            {(quotation.customer_email || quotation.customerEmail) && (
+                              <div style={{ color: '#4b5563', fontSize: '11px' }}>{quotation.customer_email || quotation.customerEmail}</div>
+                            )}
+                            {(quotation.customer_address || quotation.customerAddress) && (
+                              <div style={{ color: '#4b5563', whiteSpace: 'pre-wrap', fontSize: '11px' }}>{quotation.customer_address || quotation.customerAddress}</div>
+                            )}
                           </div>
-                        )}
-                        <div className="mb-1">
-                          <Text strong>Status:</Text> <span className="capitalize">{quotation.status}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                        </td>
+                        <td style={{ verticalAlign: 'top', width: '50%' }}>
+                          <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '12px', textAlign: 'right' }}>Quotation Details:</div>
+                          <table style={{ width: '100%', fontSize: '11px', lineHeight: '1.5', borderCollapse: 'collapse' }}>
+                            <tbody>
+                              <tr>
+                                <td style={{ textAlign: 'right', paddingBottom: '4px', paddingRight: '8px', fontWeight: 'bold', verticalAlign: 'middle' }}>Quotation No:</td>
+                                <td style={{ textAlign: 'right', paddingBottom: '4px', width: '80px', verticalAlign: 'middle' }}>
+                                  <span style={{
+                                    display: 'inline-block',
+                                    fontFamily: 'monospace',
+                                    backgroundColor: '#f5f5f5',
+                                    padding: '2px 6px',
+                                    borderRadius: '2px',
+                                    border: '1px solid #d9d9d9',
+                                    fontSize: '11px'
+                                  }}>
+                                    {quotation.id}
+                                  </span>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td style={{ textAlign: 'right', paddingRight: '8px', fontWeight: 'bold', verticalAlign: 'middle' }}>Date:</td>
+                                <td style={{ textAlign: 'right', verticalAlign: 'middle' }}>{formatDate(quotation.created_at || quotation.createdAt || new Date())}</td>
+                              </tr>
+                              {(quotation.valid_until || quotation.validUntil) && (
+                                <tr>
+                                  <td style={{ textAlign: 'right', paddingRight: '8px', fontWeight: 'bold', verticalAlign: 'middle' }}>Valid Until:</td>
+                                  <td style={{ textAlign: 'right', verticalAlign: 'middle' }}>{formatDate(quotation.valid_until || quotation.validUntil)}</td>
+                                </tr>
+                              )}
+                              <tr>
+                                <td style={{ textAlign: 'right', paddingRight: '8px', fontWeight: 'bold', verticalAlign: 'middle' }}>Status:</td>
+                                <td style={{ textAlign: 'right', textTransform: 'capitalize', verticalAlign: 'middle' }}>{quotation.status}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </>
               )}
 
               {/* Page indicator for multi-page */}
               {totalPages > 1 && (
                 <div style={{ textAlign: 'right', marginBottom: '8px' }}>
-                  <Text className="text-xs text-gray-500">
+                  <Text style={{ fontSize: '10px', color: '#6b7280' }}>
                     Page {pageIndex + 1} of {totalPages}
                   </Text>
                 </div>
               )}
 
               {/* Items Table */}
-              <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Quoted Items:</Title>
-              <table className="w-full border-collapse" style={{ marginBottom: '12px' }}>
+              <Title level={5} style={{ marginBottom: '8px', fontSize: '12px' }}>Quoted Items:</Title>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '12px' }}>
                 <thead>
-                  <tr style={{ background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)' }}>
-                    <th className="p-2 text-left text-white font-bold" style={{ width: '15%' }}>ITEM CODE</th>
-                    <th className="p-2 text-left text-white font-bold" style={{ width: '35%' }}>DESCRIPTION</th>
-                    <th className="p-2 text-center text-white font-bold" style={{ width: '10%' }}>QTY</th>
-                    <th className="p-2 text-right text-white font-bold" style={{ width: '20%' }}>UNIT PRICE</th>
-                    <th className="p-2 text-right text-white font-bold" style={{ width: '20%' }}>TOTAL</th>
+                  <tr style={{ backgroundColor: '#2563eb' }}>
+                    <th style={{ textAlign: 'left', color: 'white', fontWeight: 'bold', width: '15%', fontSize: '10px', padding: '8px 4px' }}>ITEM CODE</th>
+                    <th style={{ textAlign: 'left', color: 'white', fontWeight: 'bold', width: '35%', fontSize: '10px', padding: '8px 4px' }}>DESCRIPTION</th>
+                    <th style={{ textAlign: 'center', color: 'white', fontWeight: 'bold', width: '10%', fontSize: '10px', padding: '8px 4px' }}>QTY</th>
+                    <th style={{ textAlign: 'right', color: 'white', fontWeight: 'bold', width: '20%', fontSize: '10px', padding: '8px 4px' }}>UNIT PRICE</th>
+                    <th style={{ textAlign: 'right', color: 'white', fontWeight: 'bold', width: '20%', fontSize: '10px', padding: '8px 4px' }}>TOTAL</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pageItems && pageItems.map((item, index) => {
                     const itemCode = item.item_code || item.itemCode || item.sku || `ITEM-${String(index + 1).padStart(3, '0')}`;
                     return (
-                      <tr key={index} className="border-b border-gray-200">
-                        <td className="p-2">
-                          <Text className="text-xs font-mono">{itemCode}</Text>
+                      <tr key={index}>
+                        <td style={{ padding: '8px 4px', borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}>
+                          <div style={{ fontFamily: 'monospace', fontSize: '10px' }}>{itemCode}</div>
                         </td>
-                        <td className="p-2">
-                          <Text strong className="block text-sm">{item.product_name || item.productName}</Text>
+                        <td style={{ padding: '8px 4px', borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}>
+                          <div style={{ fontWeight: 'bold', fontSize: '11px' }}>{item.product_name || item.productName}</div>
                           {item.description && (
-                            <Text className="block text-xs text-gray-600 mt-1">{item.description}</Text>
+                            <div style={{ color: '#4b5563', fontSize: '10px', marginTop: '2px' }}>{item.description}</div>
                           )}
                           {(item.selected_variant || item.selectedVariant || item.selected_size || item.selectedSize) && (
-                            <Text className="block text-xs text-gray-500 mt-1">
+                            <div style={{ color: '#6b7280', fontSize: '10px', marginTop: '2px' }}>
                               {(item.selected_variant || item.selectedVariant) && `Color: ${item.selected_variant || item.selectedVariant}`}
                               {(item.selected_variant || item.selectedVariant) && (item.selected_size || item.selectedSize) && ' • '}
                               {(item.selected_size || item.selectedSize) && `Size: ${item.selected_size || item.selectedSize}`}
-                            </Text>
+                            </div>
                           )}
                         </td>
-                        <td className="p-2 text-center">
-                          <Text className="text-sm">{item.quantity}</Text>
+                        <td style={{ padding: '8px 4px', borderBottom: '1px solid #e5e7eb', textAlign: 'center' }}>
+                          <div style={{ fontSize: '11px' }}>{item.quantity}</div>
                         </td>
-                        <td className="p-2 text-right">
-                          <Text className="text-sm">LKR {(item.unit_price || item.unitPrice || 0).toFixed(2)}</Text>
+                        <td style={{ padding: '8px 4px', borderBottom: '1px solid #e5e7eb', textAlign: 'right' }}>
+                          <div style={{ fontSize: '11px' }}>LKR {(item.unit_price || item.unitPrice || 0).toFixed(2)}</div>
                         </td>
-                        <td className="p-2 text-right">
-                          <Text className="text-sm font-medium">LKR {(item.total_price || item.totalPrice || 0).toFixed(2)}</Text>
+                        <td style={{ padding: '8px 4px', borderBottom: '1px solid #e5e7eb', textAlign: 'right', fontWeight: '500' }}>
+                          <div style={{ fontSize: '11px' }}>LKR {(item.total_price || item.totalPrice || 0).toFixed(2)}</div>
                         </td>
                       </tr>
                     );
@@ -187,47 +209,55 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
                 <>
                   {/* Totals Summary */}
                   <div style={{ marginTop: '12px', marginBottom: '12px' }}>
-                    <div className="flex justify-end">
-                      <div className="w-1/2 space-y-2">
-                        <div className="flex justify-between py-2 border-b">
-                          <Text className="text-base">SUBTOTAL</Text>
-                          <Text className="text-base font-medium">LKR {(quotation.subtotal || 0).toFixed(2)}</Text>
-                        </div>
+                    <table style={{ width: '50%', marginLeft: 'auto', fontSize: '11px', borderCollapse: 'collapse', lineHeight: '1.5' }}>
+                      <tbody>
+                        <tr>
+                          <td style={{ textAlign: 'left', paddingBottom: '4px', borderBottom: '1px solid #e5e7eb' }}>SUBTOTAL</td>
+                          <td style={{ textAlign: 'right', paddingBottom: '4px', borderBottom: '1px solid #e5e7eb', fontWeight: '500' }}>
+                            LKR {(quotation.subtotal || 0).toFixed(2)}
+                          </td>
+                        </tr>
                         {quotation.discount > 0 && (
-                          <div className="flex justify-between py-2 border-b">
-                            <Text className="text-base">DISCOUNT</Text>
-                            <Text className="text-base font-medium">LKR {(quotation.discount || 0).toFixed(2)}</Text>
-                          </div>
+                          <tr>
+                            <td style={{ textAlign: 'left', padding: '4px 0', borderBottom: '1px solid #e5e7eb' }}>DISCOUNT</td>
+                            <td style={{ textAlign: 'right', padding: '4px 0', borderBottom: '1px solid #e5e7eb', fontWeight: '500' }}>
+                              LKR {(quotation.discount || 0).toFixed(2)}
+                            </td>
+                          </tr>
                         )}
                         {quotation.total_tax > 0 && (
-                          <div className="flex justify-between py-2 border-b">
-                            <Text className="text-base">TAX</Text>
-                            <Text className="text-base font-medium">LKR {(quotation.total_tax || quotation.totalTax || 0).toFixed(2)}</Text>
-                          </div>
+                          <tr>
+                            <td style={{ textAlign: 'left', padding: '4px 0', borderBottom: '1px solid #e5e7eb' }}>TAX</td>
+                            <td style={{ textAlign: 'right', padding: '4px 0', borderBottom: '1px solid #e5e7eb', fontWeight: '500' }}>
+                              LKR {(quotation.total_tax || quotation.totalTax || 0).toFixed(2)}
+                            </td>
+                          </tr>
                         )}
-                        <div className="flex justify-between py-2 border-b-2 border-gray-800">
-                          <Text strong className="text-base">TOTAL AMOUNT</Text>
-                          <Text strong className="text-base">LKR {(quotation.total || 0).toFixed(2)}</Text>
-                        </div>
-                      </div>
-                    </div>
+                        <tr>
+                          <td style={{ textAlign: 'left', padding: '4px 0', borderBottom: '1px solid #374151', fontWeight: 'bold', fontSize: '12px' }}>TOTAL AMOUNT</td>
+                          <td style={{ textAlign: 'right', padding: '4px 0', borderBottom: '1px solid #374151', fontWeight: 'bold', fontSize: '12px' }}>
+                            LKR {(quotation.total || 0).toFixed(2)}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
 
                   {/* Notes */}
                   {quotation.notes && (
-                    <div style={{ marginBottom: '12px' }}>
-                      <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Notes:</Title>
-                      <div className="bg-gray-50 p-4 rounded border text-sm">
-                        <Text>{quotation.notes}</Text>
+                    <div style={{ marginBottom: '8px' }}>
+                      <Title level={5} style={{ marginBottom: '4px', fontSize: '12px' }}>Notes:</Title>
+                      <div className="bg-gray-50 p-2 rounded border">
+                        <Text style={{ fontSize: '10px', lineHeight: '1.4' }}>{quotation.notes}</Text>
                       </div>
                     </div>
                   )}
 
                   {/* Terms & Conditions */}
                   <div style={{ marginBottom: '12px' }}>
-                    <Title level={5} style={{ marginBottom: '8px', fontSize: '14px' }}>Terms & Conditions:</Title>
-                    <div className="text-xs text-gray-600">
-                      <ol className="list-decimal pl-4 space-y-1">
+                    <Title level={5} style={{ marginBottom: '4px', fontSize: '12px' }}>Terms & Conditions:</Title>
+                    <div className="text-gray-600" style={{ fontSize: '10px', lineHeight: '1.4' }}>
+                      <ol className="list-decimal pl-4 space-y-1" style={{ margin: 0 }}>
                         <li>This quotation is valid until the date specified above.</li>
                         <li>Prices are in LKR and may be subject to change without notice.</li>
                         <li>Payment terms will be discussed upon order confirmation.</li>
@@ -240,31 +270,44 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
                   </div>
 
                   {/* Signature Section */}
-                  <div style={{ marginTop: '20px', marginBottom: '12px' }}>
-                    <div className="grid grid-cols-2 gap-8">
-                      <div>
-                        <div style={{ borderBottom: '1px solid #333', paddingBottom: '2px', marginBottom: '4px' }}>
-                          <Text className="text-xs text-gray-500">Signature:</Text>
-                        </div>
-                        <div className="flex justify-between items-end" style={{ marginTop: '30px' }}>
-                          <div style={{ flex: 1, borderBottom: '1px solid #333', marginRight: '8px' }}></div>
-                          <Text className="text-xs text-gray-600">Date:</Text>
-                          <div style={{ width: '80px', borderBottom: '1px solid #333', marginLeft: '8px' }}></div>
-                        </div>
-                        <Text strong className="text-xs block mt-1">Received By</Text>
-                      </div>
-                      <div>
-                        <div style={{ borderBottom: '1px solid #333', paddingBottom: '2px', marginBottom: '4px' }}>
-                          <Text className="text-xs text-gray-500">Signature:</Text>
-                        </div>
-                        <div className="flex justify-between items-end" style={{ marginTop: '30px' }}>
-                          <div style={{ flex: 1, borderBottom: '1px solid #333', marginRight: '8px' }}></div>
-                          <Text className="text-xs text-gray-600">Date:</Text>
-                          <div style={{ width: '80px', borderBottom: '1px solid #333', marginLeft: '8px' }}></div>
-                        </div>
-                        <Text strong className="text-xs block mt-1">Checked By</Text>
-                      </div>
-                    </div>
+                  <div style={{ marginTop: '16px', marginBottom: '8px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <tbody>
+                        <tr>
+                          <td style={{ width: '45%', verticalAlign: 'top' }}>
+                            <div style={{ borderBottom: '1px solid #333', paddingBottom: '2px', marginBottom: '4px' }}>
+                              <span style={{ fontSize: '10px', color: '#6b7280' }}>Signature:</span>
+                            </div>
+                            <table style={{ width: '100%', marginTop: '24px', borderCollapse: 'collapse' }}>
+                              <tbody>
+                                <tr>
+                                  <td style={{ borderBottom: '1px solid #333' }}></td>
+                                  <td style={{ width: '40px', textAlign: 'center', fontSize: '10px', color: '#4b5563', padding: '0 4px', verticalAlign: 'bottom' }}>Date:</td>
+                                  <td style={{ width: '80px', borderBottom: '1px solid #333' }}></td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <div style={{ fontWeight: 'bold', fontSize: '10px', marginTop: '4px' }}>Received By</div>
+                          </td>
+                          <td style={{ width: '10%' }}></td>
+                          <td style={{ width: '45%', verticalAlign: 'top' }}>
+                            <div style={{ borderBottom: '1px solid #333', paddingBottom: '2px', marginBottom: '4px' }}>
+                              <span style={{ fontSize: '10px', color: '#6b7280' }}>Signature:</span>
+                            </div>
+                            <table style={{ width: '100%', marginTop: '24px', borderCollapse: 'collapse' }}>
+                              <tbody>
+                                <tr>
+                                  <td style={{ borderBottom: '1px solid #333' }}></td>
+                                  <td style={{ width: '40px', textAlign: 'center', fontSize: '10px', color: '#4b5563', padding: '0 4px', verticalAlign: 'bottom' }}>Date:</td>
+                                  <td style={{ width: '80px', borderBottom: '1px solid #333' }}></td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <div style={{ fontWeight: 'bold', fontSize: '10px', marginTop: '4px' }}>Checked By</div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </>
               )}
@@ -274,27 +317,40 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10 }}>
               <div
                 style={{
-                  background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '40px',
                   width: '100%',
-                  padding: '16px'
+                  backgroundColor: '#2563eb',
+                  padding: '12px 0',
+                  textAlign: 'center'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <svg width="20" height="20" fill="none" stroke="white" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                  <span style={{ color: 'white', fontSize: '14px', fontWeight: '500' }}>0112870330</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <svg width="20" height="20" fill="none" stroke="white" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  <span style={{ color: 'white', fontSize: '14px', fontWeight: '500' }}>vcarepvtltd@gmail.com</span>
-                </div>
+                <table style={{ display: 'inline-table', borderCollapse: 'collapse', marginRight: '32px' }}>
+                  <tbody>
+                    <tr>
+                      <td style={{ padding: 0, paddingRight: '6px', verticalAlign: 'middle' }}>
+                        <svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24" style={{ display: 'block' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                      </td>
+                      <td style={{ padding: 0, verticalAlign: 'middle', color: 'white', fontSize: '12px', fontWeight: '500', lineHeight: '1' }}>
+                        0112870330
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <table style={{ display: 'inline-table', borderCollapse: 'collapse' }}>
+                  <tbody>
+                    <tr>
+                      <td style={{ padding: 0, paddingRight: '6px', verticalAlign: 'middle' }}>
+                        <svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24" style={{ display: 'block' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </td>
+                      <td style={{ padding: 0, verticalAlign: 'middle', color: 'white', fontSize: '12px', fontWeight: '500', lineHeight: '1' }}>
+                        vcarepvtltd@gmail.com
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

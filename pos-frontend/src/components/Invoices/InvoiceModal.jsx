@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Modal, Typography, Row, Col, Space, message } from 'antd';
+import { Modal, Typography, Space, message } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
@@ -257,26 +257,30 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
               }}>
                 {/* Customer and Invoice Details - First Page Only */}
                 {isFirstPage && (
-                  <Row gutter={32} style={{ marginBottom: '12px' }}>
-                    <Col span={12}>
-                      <InvoiceCustomerSection
-                        customerName={transaction.customerName}
-                        customerAddress={transaction.customerAddress}
-                        customerEmail={transaction.customerEmail}
-                        customerPhone={transaction.customerPhone}
-                      />
-                    </Col>
-                    <Col span={12}>
-                      <InvoiceDetails
-                        invoiceNumber={transaction.id}
-                        dateIssued={new Date(transaction.timestamp).toLocaleDateString('en-US', {
-                          month: '2-digit',
-                          day: '2-digit',
-                          year: 'numeric'
-                        })}
-                      />
-                    </Col>
-                  </Row>
+                  <table style={{ width: '100%', marginBottom: '12px', borderCollapse: 'collapse' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ verticalAlign: 'top', width: '50%', paddingRight: '16px' }}>
+                          <InvoiceCustomerSection
+                            customerName={transaction.customerName}
+                            customerAddress={transaction.customerAddress}
+                            customerEmail={transaction.customerEmail}
+                            customerPhone={transaction.customerPhone}
+                          />
+                        </td>
+                        <td style={{ verticalAlign: 'top', width: '50%', paddingLeft: '16px' }}>
+                          <InvoiceDetails
+                            invoiceNumber={transaction.id}
+                            dateIssued={new Date(transaction.timestamp).toLocaleDateString('en-US', {
+                              month: '2-digit',
+                              day: '2-digit',
+                              year: 'numeric'
+                            })}
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 )}
 
                 {/* Page indicator for multi-page */}

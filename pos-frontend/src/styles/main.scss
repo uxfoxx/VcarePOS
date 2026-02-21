@@ -235,10 +235,13 @@ $spacing-xxl: 48px;
     background: linear-gradient(135deg, $primary-color, color.adjust($primary-color, $lightness: 10%));
     border: none;
     box-shadow: 0 4px 12px rgba($primary-color, 0.3);
+    color: white !important;
 
-    &:hover {
+    &:hover,
+    &:focus {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba($primary-color, 0.4);
+      color: white !important;
     }
   }
 

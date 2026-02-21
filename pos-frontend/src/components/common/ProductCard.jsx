@@ -173,7 +173,7 @@ export function ProductCard({
             block
             onClick={handleAddToCart}
             disabled={product.stock === 0}
-            className="bg-[#0E72BD] hover:bg-blue-700 font-semibold"
+            className="bg-[#0E72BD] font-semibold text-xs"
           >
             {product.stock === 0
               ? 'Out of Stock'

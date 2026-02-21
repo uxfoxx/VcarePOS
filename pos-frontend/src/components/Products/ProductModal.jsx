@@ -237,7 +237,7 @@ export function ProductModal({
 
     const maxSizeMB = 5;
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
-    const maxDimensions = { width: 2000, height: 2000 };
+    // const maxDimensions = { width: 2000, height: 2000 };
 
     // Validate type
     if (!isImage && !isVideo) {
@@ -270,7 +270,7 @@ export function ProductModal({
       return false;
     }
 
-    return { isImage, isVideo, maxDimensions };
+    return { isImage, isVideo };
   };
 
   const uploadProductMedia = async (productId) => {
@@ -1008,7 +1008,7 @@ export function ProductModal({
                   </Text>
                   <br />
                   <Text type="secondary" className="text-xs">
-                    (Max: 5MB, 2000x2000 pixels) per file, 5 files total ({mediaPreviews.length}/5 used)
+                    (Max: 5MB) per file, 5 files total ({mediaPreviews.length}/5 used)
                   </Text>
                 </div>
               </div>
@@ -1036,54 +1036,60 @@ export function ProductModal({
 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-80 overflow-y-auto overflow-x-clip">
                 {mediaPreviews.map((mediaUrl, index) => {
+                  const isExisting = index < existingMediaPaths.length;
+                  const fileIndex = index - existingMediaPaths.length;
+                  const isVideoFile = !isExisting && mediaFiles[fileIndex]?.type?.startsWith('video/');
                   const isVideo = mediaUrl.startsWith('data:video/') ||
                     mediaUrl.toLowerCase().includes('.mp4') ||
                     mediaUrl.toLowerCase().includes('.webm') ||
-                    mediaUrl.toLowerCase().includes('.mov');
-                  const isExisting = index < existingMediaPaths.length;
+                    mediaUrl.toLowerCase().includes('.mov') ||
+                    isVideoFile;
 
                   return (
                     <div key={index} className="relative group">
                       <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
                         {isVideo ? (
-                          <div className="w-full h-full flex items-center justify-center bg-gray-200 aspect-square">
-                            <Icon name="play_circle" className="text-2xl text-gray-500" />
+                          <div className="w-full h-full flex items-center justify-center bg-gray-900 aspect-square relative">
+                            <Icon name="play_circle" className="text-4xl text-white/80 z-10" />
                             <video
                               src={mediaUrl}
-                              className="absolute inset-0 w-full h-full object-cover opacity-50"
+                              className="absolute inset-0 w-full h-full object-cover opacity-60"
                               muted
                             />
                           </div>
                         ) : (
-                          <img
-                            src={mediaUrl}
-                            alt={`Media ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
+                          <div className="w-full h-full flex items-center justify-center bg-gray-900 aspect-square relative">
+                            <img
+                              src={mediaUrl}
+                              alt={`Media ${index + 1}`}
+                              className="absolute inset-0 w-full h-full object-cover opacity-80"
+                            />
+                          </div>
                         )}
                       </div>
 
                       <Button
-                        type="text"
+                        type="primary"
                         danger
+                        shape="circle"
                         size="small"
                         icon={<Icon name="close" />}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-2 right-2 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm z-20"
                         onClick={() => handleRemoveMedia(index)}
                       />
 
                       <div className="absolute bottom-1 left-1 flex gap-1">
-                        <Tag size="small" color={isVideo ? 'purple' : 'blue'}>
+                        <Tag size="small" color={isVideo ? '#722ed1' : '#1677ff'} className="border-none">
                           {isVideo ? 'Video' : 'Image'}
                         </Tag>
                         {isExisting && (
-                          <Tag size="small" color="green">Saved</Tag>
+                          <Tag size="small" color="#52c41a" className="border-none">Saved</Tag>
                         )}
                       </div>
 
                       {index === 0 && (
                         <div className="absolute top-1 left-1">
-                          <Tag size="small" color="gold">
+                          <Tag size="small" color="#faad14" className="border-none">
                             Primary
                           </Tag>
                         </div>

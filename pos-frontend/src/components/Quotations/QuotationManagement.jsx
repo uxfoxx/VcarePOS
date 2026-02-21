@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Form, Input, Card, DatePicker, InputNumber, Select, Table, message } from 'antd';
 import { Icon } from '../common/Icon';
 import { PageHeader } from '../common/PageHeader';
 import { ActionButton } from '../common/ActionButton';
 import { QuotationPDF } from './QuotationPDF';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchProducts } from '../../features/products/productsSlice';
 import dayjs from 'dayjs';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -15,6 +16,13 @@ const { Option } = Select;
 export function QuotationManagement() {
   const [form] = Form.useForm();
   const { productsList } = useSelector(state => state.products);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (!productsList || productsList.length === 0) {
+      dispatch(fetchProducts());
+    }
+  }, [dispatch, productsList]);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [quotationData, setQuotationData] = useState(null);
   const [showPDF, setShowPDF] = useState(false);

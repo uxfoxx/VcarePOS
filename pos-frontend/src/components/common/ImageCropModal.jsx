@@ -44,6 +44,17 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
       y: (100 - cropHeight) / 2,
       aspect: aspect
     });
+
+    // Also set initial completedCrop in pixels so users can save immediately
+    setCompletedCrop({
+      unit: 'px',
+      width: (cropWidth / 100) * width,
+      height: (cropHeight / 100) * height,
+      x: ((100 - cropWidth) / 2 / 100) * width,
+      y: ((100 - cropHeight) / 2 / 100) * height,
+      aspect: aspect
+    });
+
     imgRef.current = e.currentTarget;
   }, [aspectRatio]);
 
@@ -291,7 +302,7 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <p className="text-sm text-blue-800">
             <Icon name="info" className="mr-1" />
-            Aspect Ratio: {aspectRatio === 4/3 ? '4:3' : aspectRatio === 16/9 ? '16:9' : aspectRatio === 1 ? '1:1' : aspectRatio.toFixed(2)}
+            Aspect Ratio: {aspectRatio === 4 / 3 ? '4:3' : aspectRatio === 16 / 9 ? '16:9' : aspectRatio === 1 ? '1:1' : aspectRatio.toFixed(2)}
             {' '}• Target Size: 800×600px • Format: JPEG
           </p>
         </div>

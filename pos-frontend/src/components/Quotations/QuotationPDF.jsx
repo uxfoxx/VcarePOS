@@ -105,12 +105,12 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
                           </div>
                         </td>
                         <td style={{ verticalAlign: 'top', width: '50%' }}>
-                          <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '12px', textAlign: 'right' }}>Quotation Details:</div>
+                          {/* <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '12px', textAlign: 'right' }}>Quotation Details:</div> */}
                           <table style={{ width: '100%', fontSize: '11px', lineHeight: '1.5', borderCollapse: 'collapse' }}>
                             <tbody>
                               <tr>
                                 <td style={{ textAlign: 'right', paddingBottom: '4px', paddingRight: '8px', fontWeight: 'bold', verticalAlign: 'middle' }}>Quotation No:</td>
-                                <td style={{ textAlign: 'right', paddingBottom: '4px', width: '80px', verticalAlign: 'middle' }}>
+                                <td style={{ textAlign: 'right', paddingBottom: '4px', verticalAlign: 'middle' }}>
                                   <span style={{
                                     display: 'inline-block',
                                     fontFamily: 'monospace',

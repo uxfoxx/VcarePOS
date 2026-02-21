@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Modal, Typography, Space, message } from 'antd';
+import { Typography, message } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import jsPDF from 'jspdf';
@@ -81,7 +81,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
     }
   };
 
-  if (!transaction) return null;
+  if (!transaction || !open) return null;
 
   const handlePrint = async () => {
     const printContainer = document.getElementById('invoice-print-container');
@@ -90,11 +90,62 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
       return;
     }
 
-    try {
-      window.print();
-    } catch (error) {
-      console.error('Error during print:', error);
-    }
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+
+    doc.write(`
+      <html>
+        <head>
+          <title>${type === 'detailed' ? 'Invoice' : 'Item Labels'} - ${transaction.id}</title>
+          <style>
+            @media print {
+              body, html {
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              @page {
+                size: A4;
+                margin: 0;
+              }
+              .invoice-page {
+                 page-break-after: always;
+                 margin: 0 !important;
+                 padding: 0 !important;
+                 width: 210mm;
+                 box-shadow: none !important;
+              }
+              .invoice-page:last-child {
+                 page-break-after: auto;
+              }
+            }
+          </style>
+          <script src="https://cdn.tailwindcss.com"></script>
+        </head>
+        <body style="margin: 0; padding: 0; background-color: white;">
+          ${printContainer.innerHTML}
+        </body>
+      </html>
+    `);
+
+    doc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
+    }, 1000);
   };
 
   const generatePDF = async () => {
@@ -208,7 +259,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
     const totalPages = itemPages.length;
 
     return (
-      <div id="invoice-print-container">
+      <div className="w-full">
         {itemPages.map((pageItems, pageIndex) => {
           const isFirstPage = pageIndex === 0;
           const isLastPage = pageIndex === totalPages - 1;
@@ -348,7 +399,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
   };
 
   const renderItemLabel = () => (
-    <div id="invoice-content" className="p-4 bg-white max-w-md mx-auto">
+    <div className="p-4 bg-white max-w-md mx-auto w-full">
       {transaction.items.map((item, itemIndex) =>
         Array.from({ length: item.quantity }, (_, qtyIndex) => (
           <div key={`${itemIndex}-${qtyIndex}`} className="border-2 border-dashed border-gray-400 p-4 mb-4 page-break-after">
@@ -438,89 +489,33 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
 
   return (
     <>
-      <style>
-        {`
-          @media print {
-            body * {
-              visibility: hidden;
-            }
-            #invoice-print-container,
-            #invoice-print-container * {
-              visibility: visible;
-            }
-            #invoice-print-container {
-              position: absolute;
-              top: 0;
-              left: 0;
-              margin: 0;
-              padding: 0;
-            }
-            .invoice-page {
-              page-break-after: always;
-              break-after: page;
-              margin: 0 !important;
-            }
-            .invoice-page:last-child {
-              page-break-after: auto;
-              break-after: auto;
-            }
-            .ant-modal,
-            .ant-modal-content,
-            .ant-modal-header,
-            .ant-modal-footer {
-              display: none !important;
-            }
-          }
-          @page {
-            size: A4;
-            margin: 0;
-          }
-        `}
-      </style>
-      <Modal
-        title={
-          <Space>
-            <Icon name={type === 'detailed' ? 'receipt_long' : 'label'} className="text-blue-600" />
-            <span>{type === 'detailed' ? 'Invoice' : 'Item Labels'}</span>
-          </Space>
-        }
-        open={open}
-        onCancel={onClose}
-        width={type === 'detailed' ? 900 : 600}
-        footer={[
-          <ActionButton key="close" onClick={onClose}>
-            Close
-          </ActionButton>,
-          <ActionButton
-            key="view"
-            icon="visibility"
-            onClick={handleView}
-            loading={loading}
-          >
-            View PDF
-          </ActionButton>,
-          <ActionButton
-            key="download"
-            icon="download"
-            onClick={handleDownload}
-            loading={loading}
-          >
-            Download PDF
-          </ActionButton>,
-          <ActionButton.Primary
-            key="print"
-            icon="print"
-            onClick={handlePrint}
-          >
-            Print
-          </ActionButton.Primary>,
-        ]}
-        className="invoice-modal"
-      >
-        <div className="max-h-[70vh] overflow-y-auto">
-          {type === 'detailed' ? renderDetailedInvoice() : renderItemLabel()}
+
+      <div className="invoice-modal-overlay fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4 print:p-0 print:bg-white" onClick={onClose}>
+        <div className={`relative flex h-[90vh] w-full ${type === 'detailed' ? 'max-w-4xl' : 'max-w-2xl'} flex-col rounded-xl bg-gray-100 shadow-2xl print:h-auto print:max-w-none print:rounded-none print:bg-white print:shadow-none overflow-hidden print:overflow-visible`} onClick={(e) => e.stopPropagation()}>
+          <div className="sticky top-0 z-[60] bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center print:hidden rounded-t-xl">
+            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <Icon name={type === 'detailed' ? 'receipt_long' : 'label'} className="text-blue-600" />
+              <span>{type === 'detailed' ? 'Invoice' : 'Item Labels'}</span>
+            </h2>
+            <div className="flex items-center space-x-3">
+              <ActionButton key="print" icon="print" onClick={handlePrint}>Print</ActionButton>
+              <ActionButton key="view" icon="visibility" onClick={handleView} loading={loading}>View PDF</ActionButton>
+              <ActionButton key="download" icon="download" onClick={handleDownload} loading={loading}>Download PDF</ActionButton>
+              <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors ml-2">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 sm:p-8 print:p-0 print:overflow-visible">
+            <div id="invoice-print-container" className="flex flex-col items-center gap-8 print:block print:gap-0 w-full">
+              {type === 'detailed' ? renderDetailedInvoice() : renderItemLabel()}
+            </div>
+          </div>
         </div>
-      </Modal>
+      </div>
     </>
   );
 }

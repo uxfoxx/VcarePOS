@@ -155,15 +155,93 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
     }
   };
 
+  const handleView = async () => {
+    setLoading(true);
+    try {
+      const pdf = await generatePDF();
+      if (pdf) {
+        const pdfBlob = pdf.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Error viewing PDF:', error);
+      toast.error('Failed to generate PDF preview');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePrint = () => {
-    window.print();
+    const printContainer = document.getElementById('ecommerce-invoice-print-container');
+    if (!printContainer) {
+      console.error('Invoice print container not found');
+      return;
+    }
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+
+    doc.write(`
+      <html>
+        <head>
+          <title>Invoice - ${order.customerName}</title>
+          <style>
+            @media print {
+              body, html {
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              @page {
+                size: A4;
+                margin: 0;
+              }
+              .ecommerce-invoice-page {
+                 page-break-after: always;
+                 margin: 0 !important;
+                 padding: 0 !important;
+                 width: 210mm;
+                 box-shadow: none !important;
+              }
+              .ecommerce-invoice-page:last-child {
+                 page-break-after: auto;
+              }
+            }
+          </style>
+          <script src="https://cdn.tailwindcss.com"></script>
+        </head>
+        <body style="margin: 0; padding: 0; background-color: white;">
+          ${printContainer.innerHTML}
+        </body>
+      </html>
+    `);
+
+    doc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
+    }, 1000);
   };
 
   if (!isOpen || !order) return null;
 
-  const businessName = invoiceConfig?.settings?.business_name || '';
-  const businessAddress = invoiceConfig?.settings?.business_address || '';
-  const phoneNumber = invoiceConfig?.settings?.phone_number || '';
+  // const businessName = invoiceConfig?.settings?.business_name || '';
+  // const businessAddress = invoiceConfig?.settings?.business_address || '';
+  // const phoneNumber = invoiceConfig?.settings?.phone_number || '';
 
   const subtotal = order.totalAmount || order.items.reduce((sum, item) => sum + (item.totalPrice || item.unitPrice * item.quantity), 0);
   const discount = 0;
@@ -175,40 +253,7 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
 
   return (
     <>
-      <style>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          #ecommerce-invoice-print-container,
-          #ecommerce-invoice-print-container * {
-            visibility: visible;
-          }
-          #ecommerce-invoice-print-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            margin: 0;
-            padding: 0;
-          }
-          .ecommerce-invoice-page {
-            page-break-after: always;
-            break-after: page;
-            margin: 0 !important;
-          }
-          .ecommerce-invoice-page:last-child {
-            page-break-after: auto;
-            break-after: auto;
-          }
-          .invoice-modal-overlay {
-            display: none !important;
-          }
-        }
-        @page {
-          size: A4;
-          margin: 0;
-        }
-      `}</style>
+
 
       <div className="invoice-modal-overlay fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4 print:p-0 print:bg-white" onClick={onClose}>
         <div className="relative flex h-[90vh] w-full max-w-4xl flex-col rounded-xl bg-gray-100 shadow-2xl print:h-auto print:max-w-none print:rounded-none print:bg-white print:shadow-none overflow-hidden print:overflow-visible" onClick={(e) => e.stopPropagation()}>
@@ -220,6 +265,13 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 Print
+              </button>
+              <button
+                onClick={handleView}
+                disabled={loading}
+                className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50"
+              >
+                {loading ? '...' : 'View PDF'}
               </button>
               <button
                 onClick={handleDownload}

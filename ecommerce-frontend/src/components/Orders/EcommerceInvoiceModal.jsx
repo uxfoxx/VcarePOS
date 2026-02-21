@@ -210,9 +210,9 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
         }
       `}</style>
 
-      <div className="invoice-modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-        <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+      <div className="invoice-modal-overlay fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4 print:p-0 print:bg-white" onClick={onClose}>
+        <div className="relative flex h-[90vh] w-full max-w-4xl flex-col rounded-xl bg-gray-100 shadow-2xl print:h-auto print:max-w-none print:rounded-none print:bg-white print:shadow-none overflow-hidden print:overflow-visible" onClick={(e) => e.stopPropagation()}>
+          <div className="sticky top-0 z-[60] bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center print:hidden rounded-t-xl">
             <h2 className="text-2xl font-bold text-gray-900">Invoice</h2>
             <div className="flex items-center space-x-3">
               <button
@@ -239,288 +239,334 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
             </div>
           </div>
 
-          <div id="ecommerce-invoice-print-container">
-            {itemPages.map((pageItems, pageIndex) => {
-              const isFirstPage = pageIndex === 0;
-              const isLastPage = pageIndex === totalPages - 1;
+          <div className="flex-1 overflow-y-auto p-4 sm:p-8 print:p-0 print:overflow-visible">
+            <div id="ecommerce-invoice-print-container" className="flex flex-col items-center gap-8 print:block print:gap-0 w-full">
+              {itemPages.map((pageItems, pageIndex) => {
+                const isFirstPage = pageIndex === 0;
+                const isLastPage = pageIndex === totalPages - 1;
 
-              return (
-                <div
-                  key={pageIndex}
-                  className="ecommerce-invoice-page bg-white"
-                  style={{
-                    fontFamily: 'Arial, sans-serif',
-                    width: '210mm',
-                    height: '297mm',
-                    position: 'relative',
-                    boxSizing: 'border-box',
-                    margin: '0 auto',
-                    overflow: 'hidden',
-                    marginBottom: pageIndex < totalPages - 1 ? '10mm' : '0'
-                  }}
-                >
-                  {/* Header Section */}
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
-                    <img
-                      src="/invoiceTop.png"
-                      alt="Invoice Header"
-                      style={{
-                        width: '100%',
-                        height: 'auto',
-                        display: 'block'
-                      }}
-                      crossOrigin="anonymous"
-                    />
-                  </div>
+                return (
+                  <div
+                    key={pageIndex}
+                    className="ecommerce-invoice-page bg-white shadow-lg print:shadow-none"
+                    style={{
+                      fontFamily: 'Arial, sans-serif',
+                      width: '210mm',
+                      minHeight: '297mm',
+                      position: 'relative',
+                      boxSizing: 'border-box',
+                      margin: '0 auto',
+                      overflow: 'hidden',
+                      marginBottom: pageIndex < totalPages - 1 ? '10mm' : '0'
+                    }}
+                  >
+                    {/* Header Section */}
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
+                      <img
+                        src="/invoiceTop.png"
+                        alt="Invoice Header"
+                        style={{
+                          width: '100%',
+                          height: 'auto',
+                          display: 'block'
+                        }}
+                        crossOrigin="anonymous"
+                      />
+                    </div>
 
-                  {/* Content Section */}
-                  <div style={{ position: 'absolute', top: '45mm', left: '10mm', right: '10mm', bottom: '30mm', overflow: 'hidden' }}>
-                    {/* Customer and Invoice Details - First Page Only */}
-                    {isFirstPage && (
-                      <div className="grid grid-cols-2 gap-8" style={{ marginBottom: '12px' }}>
-                        <div>
-                          <p className="font-bold mb-2">Invoice to:</p>
-                          <p className="font-bold text-base m-0">{order.customerName}</p>
-                          {order.customerAddress && <p className="text-sm text-gray-600 m-0">{order.customerAddress}</p>}
-                          {order.customerEmail && <p className="text-sm text-gray-600 m-0">{order.customerEmail}</p>}
-                          {order.customerPhone && <p className="text-sm text-gray-600 m-0">{order.customerPhone}</p>}
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex justify-between">
-                            <span className="font-bold">Date Issued:</span>
-                            <span>{new Date(order.createdAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="font-bold">No:</span>
-                            <span className="font-mono text-base">{order.id}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Page indicator for multi-page */}
-                    {totalPages > 1 && (
-                      <div style={{ textAlign: 'right', marginBottom: '8px' }}>
-                        <span className="text-xs text-gray-500">
-                          Page {pageIndex + 1} of {totalPages}
-                        </span>
-                      </div>
-                    )}
-
-                    <table className="w-full border-collapse" style={{ marginTop: '12px' }}>
-                      <thead>
-                        <tr style={{ background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)' }}>
-                          <th className="p-2 text-left text-white font-bold" style={{ width: '15%' }}>ITEM CODE</th>
-                          <th className="p-2 text-left text-white font-bold" style={{ width: '30%' }}>DESCRIPTION</th>
-                          <th className="p-2 text-center text-white font-bold" style={{ width: '15%' }}>QTY</th>
-                          <th className="p-2 text-right text-white font-bold" style={{ width: '20%' }}>RATE</th>
-                          <th className="p-2 text-right text-white font-bold" style={{ width: '20%' }}>AMOUNT</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pageItems.map((item, index) => {
-                          const unitPrice = item.unitPrice || 0;
-                          const itemCode = item.sku || item.itemCode || `ITEM-${String(index + 1).padStart(3, '0')}`;
-                          return (
-                            <tr key={index} className="border-b border-gray-200">
-                              <td className="p-2">
-                                <span className="text-xs font-mono">{itemCode}</span>
+                    {/* Content Section */}
+                    <div style={{ position: 'absolute', top: '45mm', left: '10mm', right: '10mm', bottom: '30mm', overflow: 'hidden' }}>
+                      {/* Customer and Invoice Details - First Page Only */}
+                      {isFirstPage && (
+                        <table style={{ width: '100%', marginBottom: '12px', borderCollapse: 'collapse', fontSize: '11px', lineHeight: '1.5' }}>
+                          <tbody>
+                            <tr>
+                              <td style={{ verticalAlign: 'top', width: '50%', paddingRight: '16px' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '11px' }}>Invoice to:</div>
+                                <div style={{ fontWeight: 'bold', marginBottom: '2px', fontSize: '12px' }}>{order.customerName}</div>
+                                {order.customerAddress && <div style={{ color: '#4b5563', fontSize: '11px', whiteSpace: 'pre-wrap', marginBottom: '2px' }}>{order.customerAddress}</div>}
+                                {order.customerEmail && <div style={{ color: '#4b5563', fontSize: '11px', marginBottom: '2px' }}>{order.customerEmail}</div>}
+                                {order.customerPhone && <div style={{ color: '#4b5563', fontSize: '11px' }}>{order.customerPhone}</div>}
                               </td>
-                              <td className="p-2">
-                                <div>
-                                  <p className="font-bold text-sm m-0">{item.productName}</p>
-                                  {(item.selectedColorId || item.selectedSize) && (
-                                    <p className="text-xs text-gray-500 mt-1 m-0">
-                                      {item.selectedColorId && `Color: ${item.selectedColorId}`}
-                                      {item.selectedColorId && item.selectedSize && ' • '}
-                                      {item.selectedSize && `Size: ${item.selectedSize}`}
-                                    </p>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="p-2 text-center">
-                                <span className="text-sm">{item.quantity} NOS</span>
-                              </td>
-                              <td className="p-2 text-right">
-                                <span className="text-sm">
-                                  LKR {unitPrice.toLocaleString('en-US', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                  })}
-                                </span>
-                              </td>
-                              <td className="p-2 text-right">
-                                <span className="text-sm font-medium">
-                                  LKR {(unitPrice * item.quantity).toLocaleString('en-US', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                  })}
-                                </span>
+                              <td style={{ verticalAlign: 'top', width: '50%', paddingLeft: '16px' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                  <tbody>
+                                    <tr>
+                                      <td style={{ fontWeight: 'bold', paddingBottom: '4px', textAlign: 'left', verticalAlign: 'middle' }}>Date Issued:</td>
+                                      <td style={{ paddingBottom: '4px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                        {new Date(order.createdAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}
+                                      </td>
+                                    </tr>
+                                    <tr>
+                                      <td style={{ fontWeight: 'bold', textAlign: 'left', verticalAlign: 'middle' }}>No:</td>
+                                      <td style={{ textAlign: 'right', verticalAlign: 'middle' }}>
+                                        <span style={{
+                                          display: 'inline-block',
+                                          fontFamily: 'monospace',
+                                          backgroundColor: '#f5f5f5',
+                                          padding: '2px 6px',
+                                          borderRadius: '2px',
+                                          border: '1px solid #d9d9d9',
+                                          fontSize: '11px'
+                                        }}>
+                                          {order.id}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  </tbody>
+                                </table>
                               </td>
                             </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                          </tbody>
+                        </table>
+                      )}
 
-                    {/* Totals, Bank Details, Terms, Signatures - Last Page Only */}
-                    {isLastPage && (
-                      <>
-                        <div style={{ marginTop: '12px' }} className="flex justify-end">
-                          <div className="w-1/2 space-y-2">
-                            <div className="flex justify-between py-2 border-b">
-                              <span className="text-base">TOTAL</span>
-                              <span className="text-base font-medium">
-                                {subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </span>
-                            </div>
-                            {discount > 0 && (
-                              <div className="flex justify-between py-2 border-b">
-                                <span className="text-base">DISCOUNT</span>
-                                <span className="text-base font-medium">
-                                  {discount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </span>
-                              </div>
-                            )}
-                            <div className="flex justify-between py-2 border-b-2 border-gray-800">
-                              <span className="font-bold text-base">GRAND TOTAL</span>
-                              <span className="font-bold text-base">
-                                {grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </span>
-                            </div>
-                          </div>
+                      {/* Page indicator for multi-page */}
+                      {totalPages > 1 && (
+                        <div style={{ textAlign: 'right', marginBottom: '8px' }}>
+                          <span className="text-xs text-gray-500">
+                            Page {pageIndex + 1} of {totalPages}
+                          </span>
                         </div>
+                      )}
 
-                        {/* Bank Details - Always show if available */}
-                        {invoiceConfig?.bankAccount && (
+                      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '12px' }}>
+                        <thead>
+                          <tr style={{ backgroundColor: '#2563eb' }}>
+                            <th style={{ textAlign: 'left', color: 'white', fontWeight: 'bold', width: '15%', fontSize: '10px', padding: '8px 4px' }}>ITEM CODE</th>
+                            <th style={{ textAlign: 'left', color: 'white', fontWeight: 'bold', width: '35%', fontSize: '10px', padding: '8px 4px' }}>DESCRIPTION</th>
+                            <th style={{ textAlign: 'center', color: 'white', fontWeight: 'bold', width: '10%', fontSize: '10px', padding: '8px 4px' }}>QTY</th>
+                            <th style={{ textAlign: 'right', color: 'white', fontWeight: 'bold', width: '20%', fontSize: '10px', padding: '8px 4px' }}>RATE</th>
+                            <th style={{ textAlign: 'right', color: 'white', fontWeight: 'bold', width: '20%', fontSize: '10px', padding: '8px 4px' }}>AMOUNT</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pageItems.map((item, index) => {
+                            const unitPrice = item.unitPrice || 0;
+                            const itemCode = item.sku || item.itemCode || `ITEM-${String(index + 1).padStart(3, '0')}`;
+                            return (
+                              <tr key={index}>
+                                <td style={{ padding: '8px 4px', borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}>
+                                  <div style={{ fontFamily: 'monospace', fontSize: '10px' }}>{itemCode}</div>
+                                </td>
+                                <td style={{ padding: '8px 4px', borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}>
+                                  <div>
+                                    <div style={{ fontWeight: 'bold', fontSize: '11px' }}>{item.productName}</div>
+                                    {(item.selectedColorId || item.selectedSize) && (
+                                      <div style={{ color: '#6b7280', fontSize: '10px', marginTop: '2px' }}>
+                                        {item.selectedColorId && `Color: ${item.selectedColorId}`}
+                                        {item.selectedColorId && item.selectedSize && ' • '}
+                                        {item.selectedSize && `Size: ${item.selectedSize}`}
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td style={{ padding: '8px 4px', borderBottom: '1px solid #e5e7eb', textAlign: 'center' }}>
+                                  <div style={{ fontSize: '11px' }}>{item.quantity} NOS</div>
+                                </td>
+                                <td style={{ padding: '8px 4px', borderBottom: '1px solid #e5e7eb', textAlign: 'right' }}>
+                                  <div style={{ fontSize: '11px' }}>
+                                    LKR {unitPrice.toLocaleString('en-US', {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2
+                                    })}
+                                  </div>
+                                </td>
+                                <td style={{ padding: '8px 4px', borderBottom: '1px solid #e5e7eb', textAlign: 'right', fontWeight: '500' }}>
+                                  <div style={{ fontSize: '11px' }}>
+                                    LKR {(unitPrice * item.quantity).toLocaleString('en-US', {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2
+                                    })}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+
+                      {/* Totals, Bank Details, Terms, Signatures - Last Page Only */}
+                      {isLastPage && (
+                        <>
                           <div style={{ marginTop: '12px' }}>
-                            <h3 style={{ fontSize: '14px', marginBottom: '8px' }} className="font-bold">Account details</h3>
-                            <div className="space-y-1">
-                              <p className="text-sm m-0">{invoiceConfig.bankAccount.account_holder_name}</p>
-                              <p className="text-sm m-0">{invoiceConfig.bankAccount.account_number}</p>
-                              <p className="text-sm m-0">
-                                {invoiceConfig.bankAccount.bank_name} {invoiceConfig.bankAccount.branch_name}
-                              </p>
-                            </div>
+                            <table style={{ width: '50%', marginLeft: 'auto', fontSize: '11px', borderCollapse: 'collapse', lineHeight: '1.5' }}>
+                              <tbody>
+                                <tr>
+                                  <td style={{ textAlign: 'left', paddingBottom: '4px', borderBottom: '1px solid #e5e7eb' }}>TOTAL</td>
+                                  <td style={{ textAlign: 'right', paddingBottom: '4px', borderBottom: '1px solid #e5e7eb', fontWeight: '500' }}>
+                                    {subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </td>
+                                </tr>
+                                {discount > 0 && (
+                                  <tr>
+                                    <td style={{ textAlign: 'left', padding: '4px 0', borderBottom: '1px solid #e5e7eb' }}>DISCOUNT</td>
+                                    <td style={{ textAlign: 'right', padding: '4px 0', borderBottom: '1px solid #e5e7eb', fontWeight: '500' }}>
+                                      {discount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </td>
+                                  </tr>
+                                )}
+                                <tr>
+                                  <td style={{ textAlign: 'left', padding: '4px 0', borderBottom: '1px solid #374151', fontWeight: 'bold', fontSize: '12px' }}>GRAND TOTAL</td>
+                                  <td style={{ textAlign: 'right', padding: '4px 0', borderBottom: '1px solid #374151', fontWeight: 'bold', fontSize: '12px' }}>
+                                    {grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </div>
-                        )}
 
-                        {/* Notes */}
-                        {invoiceConfig?.notesTemplate && (
+                          {/* Bank Details - Always show if available */}
+                          {invoiceConfig?.bankAccount && (
+                            <div style={{ marginTop: '12px' }}>
+                              <h3 style={{ fontSize: '14px', marginBottom: '8px' }} className="font-bold">Account details</h3>
+                              <div className="space-y-1">
+                                <p className="text-sm m-0">{invoiceConfig.bankAccount.account_holder_name}</p>
+                                <p className="text-sm m-0">{invoiceConfig.bankAccount.account_number}</p>
+                                <p className="text-sm m-0">
+                                  {invoiceConfig.bankAccount.bank_name} {invoiceConfig.bankAccount.branch_name}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Notes */}
+                          {invoiceConfig?.notesTemplate && (
+                            <div style={{ marginTop: '12px' }}>
+                              <h3 style={{ fontSize: '14px', marginBottom: '8px' }} className="font-bold">Note:-</h3>
+                              <div className="space-y-1">
+                                {invoiceConfig.notesTemplate.warranty_terms && (
+                                  <p className="text-xs text-gray-700 m-0" style={{ lineHeight: '1.4' }}>
+                                    {invoiceConfig.notesTemplate.warranty_terms}
+                                  </p>
+                                )}
+                                {invoiceConfig.notesTemplate.quotation_validity && (
+                                  <p className="text-xs text-gray-700 m-0" style={{ lineHeight: '1.4', marginTop: '4px' }}>
+                                    {invoiceConfig.notesTemplate.quotation_validity}
+                                  </p>
+                                )}
+                                {invoiceConfig.notesTemplate.custom_notes && (
+                                  <p className="text-xs text-gray-700 m-0" style={{ lineHeight: '1.4', marginTop: '4px' }}>
+                                    {invoiceConfig.notesTemplate.custom_notes}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Terms and Conditions */}
                           <div style={{ marginTop: '12px' }}>
-                            <h3 style={{ fontSize: '14px', marginBottom: '8px' }} className="font-bold">Note:-</h3>
-                            <div className="space-y-1">
-                              {invoiceConfig.notesTemplate.warranty_terms && (
-                                <p className="text-xs text-gray-700 m-0" style={{ lineHeight: '1.4' }}>
-                                  {invoiceConfig.notesTemplate.warranty_terms}
-                                </p>
-                              )}
-                              {invoiceConfig.notesTemplate.quotation_validity && (
-                                <p className="text-xs text-gray-700 m-0" style={{ lineHeight: '1.4', marginTop: '4px' }}>
-                                  {invoiceConfig.notesTemplate.quotation_validity}
-                                </p>
-                              )}
-                              {invoiceConfig.notesTemplate.custom_notes && (
-                                <p className="text-xs text-gray-700 m-0" style={{ lineHeight: '1.4', marginTop: '4px' }}>
-                                  {invoiceConfig.notesTemplate.custom_notes}
-                                </p>
-                              )}
+                            <div style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '8px' }}>Terms & Conditions:</div>
+                            <div style={{ color: '#374151', fontSize: '10px', lineHeight: '1.6' }}>
+                              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <tbody>
+                                  {[
+                                    "Payment is due within 30 days from the date of invoice unless otherwise agreed.",
+                                    "All prices are in LKR and include applicable taxes unless stated otherwise.",
+                                    "Delivery charges may apply and will be calculated based on location and order size.",
+                                    "Products are covered by manufacturer warranty. Terms apply as per warranty card.",
+                                    "Returns accepted within 7 days with original packaging and receipt.",
+                                    "Custom orders and special requests are non-refundable once production begins.",
+                                    "The company reserves the right to make changes without prior notice."
+                                  ].map((term, i) => (
+                                    <tr key={i}>
+                                      <td style={{ verticalAlign: 'top', paddingRight: '4px', width: '12px' }}>{i + 1}.</td>
+                                      <td style={{ verticalAlign: 'top', paddingBottom: '2px' }}>{term}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
                             </div>
                           </div>
-                        )}
 
-                        {/* Terms and Conditions */}
-                        <div style={{ marginTop: '12px' }}>
-                          <h3 style={{ fontSize: '14px', marginBottom: '8px' }} className="font-bold">Terms & Conditions:</h3>
-                          <div className="text-xs text-gray-700" style={{ lineHeight: '1.6' }}>
-                            <ol className="list-decimal pl-4 space-y-1">
-                              <li>Payment is due within 30 days from the date of invoice unless otherwise agreed.</li>
-                              <li>All prices are in LKR and include applicable taxes unless stated otherwise.</li>
-                              <li>Delivery charges may apply and will be calculated based on location and order size.</li>
-                              <li>Products are covered by manufacturer warranty. Terms apply as per warranty card.</li>
-                              <li>Returns accepted within 7 days with original packaging and receipt.</li>
-                              <li>Custom orders and special requests are non-refundable once production begins.</li>
-                              <li>The company reserves the right to make changes without prior notice.</li>
-                            </ol>
+                          {/* Signature Section */}
+                          <div style={{ marginTop: '20px', marginBottom: '12px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                              <tbody>
+                                <tr>
+                                  <td style={{ width: '45%', verticalAlign: 'top' }}>
+                                    <div style={{ borderBottom: '1px solid #333', paddingBottom: '2px', marginBottom: '4px' }}>
+                                      <span style={{ fontSize: '10px', color: '#6b7280' }}>Signature:</span>
+                                    </div>
+                                    <table style={{ width: '100%', marginTop: '30px', borderCollapse: 'collapse' }}>
+                                      <tbody>
+                                        <tr>
+                                          <td style={{ borderBottom: '1px solid #333' }}></td>
+                                          <td style={{ width: '40px', textAlign: 'center', fontSize: '10px', color: '#4b5563', padding: '0 4px', verticalAlign: 'bottom' }}>Date:</td>
+                                          <td style={{ width: '80px', borderBottom: '1px solid #333' }}></td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                    <div style={{ fontWeight: 'bold', fontSize: '10px', marginTop: '4px' }}>Received By</div>
+                                  </td>
+                                  <td style={{ width: '10%' }}></td>
+                                  <td style={{ width: '45%', verticalAlign: 'top' }}>
+                                    <div style={{ borderBottom: '1px solid #333', paddingBottom: '2px', marginBottom: '4px' }}>
+                                      <span style={{ fontSize: '10px', color: '#6b7280' }}>Signature:</span>
+                                    </div>
+                                    <table style={{ width: '100%', marginTop: '30px', borderCollapse: 'collapse' }}>
+                                      <tbody>
+                                        <tr>
+                                          <td style={{ borderBottom: '1px solid #333' }}></td>
+                                          <td style={{ width: '40px', textAlign: 'center', fontSize: '10px', color: '#4b5563', padding: '0 4px', verticalAlign: 'bottom' }}>Date:</td>
+                                          <td style={{ width: '80px', borderBottom: '1px solid #333' }}></td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                    <div style={{ fontWeight: 'bold', fontSize: '10px', marginTop: '4px' }}>Checked By</div>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </div>
-                        </div>
+                        </>
+                      )}
+                    </div>
 
-                        {/* Signature Section */}
-                        <div style={{ marginTop: '20px', marginBottom: '12px' }}>
-                          <div className="grid grid-cols-2 gap-8">
-                            <div>
-                              <div style={{ borderBottom: '1px solid #333', paddingBottom: '2px', marginBottom: '4px' }}>
-                                <span className="text-xs text-gray-500">Signature:</span>
-                              </div>
-                              <div className="flex justify-between items-end" style={{ marginTop: '30px' }}>
-                                <div style={{ flex: 1, borderBottom: '1px solid #333', marginRight: '8px' }}></div>
-                                <span className="text-xs text-gray-600">Date:</span>
-                                <div style={{ width: '80px', borderBottom: '1px solid #333', marginLeft: '8px' }}></div>
-                              </div>
-                              <span className="font-bold text-xs block mt-1">Received By</span>
-                            </div>
-                            <div>
-                              <div style={{ borderBottom: '1px solid #333', paddingBottom: '2px', marginBottom: '4px' }}>
-                                <span className="text-xs text-gray-500">Signature:</span>
-                              </div>
-                              <div className="flex justify-between items-end" style={{ marginTop: '30px' }}>
-                                <div style={{ flex: 1, borderBottom: '1px solid #333', marginRight: '8px' }}></div>
-                                <span className="text-xs text-gray-600">Date:</span>
-                                <div style={{ width: '80px', borderBottom: '1px solid #333', marginLeft: '8px' }}></div>
-                              </div>
-                              <span className="font-bold text-xs block mt-1">Checked By</span>
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Footer Section */}
-                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10 }}>
-                    <div
-                      style={{
-                        background: 'linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '40px',
-                        width: '100%',
-                        padding: '16px',
-                        pageBreakInside: 'avoid'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <svg
-                          width="20"
-                          height="20"
-                          fill="none"
-                          stroke="white"
-                          viewBox="0 0 24 24"
-                          style={{ flexShrink: 0 }}
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                        </svg>
-                        <span style={{ color: 'white', fontSize: '14px', fontWeight: '500' }}>0112870330</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <svg
-                          width="20"
-                          height="20"
-                          fill="none"
-                          stroke="white"
-                          viewBox="0 0 24 24"
-                          style={{ flexShrink: 0 }}
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                        <span style={{ color: 'white', fontSize: '14px', fontWeight: '500' }}>vcarepvtltd@gmail.com</span>
+                    {/* Footer Section */}
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10 }}>
+                      <div
+                        style={{
+                          width: '100%',
+                          backgroundColor: '#2563eb',
+                          padding: '12px 0',
+                          textAlign: 'center'
+                        }}
+                      >
+                        <table style={{ display: 'inline-table', borderCollapse: 'collapse', marginRight: '32px' }}>
+                          <tbody>
+                            <tr>
+                              <td style={{ padding: 0, paddingRight: '6px', verticalAlign: 'middle' }}>
+                                <svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24" style={{ display: 'block' }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                </svg>
+                              </td>
+                              <td style={{ padding: 0, verticalAlign: 'middle', color: 'white', fontSize: '12px', fontWeight: '500', lineHeight: '1' }}>
+                                0112870330
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                        <table style={{ display: 'inline-table', borderCollapse: 'collapse' }}>
+                          <tbody>
+                            <tr>
+                              <td style={{ padding: 0, paddingRight: '6px', verticalAlign: 'middle' }}>
+                                <svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24" style={{ display: 'block' }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                              </td>
+                              <td style={{ padding: 0, verticalAlign: 'middle', color: 'white', fontSize: '12px', fontWeight: '500', lineHeight: '1' }}>
+                                vcarepvtltd@gmail.com
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

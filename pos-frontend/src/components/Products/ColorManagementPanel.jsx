@@ -18,9 +18,11 @@ import {
   Collapse,
   Alert,
   Badge,
-  Tooltip
+  Tooltip,
+  ColorPicker
 } from 'antd';
 import { Icon } from '../common/Icon';
+
 import { ActionButton } from '../common/ActionButton';
 import { settingsApi } from '../../api/apiClient';
 
@@ -72,10 +74,39 @@ export function ColorManagementPanel({
   const [_uploadingEditColorSelectorImage, setUploadingEditColorSelectorImage] = useState(false);
   const [materialSearchTerm, _setMaterialSearchTerm] = useState('');
 
+  const commonColors = [
+    "#000000", // Black
+    "#FFFFFF", // White
+    "#808080", // Gray
+    "#C0C0C0", // Silver
+    "#FF0000", // Red
+    "#800000", // Maroon
+    "#FFA500", // Orange
+    "#FFFF00", // Yellow
+    "#808000", // Olive
+    "#00FF00", // Lime
+    "#008000", // Green
+    "#00FFFF", // Cyan
+    "#008080", // Teal
+    "#0000FF", // Blue
+    "#000080", // Navy
+    "#800080", // Purple
+    "#FF00FF", // Magenta
+    "#FFC0CB", // Pink
+    "#A52A2A", // Brown
+    "#F5F5DC"  // Beige
+  ];
+
   const handleAddColor = (values) => {
+    // If ColorPicker provides an object, call toHexString(), otherwise default to #000000
+    let hexColor = '#000000';
+    if (values.colorCode) {
+      hexColor = typeof values.colorCode === 'string' ? values.colorCode : values.colorCode.toHexString();
+    }
+
     const newColor = {
       name: values.name,
-      colorCode: '#000000',
+      colorCode: hexColor,
       productImageInColor: imagePath || '',
       colorSelectorImage: colorSelectorImagePath || ''
     };
@@ -183,7 +214,8 @@ export function ColorManagementPanel({
   const handleStartEditColor = (color) => {
     setEditingColorId(color.id);
     colorEditForm.setFieldsValue({
-      name: color.name
+      name: color.name,
+      colorCode: color.colorCode || '#000000'
     });
     setEditImagePath(color.productImageInColor || null);
     setEditImagePreview(color.productImageInColor ? getImageUrl(color.productImageInColor) : null);
@@ -210,8 +242,14 @@ export function ColorManagementPanel({
         return;
       }
 
+      let hexColor = colorToUpdate.colorCode || '#000000';
+      if (values.colorCode) {
+        hexColor = typeof values.colorCode === 'string' ? values.colorCode : values.colorCode.toHexString();
+      }
+
       const updatedData = {
         name: values.name,
+        colorCode: hexColor,
         productImageInColor: editImagePath || colorToUpdate.productImageInColor || '',
         colorSelectorImage: editColorSelectorImagePath || colorToUpdate.colorSelectorImage || ''
       };
@@ -386,7 +424,7 @@ export function ColorManagementPanel({
           onFinish={handleAddColor}
         >
           <Row gutter={16}>
-            <Col span={16}>
+            <Col span={12}>
               <Form.Item
                 name="name"
                 label="Color Name"
@@ -395,7 +433,25 @@ export function ColorManagementPanel({
                 <Input placeholder="e.g., Natural Oak, Walnut, White" />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col span={6}>
+              <Form.Item
+                name="colorCode"
+                label="Hex Color"
+                initialValue="#000000"
+                rules={[{ required: true, message: 'Select a color' }]}
+              >
+                <ColorPicker
+                  showText
+                  presets={[
+                    {
+                      label: 'Common',
+                      colors: ['#000000', '#FFFFFF', '#8B4513', '#A0522D', '#D2B48C', '#808080', '#C0C0C0', '#F5F5DC']
+                    }
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
               <Form.Item label=" ">
                 <Button type="primary" htmlType="submit" icon={<Icon name="add" />} block>
                   Add Color
@@ -506,13 +562,34 @@ export function ColorManagementPanel({
               editingColorId === color.id ? (
                 <Card key={color.id} size="small" className="border-blue-500 bg-blue-50">
                   <Form form={colorEditForm} layout="vertical">
-                    <Form.Item
-                      name="name"
-                      label="Color Name"
-                      rules={[{ required: true, message: 'Please enter color name' }]}
-                    >
-                      <Input placeholder="e.g., Natural Oak, Walnut, White" />
-                    </Form.Item>
+                    <Row gutter={16}>
+                      <Col span={16}>
+                        <Form.Item
+                          name="name"
+                          label="Color Name"
+                          rules={[{ required: true, message: 'Please enter color name' }]}
+                        >
+                          <Input placeholder="e.g., Natural Oak, Walnut, White" />
+                        </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                        <Form.Item
+                          name="colorCode"
+                          label="Hex Color"
+                          rules={[{ required: true, message: 'Select a color' }]}
+                        >
+                          <ColorPicker
+                            showText
+                            presets={[
+                              {
+                                label: 'Common',
+                                colors: commonColors
+                              }
+                            ]}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
 
                     <Row gutter={16}>
                       <Col span={12}>

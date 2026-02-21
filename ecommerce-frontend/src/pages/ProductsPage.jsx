@@ -4,6 +4,7 @@ import { fetchProducts } from '../store/slices/productsSlice';
 import ProductCard from '../components/Products/ProductCard';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Search, ChevronDown, SlidersHorizontal } from 'lucide-react';
 
 const ProductsPage = () => {
   const dispatch = useDispatch();
@@ -12,7 +13,7 @@ const ProductsPage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name');
-  const [sortOrder, setSortOrder] = useState('asc');
+  const sortOrder = 'asc'; // Fixed order for minimalist UI
 
   // Get category from URL
   const selectedCategory = useMemo(() => {
@@ -89,72 +90,73 @@ const ProductsPage = () => {
           return aValue < bValue ? 1 : -1;
         }
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [products, selectedCategory, searchTerm, sortBy, sortOrder]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Our Products</h1>
-        <p className="text-lg text-gray-600">Discover our complete collection of premium furniture</p>
-      </div>
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 py-8 lg:py-12">
 
-      {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Search */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+      {/* Editorial Breadcrumb / Minimal Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+        <div>
+          <nav className="text-sm font-medium text-gray-400 mb-2">
+            <span>Home</span> <span className="mx-2">/</span> <span className="text-gray-900">Products</span>
+          </nav>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Furniture Collection</h1>
+        </div>
+
+        {/* Minimal Search & Sort Utility */}
+        <div className="flex items-center gap-6">
+          <div className="relative group">
+            <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-gray-900 transition-colors" />
             <input
               type="text"
-              placeholder="Search products..."
+              placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-field"
+              className="pl-6 pb-1 bg-transparent border-b border-gray-200 focus:border-gray-900 text-sm font-medium text-gray-900 placeholder-gray-400 outline-none w-32 focus:w-48 transition-all duration-300"
             />
           </div>
 
-          {/* Category Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-            <select value={selectedCategory}
-              onChange={(e) => handleCategoryChange(e.target.value)}
-              className="input-field"
-            >
-              <option value="All">All Categories</option>
-              {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Sort By */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-500">Sort by:</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="input-field"
+              className="bg-transparent text-sm font-bold text-gray-900 outline-none cursor-pointer appearance-none pr-4"
+              style={{ background: 'url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 20 20\' fill=\'currentColor\'%3E%3Cpath fill-rule=\'evenodd\' d=\'M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z\' clip-rule=\'evenodd\'/%3E%3C/svg%3E") no-repeat right center / 1rem' }}
             >
               <option value="name">Name</option>
               <option value="price">Price</option>
               <option value="createdAt">Newest</option>
             </select>
           </div>
-
-          {/* Sort Order */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Order</label>
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              className="input-field"
-            >
-              <option value="asc">Ascending</option>
-              <option value="desc">Descending</option>
-            </select>
-          </div>
         </div>
+      </div>
+
+      {/* Horizontal Category Pills */}
+      <div className="flex overflow-x-auto pb-4 mb-8 scrollbar-hide gap-3 border-b border-gray-100" style={{ scrollbarWidth: 'none' }}>
+        <button
+          onClick={() => handleCategoryChange('All')}
+          className={`px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 ${selectedCategory === 'All'
+            ? 'bg-gray-900 text-white shadow-md'
+            : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+            }`}
+        >
+          All Items
+        </button>
+        {categories.map(category => (
+          <button
+            key={category}
+            onClick={() => handleCategoryChange(category)}
+            className={`px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 ${selectedCategory === category
+              ? 'bg-gray-900 text-white shadow-md'
+              : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+              }`}
+          >
+            {category}
+          </button>
+        ))}
       </div>
 
       {listLoading ? (

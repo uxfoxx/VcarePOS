@@ -27,6 +27,7 @@ import { ProductDetailsSheet } from '../Invoices/ProductDetailsSheet';
 import { CategoryManagement } from './CategoryManagement';
 import { ProductModal } from './ProductModal';
 import { DetailModal } from '../common/DetailModal';
+import { MediaViewerModal } from '../common/MediaViewerModal';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { EmptyState } from '../common/EmptyState';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
@@ -49,6 +50,7 @@ export function ProductManagement() {
   const [activeTab, setActiveTab] = useState('products');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const { productsList, error } = useSelector(state => state.products);
+  const [viewerState, setViewerState] = useState({ open: false, index: 0, media: [] });
 
   useEffect(() => {
     dispatch(fetchProducts());
@@ -124,67 +126,61 @@ export function ProductManagement() {
       fixed: 'left',
       width: 300,
       render: (text, record) => {
-        const getAllImages = () => {
-          const images = [];
+        const getAllMedia = () => {
+          const media = [];
 
           if (record.media && Array.isArray(record.media) && record.media.length > 0) {
-            const imageMedia = record.media.filter(
-              (m) =>
-                !m.startsWith('data:video/') &&
-                !m.toLowerCase().endsWith('.mp4') &&
-                !m.toLowerCase().endsWith('.webm') &&
-                !m.toLowerCase().endsWith('.mov')
-            );
-            images.push(...imageMedia);
+            media.push(...record.media);
           }
 
           if (record.colors && Array.isArray(record.colors) && record.colors.length > 0) {
             record.colors.forEach(color => {
-              if (color.productImageInColor && !images.includes(color.productImageInColor)) {
-                images.push(color.productImageInColor);
+              if (color.productImageInColor && !media.includes(color.productImageInColor)) {
+                media.push(color.productImageInColor);
               }
             });
           }
 
-          return images;
+          return media;
         };
 
-        const allImages = getAllImages();
-        const primaryImage = allImages.length > 0
-          ? `${import.meta.env.VITE_API_URL}${allImages[0]}`
+        const allMediaItems = getAllMedia();
+        const primaryMedia = allMediaItems.length > 0
+          ? `${import.meta.env.VITE_API_URL}${allMediaItems[0]}`
           : record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
 
-        const totalImages = allImages.length || (record.image ? 1 : 0);
+        const totalMedia = allMediaItems.length || (record.image ? 1 : 0);
+        const isVideo = primaryMedia.startsWith('data:video/') || primaryMedia.toLowerCase().endsWith('.mp4') || primaryMedia.toLowerCase().endsWith('.webm') || primaryMedia.toLowerCase().endsWith('.mov');
+        const mediaToView = allMediaItems.length > 0 ? allMediaItems : (record.image ? [record.image] : []);
 
         return (
           <div className="flex items-center space-x-3">
-            <div className="relative">
-              <Image
-                src={primaryImage}
-                alt={record.name}
-                width={50}
-                height={50}
-                className="object-cover rounded"
-                preview={totalImages > 1 ? {
-                  mask: <div className="flex flex-col items-center"><Icon name="search" /><span className="text-xs mt-1">View {totalImages}</span></div>,
-                  imageRender: () => (
-                    <div className="grid grid-cols-2 gap-2 p-4">
-                      {allImages.map((media, idx) => (
-                        <img
-                          key={idx}
-                          src={`${import.meta.env.VITE_API_URL}${media}`}
-                          alt={`${record.name} - ${idx + 1}`}
-                          className="w-full h-auto rounded"
-                        />
-                      ))}
-                    </div>
-                  )
-                } : false}
-                style={{ aspectRatio: '1/1', objectFit: 'cover' }}
-              />
-              {totalImages > 1 && (
+            <div
+              className="relative cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (totalMedia > 0) {
+                  setViewerState({ open: true, index: 0, media: mediaToView });
+                }
+              }}
+            >
+              {isVideo ? (
+                <div className="w-[50px] h-[50px] bg-black rounded flex items-center justify-center relative">
+                  <video src={primaryMedia} className="object-cover w-full h-full opacity-60 rounded" crossOrigin="anonymous" />
+                  <Icon name="play_circle" className="absolute text-white text-2xl" />
+                </div>
+              ) : (
+                <img
+                  src={primaryMedia}
+                  alt={record.name}
+                  className="object-cover rounded w-[50px] h-[50px]"
+                  style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                  crossOrigin="anonymous"
+                />
+              )}
+              {totalMedia > 1 && (
                 <div className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
-                  {totalImages}
+                  {totalMedia}
                 </div>
               )}
             </div>
@@ -388,67 +384,61 @@ export function ProductManagement() {
         fixed: 'left',
         width: 300,
         render: (text, record) => {
-          const getAllImages = () => {
-            const images = [];
+          const getAllMedia = () => {
+            const media = [];
 
             if (record.media && Array.isArray(record.media) && record.media.length > 0) {
-              const imageMedia = record.media.filter(
-                (m) =>
-                  !m.startsWith('data:video/') &&
-                  !m.toLowerCase().endsWith('.mp4') &&
-                  !m.toLowerCase().endsWith('.webm') &&
-                  !m.toLowerCase().endsWith('.mov')
-              );
-              images.push(...imageMedia);
+              media.push(...record.media);
             }
 
             if (record.colors && Array.isArray(record.colors) && record.colors.length > 0) {
               record.colors.forEach(color => {
-                if (color.productImageInColor && !images.includes(color.productImageInColor)) {
-                  images.push(color.productImageInColor);
+                if (color.productImageInColor && !media.includes(color.productImageInColor)) {
+                  media.push(color.productImageInColor);
                 }
               });
             }
 
-            return images;
+            return media;
           };
 
-          const allImages = getAllImages();
-          const primaryImage = allImages.length > 0
-            ? `${import.meta.env.VITE_API_URL}${allImages[0]}`
+          const allMediaItems = getAllMedia();
+          const primaryMedia = allMediaItems.length > 0
+            ? `${import.meta.env.VITE_API_URL}${allMediaItems[0]}`
             : record.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
 
-          const totalImages = allImages.length || (record.image ? 1 : 0);
+          const totalMedia = allMediaItems.length || (record.image ? 1 : 0);
+          const isVideo = primaryMedia.startsWith('data:video/') || primaryMedia.toLowerCase().endsWith('.mp4') || primaryMedia.toLowerCase().endsWith('.webm') || primaryMedia.toLowerCase().endsWith('.mov');
+          const mediaToView = allMediaItems.length > 0 ? allMediaItems : (record.image ? [record.image] : []);
 
           return (
             <div className="flex items-center space-x-3">
-              <div className="relative">
-                <Image
-                  src={primaryImage}
-                  alt={record.name}
-                  width={50}
-                  height={50}
-                  className="object-cover rounded"
-                  preview={totalImages > 1 ? {
-                    mask: <div className="flex flex-col items-center"><Icon name="search" /><span className="text-xs mt-1">View {totalImages}</span></div>,
-                    imageRender: () => (
-                      <div className="grid grid-cols-2 gap-2 p-4">
-                        {allImages.map((media, idx) => (
-                          <img
-                            key={idx}
-                            src={`${import.meta.env.VITE_API_URL}${media}`}
-                            alt={`${record.name} - ${idx + 1}`}
-                            className="w-full h-auto rounded"
-                          />
-                        ))}
-                      </div>
-                    )
-                  } : false}
-                  style={{ aspectRatio: '1/1', objectFit: 'cover' }}
-                />
-                {totalImages > 1 && (
+              <div
+                className="relative cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (totalMedia > 0) {
+                    setViewerState({ open: true, index: 0, media: mediaToView });
+                  }
+                }}
+              >
+                {isVideo ? (
+                  <div className="w-[50px] h-[50px] bg-black rounded flex items-center justify-center relative">
+                    <video src={primaryMedia} className="object-cover w-full h-full opacity-60 rounded" crossOrigin="anonymous" />
+                    <Icon name="play_circle" className="absolute text-white text-2xl" />
+                  </div>
+                ) : (
+                  <img
+                    src={primaryMedia}
+                    alt={record.name}
+                    className="object-cover rounded w-[50px] h-[50px]"
+                    style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                    crossOrigin="anonymous"
+                  />
+                )}
+                {totalMedia > 1 && (
                   <div className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
-                    {totalImages}
+                    {totalMedia}
                   </div>
                 )}
               </div>
@@ -737,6 +727,14 @@ export function ProductManagement() {
             Print Details
           </ActionButton>
         ]}
+      />
+
+      {/* Unified Media Slider Modal */}
+      <MediaViewerModal
+        open={viewerState.open}
+        onClose={() => setViewerState({ ...viewerState, open: false })}
+        media={viewerState.media}
+        initialIndex={viewerState.index}
       />
     </>
   );

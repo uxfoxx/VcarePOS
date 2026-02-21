@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Modal, Descriptions, Typography, Space, Image, Tag, Divider, Carousel } from 'antd';
 import { Icon } from './Icon';
 import { ActionButton } from './ActionButton';
+import { MediaViewerModal } from './MediaViewerModal';
 
 const { Title, Text } = Typography;
 
@@ -14,7 +15,7 @@ export function DetailModal({
   type = 'generic',
   actions = []
 }) {
-  const [videoPreviewUrl, setVideoPreviewUrl] = useState(null);
+  const [viewerState, setViewerState] = useState({ open: false, index: 0, media: [] });
   const carouselRef = useRef(null);
 
   if (!data) return null;
@@ -43,7 +44,7 @@ export function DetailModal({
             {allMedia.length > 0 ? (
               <div className="flex flex-col gap-2">
                 <div className="w-[360px] overflow-hidden rounded-lg bg-white border border-gray-100">
-                  <Image.PreviewGroup>
+                  <div className="w-full h-full relative">
                     <Carousel autoplay={false} dots={false} arrows={true} infinite={false} ref={carouselRef}>
                       {allMedia.map((mediaItem, index) => {
                         const isVideo = mediaItem.startsWith('data:video/') ||
@@ -52,36 +53,38 @@ export function DetailModal({
                           mediaItem.toLowerCase().includes('.mov');
 
                         return (
-                          <div key={index} className="flex justify-center items-center h-[360px] relative group">
-                            {isVideo ? (
-                              <div
-                                className="relative w-full h-full cursor-pointer flex items-center justify-center bg-black"
-                                onClick={() => setVideoPreviewUrl(`${import.meta.env.VITE_API_URL}${mediaItem}`)}
-                              >
-                                <video
-                                  src={`${import.meta.env.VITE_API_URL}${mediaItem}`}
-                                  className="object-cover h-[360px] w-full opacity-80"
-                                  crossOrigin="anonymous"
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                  <Icon name="play_circle" className="text-white text-6xl drop-shadow-md opacity-70 group-hover:opacity-100 transition-opacity" />
+                          <div key={index}>
+                            <div className="flex justify-center items-center h-[360px] relative group overflow-hidden rounded-lg">
+                              {isVideo ? (
+                                <div
+                                  className="relative w-full h-full cursor-pointer flex items-center justify-center bg-black"
+                                  onClick={() => setViewerState({ open: true, index, media: allMedia })}
+                                >
+                                  <video
+                                    src={`${import.meta.env.VITE_API_URL}${mediaItem}`}
+                                    className="object-cover h-[360px] w-full opacity-80"
+                                    crossOrigin="anonymous"
+                                  />
+                                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <Icon name="play_circle" className="text-white text-6xl drop-shadow-md opacity-70 group-hover:opacity-100 transition-opacity" />
+                                  </div>
                                 </div>
-                              </div>
-                            ) : (
-                              <Image
-                                src={`${import.meta.env.VITE_API_URL}${mediaItem}`}
-                                alt={`${data.name} ${index + 1}`}
-                                className="object-cover h-[360px] w-full block"
-                                style={{ aspectRatio: '1/1', objectFit: 'cover' }}
-                                crossOrigin="anonymous"
-                                preview={true}
-                              />
-                            )}
+                              ) : (
+                                <img
+                                  src={`${import.meta.env.VITE_API_URL}${mediaItem}`}
+                                  alt={`${data.name} ${index + 1}`}
+                                  className="object-cover h-[360px] w-full block cursor-pointer"
+                                  style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                                  crossOrigin="anonymous"
+                                  onClick={() => setViewerState({ open: true, index, media: allMedia })}
+                                />
+                              )}
+                            </div>
                           </div>
                         );
                       })}
                     </Carousel>
-                  </Image.PreviewGroup>
+                  </div>
                 </div>
 
                 {/* Thumbnails Row */}
@@ -119,12 +122,16 @@ export function DetailModal({
               </div>
             ) : (
               <div className="w-[360px]">
-                <Image
+                <img
                   src={data.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
                   alt={data.name}
-                  className="object-cover h-[360px] w-full rounded-lg"
-                  preview={false}
+                  className="object-cover h-[360px] w-full rounded-lg cursor-pointer"
                   style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                  onClick={() => setViewerState({
+                    open: true,
+                    index: 0,
+                    media: [data.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300']
+                  })}
                 />
               </div>
             )}
@@ -567,27 +574,13 @@ export function DetailModal({
         </div>
       </Modal>
 
-      {/* Standalone Video Preview Modal */}
-      <Modal
-        open={!!videoPreviewUrl}
-        title="Video Preview"
-        footer={null}
-        onCancel={() => setVideoPreviewUrl(null)}
-        width={800}
-        destroyOnClose
-        centered
-      >
-        {videoPreviewUrl && (
-          <video
-            src={videoPreviewUrl}
-            controls
-            autoPlay
-            className="w-full rounded-lg bg-black"
-            style={{ maxHeight: '70vh' }}
-            crossOrigin="anonymous"
-          />
-        )}
-      </Modal>
+      {/* Unified Media Slider Modal */}
+      <MediaViewerModal
+        open={viewerState.open}
+        onClose={() => setViewerState({ ...viewerState, open: false })}
+        media={viewerState.media}
+        initialIndex={viewerState.index}
+      />
     </>
   );
 }

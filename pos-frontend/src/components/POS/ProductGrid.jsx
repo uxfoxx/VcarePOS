@@ -187,11 +187,11 @@ export function ProductGrid({ collapsed }) {
   // Determine grid columns based on sidebar state
   const getColSpan = () => {
     if (collapsed) {
-      // When collapsed, show 4 products per row
-      return { xs: 24, sm: 12, md: 8, lg: 6, xl: 6 };
+      // When collapsed
+      return { xs: 24, sm: 12, md: 12, lg: 8, xl: 6 };
     } else {
-      // When expanded, show 3 products per row
-      return { xs: 24, sm: 12, md: 8, lg: 8, xl: 8 };
+      // When expanded
+      return { xs: 24, sm: 12, md: 12, lg: 12, xl: 8 };
     }
   };
 
@@ -225,14 +225,14 @@ export function ProductGrid({ collapsed }) {
             <div>
               <h2 className="text-2xl font-bold m-0">Products</h2>
             </div>
-            <Space>
+            <Space className="w-full md:w-auto mt-4 md:mt-0 flex flex-wrap gap-2">
               <Search
                 id="product-search-input"
-                placeholder="Search by product name, SKU, or barcode..."
+                placeholder="Search by product name, SKU..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onSearch={handleSearchSubmit}
-                className="w-80"
+                className="w-full sm:w-64"
                 size="large"
               />
               <ActionButton.Primary
@@ -247,7 +247,7 @@ export function ProductGrid({ collapsed }) {
         </div>
 
         {/* Category Filter */}
-        <div className="px-4 pt-4 border-b border-gray-200">
+        <div className="px-4 pt-4 pb-2 border-b border-gray-200 overflow-x-auto">
           <Select
             value={selectedCategory}
             onChange={setSelectedCategory}

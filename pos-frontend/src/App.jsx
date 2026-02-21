@@ -1,6 +1,7 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { ConfigProvider, Layout, theme, Spin, App as AntApp, Modal } from 'antd';
+import { ConfigProvider, Layout, theme, Spin, App as AntApp, Modal, Drawer, Button, Badge } from 'antd';
 import { AuthProvider } from './contexts/AuthContext';
+import { Icon } from './components/common/Icon';
 import { LoginPage } from './components/Auth/LoginPage';
 import { Header } from './components/Layout/Header';
 import { Sidebar } from './components/Layout/Sidebar';
@@ -143,6 +144,22 @@ function AppContent() {
 
   const [activeTab, setActiveTab] = useState(getInitialTab);
   const [collapsed, setCollapsed] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth < 1024);
+  const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+  const cartItemsCount = useSelector(state => state.cart?.cart?.length || 0);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsTablet(window.innerWidth < 1024);
+      if (window.innerWidth >= 1024) {
+        setCartDrawerOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Sync state to URL when activeTab changes
   useEffect(() => {
@@ -245,18 +262,55 @@ function AppContent() {
       ),
       'pos': (
         <ProtectedRoute module="pos" action="view">
-          <div className="flex h-full gap-6">
-            <div className="flex-1" data-tour="product-grid">
+          <div className="flex flex-col lg:flex-row h-full gap-6">
+            <div className="flex-1 min-w-0" data-tour="product-grid">
               <Suspense fallback={<ComponentLoader />}>
                 <ProductGrid collapsed={collapsed} />
               </Suspense>
             </div>
-            <div className="w-96" data-tour="cart">
-              <Suspense fallback={<ComponentLoader />}>
-                <Cart />
-              </Suspense>
-            </div>
+            {!isTablet && (
+              <div className="w-full lg:w-96 shrink-0" data-tour="cart">
+                <Suspense fallback={<ComponentLoader />}>
+                  <Cart />
+                </Suspense>
+              </div>
+            )}
           </div>
+
+          {/* Mobile/Tablet Cart Drawer */}
+          {isTablet && (
+            <>
+              <div className="fixed bottom-6 right-6 z-50">
+                <Badge count={cartItemsCount} size="default">
+                  <Button
+                    type="primary"
+                    shape="circle"
+                    size="large"
+                    icon={<Icon name="shopping_cart" />}
+                    style={{ width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+                    onClick={() => setCartDrawerOpen(true)}
+                    className="bg-[#0E72BD] hover:bg-blue-700"
+                  />
+                </Badge>
+              </div>
+
+              <Drawer
+                title="Current Order"
+                placement="right"
+                onClose={() => setCartDrawerOpen(false)}
+                open={cartDrawerOpen}
+                width={isMobile ? '100%' : 400}
+                styles={{ body: { padding: 0 } }}
+                zIndex={1000}
+              >
+                <div className="h-full">
+                  <Suspense fallback={<ComponentLoader />}>
+                    <Cart />
+                  </Suspense>
+                </div>
+              </Drawer>
+            </>
+          )}
         </ProtectedRoute>
       ),
       'products': (
@@ -356,8 +410,8 @@ function AppContent() {
   };
 
   // Calculate dynamic widths based on collapsed state
-  const siderWidth = collapsed ? 80 : 280;
-  const contentWidth = `calc(100% - ${siderWidth}px)`;
+  const siderWidth = isMobile ? 0 : (collapsed ? 80 : 280);
+  const contentWidth = isMobile ? '100%' : `calc(100% - ${siderWidth}px)`;
 
   // Layout styles
   const layoutStyle = {
@@ -405,21 +459,46 @@ function AppContent() {
     <>
       <TokenValidator />
       <Layout style={layoutStyle}>
-        <Sider
-          width={siderWidth}
-          style={siderStyle}
-          collapsible
-          collapsed={collapsed}
-          onCollapse={setCollapsed}
-          trigger={null}
-        >
-          <Sidebar
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
+        {!isMobile && (
+          <Sider
+            width={siderWidth}
+            style={siderStyle}
+            collapsible
             collapsed={collapsed}
             onCollapse={setCollapsed}
-          />
-        </Sider>
+            trigger={null}
+          >
+            <Sidebar
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              collapsed={collapsed}
+              onCollapse={setCollapsed}
+            />
+          </Sider>
+        )}
+
+        {isMobile && (
+          <Drawer
+            placement="left"
+            closable={false}
+            onClose={() => setCollapsed(true)}
+            open={!collapsed}
+            styles={{ body: { padding: 0 } }}
+            width={280}
+            zIndex={1001}
+          >
+            <Sidebar
+              activeTab={activeTab}
+              onTabChange={(tab) => {
+                setActiveTab(tab);
+                setCollapsed(true);
+              }}
+              collapsed={false}
+              onCollapse={() => setCollapsed(true)}
+            />
+          </Drawer>
+        )}
+
         <Layout>
           <Header
             style={headerStyle}

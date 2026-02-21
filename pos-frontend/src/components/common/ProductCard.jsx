@@ -119,24 +119,24 @@ export function ProductCard({
       }}
       {...props}
     >
-      <div className="space-y-3">
+      <div className="space-y-3 flex flex-col h-full justify-between">
         <div>
-          <Text strong className="text-base line-clamp-2 leading-tight block mb-1">
+          <Text strong className="text-base line-clamp-2 leading-tight block mb-1" style={{ minHeight: '44px' }}>
             {product.name}
           </Text>
-          <Text type="secondary" className="text-sm block mb-1">
+          <Text type="secondary" className="text-sm block mb-1 truncate">
             SKU: {product.barcode || 'N/A'}
           </Text>
           {product.hasColors && (
             <Text type="secondary" className="text-xs block mb-1">
-              {product.colors?.length || 0} color variations available
+              {product.colors?.length || 0} color{product.colors?.length !== 1 ? 's' : ''} available
             </Text>
           )}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-1 mt-2">
             <Text strong className="text-lg text-[#0E72BD]">
               {renderPrice()}
             </Text>
-            <Text type="secondary" className="text-sm">
+            <Text type="secondary" className="text-sm px-2 py-0.5 bg-gray-50 rounded text-nowrap">
               Stock: {product.stock}
             </Text>
           </div>
@@ -165,22 +165,24 @@ export function ProductCard({
           </div>
         )}
 
-        <Button
-          type="primary"
-          icon={<Icon name="add_shopping_cart" />}
-          size="large"
-          block
-          onClick={handleAddToCart}
-          disabled={product.stock === 0}
-          className="bg-[#0E72BD] hover:bg-blue-700 font-semibold"
-        >
-          {product.stock === 0
-            ? 'Out of Stock'
-            : product.hasColors
-              ? 'Select Color & Size'
-              : 'Add to Cart'
-          }
-        </Button>
+        <div className="mt-auto pt-2">
+          <Button
+            type="primary"
+            icon={<Icon name="add_shopping_cart" />}
+            size="large"
+            block
+            onClick={handleAddToCart}
+            disabled={product.stock === 0}
+            className="bg-[#0E72BD] hover:bg-blue-700 font-semibold"
+          >
+            {product.stock === 0
+              ? 'Out of Stock'
+              : product.hasColors
+                ? 'Select Color & Size'
+                : 'Add to Cart'
+            }
+          </Button>
+        </div>
       </div>
     </Card>
   );

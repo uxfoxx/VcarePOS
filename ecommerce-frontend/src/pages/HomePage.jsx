@@ -48,6 +48,7 @@ const HomePage = () => {
   const [isSlider, setIsSlider] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [direction, setDirection] = useState('next');
 
   const heroRef = useRef(null);
   // const qualityRef = useRef(null);
@@ -104,11 +105,37 @@ const HomePage = () => {
   useEffect(() => {
     if (isSlider && heroSlides.length > 1) {
       const timer = setInterval(() => {
+        setDirection('next');
         setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-      }, 6000);
+      }, 9000);
       return () => clearInterval(timer);
     }
   }, [isSlider, heroSlides.length]);
+
+  // Hero Content Animation Trigger
+  useEffect(() => {
+    if (!heroRef.current) return;
+
+    const content = heroRef.current.querySelector('.hero-content-wrapper');
+    const title = heroRef.current.querySelector('.hero-title');
+    const desc = heroRef.current.querySelector('.hero-desc');
+    const btn = heroRef.current.querySelector('.hero-btn');
+
+    if (content && title && desc) {
+      const xOffset = direction === 'next' ? 100 : -100;
+
+      gsap.killTweensOf([title, desc, btn]);
+
+      // Reset positions
+      gsap.set([title, desc, btn], { opacity: 0, x: xOffset });
+
+      // Animate in
+      const tl = gsap.timeline({ defaults: { ease: 'power3.out', duration: 1 } });
+      tl.to(title, { opacity: 1, x: 0 })
+        .to(desc, { opacity: 1, x: 0 }, "-=0.7")
+        .to(btn, { opacity: 1, x: 0 }, "-=0.7");
+    }
+  }, [currentSlide, direction, heroSlides.length]);
 
   // const qualityFeatures = [
   //   {
@@ -226,7 +253,7 @@ const HomePage = () => {
 
     if (hero) {
       gsap.fromTo(
-        hero.querySelector('.hero-content'),
+        hero.querySelector('.hero-content-wrapper'),
         {
           opacity: 0,
           y: 50
@@ -765,33 +792,23 @@ const HomePage = () => {
         <div className="hero-content relative z-10 h-full flex items-center justify-center px-4 sm:px-6 lg:px-8">
 
 
-          <div className="text-center text-white max-w-4xl relative z-10">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
+          <div className="hero-content-wrapper text-center text-white max-w-4xl relative z-10">
+            <h1 className="hero-title text-5xl sm:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
               {activeSlide.title}
             </h1>
-            <p className="text-xl sm:text-2xl mb-10 text-gray-200 font-light max-w-2xl mx-auto">
+            <p className="hero-desc text-xl sm:text-2xl mb-10 text-gray-200 font-light max-w-2xl mx-auto">
               {activeSlide.description}
             </p>
-            {activeSlide.cta_type === 'button' && activeSlide.button_text && (
-              <Link
-                to={activeSlide.button_link || '/products'}
-                className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-10 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-2xl"
-
-              // className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-10 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-2xl"
-              >
-                {activeSlide.button_text || 'Learn More'}
-              </Link>
+            {(activeSlide.cta_type === 'button' || activeSlide.cta_type === 'link') && activeSlide.button_text && (
+              <div className="hero-btn">
+                <Link
+                  to={activeSlide.button_link || '/products'}
+                  className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-10 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-2xl"
+                >
+                  {activeSlide.button_text || 'Learn More'}
+                </Link>
+              </div>
             )}
-            {/* Wrap content in link if CTA mode is 'link' */}
-            {activeSlide.cta_type === 'link' && activeSlide.button_link ? (
-              <Link
-                to={activeSlide.button_link}
-                className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-10 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-2xl"
-                aria-label={activeSlide.title}
-              >
-                {activeSlide.button_text || 'Learn More'}
-              </Link>
-            ) : null}
           </div>
         </div>
 
@@ -799,13 +816,19 @@ const HomePage = () => {
         {isSlider && heroSlides.length > 1 && (
           <>
             <button
-              onClick={() => setCurrentSlide(prev => (prev - 1 + heroSlides.length) % heroSlides.length)}
+              onClick={() => {
+                setDirection('prev');
+                setCurrentSlide(prev => (prev - 1 + heroSlides.length) % heroSlides.length);
+              }}
               className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors"
             >
               <ChevronLeft size={32} />
             </button>
             <button
-              onClick={() => setCurrentSlide(prev => (prev + 1) % heroSlides.length)}
+              onClick={() => {
+                setDirection('next');
+                setCurrentSlide(prev => (prev + 1) % heroSlides.length);
+              }}
               className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors"
             >
               <ChevronRight size={32} />
@@ -816,7 +839,10 @@ const HomePage = () => {
               {heroSlides.map((_, idx) => (
                 <button
                   key={idx}
-                  onClick={() => setCurrentSlide(idx)}
+                  onClick={() => {
+                    setDirection(idx > currentSlide ? 'next' : 'prev');
+                    setCurrentSlide(idx);
+                  }}
                   className={`w-3 h-3 rounded-full transition-all duration-300 ${currentSlide === idx ? 'bg-primary-500 w-8' : 'bg-white/50'
                     }`}
                 />
@@ -839,7 +865,7 @@ const HomePage = () => {
               <LoadingSpinner size="large" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
               {featuredProducts.map(product => (
                 <div key={product.id} className="product-card group">
                   <ProductCard product={product} />
@@ -973,40 +999,6 @@ const HomePage = () => {
           </div>
         </div>
       </section> */}
-
-
-
-      <section className="py-16 bg-white" ref={featuredRef}>
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div ref={featuredHeadingRef} className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Products</h2>
-            <p className="text-lg text-gray-600">Discover our most popular furniture pieces</p>
-          </div>
-
-          {listLoading ? (
-            <div className="flex justify-center">
-              <LoadingSpinner size="large" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredProducts.map(product => (
-                <div key={product.id} className="product-card">
-                  <ProductCard product={product} />
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="text-center mt-12">
-            <Link
-              to="/products"
-              className="view-all-btn inline-block bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200"
-            >
-              View All Products
-            </Link>
-          </div>
-        </div>
-      </section>
 
 
 

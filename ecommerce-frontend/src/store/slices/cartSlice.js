@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const getCartKey = (userId) => userId ? `cart_${userId}` : 'cart_guest';
+const getCartKey = (userId) => userId ? `cart_${userId}`.toLowerCase() : 'cart_guest';
 
 const loadState = (userId) => {
   try {
@@ -177,11 +177,71 @@ const cartSlice = createSlice({
 
     syncUserCart: (state, action) => {
       const userId = action.payload;
-      const loaded = loadState(userId);
-      state.items = loaded.items;
-      state.totalItems = loaded.totalItems;
-      state.totalAmount = loaded.totalAmount;
+
+      if (userId) {
+        // Loading user cart and checking for guest cart items to merge
+        const userState = loadState(userId);
+        const guestState = loadState(null);
+
+        if (guestState.items.length > 0) {
+          // Merge logic
+          const mergedItems = [...userState.items];
+
+          guestState.items.forEach(guestItem => {
+            const existingItemIndex = mergedItems.findIndex(
+              uItem =>
+                uItem.product.id === guestItem.product.id &&
+                uItem.selectedColorId === guestItem.selectedColorId &&
+                uItem.selectedSize === guestItem.selectedSize
+            );
+
+            if (existingItemIndex !== -1) {
+              // Item exists in user cart, combine quantities (clamped by stock)
+              let availableStock = guestItem.product.stock || 0;
+              if (guestItem.product.colors?.length > 0) {
+                const colorVariant = guestItem.product.colors.find(c => c.id === guestItem.selectedColorId);
+                if (colorVariant) {
+                  const sizeVariant = colorVariant.sizes?.find(s => s.name === guestItem.selectedSize);
+                  if (sizeVariant) {
+                    availableStock = sizeVariant.stock;
+                  }
+                }
+              }
+
+              const newQty = mergedItems[existingItemIndex].quantity + guestItem.quantity;
+              mergedItems[existingItemIndex].quantity = Math.min(newQty, availableStock);
+            } else {
+              // Item doesn't exist in user cart, just add it
+              mergedItems.push(guestItem);
+            }
+          });
+
+          // Update state
+          state.items = mergedItems;
+          state.totalItems = mergedItems.reduce((total, item) => total + item.quantity, 0);
+          state.totalAmount = mergedItems.reduce(
+            (total, item) => total + item.product.price * item.quantity,
+            0
+          );
+
+          // Clear guest cart from localStorage
+          localStorage.removeItem('cart_guest');
+        } else {
+          // No guest items, just load user cart
+          state.items = userState.items;
+          state.totalItems = userState.totalItems;
+          state.totalAmount = userState.totalAmount;
+        }
+      } else {
+        // Logout case: load guest cart (which should be empty if merged previously)
+        const guestState = loadState(null);
+        state.items = guestState.items;
+        state.totalItems = guestState.totalItems;
+        state.totalAmount = guestState.totalAmount;
+      }
+
       state.userId = userId;
+      saveState(state, userId);
     },
   },
 });

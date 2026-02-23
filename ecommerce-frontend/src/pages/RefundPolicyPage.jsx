@@ -46,68 +46,126 @@ const RefundPolicyPage = () => {
                 {/* Intro */}
                 <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-10 flex gap-3">
                     <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-amber-800 leading-relaxed">
-                        All products sold by V Care Services are <strong>considered final upon confirmation of order and successful payment.</strong> Please review this policy carefully before making a purchase.
-                    </p>
+                    <div className="text-sm text-amber-800 leading-relaxed">
+                        <p className="mb-2">Thank you for shopping at <strong>Vcare</strong>. We appreciate your trust in our products and are committed to delivering high-quality office furniture and ergonomic solutions.</p>
+                        <p>Please read our return policy carefully before making a purchase.</p>
+                    </div>
                 </div>
 
                 <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.05)] border border-gray-100 p-8 md:p-12">
 
-                    <Section icon={XCircle} color="bg-red-500" title="We Do Not Accept Returns For">
+                    <Section icon={XCircle} color="bg-red-500" title="Returns">
+                        <p className="text-sm text-gray-600 mb-4 italic">We do not accept returns for change of mind, wrong selection, or personal preference once the order has been confirmed and delivered.</p>
+                        <p className="text-sm text-gray-500 mb-3 font-semibold">Returns are accepted only under reasonable and valid circumstances, such as:</p>
                         <BulletList
-                            icon={XCircle}
-                            iconClass="text-red-400"
                             items={[
-                                'Change of mind after purchase',
-                                'Incorrect selection of product, size, or colour by the customer',
-                                'Cancellation of order after confirmation',
-                                'Delays caused due to customer unavailability at the time of delivery',
+                                'Manufacturing defects',
+                                'Warranty claims',
+                                'Damaged items received at delivery',
+                                'Incorrect product delivered',
                             ]}
                         />
                     </Section>
 
                     <hr className="border-gray-100 mb-10" />
 
-                    <Section icon={CheckCircle2} color="bg-green-500" title="Exceptions — When We Accept Returns">
-                        <p className="text-sm text-gray-500 mb-3">Refunds or replacements will only be considered under the following conditions:</p>
+                    <Section icon={ShieldCheck} color="bg-primary-600" title="Eligibility for Return">
+                        <p className="text-sm text-gray-500 mb-3">To be eligible for a return, the item must be:</p>
                         <BulletList
                             items={[
-                                'The product delivered is damaged at the time of delivery',
-                                'The product delivered is defective due to a manufacturing fault',
-                                'An incorrect item has been delivered by V Care Services',
+                                'Reported within 24 hours of delivery',
+                                'Unused and in original condition',
+                                'In original packaging',
+                                'Supported with photos/videos as proof',
                             ]}
                         />
-                        <div className="mt-4 bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-700">
-                            <strong>Important:</strong> Any damages or defects must be reported within <strong>24 hours of delivery</strong> along with photographic evidence.
+                    </Section>
+
+                    <hr className="border-gray-100 mb-10" />
+
+                    <Section icon={Clock} color="bg-purple-500" title="Refunds">
+                        <p className="text-sm text-gray-600 mb-3">Once we receive and inspect the returned item, we will notify you regarding the approval status.</p>
+                        <p className="text-sm text-gray-600 mb-3">If approved, refunds will be processed to the original payment method within <strong>7–14 working days.</strong></p>
+                        <div className="mt-4 bg-gray-50 rounded-xl p-4">
+                            <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">Please note:</p>
+                            <BulletList
+                                items={[
+                                    'Delivery charges are non-refundable',
+                                    'Installation/service charges (if any) are non-refundable',
+                                ]}
+                            />
                         </div>
                     </Section>
 
                     <hr className="border-gray-100 mb-10" />
 
-                    <Section icon={ShieldCheck} color="bg-primary-600" title="What Happens After a Verified Claim">
-                        <p className="text-sm text-gray-500 mb-3">If the claim is verified by our team, we will proceed with either:</p>
+                    <Section icon={CheckCircle2} color="bg-green-500" title="Exchanges / Replacements">
+                        <p className="text-sm text-gray-600 mb-4 italic">We do not offer exchanges for change of mind or product upgrades.</p>
+                        <p className="text-sm text-gray-500 mb-3 font-semibold">Exchanges are only applicable if:</p>
                         <BulletList
                             items={[
-                                'A replacement of the product, or',
-                                'A full refund (if replacement is not possible)',
+                                'The product has a manufacturing defect',
+                                'The wrong item was delivered',
+                                'The item was damaged during delivery',
+                            ]}
+                        />
+                        <p className="text-sm text-gray-600 mt-4">In such cases, we will arrange a repair or replacement based on warranty terms.</p>
+                    </Section>
+
+                    <hr className="border-gray-100 mb-10" />
+
+                    <Section icon={AlertCircle} color="bg-gray-700" title="Non-Returnable Items">
+                        <p className="text-sm text-gray-500 mb-3">The following items are strictly non-returnable:</p>
+                        <BulletList
+                            icon={XCircle}
+                            iconClass="text-red-400"
+                            items={[
+                                'Customized or made-to-order furniture',
+                                'Used products',
+                                'Products damaged due to misuse',
+                                'Clearance / promotional items',
                             ]}
                         />
                     </Section>
 
                     <hr className="border-gray-100 mb-10" />
 
-                    <Section icon={Clock} color="bg-purple-500" title="Refund Processing">
-                        <BulletList
-                            items={[
-                                'Full refunds (where applicable) will be processed through the original payment method via the PayHere payment gateway.',
-                                'Partial refunds, if approved under exceptional circumstances, will be processed manually via bank transfer in accordance with PayHere policies.',
-                                'Refunds may take 7–14 working days to reflect depending on your bank.',
-                            ]}
-                        />
+                    <Section icon={ShieldCheck} color="bg-blue-600" title="Warranty Returns">
+                        <p className="text-sm text-gray-600 mb-3 leading-relaxed">Electric components (such as smart desk motors, control panels, and mechanisms) are covered under the product warranty period specified at purchase.</p>
+                        <p className="text-sm text-gray-600">Warranty claims will be handled via <strong>repair or part replacement</strong> — not cash refunds.</p>
                     </Section>
 
-                    <div className="mt-2 pt-8 border-t border-gray-100 text-center text-xs text-gray-400">
-                        By making a purchase through our website, you agree to this Refund & Return Policy.
+                    <hr className="border-gray-100 mb-10" />
+
+                    <Section icon={RotateCcw} color="bg-orange-600" title="Return Shipping & Processing">
+                        <div className="space-y-4">
+                            <div>
+                                <h3 className="text-sm font-bold text-gray-900 mb-1">Shipping Costs</h3>
+                                <p className="text-sm text-gray-600 leading-relaxed">If the return is due to our error or a verified defect, Vcare will bear the return logistics cost. If inspection finds no fault, return transport costs will be charged to the customer.</p>
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-gray-900 mb-1">Processing Time</h3>
+                                <p className="text-sm text-gray-600 leading-relaxed">Return inspections and resolutions are completed within <strong>7–10 working days</strong> after product collection.</p>
+                            </div>
+                        </div>
+                    </Section>
+
+                    <div className="mt-12 pt-10 border-t border-gray-100">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 mb-4">Contact Us</h3>
+                                <p className="text-sm text-gray-600 mb-4">For return or warranty requests:</p>
+                                <ul className="space-y-2 text-sm text-gray-600">
+                                    <li className="flex gap-2"><strong>Phone / WhatsApp:</strong> +94 76 76 75 044</li>
+                                    <li className="flex gap-2"><strong>Email:</strong> info@vcaresl.com</li>
+                                    <li className="flex gap-2"><strong>Website:</strong> www.vcaresl.com</li>
+                                </ul>
+                            </div>
+                            <div className="bg-gray-50 rounded-2xl p-6 flex flex-col justify-center text-center">
+                                <p className="text-xs text-gray-400 mb-1">By making a purchase through our website,</p>
+                                <p className="text-xs text-gray-400 italic">you agree to this Refund & Return Policy.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

@@ -20,7 +20,38 @@ import apiClient from '../../api/apiClient';
 
 const { Text } = Typography;
 
-const ITEMS_PER_PAGE = 10;
+// ─── Pagination constants ────────────────────────────────────────────────────
+// Page 1: customer header consumes ~15mm vertical space
+// Last page: summary (totals+bank+notes+T&C+signatures) needs ~130mm
+// → last page can safely hold at most 4 item rows
+const FIRST_PAGE_ITEMS = 5;   // page 1: customer header takes space
+const MIDDLE_PAGE_ITEMS = 9;   // continuation pages: full-height
+const LAST_PAGE_MAX = 4;   // last page: must leave room for summary
+
+const paginateItems = (items) => {
+  if (!items || items.length === 0) return [[]];
+
+  // Tiny order: fits entirely on one page (items + summary)
+  if (items.length <= LAST_PAGE_MAX) return [[...items]];
+
+  const pages = [];
+  let remaining = [...items];
+
+  // Page 1
+  pages.push(remaining.splice(0, FIRST_PAGE_ITEMS));
+
+  // Middle pages — stop when remaining fits on a "last" page
+  while (remaining.length > LAST_PAGE_MAX) {
+    pages.push(remaining.splice(0, MIDDLE_PAGE_ITEMS));
+  }
+
+  // Last page: ≤ LAST_PAGE_MAX items + full summary section
+  if (remaining.length > 0) {
+    pages.push([...remaining]);
+  }
+
+  return pages;
+};
 
 const convertImageToBase64 = (url) => {
   return new Promise((resolve, reject) => {
@@ -45,13 +76,13 @@ const convertImageToBase64 = (url) => {
 };
 
 // Chunk array into smaller arrays
-const chunkArray = (array, size) => {
-  const chunks = [];
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size));
-  }
-  return chunks;
-};
+// const chunkArray = (array, size) => {
+//   const chunks = [];
+//   for (let i = 0; i < array.length; i += size) {
+//     chunks.push(array.slice(i, i + size));
+//   }
+//   return chunks;
+// };
 
 export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) {
   const [loading, setLoading] = useState(false);
@@ -248,7 +279,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
       '/VCARELogo 1.png';
 
     // Split items into pages of 10
-    const itemPages = chunkArray(transaction.items, ITEMS_PER_PAGE);
+    const itemPages = paginateItems(transaction.items);
     const totalPages = itemPages.length;
 
     return (
@@ -293,10 +324,10 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
               {/* Content Section */}
               <div style={{
                 position: 'absolute',
-                top: '45mm',
+                top: '38mm',
                 left: '10mm',
                 right: '10mm',
-                bottom: '30mm',
+                bottom: '20mm',
                 overflow: 'hidden'
               }}>
                 {/* Customer and Invoice Details - First Page Only */}

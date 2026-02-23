@@ -252,7 +252,7 @@ export const InvoiceTermsAndConditions = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <tbody>
             {terms.map((term, i) => (
-              <tr key={i}>
+              <tr key={i} style={{ fontSize: '10px', color: '#4b5563' }}>
                 <td style={{ verticalAlign: 'top', paddingRight: '4px', width: '12px' }}>{i + 1}.</td>
                 <td style={{ verticalAlign: 'top', paddingBottom: '2px' }}>{term}</td>
               </tr>

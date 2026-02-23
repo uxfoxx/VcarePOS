@@ -3,7 +3,38 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { toast } from 'react-toastify';
 
-const ITEMS_PER_PAGE = 10;
+// ─── Pagination constants ────────────────────────────────────────────────────
+// Page 1: customer header consumes ~15mm vertical space
+// Last page: summary (totals+bank+notes+T&C+signatures) needs ~130mm
+// → last page can safely hold at most 4 item rows
+const FIRST_PAGE_ITEMS = 5;   // page 1: customer header takes space
+const MIDDLE_PAGE_ITEMS = 9;   // continuation pages: full-height
+const LAST_PAGE_MAX = 4;   // last page: must leave room for summary
+
+const paginateItems = (items) => {
+  if (!items || items.length === 0) return [[]];
+
+  // Tiny order: fits entirely on one page (items + summary)
+  if (items.length <= LAST_PAGE_MAX) return [[...items]];
+
+  const pages = [];
+  let remaining = [...items];
+
+  // Page 1
+  pages.push(remaining.splice(0, FIRST_PAGE_ITEMS));
+
+  // Middle pages — stop when remaining fits on a "last" page
+  while (remaining.length > LAST_PAGE_MAX) {
+    pages.push(remaining.splice(0, MIDDLE_PAGE_ITEMS));
+  }
+
+  // Last page: ≤ LAST_PAGE_MAX items + full summary section
+  if (remaining.length > 0) {
+    pages.push([...remaining]);
+  }
+
+  return pages;
+};
 
 const convertImageToBase64 = (url) => {
   return new Promise((resolve, reject) => {
@@ -25,15 +56,6 @@ const convertImageToBase64 = (url) => {
     img.onerror = reject;
     img.src = url;
   });
-};
-
-// Chunk array into smaller arrays
-const chunkArray = (array, size) => {
-  const chunks = [];
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size));
-  }
-  return chunks;
 };
 
 const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
@@ -248,7 +270,7 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
   const grandTotal = subtotal - discount;
 
   // Split items into pages of 10
-  const itemPages = chunkArray(order.items, ITEMS_PER_PAGE);
+  const itemPages = paginateItems(order.items);
   const totalPages = itemPages.length;
 
   return (
@@ -327,7 +349,7 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
                     </div>
 
                     {/* Content Section */}
-                    <div style={{ position: 'absolute', top: '45mm', left: '10mm', right: '10mm', bottom: '30mm', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', top: '32mm', left: '10mm', right: '10mm', bottom: '20mm', overflow: 'hidden' }}>
                       {/* Customer and Invoice Details - First Page Only */}
                       {isFirstPage && (
                         <table style={{ width: '100%', marginBottom: '12px', borderCollapse: 'collapse', fontSize: '11px', lineHeight: '1.5' }}>
@@ -530,7 +552,7 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
                                     "Custom orders and special requests are non-refundable once production begins.",
                                     "The company reserves the right to make changes without prior notice."
                                   ].map((term, i) => (
-                                    <tr key={i}>
+                                    <tr key={i} style={{ fontSize: '10px', color: '#4b5563' }}>
                                       <td style={{ verticalAlign: 'top', paddingRight: '4px', width: '12px' }}>{i + 1}.</td>
                                       <td style={{ verticalAlign: 'top', paddingBottom: '2px' }}>{term}</td>
                                     </tr>

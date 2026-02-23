@@ -5,15 +5,37 @@ import { useState } from 'react';
 
 const { Title, Text } = Typography;
 
-const ITEMS_PER_PAGE = 10;
+// ─── Pagination constants ────────────────────────────────────────────────────
+// Page 1: customer header consumes ~15mm vertical space
+// Last page: summary (totals+bank+notes+T&C+signatures) needs ~130mm
+// → last page can safely hold at most 4 item rows
+const FIRST_PAGE_ITEMS = 5;   // page 1: customer header takes space
+const MIDDLE_PAGE_ITEMS = 9;   // continuation pages: full-height
+const LAST_PAGE_MAX = 4;   // last page: must leave room for summary
 
-// Chunk array into smaller arrays
-const chunkArray = (array, size) => {
-  const chunks = [];
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size));
+const paginateItems = (items) => {
+  if (!items || items.length === 0) return [[]];
+
+  // Tiny order: fits entirely on one page (items + summary)
+  if (items.length <= LAST_PAGE_MAX) return [[...items]];
+
+  const pages = [];
+  let remaining = [...items];
+
+  // Page 1
+  pages.push(remaining.splice(0, FIRST_PAGE_ITEMS));
+
+  // Middle pages — stop when remaining fits on a "last" page
+  while (remaining.length > LAST_PAGE_MAX) {
+    pages.push(remaining.splice(0, MIDDLE_PAGE_ITEMS));
   }
-  return chunks;
+
+  // Last page: ≤ LAST_PAGE_MAX items + full summary section
+  if (remaining.length > 0) {
+    pages.push([...remaining]);
+  }
+
+  return pages;
 };
 
 // function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
@@ -55,7 +77,7 @@ const QuotationPDF = ({ quotation, id = 'quotation-pdf-content' }) => {
   if (!quotation) return null;
 
   // Split items into pages of 10
-  const itemPages = chunkArray(quotation.items || [], ITEMS_PER_PAGE);
+  const itemPages = paginateItems(quotation.items || []);
   const totalPages = itemPages.length;
 
   return (
@@ -96,7 +118,7 @@ const QuotationPDF = ({ quotation, id = 'quotation-pdf-content' }) => {
             </div>
 
             {/* Content Section */}
-            <div style={{ position: 'absolute', top: '45mm', left: '10mm', right: '10mm', bottom: '30mm', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: '27mm', left: '10mm', right: '10mm', bottom: '20mm', overflow: 'hidden' }}>
               {/* Quotation Info - First Page Only */}
               {isFirstPage && (
                 <>
@@ -273,8 +295,8 @@ const QuotationPDF = ({ quotation, id = 'quotation-pdf-content' }) => {
                   <div style={{ marginBottom: '12px' }}>
                     <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#374151' }}>Terms & Conditions</h3>
                     <div className="text-gray-600" style={{ fontSize: '10px', lineHeight: '1.4' }}>
-                      <ol className="list-decimal pl-4 space-y-1" style={{ margin: 0 }}>
-                        <li>This quotation is valid until the date specified above.</li>
+                      <ol className="list-decimal pl-4 space-y-1" style={{ margin: 0, fontSize: '10px', color: '#4b5563' }}>
+                        <li >This quotation is valid until the date specified above.</li>
                         <li>Prices are in LKR and may be subject to change without notice.</li>
                         <li>Payment terms will be discussed upon order confirmation.</li>
                         <li>Delivery timelines will be confirmed after order placement.</li>
@@ -391,4 +413,5 @@ const QuotationPDF = ({ quotation, id = 'quotation-pdf-content' }) => {
   );
 }
 
+// export { QuotationPDF };
 export default QuotationPDF;

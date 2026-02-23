@@ -143,13 +143,42 @@ const Footer = () => {
                 </>
               )}
             </ul>
+
+            {/* Legal Links */}
+            <div className="mt-6">
+              <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Legal</h4>
+              <ul className="space-y-2">
+                <li>
+                  <Link to="/refund-policy" className="text-gray-400 hover:text-white transition-colors text-sm">
+                    Refund & Return Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/privacy-policy" className="text-gray-400 hover:text-white transition-colors text-sm">
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/terms" className="text-gray-400 hover:text-white transition-colors text-sm">
+                    Terms & Conditions
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
 
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-          <p className="text-gray-300">
+        <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-gray-400 text-sm">
             © {new Date().getFullYear()} VCare Furniture Store. All rights reserved.
           </p>
+          <div className="flex items-center gap-4 text-xs text-gray-500">
+            <Link to="/privacy-policy" className="hover:text-gray-300 transition-colors">Privacy</Link>
+            <span>·</span>
+            <Link to="/terms" className="hover:text-gray-300 transition-colors">Terms</Link>
+            <span>·</span>
+            <Link to="/refund-policy" className="hover:text-gray-300 transition-colors">Refunds</Link>
+          </div>
         </div>
       </div>
     </footer>

@@ -20,6 +20,9 @@ import OrderDetailPage from './pages/OrderDetailPage';
 import OrderSuccessPage from './pages/OrderSuccessPage';
 import NotFoundPage from './pages/NotFoundPage';
 import AboutPage from './pages/AboutPage';
+import RefundPolicyPage from './pages/RefundPolicyPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsPage from './pages/TermsPage';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import MainLayout from './components/Layout/MainLayout';
 
@@ -60,6 +63,9 @@ function App() {
               <Route path="/products/:id" element={<ProductDetailPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/about" element={<AboutPage />} />
+              <Route path="/refund-policy" element={<RefundPolicyPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
 

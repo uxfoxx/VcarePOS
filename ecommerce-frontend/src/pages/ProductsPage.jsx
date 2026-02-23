@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchProducts } from '../store/slices/productsSlice';
 import ProductCard from '../components/Products/ProductCard';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { Search, ChevronDown, SlidersHorizontal, Loader2 } from 'lucide-react';
+import { productsApi } from '../api/apiClient';
 
 const ProductsPage = () => {
   const dispatch = useDispatch();
@@ -12,8 +13,18 @@ const ProductsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchResultProducts, setSearchResultProducts] = useState([]);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [sortBy, setSortBy] = useState('name');
   const sortOrder = 'asc'; // Fixed order for minimalist UI
+  const searchTimeoutRef = useRef(null);
+
+  // Initialize search from URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const search = params.get("search");
+    if (search) setSearchTerm(search);
+  }, [location.search]);
 
   // Get category from URL
   const selectedCategory = useMemo(() => {
@@ -26,6 +37,33 @@ const ProductsPage = () => {
     if (products.length === 0) dispatch(fetchProducts());
   }, [dispatch, products.length]);
 
+  // Handle backend search
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setSearchResultProducts([]);
+      return;
+    }
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Use a longer debounce for the main products page search
+    searchTimeoutRef.current = setTimeout(async () => {
+      setIsSearchLoading(true);
+      try {
+        const results = await productsApi.search(searchTerm);
+        setSearchResultProducts(results || []);
+      } catch (error) {
+        console.error("ProductsPage search failed:", error);
+      } finally {
+        setIsSearchLoading(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(searchTimeoutRef.current);
+  }, [searchTerm]);
+
   // When user changes category from dropdown
   const handleCategoryChange = (category) => {
     const params = new URLSearchParams(location.search);
@@ -34,6 +72,9 @@ const ProductsPage = () => {
     } else {
       params.set('category', category);
     }
+    // Also clear search when changing category to avoid confusion
+    params.delete('search');
+    setSearchTerm('');
     navigate(`/products?${params.toString()}`);
   };
 
@@ -56,7 +97,20 @@ const ProductsPage = () => {
   const SEED_PRODUCT_IDS = ['PROD-001', 'PROD-002', 'PROD-003'];
 
   // Filter and sort products with memoization for performance
-  const filteredProducts = useMemo(() => {
+  const displayProducts = useMemo(() => {
+    // If we have a search term, use the backend results
+    if (searchTerm.trim() !== "") {
+      return [...searchResultProducts].sort((a, b) => {
+        let aValue = a[sortBy];
+        let bValue = b[sortBy];
+        if (sortBy === 'price') {
+          aValue = parseFloat(aValue) || 0;
+          bValue = parseFloat(bValue) || 0;
+        }
+        return aValue > bValue ? 1 : -1;
+      });
+    }
+
     if (!products || !Array.isArray(products)) return [];
 
     return products
@@ -91,7 +145,7 @@ const ProductsPage = () => {
         }
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [products, selectedCategory, searchTerm, sortBy, sortOrder]);
+  }, [products, selectedCategory, searchTerm, searchResultProducts, sortBy, sortOrder]);
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 py-8 lg:py-12">
@@ -116,6 +170,9 @@ const ProductsPage = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-6 pb-1 bg-transparent border-b border-gray-200 focus:border-gray-900 text-sm font-medium text-gray-900 placeholder-gray-400 outline-none w-32 focus:w-48 transition-all duration-300"
             />
+            {isSearchLoading && (
+              <Loader2 className="absolute -right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-primary-500 animate-spin" />
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -179,7 +236,7 @@ const ProductsPage = () => {
             Try Again
           </button>
         </div>
-      ) : filteredProducts.length === 0 ? (
+      ) : displayProducts.length === 0 ? (
         <div className="text-center py-12">
           <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -195,12 +252,11 @@ const ProductsPage = () => {
         <>
           <div className="flex justify-between items-center mb-6">
             <p className="text-gray-600">
-              Showing {filteredProducts.length} of {products.length} products
+              Showing {displayProducts.length} {searchTerm ? 'matching' : 'of ' + products.length} products
             </p>
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map(product => (
+            {displayProducts.map(product => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

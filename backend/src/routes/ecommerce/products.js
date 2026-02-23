@@ -178,6 +178,114 @@ router.get('/products', async (req, res) => {
 
 /**
  * @swagger
+ * /ecommerce/products/search:
+ *   get:
+ *     summary: Search products by keyword
+ *     tags: [E-commerce]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Search keyword
+ *     responses:
+ *       200:
+ *         description: List of matching products
+ */
+router.get('/products/search', async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q) return res.json([]);
+
+    const client = await pool.connect();
+
+    // Search products by name or description
+    const productsResult = await client.query(`
+      SELECT * FROM products 
+      WHERE name ILIKE $1 OR description ILIKE $1
+      ORDER BY created_at DESC
+      LIMIT 10
+    `, [`%${q}%`]);
+
+    if (productsResult.rows.length === 0) {
+      client.release();
+      return res.json([]);
+    }
+
+    const productIds = productsResult.rows.map(p => p.id);
+
+    // Get colors for these products
+    const colorsResult = await client.query(`
+      SELECT * FROM product_colors WHERE product_id = ANY($1)
+    `, [productIds]);
+
+    // Get sizes for these colors
+    const colorIds = colorsResult.rows.map(c => c.id);
+    let sizesResult = { rows: [] };
+    if (colorIds.length > 0) {
+      sizesResult = await client.query(`
+        SELECT ps.*, pc.id as color_id
+        FROM product_sizes ps
+        JOIN product_colors pc ON ps.product_color_id = pc.id
+        WHERE pc.id = ANY($1)
+      `, [colorIds]);
+    }
+
+    client.release();
+
+    // Map results
+    const products = productsResult.rows.map(product => {
+      const colors = colorsResult.rows
+        .filter(color => color.product_id === product.id)
+        .map(color => {
+          const colorSizes = sizesResult.rows
+            .filter(size => size.color_id === color.id)
+            .map(size => ({
+              id: size.id,
+              name: size.name,
+              stock: size.stock,
+              dimensions: size.dimensions,
+              weight: parseFloat(size.weight || 0)
+            }));
+
+          return {
+            id: color.id,
+            name: color.name,
+            colorCode: color.color_code,
+            productImageInColor: color.image,
+            colorSelectorImage: color.color_selector_image,
+            sizes: colorSizes
+          };
+        });
+
+      const totalStock = colors.length > 0
+        ? colors.reduce((total, color) =>
+          total + color.sizes.reduce((colorTotal, size) => colorTotal + (size.stock || 0), 0), 0
+        )
+        : product.stock;
+
+      return {
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        category: product.category,
+        price: parseFloat(product.price),
+        stock: totalStock || 0,
+        image: product.image,
+        colors,
+        createdAt: product.created_at
+      };
+    });
+
+    res.json(products);
+  } catch (error) {
+    handleRouteError(error, req, res, 'E-commerce - Search Products');
+  }
+});
+
+/**
+ * @swagger
  * /ecommerce/products/{id}:
  *   get:
  *     summary: Get product details by ID

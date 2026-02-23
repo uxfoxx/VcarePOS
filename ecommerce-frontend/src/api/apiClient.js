@@ -131,6 +131,10 @@ export const productsApi = {
   getById: async (productId) => {
     return makeRequest(`/ecommerce/products/${productId}`);
   },
+
+  search: async (query) => {
+    return makeRequest(`/ecommerce/products/search?q=${encodeURIComponent(query)}`);
+  },
 };
 
 // Orders API

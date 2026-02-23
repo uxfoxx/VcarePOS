@@ -376,10 +376,17 @@ router.get('/users/:userId/orders', authenticate, async (req, res) => {
       ORDER BY created_at DESC
     `, [userId]);
 
-    // Get order items
+    // Get order items with product and color details
     const itemsResult = await client.query(`
-      SELECT * FROM ecommerce_order_items 
-      WHERE ecommerce_order_id IN (
+      SELECT eoi.*,
+             p.image as product_primary_image,
+             pc.name as color_name,
+             pc.color_code as color_code,
+             pc.image as color_image
+      FROM ecommerce_order_items eoi
+      LEFT JOIN products p ON p.id = eoi.product_id
+      LEFT JOIN product_colors pc ON pc.id = eoi.selected_color_id
+      WHERE eoi.ecommerce_order_id IN (
         SELECT id FROM ecommerce_orders WHERE customer_id = $1
       )
     `, [userId]);
@@ -390,15 +397,30 @@ router.get('/users/:userId/orders', authenticate, async (req, res) => {
     const orders = ordersResult.rows.map(order => {
       const orderItems = itemsResult.rows
         .filter(item => item.ecommerce_order_id === order.id)
-        .map(item => ({
-          productId: item.product_id,
-          productName: item.product_name,
-          selectedColorId: item.selected_color_id,
-          selectedSize: item.selected_size,
-          quantity: item.quantity,
-          unitPrice: parseFloat(item.unit_price),
-          totalPrice: parseFloat(item.total_price)
-        }));
+        .map(item => {
+          let firstMediaImage = null;
+          try {
+            if (item.product_media) {
+              const parsedMedia = typeof item.product_media === 'string' ? JSON.parse(item.product_media) : item.product_media;
+              if (Array.isArray(parsedMedia) && parsedMedia.length > 0) {
+                firstMediaImage = parsedMedia[0];
+              }
+            }
+          } catch (e) { }
+
+          return {
+            productId: item.product_id,
+            productName: item.product_name,
+            productImage: item.color_image || firstMediaImage || item.product_primary_image || null,
+            selectedColorId: item.selected_color_id,
+            colorName: item.color_name || null,
+            colorCode: item.color_code || null,
+            selectedSize: item.selected_size,
+            quantity: item.quantity,
+            unitPrice: parseFloat(item.unit_price),
+            totalPrice: parseFloat(item.total_price)
+          };
+        });
 
       return {
         id: order.id,
@@ -596,9 +618,18 @@ router.get('/orders/:orderId', authenticate, hasPermission('ecommerce', 'view'),
 
     const order = orderResult.rows[0];
 
-    // Get order items
+    // Get order items with product and color details
     const itemsResult = await client.query(`
-      SELECT * FROM ecommerce_order_items WHERE ecommerce_order_id = $1
+      SELECT eoi.*,
+             p.image as product_primary_image,
+             p.media as product_media,
+             pc.name as color_name,
+             pc.color_code as color_code,
+             pc.image as color_image
+      FROM ecommerce_order_items eoi
+      LEFT JOIN products p ON p.id = eoi.product_id
+      LEFT JOIN product_colors pc ON pc.id = eoi.selected_color_id
+      WHERE eoi.ecommerce_order_id = $1
     `, [orderId]);
 
     // Get bank receipt if exists
@@ -608,15 +639,30 @@ router.get('/orders/:orderId', authenticate, hasPermission('ecommerce', 'view'),
 
     client.release();
 
-    const orderItems = itemsResult.rows.map(item => ({
-      productId: item.product_id,
-      productName: item.product_name,
-      selectedColorId: item.selected_color_id,
-      selectedSize: item.selected_size,
-      quantity: item.quantity,
-      unitPrice: parseFloat(item.unit_price),
-      totalPrice: parseFloat(item.total_price)
-    }));
+    const orderItems = itemsResult.rows.map(item => {
+      let firstMediaImage = null;
+      try {
+        if (item.product_media) {
+          const parsedMedia = typeof item.product_media === 'string' ? JSON.parse(item.product_media) : item.product_media;
+          if (Array.isArray(parsedMedia) && parsedMedia.length > 0) {
+            firstMediaImage = parsedMedia[0];
+          }
+        }
+      } catch (e) { }
+
+      return {
+        productId: item.product_id,
+        productName: item.product_name,
+        productImage: item.color_image || firstMediaImage || item.product_primary_image || null,
+        selectedColorId: item.selected_color_id,
+        colorName: item.color_name || null,
+        colorCode: item.color_code || null,
+        selectedSize: item.selected_size,
+        quantity: item.quantity,
+        unitPrice: parseFloat(item.unit_price),
+        totalPrice: parseFloat(item.total_price)
+      };
+    });
 
     const bankReceipt = receiptResult.rows.length > 0 ? {
       id: receiptResult.rows[0].id,

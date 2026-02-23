@@ -236,14 +236,18 @@ const ProfilePage = () => {
               ) : (
                 <div className="space-y-4">
                   {recentOrders.map(order => (
-                    <div key={order.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <Link
+                      key={order.id}
+                      to={`/orders/${order.id}`}
+                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                    >
                       <div>
-                        <p className="font-medium text-gray-900">Order #{order.id}</p>
+                        <p className="font-medium text-gray-900 group-hover:text-primary-600 transition-colors">Order #{order.id}</p>
                         <p className="text-sm text-gray-600">
                           {new Date(order.createdAt).toLocaleDateString()} • {order.items.length} items
                         </p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right flex flex-col items-end gap-2">
                         <p className="font-semibold text-primary-600">
                           LKR {order.totalAmount.toFixed(2)}
                         </p>
@@ -258,7 +262,7 @@ const ProfilePage = () => {
                               order.orderStatus}
                         </span>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}

@@ -4,6 +4,16 @@ import { Link } from 'react-router-dom';
 import { fetchOrders } from '../store/slices/ordersSlice';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
 import EcommerceInvoiceModal from '../components/Orders/EcommerceInvoiceModal';
+import { Package } from 'lucide-react';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const getImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  if (path.startsWith('/uploads')) return `${API_URL}${path}`;
+  if (path.startsWith('uploads')) return `${API_URL}/${path}`;
+  return `${API_URL}/uploads/${path}`;
+};
 
 const OrdersPage = () => {
   const dispatch = useDispatch();
@@ -88,86 +98,88 @@ const OrdersPage = () => {
           </Link>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-8">
           {orders.map(order => (
-            <div key={order.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
+            <div key={order.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+              {/* Order Card Header */}
+              <div className="bg-gray-50/50 px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-gray-100">
+                <div className="flex items-center gap-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Order #{order.id}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      Placed on {new Date(order.createdAt).toLocaleDateString()}
-                    </p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Order Number</p>
+                    <h3 className="text-lg font-bold text-gray-900">#{order.id}</h3>
                   </div>
-                  <div className="text-right">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.orderStatus)}`}>
-                      {getStatusText(order.orderStatus)}
-                    </span>
-                    <p className="text-lg font-bold text-primary-600 mt-1">
-                      LKR {order.totalAmount.toFixed(2)}
-                    </p>
+                  <div className="hidden sm:block">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Date Placed</p>
+                    <p className="text-sm font-semibold text-gray-700">{new Date(order.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Amount</p>
+                    <p className="text-sm font-bold text-primary-600">LKR {order.totalAmount.toFixed(2)}</p>
                   </div>
                 </div>
 
-                <div className="border-t pt-4">
-                  <h4 className="font-medium mb-3">Items ({order.items.length})</h4>
-                  <div className="space-y-3">
-                    {order.items.slice(0, 3).map((item, index) => (
-                      <div key={index} className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                          </svg>
-                        </div>
-                        {
-                          console.log("item", item)
-
-                        }
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900">{item.productName}</p>
-                          <p className="text-sm text-gray-600">
-                            Qty: {item.quantity} × LKR {item?.unitPrice ? Number(item?.unitPrice).toFixed(2) : '0.00'}
-                            {item.selectedSize && ` • Size: ${item.selectedSize}`}
-                          </p>
-                        </div>
-                        <p className="font-medium text-gray-900">
-                          LKR {item.totalPrice.toFixed(2)}
-                        </p>
-                      </div>
-                    ))}
-                    {order.items.length > 3 && (
-                      <p className="text-sm text-gray-600">
-                        +{order.items.length - 3} more items
-                      </p>
-                    )}
-                  </div>
+                <div className="flex items-center gap-3">
+                  <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold tracking-wide ${getStatusColor(order.orderStatus)}`}>
+                    {getStatusText(order.orderStatus)}
+                  </span>
                 </div>
+              </div>
 
-                <div className="border-t pt-4 mt-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">
-                        Payment: {order.paymentMethod === 'cash_on_delivery' ? 'Cash on Delivery' : 'Bank Transfer'}
-                      </p>
-                      {order.paymentMethod === 'bank_transfer' && order.orderStatus === 'pending_payment' && (
-                        <p className="text-sm text-yellow-600 font-medium">
-                          Waiting for payment confirmation
-                        </p>
+              <div className="p-6">
+                <div className="flex flex-col lg:flex-row justify-between gap-8">
+                  {/* Items Preview */}
+                  <div className="flex-1 space-y-4">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Ordered Items ({order.items.length})</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {order.items.slice(0, 2).map((item, index) => (
+                        <div key={index} className="flex items-center gap-4 bg-gray-50/50 rounded-xl p-3 border border-gray-100/50">
+                          <div className="w-14 h-14 bg-white flex-shrink-0 border border-gray-100 rounded-lg overflow-hidden flex items-center justify-center p-1">
+                            {item.productImage ? (
+                              <img
+                                src={getImageUrl(item.productImage)}
+                                alt={item.productName}
+                                className="w-full h-full object-contain"
+                              />
+                            ) : (
+                              <Package className="w-5 h-5 text-gray-300" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-gray-900 truncate">{item.productName}</p>
+                            <p className="text-xs text-gray-500">Qty: {item.quantity} • {item.colorName || 'Default'}</p>
+                          </div>
+                        </div>
+                      ))}
+                      {order.items.length > 2 && (
+                        <div className="flex items-center justify-center bg-gray-50/50 rounded-xl p-3 border border-dashed border-gray-200">
+                          <p className="text-xs font-bold text-gray-400">+{order.items.length - 2} more items</p>
+                        </div>
                       )}
                     </div>
-                    <div className="text-right space-y-2">
-                      <p className="text-sm text-gray-600">Delivery to:</p>
-                      <p className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                  </div>
+
+                  {/* Order Footer / Actions */}
+                  <div className="flex flex-col justify-end items-end gap-3 min-w-[240px]">
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Delivering to</p>
+                      <p className="text-sm text-gray-600 max-w-[200px] truncate leading-tight italic">
                         {order.customerAddress}
                       </p>
+                    </div>
+
+                    <div className="flex items-center gap-3 w-full sm:w-auto mt-2">
                       <button
                         onClick={() => handleViewInvoice(order)}
-                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                        className="flex-1 sm:flex-none text-sm font-bold text-gray-500 hover:text-gray-900 px-4 py-2 hover:bg-gray-100 rounded-xl transition-all"
                       >
                         View Invoice
                       </button>
+                      <Link
+                        to={`/orders/${order.id}`}
+                        className="flex-1 sm:flex-none inline-flex items-center justify-center text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 px-6 py-2.5 rounded-xl transition-all shadow-sm hover:shadow-md"
+                      >
+                        Order Details
+                      </Link>
                     </div>
                   </div>
                 </div>

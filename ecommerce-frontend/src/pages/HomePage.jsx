@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchProducts } from '../store/slices/productsSlice';
@@ -17,47 +17,47 @@ const HomePage = () => {
   const dispatch = useDispatch();
   const { products, listLoading } = useSelector(state => state.products);
 
-  const [activeFeature, setActiveFeature] = useState(0);
+  // const [activeFeature, setActiveFeature] = useState(0);
 
   const heroRef = useRef(null);
-  const qualityRef = useRef(null);
+  // const qualityRef = useRef(null);
   const faqRef = useRef(null);
   const faqHeadingRef = useRef(null);
   const testimonialsRef = useRef(null);
-  const storyRef = useRef(null);
-  const storyTextRef = useRef(null);
-  const storyVideoRef = useRef(null);
+  // const storyRef = useRef(null);
+  // const storyTextRef = useRef(null);
+  // const storyVideoRef = useRef(null);
   const featuredRef = useRef(null);
   const featuredHeadingRef = useRef(null);
   const whyChooseRef = useRef(null);
   const ctaRef = useRef(null);
 
-  const qualityFeatures = [
-    {
-      icon: Hammer,
-      title: "Ergonomic Comfort for Better Workdays",
-      description: "Engineered for long hours and better posture. Our mesh chairs, adjustable armrests, and lumbar support systems ensure comfort from morning to night.",
-      image: "https://images.pexels.com/photos/5974401/pexels-photo-5974401.jpeg"
-    },
-    {
-      icon: Leaf,
-      title: "Smart Desk Technology for Modern Workflows",
-      description: "Choose from single-motor or dual-motor Smart Desks with LED displays, memory height presets, and USB charging to create your ideal workflow.",
-      image: "https://images.pexels.com/photos/667838/pexels-photo-667838.jpeg"
-    },
-    {
-      icon: Shield,
-      title: "Built to Last with Premium Materials",
-      description: "Metal bases, reinforced frames, and durable construction ensure your workspace furniture withstands years of daily use.",
-      image: "https://images.pexels.com/photos/245032/pexels-photo-245032.jpeg"
-    },
-    {
-      icon: Award,
-      title: "Minimalist Design for Any Space",
-      description: "Clean, modern aesthetics that complement any environment - from home offices to corporate workspaces across Sri Lanka.",
-      image: "https://images.pexels.com/photos/374074/pexels-photo-374074.jpeg"
-    }
-  ];
+  // const qualityFeatures = [
+  //   {
+  //     icon: Hammer,
+  //     title: "Ergonomic Comfort for Better Workdays",
+  //     description: "Engineered for long hours and better posture. Our mesh chairs, adjustable armrests, and lumbar support systems ensure comfort from morning to night.",
+  //     image: "https://images.pexels.com/photos/5974401/pexels-photo-5974401.jpeg"
+  //   },
+  //   {
+  //     icon: Leaf,
+  //     title: "Smart Desk Technology for Modern Workflows",
+  //     description: "Choose from single-motor or dual-motor Smart Desks with LED displays, memory height presets, and USB charging to create your ideal workflow.",
+  //     image: "https://images.pexels.com/photos/667838/pexels-photo-667838.jpeg"
+  //   },
+  //   {
+  //     icon: Shield,
+  //     title: "Built to Last with Premium Materials",
+  //     description: "Metal bases, reinforced frames, and durable construction ensure your workspace furniture withstands years of daily use.",
+  //     image: "https://images.pexels.com/photos/245032/pexels-photo-245032.jpeg"
+  //   },
+  //   {
+  //     icon: Award,
+  //     title: "Minimalist Design for Any Space",
+  //     description: "Clean, modern aesthetics that complement any environment - from home offices to corporate workspaces across Sri Lanka.",
+  //     image: "https://images.pexels.com/photos/374074/pexels-photo-374074.jpeg"
+  //   }
+  // ];
 
   const faqData = [
     {
@@ -163,121 +163,123 @@ const HomePage = () => {
       );
     }
 
-    if (qualityRef.current) {
-      const heading = qualityRef.current.querySelector('.quality-heading');
-      const subtitle = qualityRef.current.querySelector('.quality-subtitle');
-      const featureCards = qualityRef.current.querySelectorAll('.quality-feature-card');
-      const mainImage = qualityRef.current.querySelector('.quality-main-image');
-
-      if (heading) {
-        gsap.fromTo(
-          heading,
-          { opacity: 0, y: 40 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.9,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: qualityRef.current,
-              start: 'top 75%',
-              once: true
-            }
+    /*
+        if (qualityRef.current) {
+          const heading = qualityRef.current.querySelector('.quality-heading');
+          const subtitle = qualityRef.current.querySelector('.quality-subtitle');
+          const featureCards = qualityRef.current.querySelectorAll('.quality-feature-card');
+          const mainImage = qualityRef.current.querySelector('.quality-main-image');
+    
+          if (heading) {
+            gsap.fromTo(
+              heading,
+              { opacity: 0, y: 40 },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 0.9,
+                ease: 'power3.out',
+                scrollTrigger: {
+                  trigger: qualityRef.current,
+                  start: 'top 75%',
+                  once: true
+                }
+              }
+            );
           }
-        );
-      }
-
-      if (subtitle) {
-        gsap.fromTo(
-          subtitle,
-          { opacity: 0, y: 20 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.7,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: qualityRef.current,
-              start: 'top 75%',
-              once: true
-            }
+    
+          if (subtitle) {
+            gsap.fromTo(
+              subtitle,
+              { opacity: 0, y: 20 },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 0.7,
+                ease: 'power2.out',
+                scrollTrigger: {
+                  trigger: qualityRef.current,
+                  start: 'top 75%',
+                  once: true
+                }
+              }
+            );
           }
-        );
-      }
-
-      if (featureCards.length > 0) {
-        gsap.fromTo(
-          featureCards,
-          {
-            opacity: 0,
-            y: 50,
-            scale: 0.9
-          },
-          {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            duration: 0.8,
-            stagger: 0.15,
-            ease: 'back.out(1.4)',
-            scrollTrigger: {
-              trigger: qualityRef.current,
-              start: 'top 70%',
-              once: true
-            }
-          }
-        );
-
-        featureCards.forEach(card => {
-          const icon = card.querySelector('.feature-icon');
-          if (icon) {
-            gsap.to(icon, {
-              rotation: 360,
-              duration: 20,
-              ease: 'none',
-              repeat: -1
+    
+          if (featureCards.length > 0) {
+            gsap.fromTo(
+              featureCards,
+              {
+                opacity: 0,
+                y: 50,
+                scale: 0.9
+              },
+              {
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                duration: 0.8,
+                stagger: 0.15,
+                ease: 'back.out(1.4)',
+                scrollTrigger: {
+                  trigger: qualityRef.current,
+                  start: 'top 70%',
+                  once: true
+                }
+              }
+            );
+    
+            featureCards.forEach(card => {
+              const icon = card.querySelector('.feature-icon');
+              if (icon) {
+                gsap.to(icon, {
+                  rotation: 360,
+                  duration: 20,
+                  ease: 'none',
+                  repeat: -1
+                });
+              }
+    
+              card.addEventListener('mouseenter', function() {
+                gsap.to(this, {
+                  y: -8,
+                  scale: 1.03,
+                  duration: 0.3,
+                  ease: 'power2.out'
+                });
+              });
+    
+              card.addEventListener('mouseleave', function() {
+                gsap.to(this, {
+                  y: 0,
+                  scale: 1,
+                  duration: 0.3,
+                  ease: 'power2.out'
+                });
+              });
             });
           }
-
-          card.addEventListener('mouseenter', function() {
-            gsap.to(this, {
-              y: -8,
-              scale: 1.03,
-              duration: 0.3,
-              ease: 'power2.out'
-            });
-          });
-
-          card.addEventListener('mouseleave', function() {
-            gsap.to(this, {
-              y: 0,
-              scale: 1,
-              duration: 0.3,
-              ease: 'power2.out'
-            });
-          });
-        });
-      }
-
-      if (mainImage) {
-        gsap.fromTo(
-          mainImage,
-          { opacity: 0, scale: 0.95, x: 50 },
-          {
-            opacity: 1,
-            scale: 1,
-            x: 0,
-            duration: 1.2,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: qualityRef.current,
-              start: 'top 70%',
-              once: true
-            }
+    
+          if (mainImage) {
+            gsap.fromTo(
+              mainImage,
+              { opacity: 0, scale: 0.95, x: 50 },
+              {
+                opacity: 1,
+                scale: 1,
+                x: 0,
+                duration: 1.2,
+                ease: 'power3.out',
+                scrollTrigger: {
+                  trigger: qualityRef.current,
+                  start: 'top 70%',
+                  once: true
+                }
+              }
+            );
           }
-        );
-      }
-    }
+        }
+    */
 
     if (faqRef.current && faqHeadingRef.current) {
       gsap.fromTo(
@@ -370,7 +372,7 @@ const HomePage = () => {
         );
 
         productCards.forEach(card => {
-          card.addEventListener('mouseenter', function() {
+          card.addEventListener('mouseenter', function () {
             gsap.to(this, {
               y: -10,
               scale: 1.03,
@@ -379,7 +381,7 @@ const HomePage = () => {
             });
           });
 
-          card.addEventListener('mouseleave', function() {
+          card.addEventListener('mouseleave', function () {
             gsap.to(this, {
               y: 0,
               scale: 1,
@@ -434,7 +436,7 @@ const HomePage = () => {
         );
 
         testimonialCards.forEach(card => {
-          card.addEventListener('mouseenter', function() {
+          card.addEventListener('mouseenter', function () {
             gsap.to(this, {
               scale: 1.05,
               rotateZ: gsap.utils.random(-2, 2),
@@ -443,7 +445,7 @@ const HomePage = () => {
             });
           });
 
-          card.addEventListener('mouseleave', function() {
+          card.addEventListener('mouseleave', function () {
             gsap.to(this, {
               scale: 1,
               rotateZ: 0,
@@ -455,74 +457,76 @@ const HomePage = () => {
       }
     }
 
-    if (storyRef.current && storyTextRef.current && storyVideoRef.current) {
-      const paragraphs = storyTextRef.current.querySelectorAll('p');
-      const heading = storyTextRef.current.querySelector('h2');
-
-      gsap.fromTo(
-        heading,
-        { opacity: 0, x: -40 },
-        {
-          opacity: 1,
-          x: 0,
-          duration: 0.9,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: storyRef.current,
-            start: 'top 70%',
-            once: true
-          }
+    /*
+        if (storyRef.current && storyTextRef.current && storyVideoRef.current) {
+          const paragraphs = storyTextRef.current.querySelectorAll('p');
+          const heading = storyTextRef.current.querySelector('h2');
+    
+          gsap.fromTo(
+            heading,
+            { opacity: 0, x: -40 },
+            {
+              opacity: 1,
+              x: 0,
+              duration: 0.9,
+              ease: 'power3.out',
+              scrollTrigger: {
+                trigger: storyRef.current,
+                start: 'top 70%',
+                once: true
+              }
+            }
+          );
+    
+          gsap.fromTo(
+            paragraphs,
+            { opacity: 0, x: -30 },
+            {
+              opacity: 1,
+              x: 0,
+              duration: 0.7,
+              stagger: 0.2,
+              ease: 'power2.out',
+              scrollTrigger: {
+                trigger: storyRef.current,
+                start: 'top 65%',
+                once: true
+              }
+            }
+          );
+    
+          gsap.fromTo(
+            storyVideoRef.current,
+            {
+              opacity: 0,
+              x: 40,
+              scale: 0.95
+            },
+            {
+              opacity: 1,
+              x: 0,
+              scale: 1,
+              duration: 1,
+              ease: 'power3.out',
+              scrollTrigger: {
+                trigger: storyRef.current,
+                start: 'top 70%',
+                once: true
+              }
+            }
+          );
+    
+          gsap.to(storyVideoRef.current, {
+            y: -20,
+            scrollTrigger: {
+              trigger: storyRef.current,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: 1
+            }
+          });
         }
-      );
-
-      gsap.fromTo(
-        paragraphs,
-        { opacity: 0, x: -30 },
-        {
-          opacity: 1,
-          x: 0,
-          duration: 0.7,
-          stagger: 0.2,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: storyRef.current,
-            start: 'top 65%',
-            once: true
-          }
-        }
-      );
-
-      gsap.fromTo(
-        storyVideoRef.current,
-        {
-          opacity: 0,
-          x: 40,
-          scale: 0.95
-        },
-        {
-          opacity: 1,
-          x: 0,
-          scale: 1,
-          duration: 1,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: storyRef.current,
-            start: 'top 70%',
-            once: true
-          }
-        }
-      );
-
-      gsap.to(storyVideoRef.current, {
-        y: -20,
-        scrollTrigger: {
-          trigger: storyRef.current,
-          start: 'top bottom',
-          end: 'bottom top',
-          scrub: 1
-        }
-      });
-    }
+    */
 
     if (whyChooseRef.current) {
       const featureCards = whyChooseRef.current.querySelectorAll('.feature-card');
@@ -561,7 +565,7 @@ const HomePage = () => {
             });
           }
 
-          card.addEventListener('mouseenter', function() {
+          card.addEventListener('mouseenter', function () {
             gsap.to(this, {
               y: -12,
               scale: 1.05,
@@ -570,7 +574,7 @@ const HomePage = () => {
             });
           });
 
-          card.addEventListener('mouseleave', function() {
+          card.addEventListener('mouseleave', function () {
             gsap.to(this, {
               y: 0,
               scale: 1,
@@ -654,7 +658,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section
+      {/* <section
         ref={qualityRef}
         className="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-100 overflow-hidden"
       >
@@ -767,9 +771,9 @@ const HomePage = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
-     
+
 
       <section className="py-16 bg-white" ref={featuredRef}>
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -803,9 +807,9 @@ const HomePage = () => {
         </div>
       </section>
 
-      
 
-      <section ref={storyRef} className="py-20 bg-white">
+
+      {/* <section ref={storyRef} className="py-20 bg-white">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div ref={storyTextRef}>
@@ -830,7 +834,7 @@ const HomePage = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       <section ref={whyChooseRef} className="py-20 bg-gradient-to-br from-white to-gray-100">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -912,7 +916,7 @@ const HomePage = () => {
         </div>
       </section>
 
-       <section ref={faqRef} className="py-20 bg-gray-50">
+      <section ref={faqRef} className="py-20 bg-gray-50">
         <div className="max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8">
           <div ref={faqHeadingRef} className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -928,7 +932,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      
+
     </div>
   );
 };

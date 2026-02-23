@@ -925,7 +925,7 @@ export function BrandingSettings() {
 
         <Divider />
 
-        <div className="flex justify-end space-x-3">
+        <div className="flex justify-start gap-3 flex-wrap">
           <Button onClick={() => setShowResetConfirm(true)}>
             Reset to Defaults
           </Button>

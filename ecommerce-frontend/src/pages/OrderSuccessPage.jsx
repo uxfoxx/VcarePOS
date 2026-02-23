@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchOrderById } from '../store/slices/ordersSlice';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
+import { invoiceSettingsApi } from '../api/apiClient';
 import { CheckCircle2, Package, ShoppingBag, ArrowRight, User, Mail, Phone, MapPin, CreditCard } from 'lucide-react';
 
 const fallbackImage = 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
@@ -20,12 +21,25 @@ const OrderSuccessPage = () => {
   const { orderId } = useParams();
   const dispatch = useDispatch();
   const { currentOrder, loading } = useSelector(state => state.orders);
+  const [bankAccounts, setBankAccounts] = useState([]);
 
   useEffect(() => {
     if (orderId) {
       dispatch(fetchOrderById(orderId));
     }
   }, [dispatch, orderId]);
+
+  useEffect(() => {
+    const loadBankAccounts = async () => {
+      try {
+        const accounts = await invoiceSettingsApi.getBankAccounts();
+        setBankAccounts(Array.isArray(accounts) ? accounts : []);
+      } catch (error) {
+        console.error('Failed to load bank accounts:', error);
+      }
+    };
+    loadBankAccounts();
+  }, []);
 
   if (loading) {
     return (
@@ -212,13 +226,21 @@ const OrderSuccessPage = () => {
               <h3 className="text-lg font-semibold text-blue-900 mb-4">
                 Complete Your Payment
               </h3>
-              <div className="text-sm text-blue-800 space-y-2">
-                <p><strong>Bank:</strong> Commercial Bank of Ceylon</p>
-                <p><strong>Account Name:</strong> VCare Furniture Store</p>
-                <p><strong>Account Number:</strong> 8001234567</p>
-                <p><strong>Branch:</strong> Colombo Main Branch</p>
-                <p><strong>Amount:</strong> LKR {currentOrder.totalAmount.toFixed(2)}</p>
-              </div>
+              {(() => {
+                const defaultBank = bankAccounts.find(b => b.is_default) || bankAccounts[0];
+                if (!defaultBank) return (
+                  <p className="text-sm text-blue-700">Loading bank details...</p>
+                );
+                return (
+                  <div className="text-sm text-blue-800 space-y-2">
+                    <p><strong>Bank:</strong> {defaultBank.bank_name}</p>
+                    <p><strong>Account Name:</strong> {defaultBank.account_holder_name}</p>
+                    <p><strong>Account Number:</strong> {defaultBank.account_number}</p>
+                    {defaultBank.branch_name && <p><strong>Branch:</strong> {defaultBank.branch_name}</p>}
+                    <p><strong>Amount:</strong> LKR {currentOrder.totalAmount.toFixed(2)}</p>
+                  </div>
+                );
+              })()}
               <p className="text-sm text-blue-700 mt-4">
                 After making the transfer, please upload your receipt to complete the order.
               </p>

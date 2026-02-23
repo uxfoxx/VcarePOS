@@ -9,7 +9,7 @@ import {
   clearCurrentOrder
 } from '../store/slices/ordersSlice';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
-import { deliveryChargesApi } from '../api/apiClient';
+import { deliveryChargesApi, invoiceSettingsApi } from '../api/apiClient';
 import { toast } from 'react-toastify';
 import { Package, ShoppingBag } from 'lucide-react';
 
@@ -52,6 +52,7 @@ const CheckoutPage = () => {
   const [selectedDeliveryType, setSelectedDeliveryType] = useState('');
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [loadingDeliverySettings, setLoadingDeliverySettings] = useState(false);
+  const [bankAccounts, setBankAccounts] = useState([]);
 
   useEffect(() => {
     // Scroll to top smoothly when step changes
@@ -85,6 +86,19 @@ const CheckoutPage = () => {
       }
     };
     loadDeliverySettings();
+  }, []);
+
+  // Load bank accounts
+  useEffect(() => {
+    const loadBankAccounts = async () => {
+      try {
+        const accounts = await invoiceSettingsApi.getBankAccounts();
+        setBankAccounts(Array.isArray(accounts) ? accounts : []);
+      } catch (error) {
+        console.error('Failed to load bank accounts:', error);
+      }
+    };
+    loadBankAccounts();
   }, []);
 
   useEffect(() => {
@@ -194,7 +208,8 @@ const CheckoutPage = () => {
   const validateStep1 = () => {
     return customerInfo.name.trim() &&
       customerInfo.email.trim() &&
-      customerInfo.address.trim();
+      customerInfo.address.trim() &&
+      selectedDeliveryType;
   };
 
   const handleNextStep = () => {
@@ -383,7 +398,7 @@ const CheckoutPage = () => {
                       ) : (
                         <div className="space-y-3">
                           {/* No Delivery Option */}
-                          <label
+                          {/* <label
                             className={`block p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedDeliveryType === '' ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
                               }`}
                           >
@@ -406,7 +421,7 @@ const CheckoutPage = () => {
                                 </div>
                               </div>
                             </div>
-                          </label>
+                          </label> */}
 
                           {/* Delivery Options */}
                           {activeDeliverySettings.map((setting) => {
@@ -635,15 +650,23 @@ const CheckoutPage = () => {
                   {paymentMethod === 'bank_transfer' && (
                     <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                       <h4 className="font-medium text-blue-900 mb-2">Bank Transfer Details</h4>
-                      <div className="text-sm text-blue-800">
-                        <p><strong>Bank:</strong> Commercial Bank of Ceylon</p>
-                        <p><strong>Account Name:</strong> VCare Furniture Store</p>
-                        <p><strong>Account Number:</strong> 8001234567</p>
-                        <p><strong>Branch:</strong> Colombo Main Branch</p>
-                        <p className="mt-2 text-blue-700">
-                          Please transfer LKR {(totalAmount + deliveryCharge).toFixed(2)} and upload your receipt below.
-                        </p>
-                      </div>
+                      {(() => {
+                        const defaultBank = bankAccounts.find(b => b.is_default) || bankAccounts[0];
+                        if (!defaultBank) return (
+                          <p className="text-sm text-blue-700">Loading bank details...</p>
+                        );
+                        return (
+                          <div className="text-sm text-blue-800 space-y-1">
+                            <p><strong>Bank:</strong> {defaultBank.bank_name}</p>
+                            <p><strong>Account Name:</strong> {defaultBank.account_holder_name}</p>
+                            <p><strong>Account Number:</strong> {defaultBank.account_number}</p>
+                            {defaultBank.branch_name && <p><strong>Branch:</strong> {defaultBank.branch_name}</p>}
+                            <p className="mt-2 text-blue-700">
+                              Please transfer LKR {(totalAmount + deliveryCharge).toFixed(2)} and upload your receipt below.
+                            </p>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>

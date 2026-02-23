@@ -47,16 +47,16 @@ export function InvoiceSettings() {
 
   const loadInvoiceSettings = async () => {
     try {
-      const response = await apiClient.get('/invoice-settings');
-      if (response.data) {
+      const data = await apiClient.get('/invoice-settings');
+      if (data) {
         form.setFieldsValue({
-          businessName: response.data.business_name,
-          businessAddress: response.data.business_address,
-          phoneNumber: response.data.phone_number,
-          emailAddress: response.data.email_address,
-          website: response.data.website,
-          currency: response.data.currency || 'LKR',
-          taxRate: response.data.tax_rate || 8
+          businessName: data.business_name,
+          businessAddress: data.business_address,
+          phoneNumber: data.phone_number,
+          emailAddress: data.email_address,
+          website: data.website,
+          currency: data.currency || 'LKR',
+          taxRate: data.tax_rate || 8
         });
       }
     } catch (error) {
@@ -66,8 +66,8 @@ export function InvoiceSettings() {
 
   const loadBankAccounts = async () => {
     try {
-      const response = await apiClient.get('/invoice-settings/bank-accounts');
-      setBankAccounts(response.data || []);
+      const data = await apiClient.get('/invoice-settings/bank-accounts');
+      setBankAccounts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error loading bank accounts:', error);
     }
@@ -75,8 +75,8 @@ export function InvoiceSettings() {
 
   const loadNotesTemplates = async () => {
     try {
-      const response = await apiClient.get('/invoice-settings/notes-templates');
-      setNotesTemplates(response.data || []);
+      const data = await apiClient.get('/invoice-settings/notes-templates');
+      setNotesTemplates(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error loading notes templates:', error);
     }

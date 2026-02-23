@@ -3,12 +3,12 @@ import { Form, Input, Card, DatePicker, InputNumber, Select, Table, message } fr
 import { Icon } from '../common/Icon';
 import { PageHeader } from '../common/PageHeader';
 import { ActionButton } from '../common/ActionButton';
-import { QuotationPDF } from './QuotationPDF';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchProducts } from '../../features/products/productsSlice';
 import dayjs from 'dayjs';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import QuotationPDF from './QuotationPDF';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -189,7 +189,7 @@ export function QuotationManagement() {
         created_at: new Date().toISOString(),
         createdAt: new Date().toISOString()
       };
-
+      console.log("quotation", quotation)
       setQuotationData(quotation);
       setShowPDF(true);
     }).catch(_error => {

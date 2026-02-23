@@ -48,8 +48,8 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
 
   const fetchInvoiceConfig = async () => {
     try {
-      const API_URL = 'http://localhost:3001/api';
-      const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+      const token = localStorage.getItem('ecommerce_token');
 
       const response = await fetch(`${API_URL}/invoice-settings/complete`, {
         headers: {
@@ -57,9 +57,9 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
           'Content-Type': 'application/json'
         }
       });
-
       if (response.ok) {
         const data = await response.json();
+        console.log("response", data)
         setInvoiceConfig(data);
       } else {
         setInvoiceConfig({
@@ -471,34 +471,43 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
                           {/* Bank Details - Always show if available */}
                           {invoiceConfig?.bankAccount && (
                             <div style={{ marginTop: '12px' }}>
-                              <h3 style={{ fontSize: '14px', marginBottom: '8px' }} className="font-bold">Account details</h3>
-                              <div className="space-y-1">
-                                <p className="text-sm m-0">{invoiceConfig.bankAccount.account_holder_name}</p>
-                                <p className="text-sm m-0">{invoiceConfig.bankAccount.account_number}</p>
-                                <p className="text-sm m-0">
-                                  {invoiceConfig.bankAccount.bank_name} {invoiceConfig.bankAccount.branch_name}
-                                </p>
-                              </div>
+                              <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#374151' }}>Account Details</h3>
+                              <table style={{ borderCollapse: 'collapse', fontSize: '11px', lineHeight: '1.8' }}>
+                                <tbody>
+                                  <tr>
+                                    <td style={{ color: '#6b7280', paddingRight: '10px', whiteSpace: 'nowrap', fontWeight: '500' }}>Account Holder:</td>
+                                    <td style={{ fontWeight: '600', color: '#111827' }}>{invoiceConfig.bankAccount.account_holder_name}</td>
+                                  </tr>
+                                  <tr>
+                                    <td style={{ color: '#6b7280', paddingRight: '10px', whiteSpace: 'nowrap', fontWeight: '500' }}>Account No:</td>
+                                    <td style={{ fontFamily: 'monospace', fontWeight: '700', color: '#111827', letterSpacing: '0.04em' }}>{invoiceConfig.bankAccount.account_number}</td>
+                                  </tr>
+                                  <tr>
+                                    <td style={{ color: '#6b7280', paddingRight: '10px', whiteSpace: 'nowrap', fontWeight: '500' }}>Bank:</td>
+                                    <td style={{ color: '#111827' }}>{invoiceConfig.bankAccount.bank_name}{invoiceConfig.bankAccount.branch_name ? ` — ${invoiceConfig.bankAccount.branch_name}` : ''}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
                             </div>
                           )}
 
                           {/* Notes */}
                           {invoiceConfig?.notesTemplate && (
                             <div style={{ marginTop: '12px' }}>
-                              <h3 style={{ fontSize: '14px', marginBottom: '8px' }} className="font-bold">Note:-</h3>
+                              <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#374151' }}>Note</h3>
                               <div className="space-y-1">
                                 {invoiceConfig.notesTemplate.warranty_terms && (
-                                  <p className="text-xs text-gray-700 m-0" style={{ lineHeight: '1.4' }}>
+                                  <p className="text-[10px] text-gray-700 m-0" style={{ lineHeight: '1.4' }}>
                                     {invoiceConfig.notesTemplate.warranty_terms}
                                   </p>
                                 )}
                                 {invoiceConfig.notesTemplate.quotation_validity && (
-                                  <p className="text-xs text-gray-700 m-0" style={{ lineHeight: '1.4', marginTop: '4px' }}>
+                                  <p className="text-[10px] text-gray-700 m-0" style={{ lineHeight: '1.4', marginTop: '4px' }}>
                                     {invoiceConfig.notesTemplate.quotation_validity}
                                   </p>
                                 )}
                                 {invoiceConfig.notesTemplate.custom_notes && (
-                                  <p className="text-xs text-gray-700 m-0" style={{ lineHeight: '1.4', marginTop: '4px' }}>
+                                  <p className="text-[10px] text-gray-700 m-0" style={{ lineHeight: '1.4', marginTop: '4px' }}>
                                     {invoiceConfig.notesTemplate.custom_notes}
                                   </p>
                                 )}
@@ -508,7 +517,7 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
 
                           {/* Terms and Conditions */}
                           <div style={{ marginTop: '12px' }}>
-                            <div style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '8px' }}>Terms & Conditions:</div>
+                            <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#374151' }}>Terms & Conditions</h3>
                             <div style={{ color: '#374151', fontSize: '10px', lineHeight: '1.6' }}>
                               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <tbody>
@@ -590,11 +599,26 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
                             <tr>
                               <td style={{ padding: 0, paddingRight: '6px', verticalAlign: 'middle' }}>
                                 <svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24" style={{ display: 'block' }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                              </td>
+                              <td style={{ padding: 0, verticalAlign: 'middle', color: 'white', fontSize: '11px', fontWeight: '500', lineHeight: '1' }}>
+                                {invoiceConfig?.settings?.business_address || ''}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                        <table style={{ display: 'inline-table', borderCollapse: 'collapse', marginRight: '32px' }}>
+                          <tbody>
+                            <tr>
+                              <td style={{ padding: 0, paddingRight: '6px', verticalAlign: 'middle' }}>
+                                <svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24" style={{ display: 'block' }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                 </svg>
                               </td>
                               <td style={{ padding: 0, verticalAlign: 'middle', color: 'white', fontSize: '12px', fontWeight: '500', lineHeight: '1' }}>
-                                0112870330
+                                {invoiceConfig?.settings?.phone_number || ''}
                               </td>
                             </tr>
                           </tbody>
@@ -608,7 +632,7 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
                                 </svg>
                               </td>
                               <td style={{ padding: 0, verticalAlign: 'middle', color: 'white', fontSize: '12px', fontWeight: '500', lineHeight: '1' }}>
-                                vcarepvtltd@gmail.com
+                                {invoiceConfig?.settings?.email_address || ''}
                               </td>
                             </tr>
                           </tbody>

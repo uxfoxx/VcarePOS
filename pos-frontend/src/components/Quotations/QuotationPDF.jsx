@@ -1,4 +1,7 @@
 import { Typography, Divider } from 'antd';
+import apiClient from '../../api/apiClient';
+import { useEffect } from 'react';
+import { useState } from 'react';
 
 const { Title, Text } = Typography;
 
@@ -13,22 +16,33 @@ const chunkArray = (array, size) => {
   return chunks;
 };
 
-export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
-  if (!quotation) return null;
+// function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
+const QuotationPDF = ({ quotation, id = 'quotation-pdf-content' }) => {
 
-  const brandingData = (() => {
+  const [invoiceConfig, setInvoiceConfig] = useState(null);
+
+  useEffect(() => {
+    fetchInvoiceConfig();
+  }, []);
+
+  const fetchInvoiceConfig = async () => {
     try {
-      const branding = localStorage.getItem('vcare_branding');
-      return branding ? JSON.parse(branding) : {};
-    } catch (_error) {
-      return {};
+      const response = await apiClient.get('/invoice-settings/complete');
+      console.log("resss", response)
+      setInvoiceConfig(response);
+    } catch (error) {
+      console.error('Error fetching invoice configuration:', error);
+      setInvoiceConfig({
+        settings: {
+          business_name: '',
+          business_address: '',
+          phone_number: ''
+        },
+        bankAccount: null,
+        notesTemplate: null
+      });
     }
-  })();
-
-  const _businessName = brandingData.businessName || '';
-  const _businessAddress = brandingData.address || '';
-  const _phoneNumber = brandingData.phoneNumber || '';
-  const _logoPreview = brandingData.logoPreview || '/VCARELogo 1.png';
+  };
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -37,6 +51,8 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
       year: 'numeric'
     });
   };
+
+  if (!quotation) return null;
 
   // Split items into pages of 10
   const itemPages = chunkArray(quotation.items || [], ITEMS_PER_PAGE);
@@ -255,7 +271,7 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
 
                   {/* Terms & Conditions */}
                   <div style={{ marginBottom: '12px' }}>
-                    <Title level={5} style={{ marginBottom: '4px', fontSize: '12px' }}>Terms & Conditions:</Title>
+                    <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#374151' }}>Terms & Conditions</h3>
                     <div className="text-gray-600" style={{ fontSize: '10px', lineHeight: '1.4' }}>
                       <ol className="list-decimal pl-4 space-y-1" style={{ margin: 0 }}>
                         <li>This quotation is valid until the date specified above.</li>
@@ -328,11 +344,26 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
                     <tr>
                       <td style={{ padding: 0, paddingRight: '6px', verticalAlign: 'middle' }}>
                         <svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24" style={{ display: 'block' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </td>
+                      <td style={{ padding: 0, verticalAlign: 'middle', color: 'white', fontSize: '11px', fontWeight: '500', lineHeight: '1' }}>
+                        {invoiceConfig?.settings?.business_address || ''}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <table style={{ display: 'inline-table', borderCollapse: 'collapse', marginRight: '32px' }}>
+                  <tbody>
+                    <tr>
+                      <td style={{ padding: 0, paddingRight: '6px', verticalAlign: 'middle' }}>
+                        <svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24" style={{ display: 'block' }}>
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                         </svg>
                       </td>
                       <td style={{ padding: 0, verticalAlign: 'middle', color: 'white', fontSize: '12px', fontWeight: '500', lineHeight: '1' }}>
-                        0112870330
+                        {invoiceConfig?.settings?.phone_number || ''}
                       </td>
                     </tr>
                   </tbody>
@@ -346,7 +377,7 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
                         </svg>
                       </td>
                       <td style={{ padding: 0, verticalAlign: 'middle', color: 'white', fontSize: '12px', fontWeight: '500', lineHeight: '1' }}>
-                        vcarepvtltd@gmail.com
+                        {invoiceConfig?.settings?.email_address || ''}
                       </td>
                     </tr>
                   </tbody>
@@ -359,3 +390,5 @@ export function QuotationPDF({ quotation, id = 'quotation-pdf-content' }) {
     </div>
   );
 }
+
+export default QuotationPDF;

@@ -1,7 +1,3 @@
-import { Typography } from 'antd';
-
-const { Title, Text } = Typography;
-
 export const InvoiceHeader = ({ businessName: _businessName, logoPreview: _logoPreview }) => (
   <div style={{ marginBottom: '10px' }}>
     <img
@@ -190,12 +186,23 @@ export const InvoiceAccountDetails = ({ bankAccount }) => {
 
   return (
     <div style={{ marginTop: '12px' }}>
-      <Title level={5} style={{ marginBottom: '4px', fontSize: '12px' }}>Account details</Title>
-      <div style={{ fontSize: '11px', lineHeight: '1.4' }}>
-        <Text className="block" style={{ fontSize: '11px' }}>{bankAccount.account_holder_name || bankAccount.accountHolderName}</Text>
-        <Text className="block" style={{ fontSize: '11px' }}>{bankAccount.account_number || bankAccount.accountNumber}</Text>
-        <Text className="block" style={{ fontSize: '11px' }}>{bankAccount.bank_name || bankAccount.bankName} {bankAccount.branch_name || bankAccount.branchName}</Text>
-      </div>
+      <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#374151' }}>Account Details</h3>
+      <table style={{ borderCollapse: 'collapse', fontSize: '11px', lineHeight: '1.8' }}>
+        <tbody>
+          <tr>
+            <td style={{ color: '#6b7280', paddingRight: '10px', whiteSpace: 'nowrap', fontWeight: '500' }}>Account Holder:</td>
+            <td style={{ fontWeight: '600', color: '#111827' }}>{bankAccount.account_holder_name}</td>
+          </tr>
+          <tr>
+            <td style={{ color: '#6b7280', paddingRight: '10px', whiteSpace: 'nowrap', fontWeight: '500' }}>Account No:</td>
+            <td style={{ fontFamily: 'monospace', fontWeight: '700', color: '#111827', letterSpacing: '0.04em' }}>{bankAccount.account_number}</td>
+          </tr>
+          <tr>
+            <td style={{ color: '#6b7280', paddingRight: '10px', whiteSpace: 'nowrap', fontWeight: '500' }}>Bank:</td>
+            <td style={{ color: '#111827' }}>{bankAccount.bank_name}{bankAccount.branch_name ? ` — ${bankAccount.branch_name}` : ''}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 };
@@ -205,22 +212,22 @@ export const InvoiceNotes = ({ notesTemplate }) => {
 
   return (
     <div style={{ marginTop: '12px' }}>
-      <Title level={5} style={{ marginBottom: '4px', fontSize: '12px' }}>Note:-</Title>
-      <div style={{ fontSize: '10px', lineHeight: '1.4' }}>
+      <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#374151' }}>Note</h3>
+      <div className="space-y-1">
         {notesTemplate.warranty_terms && (
-          <Text className="block text-gray-700" style={{ fontSize: '10px' }}>
-            {notesTemplate.warranty_terms || notesTemplate.warrantyTerms}
-          </Text>
+          <p className="text-[10px] text-gray-700 m-0" style={{ lineHeight: '1.4' }}>
+            {notesTemplate.warranty_terms}
+          </p>
         )}
         {notesTemplate.quotation_validity && (
-          <Text className="block text-gray-700" style={{ marginTop: '2px', fontSize: '10px' }}>
-            {notesTemplate.quotation_validity || notesTemplate.quotationValidity}
-          </Text>
+          <p className="text-[10px] text-gray-700 m-0" style={{ lineHeight: '1.4', marginTop: '4px' }}>
+            {notesTemplate.quotation_validity}
+          </p>
         )}
         {notesTemplate.custom_notes && (
-          <Text className="block text-gray-700" style={{ marginTop: '2px', fontSize: '10px' }}>
-            {notesTemplate.custom_notes || notesTemplate.customNotes}
-          </Text>
+          <p className="text-[10px] text-gray-700 m-0" style={{ lineHeight: '1.4', marginTop: '4px' }}>
+            {notesTemplate.custom_notes}
+          </p>
         )}
       </div>
     </div>
@@ -240,7 +247,7 @@ export const InvoiceTermsAndConditions = () => {
 
   return (
     <div style={{ marginTop: '12px' }}>
-      <Title level={5} style={{ marginBottom: '4px', fontSize: '12px' }}>Terms & Conditions:</Title>
+      <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#374151' }}>Terms & Conditions</h3>
       <div style={{ color: '#374151', fontSize: '10px', lineHeight: '1.5' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <tbody>
@@ -301,44 +308,61 @@ export const InvoiceSignatureSection = () => {
   );
 };
 
-export const InvoiceFooter = () => {
+export const InvoiceFooter = ({ settings }) => {
   return (
-    <div
-      style={{
-        width: '100%',
-        backgroundColor: '#2563eb',
-        padding: '12px 0',
-        textAlign: 'center'
-      }}
-    >
-      <table style={{ display: 'inline-table', borderCollapse: 'collapse', marginRight: '32px' }}>
-        <tbody>
-          <tr>
-            <td style={{ padding: 0, paddingRight: '6px', verticalAlign: 'middle' }}>
-              <svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24" style={{ display: 'block' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-            </td>
-            <td style={{ padding: 0, verticalAlign: 'middle', color: 'white', fontSize: '12px', fontWeight: '500', lineHeight: '1' }}>
-              0112870330
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <table style={{ display: 'inline-table', borderCollapse: 'collapse' }}>
-        <tbody>
-          <tr>
-            <td style={{ padding: 0, paddingRight: '6px', verticalAlign: 'middle' }}>
-              <svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24" style={{ display: 'block' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </td>
-            <td style={{ padding: 0, verticalAlign: 'middle', color: 'white', fontSize: '12px', fontWeight: '500', lineHeight: '1' }}>
-              vcarepvtltd@gmail.com
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10 }}>
+      <div
+        style={{
+          width: '100%',
+          backgroundColor: '#2563eb',
+          padding: '12px 0',
+          textAlign: 'center'
+        }}
+      >
+        <table style={{ display: 'inline-table', borderCollapse: 'collapse', marginRight: '32px' }}>
+          <tbody>
+            <tr>
+              <td style={{ padding: 0, paddingRight: '6px', verticalAlign: 'middle' }}>
+                <svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24" style={{ display: 'block' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </td>
+              <td style={{ padding: 0, verticalAlign: 'middle', color: 'white', fontSize: '11px', fontWeight: '500', lineHeight: '1' }}>
+                {settings?.business_address || ''}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <table style={{ display: 'inline-table', borderCollapse: 'collapse', marginRight: '32px' }}>
+          <tbody>
+            <tr>
+              <td style={{ padding: 0, paddingRight: '6px', verticalAlign: 'middle' }}>
+                <svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24" style={{ display: 'block' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+              </td>
+              <td style={{ padding: 0, verticalAlign: 'middle', color: 'white', fontSize: '12px', fontWeight: '500', lineHeight: '1' }}>
+                {settings?.phone_number || ''}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <table style={{ display: 'inline-table', borderCollapse: 'collapse' }}>
+          <tbody>
+            <tr>
+              <td style={{ padding: 0, paddingRight: '6px', verticalAlign: 'middle' }}>
+                <svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24" style={{ display: 'block' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </td>
+              <td style={{ padding: 0, verticalAlign: 'middle', color: 'white', fontSize: '12px', fontWeight: '500', lineHeight: '1' }}>
+                {settings?.email_address || ''}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

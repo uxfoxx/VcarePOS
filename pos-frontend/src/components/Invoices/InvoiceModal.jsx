@@ -66,7 +66,8 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
   const fetchInvoiceConfig = async () => {
     try {
       const response = await apiClient.get('/invoice-settings/complete');
-      setInvoiceConfig(response.data);
+      console.log("resss", response)
+      setInvoiceConfig(response);
     } catch (error) {
       console.error('Error fetching invoice configuration:', error);
       setInvoiceConfig({
@@ -242,14 +243,6 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
       savedBranding?.businessName ||
       '';
 
-    const businessAddress = invoiceConfig?.settings?.business_address ||
-      savedBranding?.address ||
-      '';
-
-    const phoneNumber = invoiceConfig?.settings?.phone_number ||
-      savedBranding?.phoneNumber ||
-      '';
-
     const logoPreview = invoiceConfig?.settings?.logo_url ||
       savedBranding?.logoPreview ||
       '/VCARELogo 1.png';
@@ -379,18 +372,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
               </div>
 
               {/* Footer Section - Fixed at bottom */}
-              <div style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                zIndex: 10
-              }}>
-                <InvoiceFooter
-                  businessAddress={businessAddress}
-                  phoneNumber={phoneNumber}
-                />
-              </div>
+              <InvoiceFooter settings={invoiceConfig?.settings} />
             </div>
           );
         })}

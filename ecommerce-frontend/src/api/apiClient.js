@@ -197,9 +197,13 @@ export const deliveryChargesApi = {
   },
 };
 
-// Invoice Settings API (public - for checkout bank details)
+// Invoice Settings API (public - for checkout bank details and footer contact info)
 export const invoiceSettingsApi = {
   getBankAccounts: async () => {
     return makeRequest('/ecommerce/settings/bank-accounts');
+  },
+
+  getInvoiceInfo: async () => {
+    return makeRequest('/ecommerce/settings/invoice-info');
   },
 };

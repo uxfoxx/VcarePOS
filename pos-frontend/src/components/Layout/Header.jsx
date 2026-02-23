@@ -99,8 +99,11 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
   };
 
   const handleClearAll = () => {
+    // Pass unread ecommerce orders to saga before clearing
+    const unreadOrders = notifications.filter(n => !n.read && n.category === 'ecommerce-order');
+
     // Clear regular notifications
-    clearAllNotifications();
+    clearAllNotifications(unreadOrders);
     // Clear stock alerts
     clearStockAlerts();
     // Clear local read state for stock alerts
@@ -109,8 +112,9 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
   };
 
   const handleMarkAllRead = () => {
+    const unreadOrders = notifications.filter(n => !n.read && n.category === 'ecommerce-order');
     // Mark all regular notifications as read
-    markAllAsRead();
+    markAllAsRead(unreadOrders);
     // Mark all stock alerts as read locally
     const allStockAlertIds = stockAlerts.map(alert => alert.id);
     setReadStockAlerts(prev => new Set([...prev, ...allStockAlertIds]));
@@ -194,6 +198,7 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
             <ActionButton.Text
               size="small"
               onClick={handleMarkAllRead}
+              icon="done_all"
             >
               Mark All Read
             </ActionButton.Text>
@@ -202,56 +207,60 @@ export function Header({ collapsed, onCollapse, activeTab, style, onTabChange })
             size="small"
             onClick={handleClearAll}
             disabled={allNotifications.length === 0}
+            icon="delete_sweep"
+            danger
           >
             Clear All
           </ActionButton.Text>
         </Space>
       </div>
 
-      {allNotifications.length === 0 ? (
-        <Empty
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description="No notifications"
-          className="py-8"
-        />
-      ) : (
-        <List
-          className=' overflow-y-auto max-h-96'
-          dataSource={allNotifications}
-          renderItem={item => (
-            <List.Item
-              className={`cursor-pointer  hover:bg-gray-50 transition-colors ${item.read ? 'opacity-70' : ''}`}
-              onClick={() => handleNotificationClick(item)}
-            >
-              <div className="flex items-start p-2 w-full">
-                <div className={`flex-shrink-0 mr-3 mt-1 text-${item.type === 'error' ? 'red' : item.type === 'warning' ? 'orange' : 'blue'}-500`}>
-                  <Icon name={item.icon || 'notifications'} />
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <Text strong className={item.read ? 'text-gray-500' : 'text-gray-900'}>
-                      {item.title}
-                    </Text>
-                    {!item.read && <Badge status="processing" color="blue" />}
+      {
+        allNotifications.length === 0 ? (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="No notifications"
+            className="py-8"
+          />
+        ) : (
+          <List
+            className=' overflow-y-auto max-h-96'
+            dataSource={allNotifications}
+            renderItem={item => (
+              <List.Item
+                className={`cursor-pointer  hover:bg-gray-50 transition-colors ${item.read ? 'opacity-70' : ''}`}
+                onClick={() => handleNotificationClick(item)}
+              >
+                <div className="flex items-start p-2 w-full">
+                  <div className={`flex-shrink-0 mr-3 mt-1 text-${item.type === 'error' ? 'red' : item.type === 'warning' ? 'orange' : 'blue'}-500`}>
+                    <Icon name={item.icon || 'notifications'} />
                   </div>
-                  <Text type="secondary" className="text-xs block">
-                    {new Date(item.timestamp).toLocaleString()}
-                  </Text>
-                  <Text className={`text-sm block mt-1 ${item.read ? 'text-gray-500' : 'text-gray-700'}`}>
-                    {item.message}
-                  </Text>
-                  {item.navigateTo && (
-                    <Tag color="blue" size="small" className="mt-1">
-                      Click to view
-                    </Tag>
-                  )}
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <Text strong className={item.read ? 'text-gray-500' : 'text-gray-900'}>
+                        {item.title}
+                      </Text>
+                      {!item.read && <Badge status="processing" color="blue" />}
+                    </div>
+                    <Text type="secondary" className="text-xs block">
+                      {new Date(item.timestamp).toLocaleString()}
+                    </Text>
+                    <Text className={`text-sm block mt-1 ${item.read ? 'text-gray-500' : 'text-gray-700'}`}>
+                      {item.message}
+                    </Text>
+                    {item.navigateTo && (
+                      <Tag color="blue" size="small" className="mt-1">
+                        Click to view
+                      </Tag>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </List.Item>
-          )}
-        />
-      )}
-    </div>
+              </List.Item>
+            )}
+          />
+        )
+      }
+    </div >
   );
 
   const getPageTitle = () => {

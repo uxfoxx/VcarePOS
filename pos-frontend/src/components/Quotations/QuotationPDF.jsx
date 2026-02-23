@@ -413,5 +413,5 @@ const QuotationPDF = ({ quotation, id = 'quotation-pdf-content' }) => {
   );
 }
 
-// export { QuotationPDF };
+export { QuotationPDF };
 export default QuotationPDF;

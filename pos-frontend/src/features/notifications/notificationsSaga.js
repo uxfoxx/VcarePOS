@@ -1,5 +1,5 @@
-import { put, select, call, fork, cancel, delay, take } from 'redux-saga/effects';
-import { addNotification } from './notificationsSlice';
+import { put, select, call, fork, cancel, delay, take, takeEvery, all } from 'redux-saga/effects';
+import { addNotification, markAllNotificationsRead, clearNotifications } from './notificationsSlice';
 import { ecommerceOrdersApi } from '../../api/apiClient';
 import { message } from 'antd';
 
@@ -94,11 +94,38 @@ function* pollForNewOrders() {
   }
 }
 
+/**
+ * Handle marking e-commerce notifications as read on the backend.
+ * We use the unread orders passed in the action payload.
+ */
+function* handleMarkAllBackendNotified(action) {
+  try {
+    const unreadOrders = action.payload || [];
+
+    if (unreadOrders.length > 0) {
+      console.log(`[Notifications] Syncing ${unreadOrders.length} orders to backend...`);
+      yield all(
+        unreadOrders.map(notif =>
+          call(ecommerceOrdersApi.markOrderNotified, notif.orderId)
+        )
+      );
+    }
+  } catch (error) {
+    console.warn('[Notifications] Backend sync failed:', error.message);
+  }
+}
+
 function* notificationsSaga() {
   const pollingTask = yield fork(pollForNewOrders);
+
+  // Watch for mark all read and clear all to update backend
+  yield takeEvery(markAllNotificationsRead.type, handleMarkAllBackendNotified);
+  yield takeEvery(clearNotifications.type, handleMarkAllBackendNotified);
 
   yield take('STOP_NOTIFICATIONS');
   yield cancel(pollingTask);
 }
 
+
 export default notificationsSaga;
+

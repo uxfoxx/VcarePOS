@@ -52,12 +52,12 @@ export function useReduxNotifications() {
     dispatch(markNotificationRead(notificationId));
   };
 
-  const markAllAsRead = () => {
-    dispatch(markAllNotificationsRead());
+  const markAllAsRead = (payload) => {
+    dispatch(markAllNotificationsRead(payload));
   };
 
-  const clearAllNotifications = () => {
-    dispatch(clearNotifications());
+  const clearAllNotifications = (payload) => {
+    dispatch(clearNotifications(payload));
     message.success('All notifications cleared');
   };
 

@@ -127,9 +127,9 @@ const Header = () => {
           <div className="flex items-center space-x-5">
             {/* Search */}
             <div className="relative" ref={searchRef}>
-              <div className={`flex items-center transition-all duration-300 ${isSearchOpen ? 'w-[200px] sm:w-[300px]' : 'w-10'}`}>
+              <div className={`flex items-center transition-all duration-300 ${isSearchOpen ? 'fixed top-0 h-20 z-20 bg-white left-0 right-0 w-full' : 'w-10'}`}>
                 {isSearchOpen ? (
-                  <div className="relative w-full">
+                  <div className="relative w-full px-4">
                     <input
                       type="text"
                       autoFocus
@@ -138,7 +138,7 @@ const Header = () => {
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full pl-10 pr-4 py-2 border border-primary-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-100 transition-all bg-white"
                     />
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Search className="absolute left-8 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     {isSearchLoading && (
                       <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary-500 animate-spin" />
                     )}
@@ -147,7 +147,7 @@ const Header = () => {
                         setIsSearchOpen(false);
                         setSearchQuery("");
                       }}
-                      className="absolute -right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"
+                      className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -164,7 +164,7 @@ const Header = () => {
 
               {/* Search Results Dropdown */}
               {isSearchOpen && (searchQuery.trim() !== "" || isSearchLoading) && (
-                <div className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-[90px] sm:top-full mt-0 sm:mt-3 w-auto sm:w-[400px] bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                <div className="fixed left-4 right-4 top-[80px] mt-0 w-auto bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
                   {isSearchLoading ? (
                     <div className="p-8 text-center text-gray-500">
                       <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-primary-500" />

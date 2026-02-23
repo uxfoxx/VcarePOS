@@ -130,14 +130,39 @@ router.post('/orders', [
       const itemTotal = product.price * item.quantity;
       totalAmount += itemTotal;
 
+      // Find the color image if color is selected
+      let productImage = product.image;
+      let colorName = null;
+      if (item.selectedColorId) {
+        const colorResult = await client.query(`
+          SELECT name, image FROM product_colors WHERE id = $1
+        `, [item.selectedColorId]);
+        if (colorResult.rows.length > 0) {
+          if (colorResult.rows[0].image) productImage = colorResult.rows[0].image;
+          colorName = colorResult.rows[0].name;
+        }
+      }
+
+      // If still no color image, try first media
+      if (!productImage && product.media) {
+        try {
+          const parsedMedia = typeof product.media === 'string' ? JSON.parse(product.media) : product.media;
+          if (Array.isArray(parsedMedia) && parsedMedia.length > 0) {
+            productImage = parsedMedia[0];
+          }
+        } catch (e) { }
+      }
+
       validatedItems.push({
         productId: item.productId,
         productName: product.name,
         selectedColorId: item.selectedColorId,
+        colorName: colorName,
         selectedSize: item.selectedSize,
         quantity: item.quantity,
         unitPrice: product.price,
-        totalPrice: itemTotal
+        totalPrice: itemTotal,
+        productImage: productImage
       });
 
       // Update raw material stock for the selected size (new relationship structure)

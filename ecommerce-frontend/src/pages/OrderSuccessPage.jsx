@@ -3,6 +3,18 @@ import { useParams, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchOrderById } from '../store/slices/ordersSlice';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
+import { CheckCircle2, Package, ShoppingBag, ArrowRight, User, Mail, Phone, MapPin, CreditCard } from 'lucide-react';
+
+const fallbackImage = 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
+
+const getImageUrl = (url) => {
+  if (!url) return fallbackImage;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+};
 
 const OrderSuccessPage = () => {
   const { orderId } = useParams();
@@ -38,53 +50,54 @@ const OrderSuccessPage = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="text-center mb-8">
-        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="text-center mb-10">
+        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-green-100">
+          <CheckCircle2 className="w-10 h-10 text-green-500" />
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Order Placed Successfully!</h1>
-        <p className="text-lg text-gray-600">
-          Thank you for your order. We'll process it shortly.
+        <h1 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">Order Confirmed <span className="text-primary-600">.</span></h1>
+        <p className="text-base text-gray-400 font-medium">
+          Thank you for your purchase. We've sent a confirmation email to <span className="text-gray-900 font-bold">{currentOrder.customerEmail}</span>
         </p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md p-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+      <div className="bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 p-6 md:p-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-10">
           {/* Order Details */}
           <div>
-            <h2 className="text-xl font-semibold mb-4">Order Details</h2>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Order Number:</span>
-                <span className="font-medium">{currentOrder.id}</span>
+            <h2 className="text-lg font-black text-gray-900 mb-5 flex items-center gap-2">
+              <ShoppingBag className="w-5 h-5 text-primary-600" />
+              Order Details
+            </h2>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-gray-400 font-bold uppercase tracking-wider">Order Reference</span>
+                <span className="font-black text-gray-900">#{currentOrder.id}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Order Date:</span>
-                <span className="font-medium">
-                  {new Date(currentOrder.createdAt).toLocaleDateString()}
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-gray-400 font-bold uppercase tracking-wider">Placed On</span>
+                <span className="font-bold text-gray-700">
+                  {new Date(currentOrder.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Payment Method:</span>
-                <span className="font-medium">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-gray-400 font-bold uppercase tracking-wider">Payment</span>
+                <div className="flex items-center gap-1.5 font-bold text-gray-700">
+                  <CreditCard className="w-3.5 h-3.5" />
                   {currentOrder.paymentMethod === 'cash_on_delivery' ? 'Cash on Delivery' : 'Bank Transfer'}
-                </span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Status:</span>
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  currentOrder.orderStatus === 'pending_payment'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : currentOrder.orderStatus === 'processing'
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-green-100 text-green-800'
-                }`}>
-                  {currentOrder.orderStatus === 'pending_payment' ? 'Pending Payment' : 
-                   currentOrder.orderStatus === 'processing' ? 'Processing' : 
-                   currentOrder.orderStatus}
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-gray-400 font-bold uppercase tracking-wider">Status</span>
+                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${currentOrder.orderStatus === 'pending_payment'
+                  ? 'bg-yellow-50 text-yellow-600 border border-yellow-100'
+                  : currentOrder.orderStatus === 'processing'
+                    ? 'bg-blue-50 text-blue-600 border border-blue-100'
+                    : 'bg-green-50 text-green-600 border border-green-100'
+                  }`}>
+                  {currentOrder.orderStatus === 'pending_payment' ? 'Pending Payment' :
+                    currentOrder.orderStatus === 'processing' ? 'Processing' :
+                      currentOrder.orderStatus}
                 </span>
               </div>
             </div>
@@ -92,56 +105,103 @@ const OrderSuccessPage = () => {
 
           {/* Delivery Information */}
           <div>
-            <h2 className="text-xl font-semibold mb-4">Delivery Information</h2>
-            <div className="text-sm">
-              <p className="font-medium text-gray-900">{currentOrder.customerName}</p>
-              <p className="text-gray-600">{currentOrder.customerEmail}</p>
+            <h2 className="text-lg font-black text-gray-900 mb-5 flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-primary-600" />
+              Shipping To
+            </h2>
+            <div className="bg-gray-50/50 rounded-2xl p-4 border border-gray-100/50 space-y-3">
+              <div className="flex items-start gap-3">
+                <User className="w-4 h-4 text-gray-400 mt-0.5" />
+                <p className="font-bold text-gray-900 text-sm">{currentOrder.customerName}</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Mail className="w-4 h-4 text-gray-400 mt-0.5" />
+                <p className="text-gray-500 font-medium text-xs">{currentOrder.customerEmail}</p>
+              </div>
               {currentOrder.customerPhone && (
-                <p className="text-gray-600">{currentOrder.customerPhone}</p>
+                <div className="flex items-start gap-3">
+                  <Phone className="w-4 h-4 text-gray-400 mt-0.5" />
+                  <p className="text-gray-500 font-medium text-xs">{currentOrder.customerPhone}</p>
+                </div>
               )}
-              <p className="text-gray-600 mt-2">{currentOrder.customerAddress}</p>
+              <div className="pt-2 border-t border-gray-100">
+                <p className="text-gray-500 font-medium text-xs leading-relaxed">{currentOrder.customerAddress}</p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Order Items */}
-        <div className="border-t pt-8">
-          <h2 className="text-xl font-semibold mb-4">Order Items</h2>
-          <div className="space-y-4">
-            {currentOrder.items.map((item, index) => (
-              <div key={index} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
-                <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
+        <div className="border-t border-gray-100 pt-10">
+          <h2 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2">
+            <Package className="w-5 h-5 text-primary-600" />
+            Items Ordered
+          </h2>
+          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+            {currentOrder.items.map((item, index) => {
+              // Try to find color info if available from product (might need to match by ID)
+              const selectedColor = item.product?.colors?.find(c => c.id === item.selectedColorId);
+              const itemImage = selectedColor?.productImageInColor || item.productImage || (item.product?.media && item.product?.media[0]);
+
+              return (
+                <div key={index} className="flex gap-5 p-4 bg-gray-50/30 border border-gray-100 rounded-2xl group transition-all">
+                  <div className="w-20 h-24 bg-white rounded-xl overflow-hidden flex-shrink-0 border border-gray-100 shadow-sm">
+                    <img
+                      src={getImageUrl(itemImage)}
+                      alt={item.productName}
+                      className="w-full h-full object-cover mix-blend-multiply p-1"
+                    />
+                  </div>
+                  <div className="flex-1 flex flex-col justify-between min-w-0">
+                    <div>
+                      <h3 className="font-bold text-gray-900 truncate text-base">{item.productName}</h3>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {item.selectedSize && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-white border border-gray-100 text-gray-500 text-[10px] font-bold">
+                            Size: {item.selectedSize}
+                          </span>
+                        )}
+                        {selectedColor && (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white border border-gray-100 text-gray-500 text-[10px] font-bold">
+                            <div className="w-2 h-2 rounded-full ring-1 ring-gray-100" style={{ backgroundColor: selectedColor.colorCode }} />
+                            {selectedColor.name}
+                          </span>
+                        )}
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary-50 text-primary-600 text-[10px] font-bold">
+                          Qty: {item.quantity}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-black text-gray-900">
+                        LKR {Number(item.totalPrice).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                        LKR {Number(item.unitPrice).toLocaleString()} per unit
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">{item.productName}</h3>
-                  {item.selectedSize && (
-                    <p className="text-sm text-gray-600">Size: {item.selectedSize}</p>
-                  )}
-                  <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold text-gray-900">
-                    LKR {Number(item.totalPrice).toFixed(2)}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                   LKR {Number(item.unitPrice).toFixed(2)} each
-                  </p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
         {/* Order Total */}
-        <div className="border-t pt-6 mt-6">
-          <div className="flex justify-between items-center">
-            <span className="text-xl font-semibold">Total Amount:</span>
-            <span className="text-2xl font-bold text-primary-600">
-              LKR {currentOrder.totalAmount.toFixed(2)}
-            </span>
+        <div className="border-t border-gray-100 pt-8 mt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center bg-gray-900 rounded-2xl p-6 md:p-8 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary-600/10 rounded-full -mr-16 -mt-16 blur-3xl" />
+
+            <div className="mb-4 md:mb-0">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block mb-1">Final Settlement</span>
+              <h3 className="text-lg font-black">Grand Total</h3>
+            </div>
+            <div className="text-center md:text-right">
+              <span className="text-3xl font-black text-white block">
+                LKR {currentOrder.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </span>
+              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">Included Delivery Charges</p>
+            </div>
           </div>
         </div>
 
@@ -167,12 +227,13 @@ const OrderSuccessPage = () => {
         )}
 
         {/* Action Buttons */}
-        <div className="border-t pt-6 mt-6 flex flex-col sm:flex-row gap-4">
-          <Link to="/orders" className="btn-secondary text-center">
-            View All Orders
+        <div className="mt-10 flex flex-col sm:flex-row gap-4">
+          <Link to="/orders" className="flex-1 py-4 bg-gray-50 text-gray-900 font-black rounded-2xl hover:bg-gray-100 transition-all text-center text-sm tracking-tight uppercase border border-gray-100">
+            View Order History
           </Link>
-          <Link to="/products" className="btn-primary text-center">
+          <Link to="/products" className="flex-1 py-4 bg-white text-gray-900 font-black rounded-2xl hover:bg-primary-50 transition-all text-center text-sm tracking-tight uppercase border-2 border-gray-100 flex items-center justify-center gap-2 group">
             Continue Shopping
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
       </div>

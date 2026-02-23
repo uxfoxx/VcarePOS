@@ -11,6 +11,18 @@ import {
 import LoadingSpinner from '../components/Common/LoadingSpinner';
 import { deliveryChargesApi } from '../api/apiClient';
 import { toast } from 'react-toastify';
+import { Package, ShoppingBag } from 'lucide-react';
+
+const fallbackImage = 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
+
+const getImageUrl = (url) => {
+  if (!url) return fallbackImage;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+};
 
 const CheckoutPage = () => {
   const dispatch = useDispatch();
@@ -40,6 +52,11 @@ const CheckoutPage = () => {
   const [selectedDeliveryType, setSelectedDeliveryType] = useState('');
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [loadingDeliverySettings, setLoadingDeliverySettings] = useState(false);
+
+  useEffect(() => {
+    // Scroll to top smoothly when step changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
 
   useEffect(() => {
     // Redirect if cart is empty
@@ -676,46 +693,59 @@ const CheckoutPage = () => {
                 )}
 
                 {/* Items Review */}
-                <div className="mb-6">
-                  <h3 className="font-semibold mb-4">Order Items</h3>
-                  <div className="space-y-3">
-                    {items.map(item => (
-                      <div key={item.id} className="flex items-center space-x-4 p-3 border border-gray-200 rounded-lg">
-                        <img
-                          src={
-                            item.product.media && Array.isArray(item.product.media) && item.product.media.length > 0
-                              ? (() => {
-                                // Find the first media that is NOT a video
-                                const imageMedia = item.product.media.find(
-                                  (m) =>
-                                    !m.startsWith('data:video/') &&
-                                    !m.toLowerCase().endsWith('.mp4') &&
-                                    !m.toLowerCase().endsWith('.webm') &&
-                                    !m.toLowerCase().endsWith('.mov')
-                                );
-                                return imageMedia
-                                  ? `${import.meta.env.VITE_API_URL}${imageMedia}`
-                                  : item.image ||
-                                  'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
-                              })()
-                              : item.image ||
-                              'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'
-                          }
-                          alt={item.product.name}
-                          className="w-16 h-16 object-cover rounded-lg"
-                        />
-                        <div className="flex-1">
-                          <h4 className="font-medium">{item.product.name}</h4>
-                          {item.selectedSize && (
-                            <p className="text-sm text-gray-600">Size: {item.selectedSize}</p>
-                          )}
-                          <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                <div className="mb-8">
+                  <h3 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
+                    <Package className="w-5 h-5 text-primary-600" />
+                    Review Items
+                  </h3>
+                  <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                    {items.map(item => {
+                      const selectedColor = item.product.colors?.find(c => c.id === item.selectedColorId);
+                      const itemImage = selectedColor?.productImageInColor || (item.product.media && item.product.media[0]) || item.product.image;
+
+                      return (
+                        <div key={item.id} className="flex gap-5 p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                          <div className="w-20 h-24 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100/50">
+                            <img
+                              src={getImageUrl(itemImage)}
+                              alt={item.product.name}
+                              className="w-full h-full object-cover mix-blend-multiply p-1"
+                            />
+                          </div>
+                          <div className="flex-1 flex flex-col justify-between min-w-0">
+                            <div>
+                              <h4 className="font-bold text-gray-900 truncate text-base">{item.product.name}</h4>
+                              <p className="text-[10px] font-bold text-primary-500 uppercase tracking-wider">{item.product.category || 'Collection'}</p>
+
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {item.selectedSize && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-50 border border-gray-100 text-gray-600 text-[10px] font-bold">
+                                    Size: {item.selectedSize}
+                                  </span>
+                                )}
+                                {selectedColor && (
+                                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-50 border border-gray-100 text-gray-600 text-[10px] font-bold">
+                                    <span
+                                      className="w-2 h-2 rounded-full ring-1 ring-white"
+                                      style={{ backgroundColor: selectedColor.colorCode }}
+                                    />
+                                    {selectedColor.name}
+                                  </span>
+                                )}
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary-50 text-primary-600 text-[10px] font-bold">
+                                  Qty: {item.quantity}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-black text-gray-900">
+                                LKR {(item.product.price * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium">LKR {(item.product.price * item.quantity).toFixed(2)}</p>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -750,46 +780,85 @@ const CheckoutPage = () => {
 
         {/* Order Summary Sidebar */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
-            <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sticky top-24 overflow-hidden">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-primary-50 rounded-full -mr-10 -mt-10 blur-2xl opacity-50" />
 
-            <div className="space-y-3 mb-4">
-              {items.map(item => (
-                <div key={item.id} className="flex justify-between text-sm">
-                  <span className="text-gray-600">
-                    {item.product.name} × {item.quantity}
-                  </span>
-                  <span className="font-medium">
-                    LKR {(item.product.price * item.quantity).toFixed(2)}
-                  </span>
-                </div>
-              ))}
+            <h2 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2 relative">
+              <ShoppingBag className="w-5 h-5 text-primary-600" />
+              Summary
+            </h2>
+
+            <div className="space-y-4 mb-6 relative max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+              {items.map(item => {
+                const selectedColor = item.product.colors?.find(c => c.id === item.selectedColorId);
+                const itemImage = selectedColor?.productImageInColor || (item.product.media && item.product.media[0]) || item.product.image;
+
+                return (
+                  <div key={item.id} className="flex gap-3 group">
+                    <div className="w-12 h-14 bg-gray-50 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100">
+                      <img
+                        src={getImageUrl(itemImage)}
+                        alt={item.product.name}
+                        className="w-full h-full object-cover mix-blend-multiply p-0.5"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-[11px] font-bold text-gray-900 truncate uppercase tracking-tight">{item.product.name}</h4>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Qty {item.quantity}</span>
+                        {(item.selectedSize || selectedColor) && <span className="text-[9px] text-gray-300">•</span>}
+                        {item.selectedSize && (
+                          <span className="text-[9px] text-gray-500 font-bold uppercase">{item.selectedSize}</span>
+                        )}
+                        {selectedColor && (
+                          <div
+                            className="w-1.5 h-1.5 rounded-full border border-gray-200"
+                            style={{ backgroundColor: selectedColor.colorCode }}
+                          />
+                        )}
+                      </div>
+                      <p className="text-[10px] font-black text-primary-600 mt-0.5">
+                        LKR {(item.product.price * item.quantity).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
-            <div className="border-t pt-3 space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Subtotal</span>
-                <span className="font-medium">LKR {totalAmount.toFixed(2)}</span>
+            <div className="border-t border-gray-100 pt-5 space-y-3 relative">
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-500 font-medium">Subtotal</span>
+                <span className="text-gray-900 font-bold">LKR {totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
-              {deliveryCharge > 0 ? (
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Delivery Charge ({
-                    selectedDeliveryType === 'free_delivery' ? 'Free Delivery' :
-                      selectedDeliveryType === 'inside_colombo' ? 'Inside Colombo' :
-                        selectedDeliveryType === 'out_of_colombo' ? 'Out of Colombo' :
-                          'Selected'
-                  })</span>
-                  <span className="font-medium text-blue-600">LKR {deliveryCharge.toFixed(2)}</span>
+
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-500 font-medium">Delivery</span>
+                {deliveryCharge > 0 ? (
+                  <span className="text-primary-600 font-bold">LKR {deliveryCharge.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                ) : (
+                  <span className="text-green-500 font-bold">FREE</span>
+                )}
+              </div>
+
+              <div className="pt-4 border-t border-gray-100">
+                <div className="flex justify-between items-baseline mb-1">
+                  <span className="text-sm font-black text-gray-900 uppercase tracking-wider">Total</span>
+                  <div className="text-right">
+                    <span className="text-xl font-black text-gray-900 block leading-none">
+                      LKR {(totalAmount + deliveryCharge).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </span>
+                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">VAT Included</p>
+                  </div>
                 </div>
-              ) : (
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Shipping</span>
-                  <span className="font-medium text-green-600">Free</span>
-                </div>
-              )}
-              <div className="flex justify-between text-lg font-bold">
-                <span>Total</span>
-                <span className="text-primary-600">LKR {(totalAmount + deliveryCharge).toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col items-center gap-2 opacity-40">
+              <p className="text-[8px] font-black text-gray-400 uppercase tracking-[0.2em]">Secure Checkout</p>
+              <div className="flex gap-4">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-2" />
+                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-3" />
               </div>
             </div>
           </div>
@@ -834,6 +903,52 @@ const CheckoutPage = () => {
           </div>
         </div>
       )}
+
+      {/* Sticky Bottom Action Bar for Easy Access */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-gray-100 p-4 z-50 lg:hidden flex items-center justify-between gap-4 shadow-[0_-8px_30px_rgb(0,0,0,0.05)]">
+        <div className="flex flex-col">
+          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Total Due</span>
+          <span className="text-lg font-black text-gray-900 leading-none">LKR {(totalAmount + deliveryCharge).toFixed(2)}</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {currentStep > 1 && (
+            <button
+              onClick={handlePrevStep}
+              className="px-4 py-3 bg-gray-50 text-gray-900 font-bold rounded-xl text-[10px] uppercase tracking-widest border border-gray-200"
+            >
+              Back
+            </button>
+          )}
+
+          {currentStep === 1 ? (
+            <button
+              onClick={() => document.querySelector('form')?.requestSubmit()}
+              className="px-6 py-3 bg-gray-900 text-white font-black rounded-xl text-[10px] uppercase tracking-widest shadow-lg active:scale-95"
+            >
+              Continue
+            </button>
+          ) : currentStep === 2 ? (
+            <button
+              onClick={handleNextStep}
+              className="px-6 py-3 bg-gray-900 text-white font-black rounded-xl text-[10px] uppercase tracking-widest shadow-lg active:scale-95"
+            >
+              Review
+            </button>
+          ) : (
+            <button
+              onClick={handlePlaceOrder}
+              disabled={loading || (paymentMethod === 'bank_transfer' && !uploadedReceiptDetails)}
+              className="px-6 py-3 bg-primary-600 text-white font-black rounded-xl text-[10px] uppercase tracking-widest shadow-lg active:scale-95 disabled:bg-gray-200"
+            >
+              {loading ? 'Placing...' : 'Place Order'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Spacer for sticky bottom bar */}
+      <div className="h-20 lg:hidden" />
     </div>
   );
 };

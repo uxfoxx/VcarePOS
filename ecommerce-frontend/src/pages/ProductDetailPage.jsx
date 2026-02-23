@@ -151,7 +151,8 @@ const ProductDetailPage = () => {
 
   const handleVariationChange = (variation) => {
     setSelectedVariation(variation);
-
+    // quantity reset to 1
+    setQuantity(1);
     // Automatically switch images when variation changes
     const variationImageIndex = galleryImages.findIndex(img => img.variationId === variation.id);
     if (variationImageIndex !== -1) {

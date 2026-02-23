@@ -1,3 +1,20 @@
+const getBaseUrl = () => (process.env.APP_URL || '').replace(/\/$/, '');
+const getApiUrl = () => `${getBaseUrl()}/api`;
+
+const getProductImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  if (imagePath.startsWith('http')) return imagePath;
+  const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+  return `${getApiUrl()}${normalizedPath}`;
+};
+
+const getFrontendAssetUrl = (assetPath) => {
+  if (!assetPath) return null;
+  if (assetPath.startsWith('http')) return assetPath;
+  const normalizedPath = assetPath.startsWith('/') ? assetPath : `/${assetPath}`;
+  return `${getBaseUrl()}${normalizedPath}`;
+};
+
 function generateOtpEmailBody(otp, name = '') {
   const businessName = process.env.BUSINESS_NAME || 'POS System';
   return `
@@ -50,7 +67,7 @@ function generateWelcomeEmailBody(name = '') {
       </p>
 
       <div style="text-align: center; margin: 30px 0;">
-        <a href="${process.env.APP_URL || '#'}" style="background-color: #2e86de; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold;">Visit ${businessName}</a>
+        <a href="${getFrontendAssetUrl('')}" style="background-color: #2e86de; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold;">Visit ${businessName}</a>
       </div>
 
       <p style="color: #777777; font-size: 14px;">
@@ -88,7 +105,7 @@ function generateLoginNotificationEmailBody(name = '', lastLogin = null) {
       </p>
 
       <div style="text-align: center; margin: 30px 0;">
-        <a href="${process.env.APP_URL || '#'}" style="background-color: #2e86de; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold;">Go to Your Account</a>
+        <a href="${getFrontendAssetUrl('')}" style="background-color: #2e86de; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold;">Go to Your Account</a>
       </div>
     </div>
 
@@ -183,7 +200,7 @@ function generateOrderStatusEmailBody(orderId, name = '', status, timelineData =
         <table width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
             <td align="left" valign="middle" width="50%">
-              <img src="${process.env.APP_URL}/VCARELogo%201.png" alt="Vcare Logo" style="max-height: 55px; display: block;" onerror="this.style.display='none'" />
+              <img src="${getFrontendAssetUrl('VCARELogo%201.png')}" alt="Vcare Logo" style="max-height: 55px; display: block;" onerror="this.style.display='none'" />
             </td>
             <td align="right" valign="middle" width="50%">
               <div style="color: #868e96; font-size: 13px; margin-bottom: 8px;">
@@ -252,7 +269,8 @@ function generateOrderSummaryEmailBody(order, items = []) {
       <table width="100%" cellpadding="12" cellspacing="0" border="0" style="margin-top: 20px; border-collapse: collapse;">
         <thead>
           <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-            <th align="left" style="color: #495057; font-size: 13px; text-transform: uppercase;">Item</th>
+            <th align="left" style="color: #495057; font-size: 13px; text-transform: uppercase;" width="80">Product</th>
+            <th align="left" style="color: #495057; font-size: 13px; text-transform: uppercase;">Details</th>
             <th align="center" style="color: #495057; font-size: 13px; text-transform: uppercase;">Qty</th>
             <th align="right" style="color: #495057; font-size: 13px; text-transform: uppercase;">Price</th>
             <th align="right" style="color: #495057; font-size: 13px; text-transform: uppercase;">Total</th>
@@ -263,19 +281,43 @@ function generateOrderSummaryEmailBody(order, items = []) {
 
     items.forEach((item, index) => {
       const borderBottom = index < items.length - 1 ? 'border-bottom: 1px solid #eeeeee;' : '';
-      const sizeColorStr = (item.selectedColorId || item.selectedSize)
-        ? `<div style="color: #868e96; font-size: 12px; margin-top: 4px;">Sz: ${item.selectedSize || 'N/A'}</div>`
-        : '';
+
+      let variantInfo = '';
+      if (item.selectedSize || item.colorName) {
+        variantInfo = `
+          <div style="margin-top: 8px;">
+            ${item.selectedSize ? `<span style="display: inline-block; background-color: #f1f3f5; color: #495057; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-right: 5px; text-transform: uppercase;">Size: ${item.selectedSize}</span>` : ''}
+            ${item.colorName ? `<span style="display: inline-block; background-color: #f1f3f5; color: #495057; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">Color: ${item.colorName}</span>` : ''}
+          </div>
+        `;
+      }
+
+      let imgHtml = `
+        <div style="width: 60px; height: 60px; background-color: #f8f9fa; border-radius: 8px; overflow: hidden; border: 1px solid #eeeeee; text-align: center; line-height: 60px; color: #dee2e6; font-size: 24px;">
+           &#128230;
+        </div>
+      `;
+
+      if (item.productImage) {
+        const imgUrl = getProductImageUrl(item.productImage);
+
+        imgHtml = `
+          <img src="${imgUrl}" alt="${item.productName}" width="60" height="60" style="object-fit: cover; border-radius: 8px; border: 1px solid #eeeeee; display: block;" />
+        `;
+      }
 
       itemsHTML += `
         <tr style="${borderBottom}">
-          <td valign="top" style="padding: 15px 12px; color: #2c3e50; font-size: 15px; font-weight: 500;">
-            ${item.productName}
-            ${sizeColorStr}
+          <td valign="top" style="padding: 15px 12px;">
+            ${imgHtml}
+          </td>
+          <td valign="top" style="padding: 15px 12px; color: #2c3e50; font-size: 15px; font-weight: 600;">
+            <div style="margin-bottom: 2px;">${item.productName}</div>
+            ${variantInfo}
           </td>
           <td valign="top" align="center" style="padding: 15px 12px; color: #495057; font-size: 15px;">${item.quantity}</td>
-          <td valign="top" align="right" style="padding: 15px 12px; color: #495057; font-size: 15px;">Rs ${(parseFloat(item.unitPrice) || 0).toFixed(2)}</td>
-          <td valign="top" align="right" style="padding: 15px 12px; color: #2c3e50; font-weight: 600; font-size: 15px;">Rs ${(parseFloat(item.totalPrice) || 0).toFixed(2)}</td>
+          <td valign="top" align="right" style="padding: 15px 12px; color: #495057; font-size: 14px;">Rs ${(parseFloat(item.unitPrice) || 0).toFixed(2)}</td>
+          <td valign="top" align="right" style="padding: 15px 12px; color: #2c3e50; font-weight: 700; font-size: 15px;">Rs ${(parseFloat(item.totalPrice) || 0).toFixed(2)}</td>
         </tr>
       `;
     });
@@ -300,7 +342,7 @@ function generateOrderSummaryEmailBody(order, items = []) {
         <table width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
             <td align="left" valign="middle" width="50%">
-              <img src="${process.env.APP_URL}/VCARELogo%201.png" alt="Vcare Logo" style="max-height: 55px; display: block;" onerror="this.style.display='none'" />
+              <img src="${getFrontendAssetUrl('VCARELogo%201.png')}" alt="Vcare Logo" style="max-height: 55px; display: block;" onerror="this.style.display='none'" />
             </td>
             <td align="right" valign="middle" width="50%">
               <div style="color: #868e96; font-size: 13px; margin-bottom: 8px;">
@@ -427,7 +469,7 @@ function generateForgotPasswordEmailBody(tempPassword, name = '') {
       </p>
 
       <div style="text-align:center;margin-top:30px;">
-        <a href="${`${process.env.APP_URL}/login` || '#'}" 
+        <a href="${getFrontendAssetUrl('login')}" 
            style="background:#2e86de;color:#fff;text-decoration:none;padding:12px 30px;border-radius:6px;font-weight:bold;">
            Go to Login
         </a>

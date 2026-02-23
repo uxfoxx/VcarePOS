@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -101,11 +101,38 @@ const CheckoutPage = () => {
     });
   };
 
+  // Debug logging for checkout weight
+  useEffect(() => {
+    console.log('CheckoutPage: items with weights', items.map(item => ({
+      name: item.product.name,
+      qty: item.quantity,
+      weight: item.product.weight,
+      selectedSize: item.selectedSize,
+      sizeWeight: item.product.colors?.find(c => c.id === item.selectedColorId)?.sizes?.find(s => s.name === item.selectedSize)?.weight
+    })));
+  }, [items]);
+
   // Calculate total cart weight
-  const totalWeight = items.reduce((sum, item) => {
-    const weight = item.product.weight || 0;
-    return sum + (weight * item.quantity);
-  }, 0);
+  const totalWeight = useMemo(() => {
+    const calculatedWeight = items.reduce((sum, item) => {
+      // Find weight based on specific variant or fallback to product weight
+      let weight = parseFloat(item.product.weight || 0);
+
+      if (item.selectedColorId && item.product.colors) {
+        const color = item.product.colors.find(c => c.id === item.selectedColorId);
+        if (color && item.selectedSize && color.sizes) {
+          const size = color.sizes.find(s => s.name === item.selectedSize);
+          if (size && size.weight) {
+            weight = parseFloat(size.weight);
+          }
+        }
+      }
+
+      return sum + (weight * item.quantity);
+    }, 0);
+    console.log('CheckoutPage: totalWeight calculated', calculatedWeight);
+    return calculatedWeight;
+  }, [items]);
 
   // Filter active delivery settings for e-commerce
   const activeDeliverySettings = deliverySettings.filter(s => s.is_active);
@@ -341,8 +368,6 @@ const CheckoutPage = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Delivery Options
                       </label>
-
-                      {/* Weight Display */}
                       <div className="mb-4 p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-2">
                           <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

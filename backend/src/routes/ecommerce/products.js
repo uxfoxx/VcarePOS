@@ -144,6 +144,7 @@ router.get('/products', async (req, res) => {
         price: parseFloat(product.price),
         stock: totalStock || 0, // Ensure stock is never null/undefined
         barcode: product.barcode,
+        weight: parseFloat(product.weight || 0),
         image: product.image,
         media: Array.isArray(product.media) ? product.media : [],
         colors,
@@ -272,6 +273,7 @@ router.get('/products/search', async (req, res) => {
         category: product.category,
         price: parseFloat(product.price),
         stock: totalStock || 0,
+        weight: parseFloat(product.weight || 0),
         image: product.image,
         colors,
         createdAt: product.created_at
@@ -369,6 +371,7 @@ router.get('/products/:id', async (req, res) => {
       category: product.category,
       price: parseFloat(product.price),
       stock: totalStock || 0, // Ensure stock is never null/undefined
+      weight: parseFloat(product.weight || 0),
       barcode: product.barcode,
       image: product.image,
       media: Array.isArray(product.media) ? product.media : [],

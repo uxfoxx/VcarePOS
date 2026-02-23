@@ -21,16 +21,28 @@ const Header = () => {
   const searchRef = useRef(null);
   const searchTimeoutRef = useRef(null);
 
-  // Handle outside click to close search
+  // Handle outside click to close search and user menu
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setIsSearchOpen(false);
       }
+      if (isUserMenuOpen) {
+        // Find if the click was inside the user menu button or dropdown
+        const userBtn = document.querySelector('[data-user-menu-btn]');
+        const userDropdown = document.querySelector('[data-user-dropdown]');
+        if (userBtn && !userBtn.contains(event.target) && userDropdown && !userDropdown.contains(event.target)) {
+          setIsUserMenuOpen(false);
+        }
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [isUserMenuOpen]);
 
   // Handle live search
   useEffect(() => {
@@ -67,6 +79,7 @@ const Header = () => {
   const closeAllMenus = () => {
     setIsUserMenuOpen(false);
     setIsMobileMenuOpen(false);
+    setIsSearchOpen(false);
   };
 
   // Navigation Links
@@ -243,6 +256,7 @@ const Header = () => {
               <div className="relative">
                 <button
                   onClick={() => setIsUserMenuOpen((prev) => !prev)}
+                  data-user-menu-btn
                   className="flex items-center space-x-2 text-gray-700 hover:text-primary-600 transition focus:outline-none"
                 >
                   <div className="w-9 h-9 bg-primary-50 rounded-full border border-primary-100 flex items-center justify-center transition-colors hover:bg-primary-100">
@@ -256,7 +270,10 @@ const Header = () => {
 
                 {/* User dropdown */}
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                  <div
+                    data-user-dropdown
+                    className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50"
+                  >
                     <div className="px-4 py-3 border-b border-gray-50 mb-2">
                       <p className="text-sm text-gray-500">Signed in as</p>
                       <p className="text-sm font-semibold text-gray-900 truncate">{customer?.email}</p>

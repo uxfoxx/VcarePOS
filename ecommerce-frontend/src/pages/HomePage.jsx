@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchProducts } from '../store/slices/productsSlice';
@@ -7,17 +7,47 @@ import LoadingSpinner from '../components/Common/LoadingSpinner';
 import Accordion from '../components/Common/Accordion';
 import TestimonialCard from '../components/Common/TestimonialCard';
 import YouTubeEmbed from '../components/Common/YouTubeEmbed';
-import { Award, Leaf, Hammer, Shield, Sparkles, TrendingUp } from "lucide-react";
+import { Award, Leaf, Hammer, Shield, Sparkles, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { invoiceSettingsApi } from '../api/apiClient';
+
 
 gsap.registerPlugin(ScrollTrigger);
+
+// Move base URL calculation outside
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const BASE_URL = API_BASE_URL;
+
+const HeroSkeleton = () => (
+  <div className="relative h-[700px] w-full bg-gray-200 animate-pulse flex items-center justify-center">
+    <div className="text-center w-full max-w-4xl px-4">
+      <div className="h-16 bg-gray-300 rounded-md mb-6 w-3/4 mx-auto"></div>
+      <div className="h-6 bg-gray-300 rounded-md w-1/2 mx-auto"></div>
+      <div className="h-6 bg-gray-300 rounded-md mb-8 w-1/2 mx-auto"></div>
+      <div className="h-12 bg-primary-300 rounded-lg w-40 mx-auto"></div>
+    </div>
+  </div>
+);
 
 const HomePage = () => {
   const dispatch = useDispatch();
   const { products, listLoading } = useSelector(state => state.products);
 
   // const [activeFeature, setActiveFeature] = useState(0);
+  const [heroSlides, setHeroSlides] = useState([
+    {
+      media_url: 'https://www.pexels.com/download/video/4554539/',
+      media_type: 'video',
+      title: 'Transform Your Space with Premium Workspace Solutions',
+      description: 'Discover ergonomic office chairs, smart height-adjustable desks, and modern workspace solutions designed to enhance comfort, productivity, and style.',
+      button_text: 'Explore Collection',
+      button_link: '/products'
+    }
+  ]);
+  const [isSlider, setIsSlider] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   const heroRef = useRef(null);
   // const qualityRef = useRef(null);
@@ -31,6 +61,54 @@ const HomePage = () => {
   const featuredHeadingRef = useRef(null);
   const whyChooseRef = useRef(null);
   const ctaRef = useRef(null);
+
+  const getFullUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http') || url.startsWith('blob:')) return url;
+    return `${BASE_URL}${url}`;
+  };
+
+  const fetchHeroSettings = useCallback(async () => {
+    try {
+      setLoading(true);
+      const settings = await invoiceSettingsApi.getHeroSettings();
+
+      if (settings && Object.keys(settings).length > 0) {
+        const slides = settings.hero_slides ? JSON.parse(settings.hero_slides) : [];
+        const sliderMode = settings.hero_is_slider === 'true' || settings.hero_is_slider === true;
+
+        if (slides.length > 0) {
+          setHeroSlides(slides);
+          setIsSlider(sliderMode);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch hero settings:', error);
+      // Fallback is already set in initial state
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchHeroSettings();
+  }, [fetchHeroSettings]);
+
+  useEffect(() => {
+    if (products.length === 0) {
+      dispatch(fetchProducts());
+    }
+  }, [dispatch, products.length]);
+
+  // Slider auto-play
+  useEffect(() => {
+    if (isSlider && heroSlides.length > 1) {
+      const timer = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+      }, 6000);
+      return () => clearInterval(timer);
+    }
+  }, [isSlider, heroSlides.length]);
 
   // const qualityFeatures = [
   //   {
@@ -628,31 +706,154 @@ const HomePage = () => {
     .filter(product => !SEED_PRODUCT_IDS.includes(product.id) && product.stock > 0)
     .slice(0, 8);
 
+  // YouTube ID extractor helper
+  const getYouTubeId = (url) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  if (loading) return <HeroSkeleton />;
+
+  const activeSlide = heroSlides[currentSlide] || heroSlides[0];
+
+  if (!activeSlide) return <HeroSkeleton />;
+
   return (
     <div className="min-h-screen">
-      <section ref={heroRef} className="relative h-[700px] overflow-hidden">
-        <video
-          className="absolute inset-0 w-full h-full object-cover"
-          src='https://www.pexels.com/download/video/4554539/'
-          autoPlay
-          muted
-          loop
-          playsInline
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent" />
+      {/* Hero Section */}
+      <section ref={heroRef} className="relative h-[700px] overflow-hidden bg-black">
+        {/* Media Layer */}
+        <div className="absolute inset-0 transition-opacity duration-1000">
+          {activeSlide.media_type === 'youtube' ? (
+            <div className="absolute inset-0 w-full h-full pointer-events-none">
+              <iframe
+                title="hero-youtube"
+                className="absolute inset-0 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                src={`https://www.youtube.com/embed/${getYouTubeId(activeSlide.media_url)}?autoplay=1&mute=1&loop=1&playlist=${getYouTubeId(activeSlide.media_url)}&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1`}
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+              />
+              {/* Invisible overlay for capturing mouse events if needed, but here we want it to be a background */}
+              <div className="absolute inset-0 z-10" />
+            </div>
+          ) : activeSlide.media_type === 'video' ? (
+            <video
+              key={activeSlide.media_url}
+              className="absolute inset-0 w-full h-full object-cover"
+              src={getFullUrl(activeSlide.media_url)}
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+          ) : (
+            <img
+              key={activeSlide.media_url}
+              className="absolute inset-0 w-full h-full object-cover"
+              src={getFullUrl(activeSlide.media_url)}
+              alt={activeSlide.title}
+            />
+          )}
+        </div>
+
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+
+        {/* Content */}
         <div className="hero-content relative z-10 h-full flex items-center justify-center px-4 sm:px-6 lg:px-8">
-          <div className="text-center text-white max-w-4xl">
+
+
+          <div className="text-center text-white max-w-4xl relative z-10">
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
-              Transform Your Space with <span className="text-primary-400">Premium Workspace Solutions</span>
+              {activeSlide.title}
             </h1>
-            <p className="text-xl sm:text-2xl mb-8 text-gray-200 font-light">
-              Discover ergonomic office chairs, smart height-adjustable desks, and modern workspace solutions designed to enhance comfort, productivity, and style. Explore vcare’s premium products collection built for Sri Lankan homes and offices.
+            <p className="text-xl sm:text-2xl mb-10 text-gray-200 font-light max-w-2xl mx-auto">
+              {activeSlide.description}
             </p>
+            {activeSlide.cta_type === 'button' && activeSlide.button_text && (
+              <Link
+                to={activeSlide.button_link || '/products'}
+                className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-10 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-2xl"
+
+              // className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-10 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-2xl"
+              >
+                {activeSlide.button_text || 'Learn More'}
+              </Link>
+            )}
+            {/* Wrap content in link if CTA mode is 'link' */}
+            {activeSlide.cta_type === 'link' && activeSlide.button_link ? (
+              <Link
+                to={activeSlide.button_link}
+                className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-10 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-2xl"
+                aria-label={activeSlide.title}
+              >
+                {activeSlide.button_text || 'Learn More'}
+              </Link>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Slider Controls */}
+        {isSlider && heroSlides.length > 1 && (
+          <>
+            <button
+              onClick={() => setCurrentSlide(prev => (prev - 1 + heroSlides.length) % heroSlides.length)}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors"
+            >
+              <ChevronLeft size={32} />
+            </button>
+            <button
+              onClick={() => setCurrentSlide(prev => (prev + 1) % heroSlides.length)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors"
+            >
+              <ChevronRight size={32} />
+            </button>
+
+            {/* Dots */}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3">
+              {heroSlides.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentSlide(idx)}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${currentSlide === idx ? 'bg-primary-500 w-8' : 'bg-white/50'
+                    }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </section>
+
+      {/* Featured Section */}
+      <section className="py-20 bg-white" ref={featuredRef}>
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div ref={featuredHeadingRef} className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Workspace Solutions</h2>
+            <p className="text-lg text-gray-600">Discover our most popular ergonomic furniture pieces</p>
+          </div>
+
+          {listLoading ? (
+            <div className="flex justify-center p-20">
+              <LoadingSpinner size="large" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {featuredProducts.map(product => (
+                <div key={product.id} className="product-card group">
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="text-center mt-16">
             <Link
               to="/products"
-              className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-10 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-2xl"
+              className="view-all-btn inline-block bg-primary-600 hover:bg-primary-700 text-white font-semibold py-4 px-10 rounded-lg transition-all duration-300 transform hover:translate-y-[-2px] shadow-lg"
             >
-              Explore Collection
+              View All Products
             </Link>
           </div>
         </div>

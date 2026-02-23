@@ -4,6 +4,7 @@ const { authenticate, hasPermission } = require('../middleware/auth');
 const { handleRouteError } = require('../utils/loggerUtils');
 const { pool } = require('../utils/db');
 const { brandingUpload } = require('../utils/brandingUpload');
+const { heroUpload } = require('../utils/heroUpload');
 const path = require('path');
 const fs = require('fs');
 const logger = require('../utils/logger');
@@ -64,6 +65,58 @@ router.post('/branding/upload-logo',
       });
     } catch (error) {
       handleRouteError(error, req, res, 'Settings - Upload Logo');
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /settings/hero/upload:
+ *   post:
+ *     summary: Upload hero section media (image or video)
+ *     tags: [Settings]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               media:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Media uploaded successfully
+ */
+router.post('/hero/upload',
+  authenticate,
+  hasPermission('settings', 'edit'),
+  heroUpload.single('media'),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+
+      logger.info('Hero media uploaded successfully', {
+        filename: req.file.filename,
+        size: req.file.size,
+        mimetype: req.file.mimetype,
+        uploadedBy: req.user.id
+      });
+
+      res.json({
+        success: true,
+        filePath: `/uploads/hero_section/${req.file.filename}`,
+        originalFilename: req.file.originalname,
+        fileSize: req.file.size,
+        mimetype: req.file.mimetype
+      });
+    } catch (error) {
+      handleRouteError(error, req, res, 'Settings - Upload Hero Media');
     }
   }
 );
@@ -202,6 +255,101 @@ router.put('/branding', [
     res.json(result.rows[0]);
   } catch (error) {
     handleRouteError(error, req, res, 'Settings - Update Branding');
+  }
+});
+
+/**
+ * @swagger
+ * /settings/site-content:
+ *   get:
+ *     summary: Get all site settings
+ *     tags: [Settings]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Site settings retrieved successfully
+ */
+router.get('/site-content', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT key, value, description FROM site_settings ORDER BY key ASC');
+
+    // Transform rows to a more usable object format if needed, but array of rows is fine for simple CRUD
+    res.json(result.rows);
+  } catch (error) {
+    handleRouteError(error, req, res, 'Settings - Get Site Content');
+  }
+});
+
+/**
+ * @swagger
+ * /settings/site-content:
+ *   put:
+ *     summary: Update site settings (bulk update)
+ *     tags: [Settings]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               settings:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     key:
+ *                       type: string
+ *                     value:
+ *                       type: string
+ *     responses:
+ *       200:
+ *         description: Site settings updated successfully
+ */
+router.put('/site-content', [
+  authenticate,
+  hasPermission('settings', 'edit'),
+  body('settings').isArray().withMessage('Settings must be an array')
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { settings } = req.body;
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    for (const setting of settings) {
+      const { key, value } = setting;
+
+      // Upsert logic
+      await client.query(`
+        INSERT INTO site_settings (key, value, updated_at)
+        VALUES ($1, $2, CURRENT_TIMESTAMP)
+        ON CONFLICT (key) DO UPDATE
+        SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP
+      `, [key, value]);
+    }
+
+    await client.query('COMMIT');
+
+    logger.info('Site settings updated', {
+      updatedBy: req.user.id,
+      keys: settings.map(s => s.key)
+    });
+
+    res.json({ success: true, message: 'Site settings updated successfully' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    handleRouteError(error, req, res, 'Settings - Update Site Content');
+  } finally {
+    client.release();
   }
 });
 

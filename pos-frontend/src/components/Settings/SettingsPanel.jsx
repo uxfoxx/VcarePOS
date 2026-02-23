@@ -16,6 +16,8 @@ import { BrandingSettings } from './BrandingSettings';
 import { InvoiceSettings } from './InvoiceSettings';
 import { DeliveryChargesSettings } from './DeliveryChargesSettings';
 
+import { EcommerceHeroSettings } from './EcommerceHeroSettings';
+
 const { Title, Text } = Typography;
 const { Option } = Select;
 
@@ -38,6 +40,7 @@ export function SettingsPanel() {
   const sections = [
     { key: 'general', label: 'General', icon: <Icon name="settings" /> },
     { key: 'branding', label: 'Branding', icon: <Icon name="branding_watermark" /> },
+    { key: 'ecommerce-hero', label: 'Hero Section', icon: <Icon name="view_carousel" /> },
     { key: 'invoice', label: 'Invoice Settings', icon: <Icon name="receipt" /> },
     { key: 'delivery', label: 'Delivery Charges', icon: <Icon name="local_shipping" /> }
   ];
@@ -83,6 +86,10 @@ export function SettingsPanel() {
     <BrandingSettings />
   );
 
+  const renderEcommerceHeroSettings = () => (
+    <EcommerceHeroSettings />
+  );
+
   const renderInvoiceSettings = () => (
     <InvoiceSettings />
   );
@@ -97,6 +104,8 @@ export function SettingsPanel() {
         return renderGeneralSettings();
       case 'branding':
         return renderBrandingSettings();
+      case 'ecommerce-hero':
+        return renderEcommerceHeroSettings();
       case 'invoice':
         return renderInvoiceSettings();
       case 'delivery':

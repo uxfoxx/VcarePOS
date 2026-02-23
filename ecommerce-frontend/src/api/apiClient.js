@@ -206,4 +206,8 @@ export const invoiceSettingsApi = {
   getInvoiceInfo: async () => {
     return makeRequest('/ecommerce/settings/invoice-info');
   },
+
+  getHeroSettings: async () => {
+    return makeRequest('/ecommerce/settings/hero');
+  },
 };

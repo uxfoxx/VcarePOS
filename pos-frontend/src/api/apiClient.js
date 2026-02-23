@@ -52,10 +52,13 @@ async function apiRequest(endpoint, options = {}) {
 
   try {
     // Set default headers
-    const headers = {
-      'Content-Type': 'application/json',
-      ...options.headers
-    };
+    const headers = { ...options.headers };
+
+    // Don't set Content-Type if it's already set or if body is FormData
+    // (the browser will automatically set the correct Content-Type with boundary for FormData)
+    if (!headers['Content-Type'] && !(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     // Add authorization header if token exists
     if (token) {
@@ -669,6 +672,26 @@ export const settingsApi = {
   deleteLogo: async (filename) => {
     return apiRequest(`/settings/branding/logo/${filename}`, {
       method: 'DELETE'
+    });
+  },
+
+  getSiteContent: async () => {
+    return apiRequest('/settings/site-content');
+  },
+
+  updateSiteContent: async (settings) => {
+    return apiRequest('/settings/site-content', {
+      method: 'PUT',
+      body: JSON.stringify({ settings })
+    });
+  },
+
+  uploadHeroMedia: async (file) => {
+    const formData = new FormData();
+    formData.append('media', file);
+    return apiRequest('/settings/hero/upload', {
+      method: 'POST',
+      body: formData
     });
   }
 };

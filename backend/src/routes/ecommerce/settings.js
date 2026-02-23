@@ -61,4 +61,44 @@ router.get('/settings/invoice-info', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /ecommerce/settings/hero:
+ *   get:
+ *     summary: Get hero section settings (public, no auth required)
+ *     tags: [E-commerce]
+ *     responses:
+ *       200:
+ *         description: Hero section configuration
+ */
+router.get('/settings/hero', async (req, res) => {
+    try {
+        const keys = [
+            'hero_media_url',
+            'hero_title',
+            'hero_description',
+            'hero_button_text',
+            'hero_button_link',
+            'hero_media_type',
+            'hero_slides',
+            'hero_is_slider'
+        ];
+
+        const result = await pool.query(
+            'SELECT key, value FROM site_settings WHERE key = ANY($1)',
+            [keys]
+        );
+
+        // Convert array of rows to an object
+        const settings = result.rows.reduce((acc, row) => {
+            acc[row.key] = row.value;
+            return acc;
+        }, {});
+
+        res.json(settings);
+    } catch (error) {
+        handleRouteError(error, req, res, 'E-commerce - Get Hero Settings');
+    }
+});
+
 module.exports = router;

@@ -78,7 +78,13 @@ async function apiRequest(endpoint, options = {}) {
 
     // Handle 401 Unauthorized specifically
     if (response.status === 401) {
-      handleAuthError();
+      // Don't clear credentials if it's a login request (let the caller handle the 401)
+      const isAuthEndpoint = endpoint.includes('/auth/login');
+
+      if (!isAuthEndpoint) {
+        handleAuthError();
+      }
+
       throw createApiError(
         'Authentication failed. Please log in again.',
         401

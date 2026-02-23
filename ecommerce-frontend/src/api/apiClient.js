@@ -41,12 +41,17 @@ const makeRequest = async (endpoint, options = {}) => {
     const response = await fetchWithTimeout(`${API_BASE_URL}${endpoint}`, config);
 
     if (response.status === 401) {
-      localStorage.removeItem('ecommerce_token');
-      localStorage.removeItem('vcare_token');
-      localStorage.removeItem('vcare_token_exp');
-      localStorage.removeItem('loglevel');
-      window.location.href = '/login';
-      throw new Error('Session expired. Please login again.');
+      // Don't auto-redirect if it's an auth endpoint (otherwise login errors cause a reload)
+      const isAuthEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/auth/register');
+
+      if (!isAuthEndpoint) {
+        localStorage.removeItem('ecommerce_token');
+        localStorage.removeItem('vcare_token');
+        localStorage.removeItem('vcare_token_exp');
+        localStorage.removeItem('loglevel');
+        window.location.href = '/login';
+        throw new Error('Session expired. Please login again.');
+      }
     }
 
     const data = await response.json();

@@ -166,8 +166,8 @@ const CartPage = () => {
                                   item.quantity + 1
                                 )}
                                 className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-none ${isMaxStock
-                                    ? 'text-gray-200 cursor-not-allowed'
-                                    : 'text-gray-400 hover:bg-white hover:text-primary-600 hover:shadow-sm'
+                                  ? 'text-gray-200 cursor-not-allowed'
+                                  : 'text-gray-400 hover:bg-white hover:text-primary-600 hover:shadow-sm'
                                   }`}
                                 disabled={isMaxStock}
                                 title={isMaxStock ? "Max stock reached" : "Increase quantity"}
@@ -212,9 +212,8 @@ const CartPage = () => {
 
               <div className="flex justify-between items-center text-gray-400 text-xs font-medium">
                 <span>Shipping</span>
-                <span className="text-green-400 font-bold flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                  Free
+                <span className="text-gray-400 font-bold italic">
+                  Calculated at checkout
                 </span>
               </div>
 
@@ -241,7 +240,7 @@ const CartPage = () => {
               <div className="flex flex-col items-center gap-3 pt-2">
                 <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Secured Payment</p>
                 <div className="flex items-center justify-center gap-5 opacity-30 grayscale group-hover:grayscale-0 transition-all duration-700">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-3" />
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/9/98/Visa_Inc._logo_%282005%E2%80%932014%29.svg" alt="Visa" className="h-3" />
                   <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-5" />
                   <div className="h-4 w-px bg-gray-800 mx-1" />
                   <span className="text-[8px] font-black text-gray-400 border border-gray-800 px-1.5 py-0.5 rounded uppercase">SSL</span>
@@ -250,15 +249,6 @@ const CartPage = () => {
             </div>
           </div>
 
-          <div className="mt-8 bg-white border border-gray-100 rounded-3xl p-5 flex items-center gap-3 group cursor-default">
-            <div className="w-10 h-10 bg-primary-50 rounded-2xl flex items-center justify-center text-primary-600 group-hover:bg-primary-600 group-hover:text-white transition-all duration-300">
-              <Package className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="font-bold text-gray-900">Standard Delivery</p>
-              <p className="text-xs text-gray-500 font-medium">Estimated 3-5 business days</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

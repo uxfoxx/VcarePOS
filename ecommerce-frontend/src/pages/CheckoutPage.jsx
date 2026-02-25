@@ -906,10 +906,14 @@ const CheckoutPage = () => {
 
               <div className="flex justify-between text-xs">
                 <span className="text-gray-500 font-medium">Delivery</span>
-                {deliveryCharge > 0 ? (
-                  <span className="text-primary-600 font-bold">LKR {deliveryCharge.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                {paymentMethod === 'store_pickup' ? (
+                  <span className="text-green-500 font-bold uppercase tracking-wider">Free</span>
+                ) : selectedDeliveryType ? (
+                  <span className="text-primary-600 font-bold italic">
+                    LKR {deliveryCharge.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </span>
                 ) : (
-                  <span className="text-green-500 font-bold">FREE</span>
+                  <span className="text-gray-400 font-bold italic">Pending Selection</span>
                 )}
               </div>
 
@@ -929,7 +933,7 @@ const CheckoutPage = () => {
             <div className="mt-6 flex flex-col items-center gap-2 opacity-40">
               <p className="text-[8px] font-black text-gray-400 uppercase tracking-[0.2em]">Secure Checkout</p>
               <div className="flex gap-4">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-2" />
+                <img src="https://upload.wikimedia.org/wikipedia/commons/9/98/Visa_Inc._logo_%282005%E2%80%932014%29.svg" alt="Visa" className="h-2" />
                 <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-3" />
               </div>
             </div>

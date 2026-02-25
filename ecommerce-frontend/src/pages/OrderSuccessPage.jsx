@@ -117,7 +117,9 @@ const OrderSuccessPage = () => {
                   }`}>
                   {currentOrder.orderStatus === 'pending_payment' ? 'Pending Payment' :
                     currentOrder.orderStatus === 'processing' ? 'Processing' :
-                      currentOrder.orderStatus}
+                      currentOrder.orderStatus === 'shipped' && currentOrder.paymentMethod === 'store_pickup' ? 'Ready for Pickup' :
+                        currentOrder.orderStatus === 'shipped' ? 'Shipped' :
+                          currentOrder.orderStatus}
                 </span>
               </div>
             </div>

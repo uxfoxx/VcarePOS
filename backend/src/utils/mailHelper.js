@@ -116,14 +116,14 @@ function generateLoginNotificationEmailBody(name = '', lastLogin = null) {
   `;
 };
 
-function generateOrderStatusEmailBody(orderId, name = '', status, timelineData = [], notes = '') {
+function generateOrderStatusEmailBody(orderId, name = '', status, timelineData = [], notes = '', paymentMethod = '') {
   const businessName = process.env.BUSINESS_NAME || 'POS System';
   const isCancelled = status === 'cancelled';
 
   const stages = [
     { key: 'pending_payment', label: 'Pending Payment' },
     { key: 'processing', label: 'Processing' },
-    { key: 'shipped', label: 'Shipped' },
+    { key: 'shipped', label: paymentMethod === 'store_pickup' ? 'Ready for Pickup' : 'Shipped' },
     { key: 'completed', label: 'Completed' }
   ];
 
@@ -260,7 +260,7 @@ function generateOrderStatusEmailBody(orderId, name = '', status, timelineData =
   `;
 }
 
-function generateOrderSummaryEmailBody(order, items = []) {
+function generateOrderSummaryEmailBody(order, items = [], invoiceInfo = null) {
   const businessName = process.env.BUSINESS_NAME || 'POS System';
 
   let itemsHTML = '';
@@ -367,10 +367,18 @@ function generateOrderSummaryEmailBody(order, items = []) {
         <table width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
             <td width="50%" valign="top" style="padding-right: 15px;">
-              <div style="color: #adb5bd; font-size: 12px; text-transform: uppercase; font-weight: 700; margin-bottom: 5px;">Delivery Address</div>
+              <div style="color: #adb5bd; font-size: 12px; text-transform: uppercase; font-weight: 700; margin-bottom: 5px;">
+                ${order.payment_method === 'store_pickup' || order.paymentMethod === 'store_pickup' ? 'Pickup Location' : 'Delivery Address'}
+              </div>
               <div style="color: #2c3e50; font-size: 14px; line-height: 1.5;">
-                ${order.customer_address || order.customerAddress || 'N/A'}<br>
-                ${order.delivery_location || order.deliveryLocation || ''}
+                ${order.payment_method === 'store_pickup' || order.paymentMethod === 'store_pickup' ? `
+                  <strong>${invoiceInfo?.business_name || 'Our Store'}</strong><br>
+                  ${invoiceInfo?.business_address || 'Address loading...'}<br>
+                  Phone: ${invoiceInfo?.phone_number || ''}
+                ` : `
+                  ${order.customer_address || order.customerAddress || 'N/A'}<br>
+                  ${order.delivery_location || order.deliveryLocation || ''}
+                `}
               </div>
             </td>
             <td width="50%" valign="top" style="padding-left: 15px;">

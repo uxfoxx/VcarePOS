@@ -314,15 +314,20 @@ router.post('/orders', [
 
     // Send order confirmation & summary emails
     try {
+      // Fetch invoice settings for store info
+      const invoiceResult = await client.query('SELECT business_name, business_address, phone_number FROM invoice_settings LIMIT 1');
+      const invoiceInfo = invoiceResult.rows[0] || null;
+
       const confirmationBody = generateOrderStatusEmailBody(
         order.id,
         order.customer_name,
         order.order_status,
         [{ status: order.order_status, updated_at: order.created_at }], // Initial timeline
-        '' // notes
+        '', // notes
+        order.payment_method
       );
 
-      const summaryBody = generateOrderSummaryEmailBody(order, validatedItems);
+      const summaryBody = generateOrderSummaryEmailBody(order, validatedItems, invoiceInfo);
 
       // Fire both emails concurrently
       await Promise.all([
@@ -835,7 +840,8 @@ router.put('/orders/:orderId/receipt-status', [
         order.customer_name,
         finalOrderStatus,
         timelineData.rows,
-        notes
+        notes,
+        order.payment_method
       );
       await sendEmail(order.customer_email, `Your Order #${order.id} Status Updated`, emailBody);
     } else {
@@ -987,7 +993,8 @@ router.put('/orders/:orderId/status', [
       updatedOrder.customer_name,
       updatedOrder.order_status,
       timelineResult.rows,
-      notes
+      notes,
+      updatedOrder.payment_method
     );
     await sendEmail(updatedOrder.customer_email, `Your Order #${updatedOrder.id} Status Updated`, emailBody);
 

@@ -55,7 +55,10 @@ const OrdersPage = () => {
     }
   };
 
-  const getStatusText = (status) => {
+  const getStatusText = (status, order) => {
+    if (status === 'shipped' && order?.paymentMethod === 'store_pickup') {
+      return 'Ready for Pickup';
+    }
     switch (status) {
       case 'pending_payment':
         return 'Pending Payment';
@@ -120,7 +123,7 @@ const OrdersPage = () => {
 
                 <div className="flex items-center gap-3">
                   <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold tracking-wide ${getStatusColor(order.orderStatus)}`}>
-                    {getStatusText(order.orderStatus)}
+                    {getStatusText(order.orderStatus, order)}
                   </span>
                 </div>
               </div>

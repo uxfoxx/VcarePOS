@@ -58,6 +58,9 @@ const OrderDetailPage = () => {
     };
 
     const getStatusText = (status) => {
+        if (status === 'shipped' && order?.paymentMethod === 'store_pickup') {
+            return 'Ready for Pickup';
+        }
         switch (status) {
             case 'pending_payment': return 'Pending Payment';
             case 'processing': return 'Processing';

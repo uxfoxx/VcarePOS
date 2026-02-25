@@ -22,6 +22,7 @@ import {
   ColorPicker
 } from 'antd';
 import { Icon } from '../common/Icon';
+import { ImageCropModal } from '../common/ImageCropModal';
 
 import { ActionButton } from '../common/ActionButton';
 import { settingsApi } from '../../api/apiClient';
@@ -74,6 +75,13 @@ export function ColorManagementPanel({
   const [_uploadingEditColorSelectorImage, setUploadingEditColorSelectorImage] = useState(false);
   const [materialSearchTerm, _setMaterialSearchTerm] = useState('');
 
+  // Image Cropping State
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState(null);
+  const [cropType, setCropType] = useState(null); // 'newImage', 'newSelector', 'editImage', 'editSelector'
+  const [currentCroppingFile, setCurrentCroppingFile] = useState(null);
+  const [croppingAspectRatio, setCroppingAspectRatio] = useState(4 / 3);
+
   const commonColors = [
     "#000000", // Black
     "#FFFFFF", // White
@@ -117,6 +125,55 @@ export function ColorManagementPanel({
     setImagePath(null);
     setColorSelectorImagePreview(null);
     setColorSelectorImagePath(null);
+  };
+
+  const handleBeforeCrop = (file, type, aspectRatio = 4 / 3) => {
+    const objectUrl = URL.createObjectURL(file);
+    setImageToCrop(objectUrl);
+    setCropType(type);
+    setCurrentCroppingFile(file);
+    setCroppingAspectRatio(aspectRatio);
+    setShowCropModal(true);
+    return false; // Prevent auto upload
+  };
+
+  const handleCropComplete = async ({ blob }) => {
+    try {
+      const croppedFile = new File([blob], currentCroppingFile.name, {
+        type: 'image/jpeg',
+        lastModified: Date.now()
+      });
+
+      let uploadFunc;
+      switch (cropType) {
+        case 'newImage':
+          uploadFunc = handleImageUpload;
+          break;
+        case 'newSelector':
+          uploadFunc = handleColorSelectorImageUpload;
+          break;
+        case 'editImage':
+          uploadFunc = handleEditImageUpload;
+          break;
+        case 'editSelector':
+          uploadFunc = handleEditColorSelectorImageUpload;
+          break;
+        default:
+          return;
+      }
+
+      await uploadFunc(croppedFile);
+    } catch (error) {
+      console.error('Error processing cropped image:', error);
+      message.error('Failed to process cropped image');
+    } finally {
+      if (imageToCrop) {
+        URL.revokeObjectURL(imageToCrop);
+      }
+      setImageToCrop(null);
+      setCurrentCroppingFile(null);
+      setShowCropModal(false);
+    }
   };
 
   const handleImageUpload = async (file) => {
@@ -465,7 +522,7 @@ export function ColorManagementPanel({
               <Form.Item label="Color Selector Image (Optional)" help="Small thumbnail for color picker">
                 <Upload
                   accept="image/*"
-                  beforeUpload={handleColorSelectorImageUpload}
+                  beforeUpload={(file) => handleBeforeCrop(file, 'newSelector', 1)}
                   showUploadList={false}
                   maxCount={1}
                 >
@@ -508,7 +565,7 @@ export function ColorManagementPanel({
               <Form.Item label="Product Image in Color (Optional)" help="Full-size product image">
                 <Upload
                   accept="image/*"
-                  beforeUpload={handleImageUpload}
+                  beforeUpload={(file) => handleBeforeCrop(file, 'newImage', 4 / 3)}
                   showUploadList={false}
                   maxCount={1}
                 >
@@ -596,7 +653,7 @@ export function ColorManagementPanel({
                         <Form.Item label="Color Selector Image" help="Small thumbnail for color picker">
                           <Upload
                             accept="image/*"
-                            beforeUpload={handleEditColorSelectorImageUpload}
+                            beforeUpload={(file) => handleBeforeCrop(file, 'editSelector', 1)}
                             showUploadList={false}
                             maxCount={1}
                           >
@@ -629,7 +686,7 @@ export function ColorManagementPanel({
                         <Form.Item label="Product Image" help="Full-size product image">
                           <Upload
                             accept="image/*"
-                            beforeUpload={handleEditImageUpload}
+                            beforeUpload={(file) => handleBeforeCrop(file, 'editImage', 4 / 3)}
                             showUploadList={false}
                             maxCount={1}
                           >
@@ -1276,6 +1333,14 @@ export function ColorManagementPanel({
           showIcon
         />
       )}
+
+      <ImageCropModal
+        open={showCropModal}
+        onClose={() => setShowCropModal(false)}
+        imageSrc={imageToCrop}
+        onCropComplete={handleCropComplete}
+        aspectRatio={croppingAspectRatio}
+      />
     </div>
   );
 }

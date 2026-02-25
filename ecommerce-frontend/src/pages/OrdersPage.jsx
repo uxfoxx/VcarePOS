@@ -161,9 +161,11 @@ const OrdersPage = () => {
                   {/* Order Footer / Actions */}
                   <div className="flex flex-col justify-end items-end gap-3 min-w-[240px]">
                     <div className="text-right">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Delivering to</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                        {order.paymentMethod === 'store_pickup' ? 'Pickup from' : 'Delivering to'}
+                      </p>
                       <p className="text-sm text-gray-600 max-w-[200px] truncate leading-tight italic">
-                        {order.customerAddress}
+                        {order.paymentMethod === 'store_pickup' ? 'Our Store' : order.customerAddress}
                       </p>
                     </div>
 

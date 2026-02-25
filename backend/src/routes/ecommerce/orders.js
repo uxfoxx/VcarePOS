@@ -50,7 +50,7 @@ router.post('/orders', [
   body('customerName').notEmpty().withMessage('Customer name is required'),
   body('customerEmail').isEmail().withMessage('Valid email is required'),
   body('customerAddress').notEmpty().withMessage('Customer address is required'),
-  body('paymentMethod').isIn(['cash_on_delivery', 'bank_transfer']).withMessage('Invalid payment method'),
+  body('paymentMethod').isIn(['cash_on_delivery', 'bank_transfer', 'store_pickup']).withMessage('Invalid payment method'),
   body('items').isArray({ min: 1 }).withMessage('At least one item is required'),
   // Conditional validation for bank transfer receipt
   body('receiptDetails').custom((value, { req }) => {

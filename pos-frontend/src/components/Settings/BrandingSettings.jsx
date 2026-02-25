@@ -556,7 +556,7 @@ export function BrandingSettings() {
       children: (
         <div className="space-y-6">
           <Row gutter={24}>
-            <Col span={12}>
+            <Col span={24} md={12}>
               <Form.Item
                 name="businessName"
                 label="Business Name"
@@ -603,7 +603,6 @@ export function BrandingSettings() {
                 </div>
               </Form.Item>
             </Col>
-
           </Row>
 
           <Row gutter={24}>
@@ -629,8 +628,8 @@ export function BrandingSettings() {
       ),
       children: (
         <div className="space-y-6">
-          <Row gutter={24}>
-            <Col span={8}>
+          <Row gutter={[24, 24]}>
+            <Col span={24} sm={12} lg={8}>
               <Form.Item
                 label="Primary Color"
                 name="primaryColor"
@@ -662,7 +661,7 @@ export function BrandingSettings() {
               </Form.Item>
             </Col>
 
-            <Col span={8}>
+            <Col span={24} sm={12} lg={8}>
               <Form.Item
                 label="Secondary Color"
                 name="secondaryColor"
@@ -694,7 +693,7 @@ export function BrandingSettings() {
               </Form.Item>
             </Col>
 
-            <Col span={8}>
+            <Col span={24} sm={12} lg={8}>
               <Form.Item
                 label="Accent Color"
                 name="accentColor"
@@ -727,8 +726,8 @@ export function BrandingSettings() {
             </Col>
           </Row>
 
-          <Row gutter={24}>
-            <Col span={12}>
+          <Row gutter={[24, 24]}>
+            <Col span={24} md={12}>
               <Form.Item
                 label="Font Family"
                 name="fontFamily"
@@ -743,7 +742,7 @@ export function BrandingSettings() {
               </Form.Item>
             </Col>
 
-            <Col span={12}>
+            <Col span={24} md={12}>
               <Form.Item
                 label="Dark Mode Support"
                 name="darkModeSupport"
@@ -860,8 +859,8 @@ export function BrandingSettings() {
             />
           </Form.Item>
 
-          <Row gutter={24}>
-            <Col span={12}>
+          <Row gutter={[24, 24]}>
+            <Col span={24} md={12}>
               <Form.Item
                 name="showTaxId"
                 label="Show Tax ID on Documents"
@@ -872,7 +871,7 @@ export function BrandingSettings() {
               </Form.Item>
             </Col>
 
-            <Col span={12}>
+            <Col span={24} md={12}>
               <Form.Item
                 name="taxId"
                 label="Business Tax ID"
@@ -1018,7 +1017,7 @@ export function BrandingSettings() {
         <div className="space-y-4">
           <Text>Choose a default theme to reset to:</Text>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="border rounded-lg p-4 cursor-pointer hover:border-blue-500" onClick={handleResetDefaults}>
               <div className="flex items-center space-x-2 mb-2">
                 <div className="w-6 h-6 rounded-full bg-[#0E72BD]"></div>

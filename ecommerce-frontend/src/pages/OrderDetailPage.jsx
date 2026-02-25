@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { ArrowLeft, Package, MapPin, CreditCard, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, CreditCard, ChevronRight, Store, Phone, Mail, User } from 'lucide-react';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
-import { ordersApi } from '../api/apiClient';
+import { ordersApi, invoiceSettingsApi } from '../api/apiClient';
 import EcommerceInvoiceModal from '../components/Orders/EcommerceInvoiceModal';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -22,15 +22,18 @@ const OrderDetailPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+    const [invoiceInfo, setInvoiceInfo] = useState(null);
 
     useEffect(() => {
-        const fetchOrderDetails = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true);
-                // The backend GET /api/ecommerce/orders/:orderId endpoint gives full order details
-                const response = await ordersApi.getById(orderId);
-                // ordersApi.getById already returns the data directly (it calls response.json())
-                setOrder(response);
+                const [orderRes, infoRes] = await Promise.all([
+                    ordersApi.getById(orderId),
+                    invoiceSettingsApi.getInvoiceInfo().catch(() => null)
+                ]);
+                setOrder(orderRes);
+                setInvoiceInfo(infoRes);
             } catch (err) {
                 setError(err.response?.data?.message || 'Failed to fetch order details');
             } finally {
@@ -39,7 +42,7 @@ const OrderDetailPage = () => {
         };
 
         if (orderId && customer) {
-            fetchOrderDetails();
+            fetchData();
         }
     }, [orderId, customer]);
 
@@ -214,21 +217,40 @@ const OrderDetailPage = () => {
 
                 {/* Right Column - Shipping & Billing */}
                 <div className="space-y-6">
-                    {/* Shipping Address */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-5 border-b border-gray-100 flex items-center gap-2">
-                            <MapPin className="w-5 h-5 text-gray-400" />
-                            <h2 className="text-base font-bold text-gray-900">Shipping Details</h2>
+                            {order.paymentMethod === 'store_pickup' ? (
+                                <Store className="w-5 h-5 text-gray-400" />
+                            ) : (
+                                <MapPin className="w-5 h-5 text-gray-400" />
+                            )}
+                            <h2 className="text-base font-bold text-gray-900">
+                                {order.paymentMethod === 'store_pickup' ? 'Pickup Details' : 'Shipping Details'}
+                            </h2>
                         </div>
                         <div className="p-5">
-                            <p className="font-semibold text-gray-900 mb-2">{order.customerName}</p>
-                            <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed mb-4">
-                                {order.customerAddress}
-                            </p>
-                            <div className="space-y-1 text-sm text-gray-600">
-                                <p>Phone: <span className="font-medium text-gray-900">{order.customerPhone}</span></p>
-                                <p>Email: <span className="font-medium text-gray-900">{order.customerEmail}</span></p>
-                            </div>
+                            {order.paymentMethod === 'store_pickup' ? (
+                                <>
+                                    <p className="font-semibold text-gray-900 mb-2">{invoiceInfo?.business_name || 'Our Store'}</p>
+                                    <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed mb-4">
+                                        {invoiceInfo?.business_address || 'Address loading...'}
+                                    </p>
+                                    <div className="space-y-1 text-sm text-gray-600">
+                                        <p>Phone: <span className="font-medium text-gray-900">{invoiceInfo?.phone_number}</span></p>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="font-semibold text-gray-900 mb-2">{order.customerName}</p>
+                                    <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed mb-4">
+                                        {order.customerAddress}
+                                    </p>
+                                    <div className="space-y-1 text-sm text-gray-600">
+                                        <p>Phone: <span className="font-medium text-gray-900">{order.customerPhone}</span></p>
+                                        <p>Email: <span className="font-medium text-gray-900">{order.customerEmail}</span></p>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -240,7 +262,8 @@ const OrderDetailPage = () => {
                         </div>
                         <div className="p-5">
                             <p className="font-medium text-gray-900 mb-1">
-                                {order.paymentMethod === 'cash_on_delivery' ? 'Cash on Delivery' : 'Bank Transfer'}
+                                {order.paymentMethod === 'cash_on_delivery' ? 'Cash on Delivery' :
+                                    order.paymentMethod === 'store_pickup' ? 'Store Pickup (Pay at Counter)' : 'Bank Transfer'}
                             </p>
                             {order.paymentMethod === 'bank_transfer' && order.orderStatus === 'pending_payment' && (
                                 <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">

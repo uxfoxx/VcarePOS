@@ -25,6 +25,31 @@ export function SettingsPanel() {
   const [activeSection, setActiveSection] = useState('general');
   const [form] = Form.useForm();
 
+  // Initialize active section from hash and handle hash changes
+  React.useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      const validSections = ['general', 'branding', 'ecommerce-hero', 'invoice', 'delivery'];
+      if (hash && validSections.includes(hash)) {
+        setActiveSection(hash);
+      } else if (!hash) {
+        setActiveSection('general');
+      }
+    };
+
+    // Initial check
+    handleHashChange();
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Update hash when activeSection changes manually
+  const handleSectionChange = (key) => {
+    setActiveSection(key);
+    window.location.hash = key;
+  };
+
   React.useEffect(() => {
     const savedSettings = localStorage.getItem('generalSettings');
     if (savedSettings) {
@@ -58,9 +83,9 @@ export function SettingsPanel() {
     <Form form={form} layout="vertical" onFinish={handleSave}>
       <Title level={4}>General Settings</Title>
       <Row gutter={16}>
-        <Col span={12}>
+        <Col xs={24} md={12}>
           <Form.Item name="timezone" label="Time Zone" initialValue="UTC+5:30">
-            <Select>
+            <Select style={{ width: '100%' }}>
               <Option value="UTC+5:30">UTC+5:30 (Sri Lanka)</Option>
               <Option value="UTC-5">UTC-5 (Eastern)</Option>
               <Option value="UTC-6">UTC-6 (Central)</Option>
@@ -123,23 +148,28 @@ export function SettingsPanel() {
           <Title level={4} className="m-0">Settings</Title>
         </Space>
       }
+      className="shadow-sm overflow-hidden"
     >
-      <Row gutter={24}>
+      <Row gutter={[24, 24]}>
         <Col xs={24} lg={6}>
           <Menu
             mode="inline"
             selectedKeys={[activeSection]}
-            onClick={({ key }) => setActiveSection(key)}
+            onClick={({ key }) => handleSectionChange(key)}
             items={sections.map(section => ({
               key: section.key,
               icon: section.icon,
               label: section.label
             }))}
-            className="border-none"
+            className="border-none rounded-lg overflow-hidden lg:overflow-visible"
+            style={{
+              background: 'transparent',
+              padding: 0
+            }}
           />
         </Col>
         <Col xs={24} lg={18}>
-          <div className="pl-6">
+          <div className="lg:pl-6 pt-4 lg:pt-0">
             {renderContent()}
           </div>
         </Col>

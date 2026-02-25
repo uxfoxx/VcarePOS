@@ -11,7 +11,7 @@ import {
 import LoadingSpinner from '../components/Common/LoadingSpinner';
 import { deliveryChargesApi, invoiceSettingsApi } from '../api/apiClient';
 import { toast } from 'react-toastify';
-import { Package, ShoppingBag } from 'lucide-react';
+import { Package, ShoppingBag, Store } from 'lucide-react';
 
 const fallbackImage = 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
 
@@ -244,9 +244,9 @@ const CheckoutPage = () => {
         selectedSize: item.selectedSize,
         quantity: item.quantity,
       })),
-      deliveryLocation: selectedDeliverySetting?.type || null,
-      deliveryType: selectedDeliverySetting?.type || null,
-      deliveryCharge: deliveryCharge || 0,
+      deliveryLocation: paymentMethod === 'store_pickup' ? 'Store Pickup' : (selectedDeliverySetting?.type || null),
+      deliveryType: paymentMethod === 'store_pickup' ? 'store_pickup' : (selectedDeliverySetting?.type || null),
+      deliveryCharge: paymentMethod === 'store_pickup' ? 0 : (deliveryCharge || 0),
       totalWeight: totalWeight,
     };
 
@@ -583,6 +583,28 @@ const CheckoutPage = () => {
                       </div>
                     </label>
                   </div>
+
+                  <div className="border border-gray-200 rounded-lg p-4">
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="store_pickup"
+                        checked={paymentMethod === 'store_pickup'}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="text-primary-600"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <Store className="w-6 h-6 text-orange-600" />
+                          <span className="font-medium">Store Pickup</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Pick up your order from our store and pay on counter
+                        </p>
+                      </div>
+                    </label>
+                  </div>
                 </div>
 
                 <div className="mt-6 flex justify-between">
@@ -644,7 +666,9 @@ const CheckoutPage = () => {
                 <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                   <h3 className="font-semibold mb-2">Payment Method</h3>
                   <p className="text-sm text-gray-600">
-                    {paymentMethod === 'cash_on_delivery' ? 'Cash on Delivery' : 'Bank Transfer'}
+                    {paymentMethod === 'cash_on_delivery' ? 'Cash on Delivery' :
+                      paymentMethod === 'bank_transfer' ? 'Bank Transfer' :
+                        paymentMethod === 'store_pickup' ? 'Store Pickup' : paymentMethod}
                   </p>
 
                   {paymentMethod === 'bank_transfer' && (

@@ -281,8 +281,8 @@ export function InvoiceSettings() {
       ),
       children: (
         <Form form={form} layout="vertical" onFinish={handleSaveSettings}>
-          <Row gutter={24}>
-            <Col span={12}>
+          <Row gutter={[24, 24]}>
+            <Col span={24} md={12}>
               <Form.Item
                 name="businessName"
                 label="Business Name"
@@ -300,7 +300,7 @@ export function InvoiceSettings() {
               </Form.Item>
             </Col>
 
-            <Col span={12}>
+            <Col span={24} md={12}>
               <Form.Item
                 name="phoneNumber"
                 label="Phone Number"
@@ -327,8 +327,8 @@ export function InvoiceSettings() {
 
           <Divider />
 
-          <Row gutter={24}>
-            <Col span={12}>
+          <Row gutter={[24, 24]}>
+            <Col span={24} md={12}>
               <Form.Item
                 name="currency"
                 label="Currency"
@@ -345,7 +345,7 @@ export function InvoiceSettings() {
               </Form.Item>
             </Col>
 
-            <Col span={12}>
+            <Col span={24} md={12}>
               <Form.Item
                 name="taxRate"
                 label="Default Tax Rate (%)"
@@ -400,6 +400,7 @@ export function InvoiceSettings() {
             dataSource={bankAccounts}
             rowKey="id"
             pagination={false}
+            scroll={{ x: 'max-content' }}
           />
         </div>
       )
@@ -426,6 +427,7 @@ export function InvoiceSettings() {
             dataSource={notesTemplates}
             rowKey="id"
             pagination={false}
+            scroll={{ x: 'max-content' }}
           />
         </div>
       )

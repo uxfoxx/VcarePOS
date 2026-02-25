@@ -163,7 +163,7 @@ export function EcommerceHeroSettings() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center bg-gray-50 p-6 rounded-xl border border-gray-100">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 p-6 rounded-xl border border-gray-100 gap-4">
                 <div>
                     <Title level={4} className="mb-1">Ecommerce Hero Section</Title>
                     <Text type="secondary">
@@ -176,7 +176,7 @@ export function EcommerceHeroSettings() {
                         </div>
                     )}
                 </div>
-                <div className="flex items-center gap-4 bg-white p-3 px-5 rounded-lg shadow-sm border border-gray-100">
+                <div className="flex items-center gap-4 bg-white p-3 px-5 rounded-lg shadow-sm border border-gray-100 w-full sm:w-auto justify-between sm:justify-start">
                     <Text strong>Slider Mode</Text>
                     <Switch
                         checked={isSlider}
@@ -231,7 +231,7 @@ export function EcommerceHeroSettings() {
                                     className="shadow-md border-0 rounded-2xl overflow-hidden"
                                     styles={{ body: { padding: '24px' }, header: { background: '#fafafa', borderBottom: '1px solid #f0f0f0' } }}
                                 >
-                                    <Row gutter={32}>
+                                    <Row gutter={[32, 24]}>
                                         <Col span={24} lg={12}>
                                             <Title level={5} className="mb-4">Background Media</Title>
                                             <Form.Item
@@ -329,8 +329,8 @@ export function EcommerceHeroSettings() {
                                                     if (ctaType === 'none') return null;
 
                                                     return (
-                                                        <div className="bg-primary-50/30 p-6 rounded-xl border border-primary-100/50">
-                                                            <Row gutter={24}>
+                                                        <div className="bg-primary-50/30 p-4 sm:p-6 rounded-xl border border-primary-100/50">
+                                                            <Row gutter={[24, 16]}>
                                                                 <Col span={24} md={12}>
                                                                     <Form.Item
                                                                         {...restField}

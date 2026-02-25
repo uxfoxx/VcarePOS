@@ -26,6 +26,7 @@ export function DeliveryChargesSettings() {
   const dispatch = useDispatch();
   const { settings, loading, error } = useSelector(state => state.deliveryCharges);
   const [testWeight, setTestWeight] = useState(6);
+  const [updateTriggered, setUpdateTriggered] = useState(false);
   const prevLoadingRef = React.useRef(loading);
 
   useEffect(() => {
@@ -33,20 +34,23 @@ export function DeliveryChargesSettings() {
   }, [dispatch]);
 
   useEffect(() => {
-    if (prevLoadingRef.current && !loading && !error) {
+    if (updateTriggered && prevLoadingRef.current && !loading && !error) {
       message.success('Delivery settings updated successfully');
+      setUpdateTriggered(false);
     }
     if (prevLoadingRef.current && !loading && error) {
       message.error(error);
+      setUpdateTriggered(false);
     }
     prevLoadingRef.current = loading;
-  }, [loading, error]);
+  }, [loading, error, updateTriggered]);
 
   const handleFreeDeliveryChange = (field, value) => {
     const updatedSettings = {
       ...settings.freeDelivery,
       [field]: value
     };
+    setUpdateTriggered(true);
     dispatch(updateFreeDeliveryRequest(updatedSettings));
   };
 
@@ -55,6 +59,7 @@ export function DeliveryChargesSettings() {
       ...settings.insideColombo,
       [field]: value
     };
+    setUpdateTriggered(true);
     dispatch(updateInsideColomboRequest(updatedSettings));
   };
 
@@ -63,6 +68,7 @@ export function DeliveryChargesSettings() {
       ...settings.outOfColombo,
       [field]: value
     };
+    setUpdateTriggered(true);
     dispatch(updateOutOfColomboRequest(updatedSettings));
   };
 
@@ -150,7 +156,7 @@ export function DeliveryChargesSettings() {
         />
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         <Card
           title="Free Delivery"
           className="shadow-sm"

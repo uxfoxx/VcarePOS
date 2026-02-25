@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { fetchOrderById } from '../store/slices/ordersSlice';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
 import { invoiceSettingsApi } from '../api/apiClient';
-import { CheckCircle2, Package, ShoppingBag, ArrowRight, User, Mail, Phone, MapPin, CreditCard } from 'lucide-react';
+import { CheckCircle2, Package, ShoppingBag, ArrowRight, User, Mail, Phone, MapPin, CreditCard, Store } from 'lucide-react';
 
 const fallbackImage = 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
 
@@ -22,6 +22,7 @@ const OrderSuccessPage = () => {
   const dispatch = useDispatch();
   const { currentOrder, loading } = useSelector(state => state.orders);
   const [bankAccounts, setBankAccounts] = useState([]);
+  const [invoiceInfo, setInvoiceInfo] = useState(null);
 
   useEffect(() => {
     if (orderId) {
@@ -30,15 +31,19 @@ const OrderSuccessPage = () => {
   }, [dispatch, orderId]);
 
   useEffect(() => {
-    const loadBankAccounts = async () => {
+    const loadData = async () => {
       try {
-        const accounts = await invoiceSettingsApi.getBankAccounts();
+        const [accounts, info] = await Promise.all([
+          invoiceSettingsApi.getBankAccounts(),
+          invoiceSettingsApi.getInvoiceInfo()
+        ]);
         setBankAccounts(Array.isArray(accounts) ? accounts : []);
+        setInvoiceInfo(info);
       } catch (error) {
-        console.error('Failed to load bank accounts:', error);
+        console.error('Failed to load settings data:', error);
       }
     };
-    loadBankAccounts();
+    loadData();
   }, []);
 
   if (loading) {
@@ -98,7 +103,8 @@ const OrderSuccessPage = () => {
                 <span className="text-gray-400 font-bold uppercase tracking-wider">Payment</span>
                 <div className="flex items-center gap-1.5 font-bold text-gray-700">
                   <CreditCard className="w-3.5 h-3.5" />
-                  {currentOrder.paymentMethod === 'cash_on_delivery' ? 'Cash on Delivery' : 'Bank Transfer'}
+                  {currentOrder.paymentMethod === 'cash_on_delivery' ? 'Cash on Delivery' :
+                    currentOrder.paymentMethod === 'store_pickup' ? 'Store Pickup (Pay at Counter)' : 'Bank Transfer'}
                 </div>
               </div>
               <div className="flex justify-between items-center text-xs">
@@ -121,26 +127,46 @@ const OrderSuccessPage = () => {
           <div>
             <h2 className="text-lg font-black text-gray-900 mb-5 flex items-center gap-2">
               <MapPin className="w-5 h-5 text-primary-600" />
-              Shipping To
+              {currentOrder.paymentMethod === 'store_pickup' ? 'Pickup At' : 'Shipping To'}
             </h2>
             <div className="bg-gray-50/50 rounded-2xl p-4 border border-gray-100/50 space-y-3">
-              <div className="flex items-start gap-3">
-                <User className="w-4 h-4 text-gray-400 mt-0.5" />
-                <p className="font-bold text-gray-900 text-sm">{currentOrder.customerName}</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <Mail className="w-4 h-4 text-gray-400 mt-0.5" />
-                <p className="text-gray-500 font-medium text-xs">{currentOrder.customerEmail}</p>
-              </div>
-              {currentOrder.customerPhone && (
-                <div className="flex items-start gap-3">
-                  <Phone className="w-4 h-4 text-gray-400 mt-0.5" />
-                  <p className="text-gray-500 font-medium text-xs">{currentOrder.customerPhone}</p>
-                </div>
+              {currentOrder.paymentMethod === 'store_pickup' ? (
+                <>
+                  <div className="flex items-start gap-3">
+                    <Store className="w-4 h-4 text-gray-400 mt-0.5" />
+                    <p className="font-bold text-gray-900 text-sm">{invoiceInfo?.business_name || 'Our Store'}</p>
+                  </div>
+                  <div className="pt-2 border-t border-gray-100">
+                    <p className="text-gray-500 font-medium text-xs leading-relaxed">
+                      {invoiceInfo?.business_address || 'Address loading...'}
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-3 pt-1">
+                    <Phone className="w-4 h-4 text-gray-400 mt-0.5" />
+                    <p className="text-gray-500 font-medium text-xs">{invoiceInfo?.phone_number}</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-start gap-3">
+                    <User className="w-4 h-4 text-gray-400 mt-0.5" />
+                    <p className="font-bold text-gray-900 text-sm">{currentOrder.customerName}</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Mail className="w-4 h-4 text-gray-400 mt-0.5" />
+                    <p className="text-gray-500 font-medium text-xs">{currentOrder.customerEmail}</p>
+                  </div>
+                  {currentOrder.customerPhone && (
+                    <div className="flex items-start gap-3">
+                      <Phone className="w-4 h-4 text-gray-400 mt-0.5" />
+                      <p className="text-gray-500 font-medium text-xs">{currentOrder.customerPhone}</p>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-gray-100">
+                    <p className="text-gray-500 font-medium text-xs leading-relaxed">{currentOrder.customerAddress}</p>
+                  </div>
+                </>
               )}
-              <div className="pt-2 border-t border-gray-100">
-                <p className="text-gray-500 font-medium text-xs leading-relaxed">{currentOrder.customerAddress}</p>
-              </div>
             </div>
           </div>
         </div>
@@ -214,7 +240,9 @@ const OrderSuccessPage = () => {
               <span className="text-3xl font-black text-white block">
                 LKR {currentOrder.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </span>
-              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">Included Delivery Charges</p>
+              {currentOrder.deliveryCharge > 0 && (
+                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">Included Delivery Charges</p>
+              )}
             </div>
           </div>
         </div>

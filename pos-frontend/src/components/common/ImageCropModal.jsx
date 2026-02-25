@@ -69,9 +69,9 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
 
-    // Set canvas size to the target dimensions (800x600 for 4:3)
+    // Set canvas size to the target dimensions (dynamic height based on aspect ratio)
     const targetWidth = 800;
-    const targetHeight = 600;
+    const targetHeight = targetWidth / aspectRatio;
     canvas.width = targetWidth;
     canvas.height = targetHeight;
 
@@ -81,6 +81,10 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
       message.error('Failed to get canvas context');
       return null;
     }
+
+    // Fill with white background (to avoid black borders in JPEG)
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Calculate source dimensions
     const pixelCrop = {
@@ -131,7 +135,7 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
         0.9
       );
     });
-  }, [completedCrop, scale, rotate]);
+  }, [completedCrop, scale, rotate, aspectRatio]);
 
   const handleCrop = async () => {
     try {

@@ -11,7 +11,11 @@ import {
 import LoadingSpinner from '../components/Common/LoadingSpinner';
 import { deliveryChargesApi, invoiceSettingsApi } from '../api/apiClient';
 import { toast } from 'react-toastify';
-import { Package, ShoppingBag, Store } from 'lucide-react';
+import {
+  Package, ShoppingBag, Store, FileText, X, ShieldCheck, RotateCcw,
+  Globe, CheckCircle2, Truck, Copyright, AlertTriangle,
+  Database, Eye, Users, Lock, AlertCircle, XCircle, Clock
+} from 'lucide-react';
 
 const fallbackImage = 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300';
 
@@ -23,6 +27,34 @@ const getImageUrl = (url) => {
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
   return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
 };
+
+// eslint-disable-next-line no-unused-vars
+const ModalSection = ({ icon: IconComponent, color, title, children }) => (
+  <div className="mb-8 last:mb-0">
+    <div className="flex items-center gap-3 mb-3">
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${color}`}>
+        <IconComponent className="w-4 h-4 text-white" />
+      </div>
+      <h3 className="text-base font-bold text-gray-900">{title}</h3>
+    </div>
+    <div className="pl-11">{children}</div>
+  </div>
+);
+
+const ModalBulletList = ({ items, icon: IconComponent = null, iconClass = 'text-primary-500' }) => (
+  <ul className="space-y-2">
+    {items.map((item, i) => (
+      <li key={i} className="flex items-start gap-2.5 text-gray-600 text-xs leading-relaxed">
+        {IconComponent ? (
+          <IconComponent className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${iconClass}`} />
+        ) : (
+          <span className="w-1.5 h-1.5 rounded-full bg-primary-400 flex-shrink-0 mt-1.5" />
+        )}
+        <span>{item}</span>
+      </li>
+    ))}
+  </ul>
+);
 
 const CheckoutPage = () => {
   const dispatch = useDispatch();
@@ -53,6 +85,12 @@ const CheckoutPage = () => {
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [loadingDeliverySettings, setLoadingDeliverySettings] = useState(false);
   const [bankAccounts, setBankAccounts] = useState([]);
+  const [policiesAccepted, setPoliciesAccepted] = useState({
+    terms: false,
+    privacy: false,
+    refund: false
+  });
+  const [activePolicyModal, setActivePolicyModal] = useState(null); // 'terms', 'privacy', 'refund' or null
 
   useEffect(() => {
     // Scroll to top smoothly when step changes
@@ -248,7 +286,15 @@ const CheckoutPage = () => {
       deliveryType: paymentMethod === 'store_pickup' ? 'store_pickup' : (selectedDeliverySetting?.type || null),
       deliveryCharge: paymentMethod === 'store_pickup' ? 0 : (deliveryCharge || 0),
       totalWeight: totalWeight,
+      terms_accepted: policiesAccepted.terms,
+      privacy_policy_accepted: policiesAccepted.privacy,
+      refund_policy_accepted: policiesAccepted.refund
     };
+
+    if (!orderData.terms_accepted || !orderData.privacy_policy_accepted || !orderData.refund_policy_accepted) {
+      toast.error('Please accept all policies before placing your order');
+      return;
+    }
 
     // Include receipt details if bank transfer
     if (paymentMethod === 'bank_transfer' && uploadedReceiptDetails) {
@@ -268,6 +314,300 @@ const CheckoutPage = () => {
     { number: 2, title: 'Payment Method', completed: currentStep > 2 },
     { number: 3, title: 'Review & Place Order', completed: false },
   ];
+
+  const PolicyModal = ({ type, onClose }) => {
+    const getContent = () => {
+      switch (type) {
+        case 'terms':
+          return {
+            title: 'Terms & Conditions',
+            icon: FileText,
+            color: 'bg-gray-800',
+            content: (
+              <div className="space-y-6">
+                <p className="text-gray-500 text-xs leading-relaxed text-center mb-6">
+                  Welcome to <strong>Vcare</strong>. By accessing our website and purchasing our products, you agree to the following terms.
+                </p>
+
+                <ModalSection icon={Globe} color="bg-primary-600" title="Website Usage">
+                  <ModalBulletList items={[
+                    'You must be at least 18 years old to make purchases.',
+                    'You agree to provide accurate billing & delivery details.',
+                    'Unauthorized or fraudulent use of the website is prohibited.',
+                  ]} />
+                </ModalSection>
+
+                <hr className="border-gray-100 mb-6" />
+
+                <ModalSection icon={CheckCircle2} color="bg-blue-500" title="Product Information">
+                  <p className="text-xs text-gray-600 leading-relaxed mb-3">
+                    We strive to ensure all product details, images, and specifications are accurate. However, minor variations may occur due to screen display, materials, or manufacturing updates.
+                  </p>
+                  <p className="text-xs text-gray-600 leading-relaxed font-semibold">
+                    Prices are subject to change without prior notice.
+                  </p>
+                </ModalSection>
+
+                <hr className="border-gray-100 mb-6" />
+
+                <ModalSection icon={FileText} color="bg-green-600" title="Orders & Payments">
+                  <ModalBulletList items={[
+                    'Orders are confirmed only after payment verification.',
+                    'We reserve the right to cancel orders due to stock issues, pricing errors, or suspected fraud.',
+                    'Payments are processed via secure third-party gateways.',
+                  ]} />
+                </ModalSection>
+
+                <hr className="border-gray-100 mb-6" />
+
+                <ModalSection icon={Truck} color="bg-amber-600" title="Shipping & Delivery">
+                  <p className="text-xs text-gray-600 leading-relaxed mb-3">
+                    Delivery timelines vary based on product availability and location.
+                  </p>
+                  <p className="text-[10px] text-gray-400 italic">
+                    Delays caused by courier partners, weather, or external factors are beyond our control.
+                  </p>
+                </ModalSection>
+
+                <hr className="border-gray-100 mb-6" />
+
+                <ModalSection icon={RotateCcw} color="bg-purple-600" title="Returns & Warranty">
+                  <p className="text-xs text-gray-600 leading-relaxed mb-3">
+                    All returns are governed by our <strong>Refund & Return Policy</strong>.
+                  </p>
+                  <ModalBulletList items={[
+                    'We do not accept returns for change of mind.',
+                    'Warranty covers manufacturing defects only.',
+                  ]} />
+                </ModalSection>
+
+                <hr className="border-gray-100 mb-6" />
+
+                <ModalSection icon={Copyright} color="bg-orange-600" title="Intellectual Property">
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    All website content — including logos, images, designs, and text — belongs to <strong>Vcare</strong> and may not be reused without permission.
+                  </p>
+                </ModalSection>
+
+                <hr className="border-gray-100 mb-6" />
+
+                <ModalSection icon={AlertTriangle} color="bg-red-600" title="Other Terms">
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-xs font-bold text-gray-900 mb-1 tracking-tight uppercase">Limitation of Liability</h4>
+                      <p className="text-xs text-gray-600 leading-relaxed">Vcare is not liable for indirect or consequential damages arising from product use, delays, or service interruptions.</p>
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-gray-900 mb-1 tracking-tight uppercase">Amendments</h4>
+                      <p className="text-xs text-gray-600 leading-relaxed">We reserve the right to update these Terms at any time. Continued website use implies acceptance.</p>
+                    </div>
+                  </div>
+                </ModalSection>
+
+                <div className="mt-8 pt-6 border-t border-gray-100 text-center text-[10px] text-gray-400 italic">
+                  By accessing and purchasing from this website, you agree to these Terms & Conditions.
+                </div>
+              </div>
+            )
+          };
+        case 'privacy':
+          return {
+            title: 'Privacy Policy',
+            icon: ShieldCheck,
+            color: 'bg-slate-700',
+            content: (
+              <div className="space-y-6">
+                <div className="text-center mb-6 space-y-2">
+                  <p className="text-gray-600 text-xs leading-relaxed">
+                    At <strong>Vcare</strong>, we are committed to protecting your privacy and safeguarding your personal information.
+                  </p>
+                  <p className="text-gray-500 text-xs leading-relaxed">
+                    This policy explains how we collect, use, and protect your data.
+                  </p>
+                </div>
+
+                <ModalSection icon={Database} color="bg-blue-500" title="Information We Collect">
+                  <p className="text-xs text-gray-500 mb-3">We may collect the following:</p>
+                  <ModalBulletList items={[
+                    'Name, Phone, Email',
+                    'Billing & delivery address',
+                    'Payment details (processed securely)',
+                    'IP address & device information',
+                  ]} />
+                </ModalSection>
+
+                <hr className="border-gray-100 mb-6" />
+
+                <ModalSection icon={Eye} color="bg-purple-500" title="How We Use Your Data">
+                  <ModalBulletList items={[
+                    'Process and deliver orders',
+                    'Provide customer support',
+                    'Send order updates',
+                    'Improve our services',
+                    'Prevent fraud',
+                  ]} />
+                </ModalSection>
+
+                <hr className="border-gray-100 mb-6" />
+
+                <ModalSection icon={Users} color="bg-orange-500" title="Information Sharing">
+                  <div className="space-y-3">
+                    <p className="text-xs text-gray-600 leading-relaxed italic">
+                      We do not sell or trade your personal data.
+                    </p>
+                    <p className="text-xs text-gray-500 mb-1">Shared only with:</p>
+                    <ModalBulletList items={[
+                      'Courier & logistics partners',
+                      'Payment gateway providers',
+                      'IT service providers',
+                    ]} />
+                  </div>
+                </ModalSection>
+
+                <hr className="border-gray-100 mb-6" />
+
+                <ModalSection icon={Lock} color="bg-green-500" title="Payment Security">
+                  <div className="bg-green-50 border border-green-100 rounded-xl p-4 text-[11px] text-green-800 leading-relaxed">
+                    Online payments are encrypted. <strong>Vcare does not store full card or banking details.</strong>
+                  </div>
+                </ModalSection>
+
+                <hr className="border-gray-100 mb-6" />
+
+                <ModalSection icon={ShieldCheck} color="bg-slate-500" title="Updates">
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    We may update this policy periodically. Changes will be published on this page.
+                  </p>
+                </ModalSection>
+
+                <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+                  <h4 className="text-xs font-bold text-gray-900 mb-1">Contact</h4>
+                  <p className="text-primary-600 text-[11px] font-medium">info@vcaresl.com</p>
+                </div>
+              </div>
+            )
+          };
+        case 'refund':
+          return {
+            title: 'Refund & Return Policy',
+            icon: RotateCcw,
+            color: 'bg-primary-600',
+            content: (
+              <div className="space-y-6">
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex gap-3">
+                  <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-amber-800 leading-relaxed">
+                    Please read our policy carefully. We are committed to high-quality office furniture solutions.
+                  </p>
+                </div>
+
+                <ModalSection icon={XCircle} color="bg-red-500" title="Returns">
+                  <p className="text-xs text-gray-600 mb-3 italic font-medium">We do not accept returns for change of mind once delivered.</p>
+                  <ModalBulletList items={[
+                    'Manufacturing defects',
+                    'Warranty claims',
+                    'Damaged items at delivery',
+                    'Incorrect product delivered',
+                  ]} />
+                </ModalSection>
+
+                <hr className="border-gray-100 mb-6" />
+
+                <ModalSection icon={ShieldCheck} color="bg-primary-600" title="Eligibility">
+                  <ModalBulletList items={[
+                    'Reported within 24 hours of delivery',
+                    'Unused and in original condition',
+                    'In original packaging',
+                    'Supported with proof (photos/videos)',
+                  ]} />
+                </ModalSection>
+
+                <hr className="border-gray-100 mb-6" />
+
+                <ModalSection icon={Clock} color="bg-purple-500" title="Refunds">
+                  <p className="text-xs text-gray-600 mb-3 leading-relaxed">
+                    Approved refunds are processed to original payment method within <strong>7–14 working days</strong>.
+                  </p>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Note:</p>
+                    <ModalBulletList items={[
+                      'Delivery charges are non-refundable',
+                      'Service charges are non-refundable',
+                    ]} />
+                  </div>
+                </ModalSection>
+
+                <hr className="border-gray-100 mb-6" />
+
+                <ModalSection icon={CheckCircle2} color="bg-green-500" title="Exchanges">
+                  <ModalBulletList items={[
+                    'Manufacturing defects',
+                    'Wrong item delivered',
+                    'Delivery damage',
+                  ]} />
+                  <p className="text-xs text-gray-600 mt-3">Repairs or replacements based on warranty terms.</p>
+                </ModalSection>
+
+                <hr className="border-gray-100 mb-6" />
+
+                <ModalSection icon={AlertCircle} color="bg-gray-700" title="Non-Returnable">
+                  <ModalBulletList icon={XCircle} iconClass="text-red-400" items={[
+                    'Customized furniture',
+                    'Used products',
+                    'Clearance items',
+                  ]} />
+                </ModalSection>
+
+                <div className="mt-8 pt-6 border-t border-gray-100">
+                  <p className="text-[10px] text-gray-400 text-center italic">By purchasing, you agree to this Refund & Return Policy.</p>
+                </div>
+              </div>
+            )
+          };
+        default:
+          return null;
+      }
+    };
+
+    const config = getContent();
+    if (!config) return null;
+
+    const Icon = config.icon;
+
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
+          <div className={`${config.color} p-6 text-white flex justify-between items-center`}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                <Icon className="w-6 h-6" />
+              </div>
+              <h2 className="text-xl font-black">{config.title}</h2>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="p-8 max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200">
+            {config.content}
+          </div>
+          <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-6 py-2.5 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const allPoliciesAccepted = policiesAccepted.terms && policiesAccepted.privacy && policiesAccepted.refund;
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -821,6 +1161,45 @@ const CheckoutPage = () => {
                   </div>
                 </div>
 
+                {/* Policy Acceptance */}
+                <div className="mb-8 p-6 bg-gray-50 rounded-2xl border border-gray-100">
+                  <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4">Policy Agreement</h4>
+                  <div className="space-y-4">
+                    {[
+                      { id: 'terms', label: 'Terms & Conditions' },
+                      { id: 'privacy', label: 'Privacy Policy' },
+                      { id: 'refund', label: 'Refund & Return Policy' }
+                    ].map((policy) => (
+                      <div key={policy.id} className="flex items-start gap-3">
+                        <div className="flex items-center h-5 mt-0.5">
+                          <input
+                            id={`policy-${policy.id}`}
+                            type="checkbox"
+                            checked={policiesAccepted[policy.id]}
+                            onChange={(e) => setPoliciesAccepted({
+                              ...policiesAccepted,
+                              [policy.id]: e.target.checked
+                            })}
+                            className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer"
+                          />
+                        </div>
+                        <div className="text-xs">
+                          <label htmlFor={`policy-${policy.id}`} className="font-medium text-gray-700 cursor-pointer">
+                            I have read and agree to the{' '}
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setActivePolicyModal(policy.id)}
+                            className="text-primary-600 font-bold hover:underline"
+                          >
+                            {policy.label}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex justify-between">
                   <button
                     onClick={handlePrevStep}
@@ -830,7 +1209,7 @@ const CheckoutPage = () => {
                   </button>
                   <button
                     onClick={handlePlaceOrder}
-                    disabled={loading || (paymentMethod === 'bank_transfer' && !uploadedReceiptDetails)}
+                    disabled={loading || (paymentMethod === 'bank_transfer' && !uploadedReceiptDetails) || !allPoliciesAccepted}
                     className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
@@ -1014,7 +1393,7 @@ const CheckoutPage = () => {
           ) : (
             <button
               onClick={handlePlaceOrder}
-              disabled={loading || (paymentMethod === 'bank_transfer' && !uploadedReceiptDetails)}
+              disabled={loading || (paymentMethod === 'bank_transfer' && !uploadedReceiptDetails) || !allPoliciesAccepted}
               className="px-6 py-3 bg-primary-600 text-white font-black rounded-xl text-[10px] uppercase tracking-widest shadow-lg active:scale-95 disabled:bg-gray-200"
             >
               {loading ? 'Placing...' : 'Place Order'}
@@ -1025,6 +1404,13 @@ const CheckoutPage = () => {
 
       {/* Spacer for sticky bottom bar */}
       <div className="h-20 lg:hidden" />
+
+      {activePolicyModal && (
+        <PolicyModal
+          type={activePolicyModal}
+          onClose={() => setActivePolicyModal(null)}
+        />
+      )}
     </div>
   );
 };

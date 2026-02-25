@@ -52,6 +52,9 @@ router.post('/orders', [
   body('customerAddress').notEmpty().withMessage('Customer address is required'),
   body('paymentMethod').isIn(['cash_on_delivery', 'bank_transfer', 'store_pickup']).withMessage('Invalid payment method'),
   body('items').isArray({ min: 1 }).withMessage('At least one item is required'),
+  body('terms_accepted').isBoolean().withMessage('Terms acceptance must be a boolean'),
+  body('privacy_policy_accepted').isBoolean().withMessage('Privacy policy acceptance must be a boolean'),
+  body('refund_policy_accepted').isBoolean().withMessage('Refund policy acceptance must be a boolean'),
   // Conditional validation for bank transfer receipt
   body('receiptDetails').custom((value, { req }) => {
     if (req.body.paymentMethod === 'bank_transfer') {
@@ -80,7 +83,10 @@ router.post('/orders', [
     items,
     receiptDetails,
     deliveryLocation,
-    deliveryCharge
+    deliveryCharge,
+    terms_accepted,
+    privacy_policy_accepted,
+    refund_policy_accepted
   } = req.body;
 
   const client = await pool.connect();
@@ -199,8 +205,9 @@ router.post('/orders', [
       INSERT INTO ecommerce_orders (
         id, customer_id, customer_name, customer_email, customer_phone,
         customer_address, total_amount, payment_method, order_status,
-        delivery_location, delivery_charge
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        delivery_location, delivery_charge, terms_accepted, 
+        privacy_policy_accepted, refund_policy_accepted
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *
     `, [
       orderId,
@@ -213,7 +220,10 @@ router.post('/orders', [
       paymentMethod,
       paymentMethod === 'bank_transfer' ? 'pending_payment' : 'processing',
       deliveryLocation || null,
-      parseFloat(deliveryCharge) || 0
+      parseFloat(deliveryCharge) || 0,
+      terms_accepted || false,
+      privacy_policy_accepted || false,
+      refund_policy_accepted || false
     ]);
 
     // Handle bank transfer receipt if provided

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { Modal, Button, Slider, Space, message } from 'antd';
+import { Modal, Button, Slider, Space, message, Segmented, Input } from 'antd';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Icon } from './Icon';
@@ -22,6 +22,9 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
   const [rotate, setRotate] = useState(0);
   const imgRef = useRef(null);
   const [loading, setLoading] = useState(false);
+  const [bgType, setBgType] = useState('transparent');
+  const [bgColor, setBgColor] = useState('#ffffff');
+  const [blurAmount, setBlurAmount] = useState(20);
 
   const onImageLoad = useCallback((e) => {
     const { width, height } = e.currentTarget;
@@ -66,8 +69,6 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
 
     const image = imgRef.current;
     const canvas = document.createElement('canvas');
-    const scaleX = image.naturalWidth / image.width;
-    const scaleY = image.naturalHeight / image.height;
 
     // Set canvas size to the target dimensions (dynamic height based on aspect ratio)
     const targetWidth = 800;
@@ -82,14 +83,58 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
       return null;
     }
 
-    // Fill with white background (to avoid black borders in JPEG)
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Background handling
+    if (bgType === 'transparent') {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    } else if (bgType === 'color') {
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else if (bgType === 'blur') {
+      ctx.save();
+      // Draw full image blurred to cover background
+      ctx.filter = `blur(${blurAmount}px)`;
+      const imgAspect = image.naturalWidth / image.naturalHeight;
+      const canvasAspect = canvas.width / canvas.height;
+      let drawWidth, drawHeight, drawX, drawY;
 
-    // Calculate source dimensions
+      if (imgAspect > canvasAspect) {
+        drawHeight = canvas.height;
+        drawWidth = canvas.height * imgAspect;
+        drawX = (canvas.width - drawWidth) / 2;
+        drawY = 0;
+      } else {
+        drawWidth = canvas.width;
+        drawHeight = canvas.width / imgAspect;
+        drawX = 0;
+        drawY = (canvas.height - drawHeight) / 2;
+      }
+      ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+
+      // Optional: subtle dark overlay for better contrast
+      ctx.filter = 'none';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+
+    // Calculate source dimensions relative to the scaled and centered image in the layout box
+    const viewScale = scale;
+    const layoutWidth = image.width;
+    const layoutHeight = image.height;
+
+    // The CSS transform: scale() centers the scaled image by default. 
+    // We need to find where the actual image pixels are within the layout box.
+    const scaledWidth = layoutWidth * viewScale;
+    const scaledHeight = layoutHeight * viewScale;
+    const offsetX = (layoutWidth - scaledWidth) / 2;
+    const offsetY = (layoutHeight - scaledHeight) / 2;
+
+    const scaleX = image.naturalWidth / scaledWidth;
+    const scaleY = image.naturalHeight / scaledHeight;
+
     const pixelCrop = {
-      x: completedCrop.x * scaleX,
-      y: completedCrop.y * scaleY,
+      x: (completedCrop.x - offsetX) * scaleX,
+      y: (completedCrop.y - offsetY) * scaleY,
       width: completedCrop.width * scaleX,
       height: completedCrop.height * scaleY
     };
@@ -103,10 +148,12 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
     // Apply rotation
     ctx.rotate((rotate * Math.PI) / 180);
 
-    // Apply scale
+    // Apply scale (this is the zoom factor)
     ctx.scale(scale, scale);
 
     // Draw image
+    // Note: We use the full targetWidth/Height as the destination, 
+    // but the source rect (pixelCrop) is mapped to the original image pixels.
     ctx.drawImage(
       image,
       pixelCrop.x,
@@ -121,6 +168,10 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
 
     ctx.restore();
 
+    const format = bgType === 'transparent' ? 'image/png' : 'image/jpeg';
+    const quality = format === 'image/jpeg' ? 0.9 : undefined;
+    const extension = format === 'image/png' ? 'png' : 'jpg';
+
     return new Promise((resolve, reject) => {
       canvas.toBlob(
         (blob) => {
@@ -128,14 +179,32 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
             reject(new Error('Canvas is empty'));
             return;
           }
-          blob.name = 'cropped-image.jpg';
+          blob.name = `cropped-image.${extension}`;
           resolve(blob);
         },
-        'image/jpeg',
-        0.9
+        format,
+        quality
       );
     });
-  }, [completedCrop, scale, rotate, aspectRatio]);
+  }, [completedCrop, scale, rotate, aspectRatio, bgType, bgColor, blurAmount]);
+
+  const handleReset = () => {
+    setScale(1);
+    setRotate(0);
+    setBgType('transparent');
+    setBgColor('#ffffff');
+    setBlurAmount(20);
+    setCrop({
+      unit: '%',
+      x: 5,
+      y: 5,
+      width: 90,
+      height: 90 / aspectRatio,
+      aspect: aspectRatio
+    });
+    message.info('Reset to default');
+  };
+
 
   const handleCrop = async () => {
     try {
@@ -154,6 +223,7 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
           });
           message.success('Image cropped successfully');
           onClose();
+          handleReset();
         };
       }
     } catch (error) {
@@ -164,19 +234,6 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
     }
   };
 
-  const handleReset = () => {
-    setScale(1);
-    setRotate(0);
-    setCrop({
-      unit: '%',
-      x: 5,
-      y: 5,
-      width: 90,
-      height: 90 / aspectRatio,
-      aspect: aspectRatio
-    });
-    message.info('Reset to default');
-  };
 
   return (
     <Modal
@@ -190,7 +247,7 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
           <Icon name="refresh" className="mr-1" />
           Reset
         </Button>,
-        <Button key="cancel" onClick={onClose}>
+        <Button key="cancel" onClick={() => { onClose(); handleReset(); }}>
           Cancel
         </Button>,
         <Button
@@ -206,33 +263,130 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
     >
       <div className="space-y-4">
         {/* Crop Area */}
-        <div className="flex justify-center bg-gray-100 rounded-lg p-4">
-          <ReactCrop
-            crop={crop}
-            onChange={(c) => setCrop(c)}
-            onComplete={(c) => setCompletedCrop(c)}
-            aspect={aspectRatio}
+        <div className="flex justify-center bg-gray-200 rounded-lg p-4 overflow-hidden">
+          <div
+            className="relative shadow-lg overflow-hidden"
             style={{
-              maxHeight: '400px',
-              maxWidth: '100%'
+              width: '100%',
+              maxWidth: '500px',
+              aspectRatio: aspectRatio,
+              backgroundColor: bgType === 'color' ? bgColor : 'transparent',
+              backgroundImage: bgType === 'transparent' ?
+                'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)' :
+                'none',
+              backgroundSize: '20px 20px',
+              backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
           >
-            <img
-              ref={imgRef}
-              src={imageSrc}
-              alt="Crop preview"
-              onLoad={onImageLoad}
+            {/* Blur Background Layer */}
+            {bgType === 'blur' && (
+              <div
+                className="absolute inset-0 z-0"
+                style={{
+                  backgroundImage: `url(${imageSrc})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  filter: `blur(${blurAmount}px)`,
+                  transform: 'scale(1.1)', // Prevent edge bleeding
+                  opacity: 0.7
+                }}
+              />
+            )}
+
+            <ReactCrop
+              crop={crop}
+              onChange={(c) => setCrop(c)}
+              onComplete={(c) => setCompletedCrop(c)}
+              aspect={aspectRatio}
+              className="z-10"
               style={{
-                transform: `scale(${scale}) rotate(${rotate}deg)`,
-                maxHeight: '400px',
+                maxHeight: '100%',
                 maxWidth: '100%'
               }}
-            />
-          </ReactCrop>
+            >
+              <img
+                ref={imgRef}
+                src={imageSrc}
+                alt="Crop preview"
+                onLoad={onImageLoad}
+                style={{
+                  transform: `scale(${scale}) rotate(${rotate}deg)`,
+                  transition: 'transform 0.2s ease-out',
+                  maxHeight: '400px',
+                  maxWidth: '100%',
+                  display: 'block'
+                }}
+              />
+            </ReactCrop>
+          </div>
         </div>
 
         {/* Controls */}
         <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
+          {/* Background Settings */}
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-700">
+              <Icon name="settings" className="mr-1" />
+              Background Settings
+            </label>
+
+            <div className="flex flex-wrap items-center gap-4">
+              <div>
+                <span className="text-xs text-gray-500 block mb-1">Type</span>
+                <Segmented
+                  value={bgType}
+                  onChange={setBgType}
+                  options={[
+                    { label: 'Transparent', value: 'transparent' },
+                    { label: 'Color', value: 'color' },
+                    { label: 'Blur', value: 'blur' }
+                  ]}
+                />
+              </div>
+
+              {bgType === 'color' && (
+                <div>
+                  <span className="text-xs text-gray-500 block mb-1">Color</span>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="color"
+                      value={bgColor}
+                      onChange={(e) => setBgColor(e.target.value)}
+                      className="w-12 h-8 p-1"
+                    />
+                    <Input
+                      size="small"
+                      value={bgColor}
+                      onChange={(e) => setBgColor(e.target.value)}
+                      className="w-24"
+                      placeholder="#ffffff"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {bgType === 'blur' && (
+              <div>
+                <span className="text-xs text-gray-500 block mb-1">Blur Intensity: {blurAmount}px</span>
+                <Slider
+                  min={0}
+                  max={100}
+                  value={blurAmount}
+                  onChange={setBlurAmount}
+                  marks={{
+                    0: 'None',
+                    20: 'Soft',
+                    50: 'Medium',
+                    100: 'Strong'
+                  }}
+                />
+              </div>
+            )}
+          </div>
           {/* Zoom Control */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -301,6 +455,10 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
               </Button>
             </Space>
           </div>
+
+          <hr className="border-gray-200" />
+
+
         </div>
 
         {/* Info */}

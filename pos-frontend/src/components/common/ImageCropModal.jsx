@@ -180,6 +180,7 @@ export function ImageCropModal({ open, onClose, imageSrc, onCropComplete, aspect
 
   return (
     <Modal
+      maskClosable={false}
       title="Crop Image"
       open={open}
       onCancel={onClose}

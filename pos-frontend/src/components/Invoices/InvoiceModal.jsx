@@ -323,7 +323,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
 
   return (
     <>
-      <div className="invoice-modal-overlay fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4 print:p-0 print:bg-white" onClick={onClose}>
+      <div className="invoice-modal-overlay fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4 print:p-0 print:bg-white">
         <div className={`relative flex h-[90vh] w-full ${type !== 'labels' ? 'max-w-4xl' : 'max-w-2xl'} flex-col rounded-xl bg-gray-100 shadow-2xl print:h-auto print:max-w-none print:rounded-none print:bg-white print:shadow-none overflow-hidden print:overflow-visible`} onClick={(e) => e.stopPropagation()}>
           <div className="sticky top-0 z-[60] bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center print:hidden rounded-t-xl">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">

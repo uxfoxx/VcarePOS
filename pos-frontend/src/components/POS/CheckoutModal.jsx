@@ -747,6 +747,7 @@ export function CheckoutModal({
   return (
     <>
       <Modal
+        maskClosable={false}
         title="Complete Order"
         open={open}
         onCancel={onClose}
@@ -802,6 +803,7 @@ export function CheckoutModal({
       {/* Post-Order Success Modal */}
       {completedTransaction && (
         <Modal
+          maskClosable={false}
           title="Order Completed Successfully!"
           open={!!completedTransaction && !showInvoice && !showInventoryLabels}
           onCancel={handleCloseOrderComplete}

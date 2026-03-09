@@ -662,6 +662,7 @@ export function Cart() {
 
       {/* Quotation Customer Details Modal */}
       <Modal
+        maskClosable={false}
         title="Customer Information for Quotation"
         open={showQuotationModal}
         onCancel={() => setShowQuotationModal(false)}

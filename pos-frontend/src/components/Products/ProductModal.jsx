@@ -1556,6 +1556,7 @@ export function ProductModal({
 
   return (
     <Modal
+      maskClosable={false}
       title={editingProduct ? 'Edit Product' : 'Add New Product'}
       open={open}
       onCancel={handleClose}

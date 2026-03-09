@@ -552,6 +552,7 @@ export function DetailModal({
   return (
     <>
       <Modal
+        maskClosable={false}
         title={
           <Space>
             {icon && <Icon name={icon} className="text-blue-600" />}

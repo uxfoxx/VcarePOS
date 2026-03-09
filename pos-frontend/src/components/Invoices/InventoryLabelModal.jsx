@@ -185,6 +185,7 @@ export function InventoryLabelModal({ open, onClose, transaction }) {
         `}
       </style>
       <Modal
+        maskClosable={false}
         title={
           <Space>
             <Icon name="label" className="text-blue-600" />

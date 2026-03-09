@@ -2,56 +2,12 @@ import { useState, useEffect } from 'react';
 import { Typography, message } from 'antd';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
-import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import {
-  InvoiceHeader,
-  InvoiceDetails,
-  InvoiceCustomerSection,
-  InvoiceItemsTable,
-  InvoicePaymentSummary,
-  InvoiceAccountDetails,
-  InvoiceNotes,
-  InvoiceTermsAndConditions,
-  InvoiceSignatureSection,
-  InvoiceFooter
 } from './SharedInvoiceComponents';
+import { DocumentTemplate } from './DocumentTemplate';
 import apiClient from '../../api/apiClient';
-
-const { Text } = Typography;
-
-// ─── Pagination constants ────────────────────────────────────────────────────
-// Page 1: customer header consumes ~15mm vertical space
-// Last page: summary (totals+bank+notes+T&C+signatures) needs ~130mm
-// → last page can safely hold at most 4 item rows
-const FIRST_PAGE_ITEMS = 5;   // page 1: customer header takes space
-const MIDDLE_PAGE_ITEMS = 9;   // continuation pages: full-height
-const LAST_PAGE_MAX = 4;   // last page: must leave room for summary
-
-const paginateItems = (items) => {
-  if (!items || items.length === 0) return [[]];
-
-  // Tiny order: fits entirely on one page (items + summary)
-  if (items.length <= LAST_PAGE_MAX) return [[...items]];
-
-  const pages = [];
-  let remaining = [...items];
-
-  // Page 1
-  pages.push(remaining.splice(0, FIRST_PAGE_ITEMS));
-
-  // Middle pages — stop when remaining fits on a "last" page
-  while (remaining.length > LAST_PAGE_MAX) {
-    pages.push(remaining.splice(0, MIDDLE_PAGE_ITEMS));
-  }
-
-  // Last page: ≤ LAST_PAGE_MAX items + full summary section
-  if (remaining.length > 0) {
-    pages.push([...remaining]);
-  }
-
-  return pages;
-};
 
 const convertImageToBase64 = (url) => {
   return new Promise((resolve, reject) => {
@@ -75,14 +31,7 @@ const convertImageToBase64 = (url) => {
   });
 };
 
-// Chunk array into smaller arrays
-// const chunkArray = (array, size) => {
-//   const chunks = [];
-//   for (let i = 0; i < array.length; i += size) {
-//     chunks.push(array.slice(i, i + size));
-//   }
-//   return chunks;
-// };
+const { Text } = Typography;
 
 export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) {
   const [loading, setLoading] = useState(false);
@@ -97,7 +46,6 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
   const fetchInvoiceConfig = async () => {
     try {
       const response = await apiClient.get('/invoice-settings/complete');
-      console.log("resss", response)
       setInvoiceConfig(response);
     } catch (error) {
       console.error('Error fetching invoice configuration:', error);
@@ -137,7 +85,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
     doc.write(`
       <html>
         <head>
-          <title>${type === 'detailed' ? 'Invoice' : 'Item Labels'} - ${transaction.id}</title>
+          <title>${documentTitle} - ${transaction.id}</title>
           <style>
             @media print {
               body, html {
@@ -148,14 +96,14 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
                 size: A4;
                 margin: 0;
               }
-              .invoice-page {
+              .document-page, .invoice-page {
                  page-break-after: always;
                  margin: 0 !important;
                  padding: 0 !important;
                  width: 210mm;
                  box-shadow: none !important;
               }
-              .invoice-page:last-child {
+              .document-page:last-child, .invoice-page:last-child {
                  page-break-after: auto;
               }
             }
@@ -181,9 +129,9 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
   };
 
   const generatePDF = async () => {
-    const pages = document.querySelectorAll('.invoice-page');
+    const pages = document.querySelectorAll('.document-page, .invoice-page');
     if (!pages || pages.length === 0) {
-      console.error('No invoice pages found');
+      console.error('No document pages found');
       return null;
     }
 
@@ -256,7 +204,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
     try {
       const pdf = await generatePDF();
       if (pdf) {
-        const filename = `invoice-${transaction.id}.pdf`;
+        const filename = `${documentTitle.toLowerCase().replace(' ', '-')}-${transaction.id}.pdf`;
         pdf.save(filename);
       }
     } catch (error) {
@@ -267,147 +215,20 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
     }
   };
 
+  console.log(handleView, handleDownload, loading)
+
+  const isQuotation = type === 'quotation';
+  const documentTitle = isQuotation ? 'Quotation' : (type === 'detailed' ? 'Invoice' : 'Item Labels');
+  const iconName = isQuotation ? 'request_quote' : (type === 'detailed' ? 'receipt_long' : 'label');
+
   const renderDetailedInvoice = () => {
-    const savedBranding = localStorage.getItem('vcare_branding') ? JSON.parse(localStorage.getItem('vcare_branding')) : null;
-
-    const businessName = invoiceConfig?.settings?.business_name ||
-      savedBranding?.businessName ||
-      '';
-
-    const logoPreview = invoiceConfig?.settings?.logo_url ||
-      savedBranding?.logoPreview ||
-      '/VCARELogo 1.png';
-
-    // Split items into pages of 10
-    const itemPages = paginateItems(transaction.items);
-    const totalPages = itemPages.length;
-
     return (
-      <div className="w-full">
-        {itemPages.map((pageItems, pageIndex) => {
-          const isFirstPage = pageIndex === 0;
-          const isLastPage = pageIndex === totalPages - 1;
-
-          return (
-            <div
-              key={pageIndex}
-              className="invoice-page"
-              style={{
-                fontFamily: 'Arial, sans-serif',
-                width: '210mm',
-                height: '297mm',
-                boxSizing: 'border-box',
-                position: 'relative',
-                overflow: 'hidden',
-                backgroundColor: '#ffffff',
-                pageBreakAfter: isLastPage ? 'auto' : 'always',
-                breakAfter: isLastPage ? 'auto' : 'page',
-                margin: '0 auto',
-                marginBottom: pageIndex < totalPages - 1 ? '10mm' : '0'
-              }}
-            >
-              {/* Header Section - Fixed at top */}
-              <div style={{
-                padding: '8mm 10mm 5mm 10mm',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                zIndex: 10
-              }}>
-                <InvoiceHeader
-                  businessName={businessName}
-                  logoPreview={logoPreview}
-                />
-              </div>
-
-              {/* Content Section */}
-              <div style={{
-                position: 'absolute',
-                top: '38mm',
-                left: '10mm',
-                right: '10mm',
-                bottom: '20mm',
-                overflow: 'hidden'
-              }}>
-                {/* Customer and Invoice Details - First Page Only */}
-                {isFirstPage && (
-                  <table style={{ width: '100%', marginBottom: '12px', borderCollapse: 'collapse' }}>
-                    <tbody>
-                      <tr>
-                        <td style={{ verticalAlign: 'top', width: '50%', paddingRight: '16px' }}>
-                          <InvoiceCustomerSection
-                            customerName={transaction.customerName}
-                            customerAddress={transaction.customerAddress}
-                            customerEmail={transaction.customerEmail}
-                            customerPhone={transaction.customerPhone}
-                          />
-                        </td>
-                        <td style={{ verticalAlign: 'top', width: '50%', paddingLeft: '16px' }}>
-                          <InvoiceDetails
-                            invoiceNumber={transaction.id}
-                            dateIssued={new Date(transaction.timestamp).toLocaleDateString('en-US', {
-                              month: '2-digit',
-                              day: '2-digit',
-                              year: 'numeric'
-                            })}
-                          />
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                )}
-
-                {/* Page indicator for multi-page */}
-                {totalPages > 1 && (
-                  <div style={{ textAlign: 'right', marginBottom: '8px' }}>
-                    <Text className="text-xs text-gray-500">
-                      Page {pageIndex + 1} of {totalPages}
-                    </Text>
-                  </div>
-                )}
-
-                {/* Items Table */}
-                <InvoiceItemsTable items={pageItems} />
-
-                {/* Totals, Bank Details, Terms, Signatures - Last Page Only */}
-                {isLastPage && (
-                  <>
-                    <InvoicePaymentSummary
-                      subtotal={transaction.subtotal}
-                      discount={transaction.discount || 0}
-                      grandTotal={transaction.total}
-                      deliveryCharge={transaction.deliveryCharge || 0}
-                      advancedPayment={transaction.advancedPayment || 0}
-                      balancePayment={transaction.balancePayment || 0}
-                      tax={transaction.totalTax || 0}
-                    />
-
-                    {/* Bank Details - Always show if available */}
-                    {invoiceConfig?.bankAccount && (
-                      <InvoiceAccountDetails bankAccount={invoiceConfig.bankAccount} />
-                    )}
-
-                    {/* Notes */}
-                    {invoiceConfig?.notesTemplate && (
-                      <InvoiceNotes notesTemplate={invoiceConfig.notesTemplate} />
-                    )}
-
-                    {/* Terms and Conditions */}
-                    <InvoiceTermsAndConditions />
-
-                    {/* Signature Section */}
-                    <InvoiceSignatureSection />
-                  </>
-                )}
-              </div>
-
-              {/* Footer Section - Fixed at bottom */}
-              <InvoiceFooter settings={invoiceConfig?.settings} />
-            </div>
-          );
-        })}
-      </div>
+      <DocumentTemplate
+        data={transaction}
+        type={type}
+        config={invoiceConfig}
+        id="invoice-template-standard"
+      />
     );
   };
 
@@ -479,7 +300,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
 
               <div className="flex justify-between">
                 <Text type="secondary" className="text-xs">Date:</Text>
-                <Text className="text-xs">{new Date(transaction.timestamp).toLocaleDateString()}</Text>
+                <Text className="text-xs">{new Date(transaction.timestamp || transaction.createdAt || transaction.created_at).toLocaleDateString()}</Text>
               </div>
 
               <div className="flex justify-between">
@@ -502,18 +323,17 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
 
   return (
     <>
-
       <div className="invoice-modal-overlay fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4 print:p-0 print:bg-white" onClick={onClose}>
-        <div className={`relative flex h-[90vh] w-full ${type === 'detailed' ? 'max-w-4xl' : 'max-w-2xl'} flex-col rounded-xl bg-gray-100 shadow-2xl print:h-auto print:max-w-none print:rounded-none print:bg-white print:shadow-none overflow-hidden print:overflow-visible`} onClick={(e) => e.stopPropagation()}>
+        <div className={`relative flex h-[90vh] w-full ${type !== 'labels' ? 'max-w-4xl' : 'max-w-2xl'} flex-col rounded-xl bg-gray-100 shadow-2xl print:h-auto print:max-w-none print:rounded-none print:bg-white print:shadow-none overflow-hidden print:overflow-visible`} onClick={(e) => e.stopPropagation()}>
           <div className="sticky top-0 z-[60] bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center print:hidden rounded-t-xl">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Icon name={type === 'detailed' ? 'receipt_long' : 'label'} className="text-blue-600" />
-              <span>{type === 'detailed' ? 'Invoice' : 'Item Labels'}</span>
+              <Icon name={iconName} className="text-blue-600" />
+              <span>{documentTitle} {type !== 'labels' ? 'Preview' : ''}</span>
             </h2>
             <div className="flex items-center space-x-3">
               <ActionButton key="print" icon="print" onClick={handlePrint}>Print</ActionButton>
-              <ActionButton key="view" icon="visibility" onClick={handleView} loading={loading}>View PDF</ActionButton>
-              <ActionButton key="download" icon="download" onClick={handleDownload} loading={loading}>Download PDF</ActionButton>
+              {/* <ActionButton key="view" icon="visibility" onClick={handleView} loading={loading}>View PDF</ActionButton>
+              <ActionButton key="download" icon="download" onClick={handleDownload} loading={loading}>Download PDF</ActionButton> */}
               <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors ml-2">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -524,7 +344,7 @@ export function InvoiceModal({ open, onClose, transaction, type = 'detailed' }) 
 
           <div className="flex-1 overflow-y-auto p-4 sm:p-8 print:p-0 print:overflow-visible">
             <div id="invoice-print-container" className="flex flex-col items-center gap-8 print:block print:gap-0 w-full">
-              {type === 'detailed' ? renderDetailedInvoice() : renderItemLabel()}
+              {type !== 'labels' ? renderDetailedInvoice() : renderItemLabel()}
             </div>
           </div>
         </div>

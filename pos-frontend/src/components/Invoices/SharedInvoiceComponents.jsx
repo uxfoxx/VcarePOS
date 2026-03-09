@@ -1,17 +1,20 @@
-export const InvoiceHeader = ({ businessName: _businessName, logoPreview: _logoPreview }) => (
-  <div style={{ marginBottom: '10px' }}>
-    <img
-      src="/invoiceTop.png"
-      alt="Business Logo"
-      style={{
-        width: '100%',
-        height: 'auto',
-        display: 'block'
-      }}
-      crossOrigin="anonymous"
-    />
-  </div>
-);
+export const InvoiceHeader = ({ type = 'invoice' }) => {
+  const headerImage = type === 'quotation' ? '/quotationTop.png' : '/invoiceTop.png';
+  return (
+    <div style={{ marginBottom: '10px' }}>
+      <img
+        src={headerImage}
+        alt="Business Logo"
+        style={{
+          width: '100%',
+          height: 'auto',
+          display: 'block'
+        }}
+        crossOrigin="anonymous"
+      />
+    </div>
+  );
+};
 
 export const InvoiceDetails = ({ invoiceNumber, dateIssued }) => (
   <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', lineHeight: '1.5' }}>

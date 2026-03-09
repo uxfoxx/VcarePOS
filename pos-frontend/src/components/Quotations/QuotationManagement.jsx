@@ -1,14 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Form, Input, Card, DatePicker, InputNumber, Select, Table, message } from 'antd';
-import { Icon } from '../common/Icon';
 import { PageHeader } from '../common/PageHeader';
 import { ActionButton } from '../common/ActionButton';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchProducts } from '../../features/products/productsSlice';
 import dayjs from 'dayjs';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import QuotationPDF from './QuotationPDF';
+import { InvoiceModal } from '../Invoices/InvoiceModal';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -26,7 +23,6 @@ export function QuotationManagement() {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [quotationData, setQuotationData] = useState(null);
   const [showPDF, setShowPDF] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [selectedProductData, setSelectedProductData] = useState(null);
   const [_selectedColorData, setSelectedColorData] = useState(null);
   const [availableColors, setAvailableColors] = useState([]);
@@ -203,128 +199,6 @@ export function QuotationManagement() {
     message.success('Form cleared');
   };
 
-  const generatePDF = async (action = 'view') => {
-    setLoading(true);
-    const element = document.getElementById('quotation-pdf-preview');
-    if (!element) {
-      setLoading(false);
-      message.error('PDF content not found');
-      return;
-    }
-
-    try {
-      const canvas = await html2canvas(element, {
-        scale: 1.5,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false
-      });
-
-      // Cache the image data to avoid regenerating it for each page
-      const imgData = canvas.toDataURL('image/jpeg', 0.85);
-      const imgWidth = 210;
-      const pageHeight = 297;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      let position = 0;
-
-      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-
-      let heightLeft = imgHeight - pageHeight;
-
-      // Only add new page if significant content remains (> 20mm)
-      while (heightLeft > 20) {
-        position = position - pageHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      if (action === 'download') {
-        const filename = `quotation-${quotationData.id}.pdf`;
-        pdf.save(filename);
-        message.success('Quotation downloaded successfully');
-      } else {
-        const pdfBlob = pdf.output('blob');
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        window.open(pdfUrl, '_blank');
-      }
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      message.error('Failed to generate PDF');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDownload = () => generatePDF('download');
-  const handleView = () => generatePDF('view');
-
-  const handlePrint = () => {
-    const printContainer = document.getElementById('quotation-pdf-preview');
-    if (!printContainer) {
-      console.error('Quotation print container not found');
-      return;
-    }
-
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow.document;
-
-    doc.write(`
-      <html>
-        <head>
-          <title>Quotation - ${quotationData?.id || 'Preview'}</title>
-          <style>
-            @media print {
-              body, html {
-                margin: 0 !important;
-                padding: 0 !important;
-              }
-              @page {
-                size: A4;
-                margin: 0;
-              }
-              .quotation-page {
-                 page-break-after: always;
-                 margin: 0 !important;
-                 padding: 0 !important;
-                 width: 210mm;
-                 box-shadow: none !important;
-              }
-              .quotation-page:last-child {
-                 page-break-after: auto;
-              }
-            }
-          </style>
-          <script src="https://cdn.tailwindcss.com"></script>
-        </head>
-        <body style="margin: 0; padding: 0; background-color: white;">
-          ${printContainer.innerHTML}
-        </body>
-      </html>
-    `);
-
-    doc.close();
-
-    setTimeout(() => {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 1000);
-    }, 1000);
-  };
 
   const productColumns = [
     {
@@ -656,37 +530,12 @@ export function QuotationManagement() {
       </div>
 
       {/* PDF Preview Modal */}
-      {showPDF && (
-        <>
-
-          <div className="invoice-modal-overlay fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4 print:p-0 print:bg-white" onClick={() => setShowPDF(false)}>
-            <div className="relative flex h-[90vh] w-full max-w-4xl flex-col rounded-xl bg-gray-100 shadow-2xl print:h-auto print:max-w-none print:rounded-none print:bg-white print:shadow-none overflow-hidden print:overflow-visible" onClick={(e) => e.stopPropagation()}>
-              <div className="sticky top-0 z-[60] bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center print:hidden rounded-t-xl">
-                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <Icon name="request_quote" className="text-blue-600" />
-                  <span>Quotation Preview</span>
-                </h2>
-                <div className="flex items-center space-x-3">
-                  <ActionButton key="print" icon="print" onClick={handlePrint}>Print</ActionButton>
-                  <ActionButton key="view" icon="visibility" onClick={handleView} loading={loading}>View PDF</ActionButton>
-                  <ActionButton key="download" icon="download" onClick={handleDownload} loading={loading}>Download PDF</ActionButton>
-                  <button onClick={() => setShowPDF(false)} className="text-gray-400 hover:text-gray-600 transition-colors ml-2">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-4 sm:p-8 print:p-0 print:overflow-visible">
-                <div id="quotation-pdf-preview" className="flex flex-col items-center gap-8 print:block print:gap-0 w-full">
-                  {quotationData && <QuotationPDF quotation={quotationData} />}
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      <InvoiceModal
+        open={showPDF}
+        onClose={() => setShowPDF(false)}
+        transaction={quotationData}
+        type="quotation"
+      />
     </div>
   );
 }

@@ -14,7 +14,6 @@ import {
   Tag,
   Empty,
   Modal,
-  Space
 } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import { removeFromCart, updateQuantity, clearCart } from '../../features/cart/cartSlice';
@@ -24,9 +23,7 @@ import { useReduxNotifications as useNotifications } from '../../hooks/useReduxN
 import { ActionButton } from '../common/ActionButton';
 import { Icon } from '../common/Icon';
 import { CheckoutModal } from '../POS/CheckoutModal';
-import { QuotationPDF } from '../Quotations/QuotationPDF';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { InvoiceModal } from '../Invoices/InvoiceModal';
 
 const { Title, Text } = Typography;
 
@@ -49,7 +46,6 @@ export function Cart() {
     notes: ''
   });
   const [quotationData, setQuotationData] = useState(null);
-  const [loadingPDF, setLoadingPDF] = useState(false);
 
   // Track previous cart length to detect when cart becomes empty
   const prevCartLengthRef = useRef(cart?.length || 0);
@@ -322,70 +318,6 @@ export function Cart() {
     message.success('Quotation generated successfully');
   };
 
-  const generateQuotationPDF = async (action = 'view') => {
-    if (!quotationData) return;
-
-    setLoadingPDF(true);
-    const element = document.getElementById('quotation-pdf-content');
-    if (!element) {
-      setLoadingPDF(false);
-      message.error('PDF content not found');
-      return;
-    }
-
-    try {
-      const canvas = await html2canvas(element, {
-        scale: 1.5,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false
-      });
-
-      // Cache the image data to avoid regenerating it for each page
-      const imgData = canvas.toDataURL('image/jpeg', 0.85);
-      const imgWidth = 210;
-      const pageHeight = 297;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      let position = 0;
-
-      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-
-      let heightLeft = imgHeight - pageHeight;
-
-      // Only add new page if significant content remains (> 20mm)
-      while (heightLeft > 20) {
-        position = position - pageHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      if (action === 'download') {
-        const filename = `quotation-${quotationData.id}.pdf`;
-        pdf.save(filename);
-        message.success('Quotation downloaded successfully');
-        setQuotationData(null);
-        setQuotationForm({
-          customerName: '',
-          customerPhone: '',
-          customerEmail: '',
-          customerAddress: '',
-          notes: ''
-        });
-      } else {
-        const pdfBlob = pdf.output('blob');
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        window.open(pdfUrl, '_blank');
-      }
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      message.error('Failed to generate PDF');
-    } finally {
-      setLoadingPDF(false);
-    }
-  };
 
   const handleProceedToCheckout = () => {
     if (cart.length === 0) {
@@ -785,15 +717,9 @@ export function Cart() {
       </Modal>
 
       {/* Quotation PDF Preview Modal */}
-      <Modal
-        title={
-          <Space>
-            <Icon name="request_quote" className="text-blue-600" />
-            <span>Quotation Preview</span>
-          </Space>
-        }
+      <InvoiceModal
         open={!!quotationData}
-        onCancel={() => {
+        onClose={() => {
           setQuotationData(null);
           setQuotationForm({
             customerName: '',
@@ -803,47 +729,9 @@ export function Cart() {
             notes: ''
           });
         }}
-        width={900}
-        footer={[
-          <ActionButton
-            key="close"
-            onClick={() => {
-              setQuotationData(null);
-              setQuotationForm({
-                customerName: '',
-                customerPhone: '',
-                customerEmail: '',
-                customerAddress: '',
-                notes: ''
-              });
-            }}
-          >
-            Close
-          </ActionButton>,
-          <ActionButton
-            key="view"
-            icon="visibility"
-            onClick={() => generateQuotationPDF('view')}
-            loading={loadingPDF}
-          >
-            View PDF
-          </ActionButton>,
-          <ActionButton.Primary
-            key="download"
-            icon="download"
-            onClick={() => generateQuotationPDF('download')}
-            loading={loadingPDF}
-          >
-            Download PDF
-          </ActionButton.Primary>
-        ]}
-      >
-        <div className="max-h-[70vh] overflow-y-auto">
-          <div id="quotation-pdf-content">
-            {quotationData && <QuotationPDF quotation={quotationData} />}
-          </div>
-        </div>
-      </Modal>
+        transaction={quotationData}
+        type="quotation"
+      />
     </>
   );
 }

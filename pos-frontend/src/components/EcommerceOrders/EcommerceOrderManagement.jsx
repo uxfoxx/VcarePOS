@@ -19,6 +19,7 @@ import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { EnhancedTable } from '../common/EnhancedTable';
 import { DetailModal } from '../common/DetailModal';
+import { InvoiceModal } from '../Invoices/InvoiceModal';
 import { LoadingSkeleton } from '../common/LoadingSkeleton';
 import { AuthenticatedFile } from '../common/AuthenticatedFile';
 import {
@@ -41,6 +42,7 @@ export function EcommerceOrderManagement() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [_selectedRowKeys, _setSelectedRowKeys] = useState([]);
 
   useEffect(() => {
@@ -356,8 +358,24 @@ export function EcommerceOrderManagement() {
             >
               View Receipt
             </ActionButton>
-          )
+          ),
+          <ActionButton
+            key="invoice"
+            icon="receipt_long"
+            onClick={() => {
+              setShowInvoiceModal(true);
+            }}
+          >
+            Invoice
+          </ActionButton>
         ].filter(Boolean)}
+      />
+
+      <InvoiceModal
+        open={showInvoiceModal}
+        onClose={() => setShowInvoiceModal(false)}
+        transaction={selectedOrder}
+        type="ecommerceOrder"
       />
 
       {/* Bank Receipt Modal */}

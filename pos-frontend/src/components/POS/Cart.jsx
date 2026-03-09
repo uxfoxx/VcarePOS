@@ -285,6 +285,7 @@ export function Cart() {
       total_price: item.product.price * item.quantity,
       totalPrice: item.product.price * item.quantity,
       description: item.product.description || '',
+      invoiceDescription: item.product.invoiceDescription || '',
       selected_variant: item.selectedVariant || '',
       selectedVariant: item.selectedVariant || '',
       selected_size: item.selectedSize || '',

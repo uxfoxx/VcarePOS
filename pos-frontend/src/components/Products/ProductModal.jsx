@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import {
   Modal,
@@ -20,6 +20,8 @@ import {
   Switch,
   Tag,
 } from 'antd';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { ColorManagementPanel } from './ColorManagementPanel';
@@ -63,6 +65,16 @@ export function ProductModal({
   const { rawMaterialsList, } = useSelector(state => state.rawMaterials);
   const { categoriesList } = useSelector(state => state.categories);
 
+  const quillModules = React.useMemo(() => ({
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      [{ 'color': [] }, { 'background': [] }],
+      ['clean']
+    ],
+  }), []);
+
   // Generate SKU based on category
   const generateSKU = () => {
     const currentValues = productForm.getFieldsValue();
@@ -103,6 +115,7 @@ export function ProductModal({
         weight: editingProduct.weight || 0,
         barcode: editingProduct.barcode || '',
         description: editingProduct.description || '',
+        invoiceDescription: editingProduct.invoiceDescription || '',
         color: editingProduct.color || '',
       };
 
@@ -181,6 +194,7 @@ export function ProductModal({
         price: 0,
         barcode: '',
         description: '',
+        invoiceDescription: '',
         color: '',
       };
 
@@ -607,6 +621,7 @@ export function ProductModal({
               'stock': 'Stock',
               'barcode': 'SKU/Barcode',
               'description': 'Description',
+              'invoiceDescription': 'Invoice/Quotation Description',
               'weight': 'Weight',
               'color': 'Color'
             };
@@ -685,6 +700,7 @@ export function ProductModal({
         name: finalProductData.name,
         category: finalProductData.category,
         description: finalProductData.description || '',
+        invoiceDescription: finalProductData.invoiceDescription || '',
         image: finalImage,
         hasAddons: hasAddons,
 
@@ -983,9 +999,26 @@ export function ProductModal({
       </Row>
 
       <Form.Item name="description" label="Description">
-        <TextArea
-          rows={3}
+        <ReactQuill
+          key={`desc-${editingProduct?.id || 'new'}`}
+          theme="snow"
           placeholder="Enter product description"
+          className="bg-white rounded custom-quill-editor"
+          modules={quillModules}
+        />
+      </Form.Item>
+
+      <Form.Item
+        name="invoiceDescription"
+        label="Invoice & Quotation Description"
+        tooltip="This description will be shown in invoices and quotations."
+      >
+        <ReactQuill
+          key={`invdesc-${editingProduct?.id || 'new'}`}
+          theme="snow"
+          placeholder="Enter description for invoices and quotations"
+          className="bg-white rounded custom-quill-editor"
+          modules={quillModules}
         />
       </Form.Item>
 

@@ -373,6 +373,7 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
         id: product.id,
         name: product.name,
         description: product.description,
+        invoiceDescription: product.invoice_description,
         category: product.category,
         price: parseFloat(product.price),
         weight: parseFloat(product.weight || 0),
@@ -495,6 +496,7 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
       id: product.id,
       name: product.name,
       description: product.description,
+      invoiceDescription: product.invoice_description,
       category: product.category,
       price: parseFloat(product.price),
       weight: parseFloat(product.weight || 0),
@@ -561,7 +563,8 @@ router.post(
         hasAddons,
         colors,
         addons,
-        media
+        media,
+        invoiceDescription
       } = req.body;
 
       // Generate product ID if not provided
@@ -571,12 +574,12 @@ router.post(
       const mediaData = Array.isArray(media) ? media : [];
       const productResult = await client.query(`
         INSERT INTO products (
-          id, name, description, category, price, weight, stock, barcode, image, 
+          id, name, description, invoice_description, category, price, weight, stock, barcode, image, 
           color, material, has_addons, media
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         RETURNING *
       `, [
-        productId, name, description, category, price, weight || 0, 0, barcode, image,
+        productId, name, description, invoiceDescription, category, price, weight || 0, 0, barcode, image,
         color, material, hasAddons, JSON.stringify(mediaData)
       ]);
 
@@ -672,6 +675,7 @@ router.post(
         id: product.id,
         name: product.name,
         description: product.description,
+        invoiceDescription: product.invoice_description,
         category: product.category,
         price: parseFloat(product.price),
         weight: parseFloat(product.weight || 0),
@@ -739,6 +743,7 @@ router.put(
       const {
         name,
         description,
+        invoiceDescription,
         category,
         price,
         weight,
@@ -759,20 +764,21 @@ router.put(
         UPDATE products SET
           name = $1,
           description = $2,
-          category = $3,
-          price = $4,
-          weight = $5,
-          barcode = $6,
-          image = $7,
-          color = $8,
-          material = $9,
-          has_addons = $10,
-          media = $11,
+          invoice_description = $3,
+          category = $4,
+          price = $5,
+          weight = $6,
+          barcode = $7,
+          image = $8,
+          color = $9,
+          material = $10,
+          has_addons = $11,
+          media = $12,
           updated_at = CURRENT_TIMESTAMP
-        WHERE id = $12
+        WHERE id = $13
         RETURNING *
       `, [
-        name, description, category, price, weight || 0, barcode, image,
+        name, description, invoiceDescription, category, price, weight || 0, barcode, image,
         color, material, hasAddons, JSON.stringify(mediaData),
         id
       ]);
@@ -879,6 +885,7 @@ router.put(
         id: product.id,
         name: product.name,
         description: product.description,
+        invoiceDescription: product.invoice_description,
         category: product.category,
         price: parseFloat(product.price),
         stock: totalStock,

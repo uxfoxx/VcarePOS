@@ -588,8 +588,8 @@ router.post(
           INSERT INTO transaction_items (
             transaction_id, product_id, product_name, product_price,
             product_barcode, product_category, quantity, selected_size,
-            selected_variant, addons, selected_color_id
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            selected_variant, addons, selected_color_id, invoice_description
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         `, [
           transactionId,
           item.product.id,
@@ -601,7 +601,8 @@ router.post(
           item.selectedSize,
           item.selectedVariant,
           JSON.stringify(item.product.addons || null),
-          item.selectedColorId
+          item.selectedColorId,
+          item.invoiceDescription
         ]);
 
         // Update product stock

@@ -501,13 +501,12 @@ const ProductDetailPage = () => {
                 <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Description</h3>
                 <div className="pt-1">
                   <div
-                    className={`text-gray-600 text-[15px] leading-relaxed opacity-90 transition-all duration-300 relative ${!isDescriptionExpanded ? 'max-h-24 overflow-hidden before:absolute before:bottom-0 before:left-0 before:w-full before:h-12 before:bg-gradient-to-t before:from-white before:to-transparent' : ''
+                    className={`text-gray-600 text-[15px] leading-relaxed opacity-90 transition-all duration-300 relative html-description ${!isDescriptionExpanded ? 'max-h-24 overflow-hidden before:absolute before:bottom-0 before:left-0 before:w-full before:h-12 before:bg-gradient-to-t before:from-white before:to-transparent' : ''
                       }`}
-                  >
-                    {currentProduct.description}
-                  </div>
+                    dangerouslySetInnerHTML={{ __html: currentProduct.description }}
+                  />
 
-                  {currentProduct.description.length > 150 && (
+                  {currentProduct.description.replace(/<[^>]*>/g, '').length > 150 && (
                     <button
                       onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
                       className="mt-2 text-sm font-semibold text-[#0E72BD] hover:text-[#0b5c99] focus:outline-none flex items-center gap-1 transition-colors"

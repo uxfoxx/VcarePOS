@@ -49,7 +49,7 @@ const paginateItems = (items) => {
  */
 export const DocumentTemplate = ({ data, type = 'invoice', config, id }) => {
     if (!data || !config) return null;
-
+    console.log("dats,sta", data)
     const isQuotation = type === 'quotation';
     const isEcommerce = type === 'ecommerceOrder';
 
@@ -241,10 +241,11 @@ export const DocumentTemplate = ({ data, type = 'invoice', config, id }) => {
                                                     <td style={{ padding: '8px 4px', borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}>
                                                         <div>
                                                             <div style={{ fontWeight: 'bold', fontSize: '11px' }}>{itemName}</div>
-                                                            {item.description && (
-                                                                <div style={{ color: '#4b5563', whiteSpace: 'pre-wrap', fontSize: '10px', marginTop: '2px' }}>
-                                                                    {item.description}
-                                                                </div>
+                                                            {(item.invoiceDescription || item.invoice_description || item.product?.invoiceDescription || item.description || item.product?.description) && (
+                                                                <div
+                                                                    style={{ color: '#4b5563', fontSize: '10px', marginTop: '2px', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}
+                                                                    dangerouslySetInnerHTML={{ __html: item.invoiceDescription || item.invoice_description || item.product?.invoiceDescription || item.description || item.product?.description }}
+                                                                />
                                                             )}
                                                             {(item.selected_variant || item.selectedVariant || item.selected_size || item.selectedSize) && (
                                                                 <div style={{ color: '#6b7280', fontSize: '10px', marginTop: '2px' }}>

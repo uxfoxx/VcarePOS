@@ -33,12 +33,14 @@ export function ColorAndSizeSelectionModal({
 }) {
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   // Reset selections when modal opens or product changes
   useEffect(() => {
     if (open && product) {
       setSelectedColor(null);
       setSelectedSize(null);
+      setIsDescriptionExpanded(false);
     }
   }, [open, product]);
 
@@ -192,7 +194,28 @@ export function ColorAndSizeSelectionModal({
             )}
             <div className="flex-1">
               <Title level={4} className="mb-1">{product.name}</Title>
-              <Text type="secondary">{product.description}</Text>
+              <div>
+                <div
+                  className={`text-gray-500 text-sm html-description transition-all duration-300 relative ${!isDescriptionExpanded ? 'max-h-20 overflow-hidden before:absolute before:bottom-0 before:left-0 before:w-full before:h-8 before:bg-gradient-to-t before:from-white before:to-transparent' : ''}`}
+                  dangerouslySetInnerHTML={{ __html: product.description }}
+                />
+                {product.description && product.description.replace(/<[^>]*>/g, '').length > 100 && (
+                  <button
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                    className="mt-1 text-xs font-semibold text-[#0E72BD] hover:text-[#0b5c99] focus:outline-none flex items-center gap-1 transition-colors"
+                  >
+                    {isDescriptionExpanded ? 'Read Less' : 'Read More'}
+                    <svg
+                      className={`w-3 h-3 transition-transform duration-300 ${isDescriptionExpanded ? 'rotate-180' : ''}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                )}
+              </div>
               <div className="mt-2">
                 <Tag color="blue">{product.category}</Tag>
                 <Text strong className="text-xl text-blue-600 ml-4">

@@ -155,7 +155,10 @@ export function ProductAddonsModal({ open, onClose, product }) {
               <div>
                 <Text strong className="text-lg">{product.name}</Text>
                 <div>
-                  <Text type="secondary">{product.description}</Text>
+                  <div
+                    className="text-gray-500 text-sm"
+                    dangerouslySetInnerHTML={{ __html: product.description }}
+                  />
                 </div>
                 <div className="mt-1">
                   <Tag color="blue">{product.category}</Tag>

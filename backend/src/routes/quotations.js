@@ -80,8 +80,8 @@ router.post(
             `INSERT INTO quotation_items (
               quotation_id, product_id, product_name, product_barcode,
               selected_variant, selected_size, quantity, unit_price,
-              total_price, description
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+              total_price, description, invoice_description
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING *`,
             [
               quotationId,
@@ -93,7 +93,8 @@ router.post(
               item.quantity,
               item.unitPrice || item.price || item.product?.price,
               (item.quantity * (item.unitPrice || item.price || item.product?.price)),
-              item.description
+              item.description,
+              item.invoiceDescription
             ]
           )
         );
@@ -475,7 +476,8 @@ router.post(
         selectedSize: row.selected_size,
         quantity: row.quantity,
         price: row.unit_price,
-        description: row.description
+        description: row.description,
+        invoiceDescription: row.invoice_description
       }));
 
       res.json({

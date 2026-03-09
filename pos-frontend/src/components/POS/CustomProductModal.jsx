@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   Form,
@@ -19,10 +19,11 @@ import { addToCart } from '../../features/cart/cartSlice';
 import { Icon } from '../common/Icon';
 import { ActionButton } from '../common/ActionButton';
 import { EnhancedStepper } from '../common/EnhancedStepper';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
-const { TextArea } = Input;
 const { Search } = Input;
 
 export function CustomProductModal({ open, onClose }) {
@@ -35,9 +36,20 @@ export function CustomProductModal({ open, onClose }) {
   const [totalPrice, setTotalPrice] = useState(0);
   const [customName, setCustomName] = useState('Custom Product');
   const [customDescription, setCustomDescription] = useState('');
+  const [customInvoiceDescription, setCustomInvoiceDescription] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
   const [editablePrice, setEditablePrice] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const quillModules = React.useMemo(() => ({
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      [{ 'color': [] }, { 'background': [] }],
+      ['clean']
+    ],
+  }), []);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -49,6 +61,7 @@ export function CustomProductModal({ open, onClose }) {
       setEditablePrice(0);
       setCustomName('Custom Product');
       setCustomDescription('');
+      setCustomInvoiceDescription('')
       setCurrentStep(0);
       setSearchTerm('');
     }
@@ -123,7 +136,7 @@ export function CustomProductModal({ open, onClose }) {
   const handlePrev = () => {
     setCurrentStep(currentStep - 1);
   };
-
+  console.log("customInvoiceDescription", customInvoiceDescription)
   const handleSubmit = () => {
     if (selectedMaterials.length === 0) {
       message.error('Please add at least one material');
@@ -139,6 +152,7 @@ export function CustomProductModal({ open, onClose }) {
         id: `CUSTOM-${Date.now()}`,
         name: customName,
         description: customDescription || 'Custom product',
+        invoiceDescription: customInvoiceDescription || customDescription || 'Custom product',
         price: editablePrice,
         category: 'Custom',
         stock: 999,
@@ -199,13 +213,29 @@ export function CustomProductModal({ open, onClose }) {
           </div>
           <div>
             <Text strong>Description:</Text>
-            <TextArea
-              placeholder="Enter description (optional)"
-              value={customDescription}
-              onChange={(e) => setCustomDescription(e.target.value)}
-              rows={2}
-              className="mt-1"
-            />
+            <div className="mt-1 custom-quill-editor">
+              <ReactQuill
+                theme="snow"
+                value={customDescription}
+                onChange={setCustomDescription}
+                placeholder="Enter description (optional)"
+                style={{ height: '120px', marginBottom: '40px' }}
+                modules={quillModules}
+              />
+            </div>
+          </div>
+          <div>
+            <Text strong>Invoice & Quotation Description:</Text>
+            <div className="mt-1 custom-quill-editor">
+              <ReactQuill
+                theme="snow"
+                value={customInvoiceDescription}
+                onChange={setCustomInvoiceDescription}
+                placeholder="Enter description for invoices and quotations (optional)"
+                style={{ height: '120px', marginBottom: '40px' }}
+                modules={quillModules}
+              />
+            </div>
           </div>
         </div>
       )

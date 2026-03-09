@@ -12,7 +12,7 @@ const PrivacyPolicyPage = () => {
                         <ShieldCheck className="w-8 h-8 text-white" />
                     </div>
                     <h1 className="text-4xl font-black mb-3 tracking-tight">Privacy Policy</h1>
-                    <p className="text-slate-300 text-base font-medium">V Care Services (Private) Limited · www.vcaresl.com</p>
+                    {/* <p className="text-slate-300 text-base font-medium">V Care Services (Private) Limited · www.vcaresl.com</p> */}
                 </div>
             </div>
 

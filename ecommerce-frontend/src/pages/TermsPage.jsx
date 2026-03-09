@@ -12,7 +12,7 @@ const TermsPage = () => {
                         <FileText className="w-8 h-8 text-white" />
                     </div>
                     <h1 className="text-4xl font-black mb-3 tracking-tight">Terms & Conditions</h1>
-                    <p className="text-gray-400 text-base font-medium">V Care Services (Private) Limited · www.vcaresl.com</p>
+                    {/* <p className="text-gray-400 text-base font-medium">V Care Services (Private) Limited · www.vcaresl.com</p> */}
                 </div>
             </div>
 

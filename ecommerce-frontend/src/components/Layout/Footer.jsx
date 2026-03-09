@@ -126,12 +126,22 @@ const Footer = () => {
 
             {/* Contact details — loaded from invoice settings */}
             <div className="space-y-1.5 text-sm text-gray-500">
-              {invoiceInfo?.business_address && (
-                <p className="flex items-start gap-2">
-                  <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-600" />
-                  <span>{invoiceInfo.business_address}</span>
-                </p>
-              )}
+              {/* {invoiceInfo?.business_address && ( */}
+              <p className="flex items-start gap-2">
+                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-600" />
+                <span className='flex flex-col'>
+                  <span>
+                    Factory and office
+                  </span>
+                  <span>
+                    Vogue Holdings (Private) Limited
+                  </span>
+                  <span>
+                    No-19, Batewala, Ranala
+                  </span>
+                </span>
+              </p>
+              {/* )} */}
               {invoiceInfo?.phone_number && (
                 <p className="flex items-center gap-2">
                   <Phone className="w-4 h-4 flex-shrink-0 text-gray-600" />

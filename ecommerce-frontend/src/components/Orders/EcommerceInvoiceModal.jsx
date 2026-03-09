@@ -265,9 +265,10 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
   // const businessAddress = invoiceConfig?.settings?.business_address || '';
   // const phoneNumber = invoiceConfig?.settings?.phone_number || '';
 
-  const subtotal = order.totalAmount || order.items.reduce((sum, item) => sum + (item.totalPrice || item.unitPrice * item.quantity), 0);
+  const itemsTotal = order.items.reduce((sum, item) => sum + (item.totalPrice || Number(item.unitPrice) * item.quantity), 0);
+  const deliveryFee = Number(order.deliveryCharge) || 0;
   const discount = 0;
-  const grandTotal = subtotal - discount;
+  const grandTotal = itemsTotal + deliveryFee - discount;
 
   // Split items into pages of 10
   const itemPages = paginateItems(order.items);
@@ -467,11 +468,19 @@ const EcommerceInvoiceModal = ({ order, isOpen, onClose }) => {
                             <table style={{ width: '50%', marginLeft: 'auto', fontSize: '11px', borderCollapse: 'collapse', lineHeight: '1.5' }}>
                               <tbody>
                                 <tr>
-                                  <td style={{ textAlign: 'left', paddingBottom: '4px', borderBottom: '1px solid #e5e7eb' }}>TOTAL</td>
+                                  <td style={{ textAlign: 'left', paddingBottom: '4px', borderBottom: '1px solid #e5e7eb' }}>SUBTOTAL</td>
                                   <td style={{ textAlign: 'right', paddingBottom: '4px', borderBottom: '1px solid #e5e7eb', fontWeight: '500' }}>
-                                    {subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    {itemsTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                   </td>
                                 </tr>
+                                {deliveryFee > 0 && (
+                                  <tr>
+                                    <td style={{ textAlign: 'left', padding: '4px 0', borderBottom: '1px solid #e5e7eb' }}>DELIVERY FEE</td>
+                                    <td style={{ textAlign: 'right', padding: '4px 0', borderBottom: '1px solid #e5e7eb', fontWeight: '500' }}>
+                                      {deliveryFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </td>
+                                  </tr>
+                                )}
                                 {discount > 0 && (
                                   <tr>
                                     <td style={{ textAlign: 'left', padding: '4px 0', borderBottom: '1px solid #e5e7eb' }}>DISCOUNT</td>

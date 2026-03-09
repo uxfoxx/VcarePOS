@@ -20,12 +20,12 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 const BASE_URL = API_BASE_URL;
 
 const HeroSkeleton = () => (
-  <div className="relative h-[700px] w-full bg-gray-200 animate-pulse flex items-center justify-center">
-    <div className="text-center w-full max-w-4xl px-4">
-      <div className="h-16 bg-gray-300 rounded-md mb-6 w-3/4 mx-auto"></div>
-      <div className="h-6 bg-gray-300 rounded-md w-1/2 mx-auto"></div>
-      <div className="h-6 bg-gray-300 rounded-md mb-8 w-1/2 mx-auto"></div>
-      <div className="h-12 bg-primary-300 rounded-lg w-40 mx-auto"></div>
+  <div className="relative aspect-video w-full bg-gray-200 animate-pulse flex items-end justify-start px-6 sm:px-12 lg:px-20 pb-16 sm:pb-24 lg:pb-32">
+    <div className="text-left w-full max-w-4xl px-4">
+      <div className="h-10 sm:h-16 bg-gray-300 rounded-md mb-6 w-3/4"></div>
+      <div className="h-4 sm:h-6 bg-gray-300 rounded-md w-1/2"></div>
+      <div className="h-4 sm:h-6 bg-gray-300 rounded-md mb-8 w-1/2"></div>
+      <div className="h-10 sm:h-12 bg-primary-300 rounded-lg w-32 sm:w-40"></div>
     </div>
   </div>
 );
@@ -750,7 +750,7 @@ const HomePage = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section ref={heroRef} className="relative h-[700px] overflow-hidden bg-black">
+      <section ref={heroRef} className="relative  aspect-video overflow-hidden bg-black">
         {/* Media Layer */}
         <div className="absolute inset-0 transition-opacity duration-1000">
           {activeSlide.media_type === 'youtube' ? (
@@ -789,21 +789,25 @@ const HomePage = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
 
         {/* Content */}
-        <div className="hero-content relative z-10 h-full flex items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div className="hero-content relative z-10 h-full flex items-end justify-start px-2 sm:px-6 md:px-12 lg:px-20 pb-6 sm:pb-12 md:pb-24 lg:pb-32">
 
 
-          <div className="hero-content-wrapper text-center text-white max-w-4xl relative z-10">
-            <h1 className="hero-title text-5xl sm:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
-              {activeSlide.title}
-            </h1>
-            <p className="hero-desc text-xl sm:text-2xl mb-10 text-gray-200 font-light max-w-2xl mx-auto">
-              {activeSlide.description}
-            </p>
+          <div className="hero-content-wrapper text-left text-white max-w-4xl relative z-10 px-2 lg:px-0">
+            {activeSlide.title && (
+              <h1 className="hero-title text-3xl sm:text-6xl lg:text-7xl font-extrabold mb-4 sm:mb-6 leading-tight">
+                {activeSlide.title}
+              </h1>
+            )}
+            {activeSlide.description && (
+              <p className="hero-desc text-base sm:text-2xl mb-6 sm:mb-10 text-gray-200 font-light max-w-2xl line-clamp-2 sm:line-clamp-none">
+                {activeSlide.description}
+              </p>
+            )}
             {(activeSlide.cta_type === 'button' || activeSlide.cta_type === 'link') && activeSlide.button_text && (
               <div className="hero-btn">
                 <Link
                   to={activeSlide.button_link || '/products'}
-                  className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-10 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-2xl"
+                  className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 sm:py-4 sm:px-10 rounded-lg text-xs sm:text-lg transition-all duration-200 transform hover:scale-105 shadow-2xl"
                 >
                   {activeSlide.button_text || 'Learn More'}
                 </Link>
@@ -820,22 +824,22 @@ const HomePage = () => {
                 setDirection('prev');
                 setCurrentSlide(prev => (prev - 1 + heroSlides.length) % heroSlides.length);
               }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors"
+              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-1.5 sm:p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors"
             >
-              <ChevronLeft size={32} />
+              <ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8" />
             </button>
             <button
               onClick={() => {
                 setDirection('next');
                 setCurrentSlide(prev => (prev + 1) % heroSlides.length);
               }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors"
+              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-1.5 sm:p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors"
             >
-              <ChevronRight size={32} />
+              <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8" />
             </button>
 
             {/* Dots */}
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3">
+            <div className="absolute bottom-2 sm:bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3">
               {heroSlides.map((_, idx) => (
                 <button
                   key={idx}
@@ -843,7 +847,7 @@ const HomePage = () => {
                     setDirection(idx > currentSlide ? 'next' : 'prev');
                     setCurrentSlide(idx);
                   }}
-                  className={`w-3 h-3 rounded-full transition-all duration-300 ${currentSlide === idx ? 'bg-primary-500 w-8' : 'bg-white/50'
+                  className={`w-1.5 h-1.5 sm:w-3 sm:h-3 rounded-full transition-all duration-300 ${currentSlide === idx ? 'bg-primary-500 w-8' : 'bg-white/50'
                     }`}
                 />
               ))}

@@ -258,21 +258,30 @@ export function EcommerceHeroSettings() {
                                                     placeholder="URL (Direct or YouTube) or Upload File"
                                                     prefix={<LinkOutlined />}
                                                     suffix={
-                                                        <Upload
-                                                            beforeUpload={(file) => handleFileUpload(file, name)}
-                                                            showUploadList={false}
-                                                            accept={form.getFieldValue(['hero_slides', name, 'media_type']) === 'video' ? 'video/*' : 'image/*'}
-                                                            disabled={form.getFieldValue(['hero_slides', name, 'media_type']) === 'youtube'}
+                                                        <Form.Item
+                                                            noStyle
+                                                            shouldUpdate={(prev, curr) =>
+                                                                prev.hero_slides?.[name]?.media_type !== curr.hero_slides?.[name]?.media_type
+                                                            }
                                                         >
-                                                            <Button
-                                                                type="link"
-                                                                size="small"
-                                                                icon={<UploadOutlined />}
-                                                                disabled={form.getFieldValue(['hero_slides', name, 'media_type']) === 'youtube'}
-                                                            >
-                                                                Upload
-                                                            </Button>
-                                                        </Upload>
+                                                            {({ getFieldValue }) => (
+                                                                <Upload
+                                                                    beforeUpload={(file) => handleFileUpload(file, name)}
+                                                                    showUploadList={false}
+                                                                    accept={getFieldValue(['hero_slides', name, 'media_type']) === 'video' ? 'video/*' : 'image/*'}
+                                                                    disabled={getFieldValue(['hero_slides', name, 'media_type']) === 'youtube'}
+                                                                >
+                                                                    <Button
+                                                                        type="link"
+                                                                        size="small"
+                                                                        icon={<UploadOutlined />}
+                                                                        disabled={getFieldValue(['hero_slides', name, 'media_type']) === 'youtube'}
+                                                                    >
+                                                                        Upload
+                                                                    </Button>
+                                                                </Upload>
+                                                            )}
+                                                        </Form.Item>
                                                     }
                                                 />
                                             </Form.Item>
@@ -287,7 +296,6 @@ export function EcommerceHeroSettings() {
                                                 {...restField}
                                                 name={[name, 'title']}
                                                 label="Main Heading"
-                                                rules={[{ required: true, message: 'Heading is required' }]}
                                             >
                                                 <Input placeholder="e.g. Premium Ergonomic Chairs" />
                                             </Form.Item>

@@ -879,7 +879,8 @@ const CheckoutPage = () => {
                     <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                       {items.map(item => {
                         const selectedColor = item.product.colors?.find(c => c.id === item.selectedColorId);
-                        const itemImage = selectedColor?.productImageInColor || (item.product.media && item.product.media[0]) || item.product.image;
+                        const selectedSize = selectedColor?.sizes?.find(s => s.name === item.selectedSize);
+                        const itemImage = selectedSize?.sizeImage || selectedColor?.productImageInColor || (item.product.media && item.product.media[0]) || item.product.image;
 
                         return (
                           <div key={item.id} className="flex gap-5 p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
@@ -1007,7 +1008,8 @@ const CheckoutPage = () => {
               <div className="space-y-4 mb-6 relative max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                 {items.map(item => {
                   const selectedColor = item.product.colors?.find(c => c.id === item.selectedColorId);
-                  const itemImage = selectedColor?.productImageInColor || (item.product.media && item.product.media[0]) || item.product.image;
+                  const selectedSize = selectedColor?.sizes?.find(s => s.name === item.selectedSize);
+                  const itemImage = selectedSize?.sizeImage || selectedColor?.productImageInColor || (item.product.media && item.product.media[0]) || item.product.image;
 
                   return (
                     <div key={item.id} className="flex gap-3 group">

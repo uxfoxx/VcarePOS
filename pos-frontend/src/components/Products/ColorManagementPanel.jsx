@@ -75,6 +75,13 @@ export function ColorManagementPanel({
   const [_uploadingEditColorSelectorImage, setUploadingEditColorSelectorImage] = useState(false);
   const [materialSearchTerm, _setMaterialSearchTerm] = useState('');
 
+  // Size image state
+  const [newSizeImagePreview, setNewSizeImagePreview] = useState(null);
+  const [newSizeImagePath, setNewSizeImagePath] = useState(null);
+  const [editSizeImagePreview, setEditSizeImagePreview] = useState(null);
+  const [editSizeImagePath, setEditSizeImagePath] = useState(null);
+  const [_uploadingSizeImage, setUploadingSizeImage] = useState(false);
+
   // Image Cropping State
   const [showCropModal, setShowCropModal] = useState(false);
   const [imageToCrop, setImageToCrop] = useState(null);
@@ -157,6 +164,12 @@ export function ColorManagementPanel({
           break;
         case 'editSelector':
           uploadFunc = handleEditColorSelectorImageUpload;
+          break;
+        case 'newSizeImage':
+          uploadFunc = handleNewSizeImageUpload;
+          break;
+        case 'editSizeImage':
+          uploadFunc = handleEditSizeImageUpload;
           break;
         default:
           return;
@@ -268,6 +281,48 @@ export function ColorManagementPanel({
     return false;
   };
 
+  const handleNewSizeImageUpload = async (file) => {
+    try {
+      setUploadingSizeImage(true);
+      const response = await settingsApi.uploadColorImage(file);
+      if (response.success) {
+        const fullPath = response.filePath.startsWith('http')
+          ? response.filePath
+          : `${import.meta.env.VITE_API_URL}${response.filePath}`;
+        setNewSizeImagePath(response.filePath);
+        setNewSizeImagePreview(fullPath);
+        message.success('Size image uploaded successfully');
+      }
+    } catch (error) {
+      console.error('Failed to upload size image:', error);
+      message.error('Failed to upload size image. Please try again.');
+    } finally {
+      setUploadingSizeImage(false);
+    }
+    return false;
+  };
+
+  const handleEditSizeImageUpload = async (file) => {
+    try {
+      setUploadingSizeImage(true);
+      const response = await settingsApi.uploadColorImage(file);
+      if (response.success) {
+        const fullPath = response.filePath.startsWith('http')
+          ? response.filePath
+          : `${import.meta.env.VITE_API_URL}${response.filePath}`;
+        setEditSizeImagePath(response.filePath);
+        setEditSizeImagePreview(fullPath);
+        message.success('Size image uploaded successfully');
+      }
+    } catch (error) {
+      console.error('Failed to upload size image:', error);
+      message.error('Failed to upload size image. Please try again.');
+    } finally {
+      setUploadingSizeImage(false);
+    }
+    return false;
+  };
+
   const handleStartEditColor = (color) => {
     setEditingColorId(color.id);
     colorEditForm.setFieldsValue({
@@ -331,11 +386,14 @@ export function ColorManagementPanel({
       stock: values.stock || 0,
       dimensions: values.dimensions || {},
       weight: values.weight || 0,
+      sizeImage: newSizeImagePath || '',
       rawMaterials: [] // Initialize empty raw materials array
     };
 
     onAddColorSize(activeColorId, sizeData);
     sizeForm.resetFields();
+    setNewSizeImagePreview(null);
+    setNewSizeImagePath(null);
   };
 
   const handleUpdateSize = async (colorId, sizeId) => {
@@ -346,6 +404,7 @@ export function ColorManagementPanel({
         name: values.name,
         stock: Number(values.stock) || 0,
         weight: Number(values.weight) || 0,
+        sizeImage: editSizeImagePath || undefined,
         dimensions: {
           length: Number(values.length) || 0,
           width: Number(values.width) || 0,
@@ -359,6 +418,8 @@ export function ColorManagementPanel({
       }
 
       setEditingSizeId(null);
+      setEditSizeImagePreview(null);
+      setEditSizeImagePath(null);
       message.success('Size updated successfully');
     } catch (error) {
       console.error('Size update validation failed:', error);
@@ -377,11 +438,16 @@ export function ColorManagementPanel({
       height: size.dimensions?.height || 0,
       unit: size.dimensions?.unit || 'cm'
     });
+    // Load existing size image
+    setEditSizeImagePath(size.sizeImage || null);
+    setEditSizeImagePreview(size.sizeImage ? getImageUrl(size.sizeImage) : null);
   };
 
   const handleCancelEdit = () => {
     setEditingSizeId(null);
     sizeEditForm.resetFields();
+    setEditSizeImagePreview(null);
+    setEditSizeImagePath(null);
   };
 
   const handleAddMaterialToSize = (colorId, sizeId, values) => {
@@ -916,6 +982,47 @@ export function ColorManagementPanel({
                 </Form.Item>
               </Col>
             </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item label="Size Image (Optional)" help="Image shown when this size is selected on the product page">
+                  <Upload
+                    accept="image/*"
+                    beforeUpload={(file) => handleBeforeCrop(file, 'newSizeImage', 4 / 3)}
+                    showUploadList={false}
+                    maxCount={1}
+                  >
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors cursor-pointer">
+                      {newSizeImagePreview ? (
+                        <div className="flex items-center gap-4">
+                          <img
+                            src={newSizeImagePreview}
+                            alt="Size"
+                            className="h-16 w-16 object-cover rounded border"
+                          />
+                          <div>
+                            <Button icon={<Icon name="upload" />} size="small">Change Image</Button>
+                            <div
+                              className="text-xs text-red-500 mt-1 cursor-pointer"
+                              onClick={(e) => { e.stopPropagation(); setNewSizeImagePreview(null); setNewSizeImagePath(null); }}
+                            >
+                              Remove
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <Icon name="photo_camera" className="text-2xl text-gray-400" />
+                          <div>
+                            <Text>Upload size image</Text><br />
+                            <Text type="secondary" className="text-xs">Shown when this size is selected</Text>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </Upload>
+                </Form.Item>
+              </Col>
+            </Row>
           </Form>
         </Card>
 
@@ -942,6 +1049,22 @@ export function ColorManagementPanel({
                   header={
                     <div className="flex items-center justify-between w-full pr-4">
                       <div className="flex items-center space-x-4">
+                        {/* Size Image Thumbnail */}
+                        <div className="flex-shrink-0">
+                          {size.sizeImage ? (
+                            <Tooltip title="Size image">
+                              <img
+                                src={getImageUrl(size.sizeImage)}
+                                alt={size.name}
+                                className="w-10 h-10 rounded object-cover border border-gray-200 shadow-sm"
+                              />
+                            </Tooltip>
+                          ) : (
+                            <div className="w-10 h-10 rounded border border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+                              <Icon name="photo_camera" className="text-gray-300 text-sm" />
+                            </div>
+                          )}
+                        </div>
                         <div>
                           <Text strong className="text-base">{size.name}</Text>
                           <div className="flex space-x-4 mt-1">
@@ -1100,6 +1223,45 @@ export function ColorManagementPanel({
                                   className="w-full"
                                   step={0.1}
                                 />
+                              </Form.Item>
+                            </Col>
+                          </Row>
+
+                          <Row gutter={16}>
+                            <Col span={24}>
+                              <Form.Item label="Size Image (Optional)" help="Image shown when this size is selected">
+                                <Upload
+                                  accept="image/*"
+                                  beforeUpload={(file) => handleBeforeCrop(file, 'editSizeImage', 4 / 3)}
+                                  showUploadList={false}
+                                  maxCount={1}
+                                >
+                                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-blue-400 transition-colors cursor-pointer">
+                                    {editSizeImagePreview ? (
+                                      <div className="flex items-center gap-4">
+                                        <img
+                                          src={editSizeImagePreview}
+                                          alt="Size"
+                                          className="h-14 w-14 object-cover rounded border"
+                                        />
+                                        <div>
+                                          <Button icon={<Icon name="upload" />} size="small">Change Image</Button>
+                                          <div
+                                            className="text-xs text-red-500 mt-1 cursor-pointer"
+                                            onClick={(e) => { e.stopPropagation(); setEditSizeImagePreview(null); setEditSizeImagePath(null); }}
+                                          >
+                                            Remove
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-1">
+                                        <Icon name="photo_camera" className="text-xl text-gray-400" />
+                                        <div><Text className="text-xs">Upload size image</Text></div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </Upload>
                               </Form.Item>
                             </Col>
                           </Row>

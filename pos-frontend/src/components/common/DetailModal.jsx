@@ -35,6 +35,17 @@ export function DetailModal({
           allMedia.push(color.productImageInColor);
         }
       });
+      data.colors.forEach((color) => {
+        console.log("sizerecord.colors", color)
+
+        if (Array.isArray(color.sizes)) {
+          color.sizes.forEach((size) => {
+            if (size.sizeImage) {
+              allMedia.push(size.sizeImage);
+            }
+          });
+        }
+      });
     }
 
     return (

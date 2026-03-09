@@ -341,6 +341,7 @@ router.get('/', authenticate, hasPermission('products', 'view'), async (req, res
                 stock: size.stock,
                 dimensions: size.dimensions,
                 weight: parseFloat(size.weight || 0),
+                sizeImage: size.size_image || null,
                 rawMaterials: sizeMaterials
               };
             });
@@ -472,6 +473,7 @@ router.get('/:id', authenticate, hasPermission('products', 'view'), async (req, 
             stock: size.stock,
             dimensions: size.dimensions,
             weight: parseFloat(size.weight || 0),
+            sizeImage: size.size_image || null,
             rawMaterials: sizeMaterials
           };
         });
@@ -611,8 +613,8 @@ router.post(
             for (const size of color.sizes) {
               const sizeResult = await client.query(`
                 INSERT INTO product_sizes (
-                  id, product_color_id, name, stock, weight, dimensions
-                ) VALUES ($1, $2, $3, $4, $5, $6)
+                  id, product_color_id, name, stock, weight, dimensions, size_image
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7)
                 RETURNING *
               `, [
                 size.id || `SIZE-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
@@ -620,7 +622,8 @@ router.post(
                 size.name,
                 size.stock,
                 size.weight,
-                JSON.stringify(size.dimensions)
+                JSON.stringify(size.dimensions),
+                size.sizeImage || size.size_image || null
               ]);
 
               const insertedSize = sizeResult.rows[0];
@@ -815,8 +818,8 @@ router.put(
             for (const size of color.sizes) {
               const sizeResult = await client.query(`
                 INSERT INTO product_sizes (
-                  id, product_color_id, name, stock, weight, dimensions
-                ) VALUES ($1, $2, $3, $4, $5, $6)
+                  id, product_color_id, name, stock, weight, dimensions, size_image
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7)
                 RETURNING *
               `, [
                 size.id || `SIZE-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
@@ -824,7 +827,8 @@ router.put(
                 size.name,
                 size.stock,
                 size.weight,
-                JSON.stringify(size.dimensions)
+                JSON.stringify(size.dimensions),
+                size.sizeImage || size.size_image || null
               ]);
 
               const insertedSize = sizeResult.rows[0];
@@ -1062,7 +1066,8 @@ router.put(
             name: size.name,
             stock: size.stock,
             dimensions: size.dimensions,
-            weight: parseFloat(size.weight || 0)
+            weight: parseFloat(size.weight || 0),
+            sizeImage: size.size_image || null
           }))
         };
       }));

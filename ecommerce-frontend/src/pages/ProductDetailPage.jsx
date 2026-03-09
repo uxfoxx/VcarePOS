@@ -107,6 +107,23 @@ const ProductDetailPage = () => {
         if (variation.productImageInColor) {
           addImage(variation.productImageInColor, 'variation', variation.id);
         }
+        // Add size-specific images
+        if (Array.isArray(variation.sizes)) {
+          variation.sizes.forEach((size) => {
+            if (size.sizeImage) {
+              if (!seen.has(getImageUrl(size.sizeImage))) {
+                seen.add(getImageUrl(size.sizeImage));
+                images.push({
+                  url: getImageUrl(size.sizeImage),
+                  source: 'size',
+                  variationId: variation.id,
+                  sizeId: size.id,
+                  originalUrl: size.sizeImage
+                });
+              }
+            }
+          });
+        }
       });
     }
 
@@ -154,7 +171,7 @@ const ProductDetailPage = () => {
     // quantity reset to 1
     setQuantity(1);
     // Automatically switch images when variation changes
-    const variationImageIndex = galleryImages.findIndex(img => img.variationId === variation.id);
+    const variationImageIndex = galleryImages.findIndex(img => img.variationId === variation.id && img.source === 'variation');
     if (variationImageIndex !== -1) {
       setSelectedImageIndex(variationImageIndex);
     }
@@ -163,6 +180,16 @@ const ProductDetailPage = () => {
       setSelectedSize(variation.sizes[0]);
     } else {
       setSelectedSize(null);
+    }
+  };
+
+  const handleSizeChange = (size) => {
+    setSelectedSize(size);
+    setQuantity(1);
+    // If the size has its own image, switch the gallery to it
+    const sizeImageIndex = galleryImages.findIndex(img => img.sizeId === size.id);
+    if (sizeImageIndex !== -1) {
+      setSelectedImageIndex(sizeImageIndex);
     }
   };
 
@@ -398,7 +425,7 @@ const ProductDetailPage = () => {
                     return (
                       <button
                         key={size.id}
-                        onClick={() => setSelectedSize(size)}
+                        onClick={() => handleSizeChange(size)}
                         disabled={isOutOfStock}
                         className={`relative px-6 py-3 rounded-full text-sm font-semibold transition-all duration-200 overflow-hidden ${isSelected
                           ? "bg-gray-900 text-white shadow-md transform scale-[1.02]"

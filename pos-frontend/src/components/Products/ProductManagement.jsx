@@ -139,8 +139,18 @@ export function ProductManagement() {
                 media.push(color.productImageInColor);
               }
             });
-          }
+            record.colors.forEach((color) => {
+              console.log("sizerecord.colors", color)
 
+              if (Array.isArray(color.sizes)) {
+                color.sizes.forEach((size) => {
+                  if (size.sizeImage) {
+                    media.push(size.sizeImage);
+                  }
+                });
+              }
+            });
+          }
           return media;
         };
 
@@ -397,8 +407,17 @@ export function ProductManagement() {
                   media.push(color.productImageInColor);
                 }
               });
+              // Add size-specific images
+              record.colors.forEach((color) => {
+                if (Array.isArray(color.sizes)) {
+                  color.sizes.forEach((size) => {
+                    if (size.sizeImage) {
+                      media.push(size.sizeImage);
+                    }
+                  });
+                }
+              });
             }
-
             return media;
           };
 

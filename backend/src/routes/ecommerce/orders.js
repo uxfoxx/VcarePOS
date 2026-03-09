@@ -424,10 +424,12 @@ router.get('/users/:userId/orders', authenticate, async (req, res) => {
              p.image as product_primary_image,
              pc.name as color_name,
              pc.color_code as color_code,
-             pc.image as color_image
+             pc.image as color_image,
+             ps.size_image as size_image
       FROM ecommerce_order_items eoi
       LEFT JOIN products p ON p.id = eoi.product_id
       LEFT JOIN product_colors pc ON pc.id = eoi.selected_color_id
+      LEFT JOIN product_sizes ps ON ps.product_color_id = pc.id AND ps.name = eoi.selected_size
       WHERE eoi.ecommerce_order_id IN (
         SELECT id FROM ecommerce_orders WHERE customer_id = $1
       )
@@ -453,11 +455,12 @@ router.get('/users/:userId/orders', authenticate, async (req, res) => {
           return {
             productId: item.product_id,
             productName: item.product_name,
-            productImage: item.color_image || firstMediaImage || item.product_primary_image || null,
+            productImage: item.size_image || item.color_image || firstMediaImage || item.product_primary_image || null,
             selectedColorId: item.selected_color_id,
             colorName: item.color_name || null,
             colorCode: item.color_code || null,
             selectedSize: item.selected_size,
+            sizeImage: item.size_image || null,
             quantity: item.quantity,
             unitPrice: parseFloat(item.unit_price),
             totalPrice: parseFloat(item.total_price)
@@ -671,10 +674,12 @@ router.get('/orders/:orderId', authenticate, hasPermission('ecommerce', 'view'),
              p.media as product_media,
              pc.name as color_name,
              pc.color_code as color_code,
-             pc.image as color_image
+             pc.image as color_image,
+             ps.size_image as size_image
       FROM ecommerce_order_items eoi
       LEFT JOIN products p ON p.id = eoi.product_id
       LEFT JOIN product_colors pc ON pc.id = eoi.selected_color_id
+      LEFT JOIN product_sizes ps ON ps.product_color_id = pc.id AND ps.name = eoi.selected_size
       WHERE eoi.ecommerce_order_id = $1
     `, [orderId]);
 
@@ -699,11 +704,12 @@ router.get('/orders/:orderId', authenticate, hasPermission('ecommerce', 'view'),
       return {
         productId: item.product_id,
         productName: item.product_name,
-        productImage: item.color_image || firstMediaImage || item.product_primary_image || null,
+        productImage: item.size_image || item.color_image || firstMediaImage || item.product_primary_image || null,
         selectedColorId: item.selected_color_id,
         colorName: item.color_name || null,
         colorCode: item.color_code || null,
         selectedSize: item.selected_size,
+        sizeImage: item.size_image || null,
         quantity: item.quantity,
         unitPrice: parseFloat(item.unit_price),
         totalPrice: parseFloat(item.total_price)

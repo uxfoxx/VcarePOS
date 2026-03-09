@@ -102,7 +102,8 @@ router.get('/products', async (req, res) => {
               name: size.name,
               stock: size.stock,
               dimensions: size.dimensions,
-              weight: parseFloat(size.weight || 0)
+              weight: parseFloat(size.weight || 0),
+              sizeImage: size.size_image || null
             }));
 
           logger.debug('Color sizes mapped', {
@@ -247,7 +248,8 @@ router.get('/products/search', async (req, res) => {
               name: size.name,
               stock: size.stock,
               dimensions: size.dimensions,
-              weight: parseFloat(size.weight || 0)
+              weight: parseFloat(size.weight || 0),
+              sizeImage: size.size_image || null
             }));
 
           return {
@@ -344,7 +346,8 @@ router.get('/products/:id', async (req, res) => {
           name: size.name,
           stock: size.stock,
           dimensions: size.dimensions,
-          weight: parseFloat(size.weight || 0)
+          weight: parseFloat(size.weight || 0),
+          sizeImage: size.size_image || null
         }));
 
       return {

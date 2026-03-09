@@ -69,8 +69,11 @@ const CartPage = () => {
               {items.map(item => {
                 // Find selected color object if available
                 const selectedColor = item.product.colors?.find(c => c.id === item.selectedColorId);
-                // Fix: Use productImageInColor for color-specific images
-                const itemImage = selectedColor?.productImageInColor || (item.product.media && item.product.media[0]) || item.product.image;
+                // Find selected size object if available
+                const selectedSize = selectedColor?.sizes?.find(s => s.name === item.selectedSize);
+
+                // Fix: Priority - 1. Size-specific image, 2. Color-specific image, 3. First media, 4. Main image
+                const itemImage = selectedSize?.sizeImage || selectedColor?.productImageInColor || (item.product.media && item.product.media[0]) || item.product.image;
 
                 return (
                   <div key={item.id} className="p-5 md:p-6 flex flex-col sm:flex-row gap-5 md:gap-6 group hover:bg-gray-50/20 transition-all duration-300">

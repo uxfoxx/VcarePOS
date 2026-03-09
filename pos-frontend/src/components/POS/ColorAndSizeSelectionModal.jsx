@@ -8,11 +8,13 @@ import {
   Tag,
   Button,
   Empty,
-  Image,
   Space,
-  Badge
+  Badge,
+  Carousel
 } from 'antd';
 import { Icon } from '../common/Icon';
+import { MediaViewerModal } from '../common/MediaViewerModal';
+import { useRef } from 'react';
 
 const { Text, Title } = Typography;
 
@@ -34,6 +36,8 @@ export function ColorAndSizeSelectionModal({
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [viewerState, setViewerState] = useState({ open: false, index: 0, media: [] });
+  const carouselRef = useRef(null);
 
   // Reset selections when modal opens or product changes
   useEffect(() => {
@@ -73,6 +77,32 @@ export function ColorAndSizeSelectionModal({
     return color.sizes.reduce((total, size) => total + (size.stock || 0), 0);
   };
 
+  // Collect all media including color variant images
+  let allMedia = [];
+  if (product.media && Array.isArray(product.media)) {
+    allMedia = [...product.media];
+  }
+
+  // Append unique color images
+  if (product.colors && Array.isArray(product.colors)) {
+    product.colors.forEach(color => {
+      if (color.productImageInColor && !allMedia.includes(color.productImageInColor)) {
+        allMedia.push(color.productImageInColor);
+      }
+    });
+    product.colors.forEach((color) => {
+      console.log("sizerecord.colors", color)
+
+      if (Array.isArray(color.sizes)) {
+        color.sizes.forEach((size) => {
+          if (size.sizeImage) {
+            allMedia.push(size.sizeImage);
+          }
+        });
+      }
+    });
+  }
+
   return (
     <Modal
       title={
@@ -108,90 +138,102 @@ export function ColorAndSizeSelectionModal({
         {/* Product Info */}
         <div className="bg-blue-50 p-4 rounded-lg">
           <div className="flex items-center space-x-4">
-            {product.media && Array.isArray(product.media) && product.media.length > 0 ? (
-              <div className="space-y-3">
-                {/* Primary Media */}
-                <div className="relative">
-                  {product.media[0].startsWith('data:video/') ||
-                    product.media[0].toLowerCase().includes('.mp4') ||
-                    product.media[0].toLowerCase().includes('.webm') ||
-                    product.media[0].toLowerCase().includes('.mov') ? (
-                    <video
-                      src={getImageUrl(product.media[0])}
-                      width={200}
-                      height={150}
-                      className="object-cover rounded-lg"
-                      controls
-                      style={{ aspectRatio: '4/3', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <Image
-                      src={getImageUrl(product.media[0])}
-                      alt={product.name}
-                      width={200}
-                      height={150}
-                      className="object-cover rounded-lg"
-                      preview={true}
-                      style={{ aspectRatio: '4/3', objectFit: 'cover' }}
-                    />
-                  )}
-                  {product.media.length > 1 && (
-                    <div className="absolute top-2 right-2">
-                      <Tag color="purple" size="small">
-                        +{product.media.length - 1} more
-                      </Tag>
+            <div className="flex-shrink-0">
+              {allMedia.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  <div className="w-[360px] overflow-hidden rounded-lg bg-white border border-gray-100">
+                    <div className="w-full h-full relative">
+                      <Carousel autoplay={false} dots={false} arrows={true} infinite={false} ref={carouselRef}>
+                        {allMedia.map((mediaItem, index) => {
+                          const isVideo = mediaItem.startsWith('data:video/') ||
+                            mediaItem.toLowerCase().includes('.mp4') ||
+                            mediaItem.toLowerCase().includes('.webm') ||
+                            mediaItem.toLowerCase().includes('.mov');
+
+                          return (
+                            <div key={index}>
+                              <div className="flex justify-center items-center h-[360px] relative group overflow-hidden rounded-lg">
+                                {isVideo ? (
+                                  <div
+                                    className="relative w-full h-full cursor-pointer flex items-center justify-center bg-black"
+                                    onClick={() => setViewerState({ open: true, index, media: allMedia })}
+                                  >
+                                    <video
+                                      src={`${import.meta.env.VITE_API_URL}${mediaItem}`}
+                                      className="object-cover h-[360px] w-full opacity-80"
+                                      crossOrigin="anonymous"
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                      <Icon name="play_circle" className="text-white text-6xl drop-shadow-md opacity-70 group-hover:opacity-100 transition-opacity" />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <img
+                                    src={`${import.meta.env.VITE_API_URL}${mediaItem}`}
+                                    alt={`${product.name} ${index + 1}`}
+                                    className="object-cover h-[360px] w-full block cursor-pointer"
+                                    style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                                    crossOrigin="anonymous"
+                                    onClick={() => setViewerState({ open: true, index, media: allMedia })}
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </Carousel>
+                    </div>
+                  </div>
+
+                  {/* Thumbnails Row */}
+                  {allMedia.length > 1 && (
+                    <div className="flex gap-2 w-[360px] overflow-x-auto pb-2 scrollbar-hide shrink-0">
+                      {allMedia.map((mediaItem, index) => {
+                        const isVideo = mediaItem.startsWith('data:video/') ||
+                          mediaItem.toLowerCase().includes('.mp4') ||
+                          mediaItem.toLowerCase().includes('.webm') ||
+                          mediaItem.toLowerCase().includes('.mov');
+
+                        return (
+                          <div
+                            key={`thumb-${index}`}
+                            onClick={() => carouselRef.current?.goTo(index)}
+                            className="w-16 h-16 flex-shrink-0 cursor-pointer rounded overflow-hidden border-2 border-transparent hover:border-blue-500 transition-colors relative bg-gray-100"
+                          >
+                            {isVideo ? (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Icon name="play_circle" className="text-gray-500 text-2xl" />
+                              </div>
+                            ) : (
+                              <img
+                                src={`${import.meta.env.VITE_API_URL}${mediaItem}`}
+                                className="w-full h-full object-cover"
+                                alt={`Thumbnail ${index + 1}`}
+                                crossOrigin="anonymous"
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
-
-                {/* Additional Media Thumbnails */}
-                {product.media.length > 1 && (
-                  <div className="grid grid-cols-4 gap-2">
-                    {product.media.slice(1, 5).map((mediaUrl, index) => {
-                      const isVideo = mediaUrl.startsWith('data:video/') ||
-                        mediaUrl.toLowerCase().includes('.mp4') ||
-                        mediaUrl.toLowerCase().includes('.webm') ||
-                        mediaUrl.toLowerCase().includes('.mov');
-
-                      return (
-                        <div key={index + 1} className="relative w-12 h-12 bg-gray-100 rounded overflow-hidden">
-                          {isVideo ? (
-                            <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                              <Icon name="play_circle" className="text-gray-500 text-sm" />
-                            </div>
-                          ) : (
-                            <Image
-                              src={getImageUrl(mediaUrl)}
-                              alt={`${product.name} ${index + 2}`}
-                              width={48}
-                              height={48}
-                              className="object-cover"
-                              preview={true}
-                              style={{ aspectRatio: '1/1', objectFit: 'cover' }}
-                            />
-                          )}
-                        </div>
-                      );
+              ) : (
+                <div className="w-[360px]">
+                  <img
+                    src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
+                    alt={product.name}
+                    className="object-cover h-[360px] w-full rounded-lg cursor-pointer"
+                    style={{ aspectRatio: '1/1', objectFit: 'cover' }}
+                    onClick={() => setViewerState({
+                      open: true,
+                      index: 0,
+                      media: [product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300']
                     })}
-                    {product.media.length > 5 && (
-                      <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-                        <Text className="text-xs">+{product.media.length - 5}</Text>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Image
-                src={product.image || 'https://images.pexels.com/photos/586344/pexels-photo-586344.jpeg?auto=compress&cs=tinysrgb&w=300'}
-                alt={product.name}
-                width={80}
-                height={80}
-                className="object-cover rounded"
-                preview={false}
-                style={{ aspectRatio: '1/1', objectFit: 'cover' }}
-              />
-            )}
+                  />
+                </div>
+              )}
+            </div>
             <div className="flex-1">
               <Title level={4} className="mb-1">{product.name}</Title>
               <div>
@@ -390,6 +432,12 @@ export function ColorAndSizeSelectionModal({
           </div>
         )}
       </div>
+      <MediaViewerModal
+        open={viewerState.open}
+        onClose={() => setViewerState({ ...viewerState, open: false })}
+        media={viewerState.media}
+        initialIndex={viewerState.index}
+      />
     </Modal>
   );
 }

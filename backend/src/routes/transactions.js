@@ -267,9 +267,12 @@ router.get('/', authenticate, hasPermission('transactions', 'view'), async (req,
 
     // Get all transaction items
     const itemsResult = await client.query(`
-      SELECT ti.*, p.image
+      SELECT ti.*, p.image,
+             ps.size_image
       FROM transaction_items ti
       LEFT JOIN products p ON ti.product_id = p.id
+      LEFT JOIN product_colors pc ON pc.id = ti.selected_color_id
+      LEFT JOIN product_sizes ps ON ps.product_color_id = pc.id AND ps.name = ti.selected_size
     `);
 
     // Get all refunds
@@ -292,11 +295,16 @@ router.get('/', authenticate, hasPermission('transactions', 'view'), async (req,
             price: parseFloat(item.product_price),
             barcode: item.product_barcode,
             category: item.product_category,
-            image: item.image
+            image: item.image,
+            invoiceDescription: item.invoice_description || null,
+            description: item.invoice_description || null
           },
+          invoiceDescription: item.invoice_description || null,
           quantity: item.quantity,
           selectedSize: item.selected_size,
           selectedVariant: item.selected_variant,
+          selectedColorId: item.selected_color_id,
+          sizeImage: item.size_image || null,
           addons: item.addons
         }));
 
@@ -396,9 +404,12 @@ router.get('/:id', authenticate, hasPermission('transactions', 'view'), async (r
 
     // Get transaction items
     const itemsResult = await client.query(`
-      SELECT ti.*, p.image
+      SELECT ti.*, p.image,
+             ps.size_image
       FROM transaction_items ti
       LEFT JOIN products p ON ti.product_id = p.id
+      LEFT JOIN product_colors pc ON pc.id = ti.selected_color_id
+      LEFT JOIN product_sizes ps ON ps.product_color_id = pc.id AND ps.name = ti.selected_size
       WHERE ti.transaction_id = $1
     `, [id]);
 
@@ -420,11 +431,16 @@ router.get('/:id', authenticate, hasPermission('transactions', 'view'), async (r
         price: parseFloat(item.product_price),
         barcode: item.product_barcode,
         category: item.product_category,
-        image: item.image
+        image: item.image,
+        invoiceDescription: item.invoice_description || null,
+        description: item.invoice_description || null
       },
+      invoiceDescription: item.invoice_description || null,
       quantity: item.quantity,
       selectedSize: item.selected_size,
       selectedVariant: item.selected_variant,
+      selectedColorId: item.selected_color_id,
+      sizeImage: item.size_image || null,
       addons: item.addons
     }));
 

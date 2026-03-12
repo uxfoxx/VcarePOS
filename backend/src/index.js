@@ -41,6 +41,8 @@ const app = express();
 const allowedOrigins = [
   'https://pos.vcaresl.com',
   'https://vcaresl.com',
+  'https://www.vcaresl.com',
+  'https://www.pos.vcaresl.com',
   'http://localhost:3000',
   'http://localhost:3001',
   'http://localhost:3002',
